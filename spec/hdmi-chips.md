@@ -96,10 +96,23 @@ RD derives the FPGA configuration from the IT6805 state when streaming starts (`
 
   (`T1/S01`; C) A Roku in automatic mode therefore chose 2160p59.94 4:2:0, the one mode that captured black (open question 14).
 - Driver policy (design decision, not a hardware fact):
-  - ship an own EDID image with its own manufacturer/product identity (do not reuse RD's);
-  - advertise only verified capture modes: initially 1080p60 and below, RGB and YCbCr 4:4:4/4:2:2, LPCM 2 ch 48 kHz. Add 2160p modes once open question 14 is resolved;
-  - load the same image into both RAMs (mechanisms in the chapters);
-  - expose `VIDIOC_G_EDID` / `VIDIOC_S_EDID`; on change, drop and re-raise the source HPD.
+  - ship an own EDID image (do not reuse RD's); load the same image into both RAMs (mechanisms in the chapters);
+  - expose `VIDIOC_G_EDID` / `VIDIOC_S_EDID` (2 blocks max, `hdmi-it6805.md` §4); on change: HPD low, reload both RAMs, HPD high;
+  - advertise only verified capture modes. Grow the image as modes are verified, never ahead of them.
+
+### Default EDID (requirements for the driver's built-in image)
+| Part | Content | Why |
+|---|---|---|
+| Identity | manufacturer ID `LNX`, product code 0x5730, serial 0, monitor name "GC573 Linux", EDID 1.3, digital input | own identity; the subsystem ID in the product code |
+| Preferred timing | DTD 1920×1080p60, 148.5 MHz | the main capture mode; makes sources default to it |
+| Range limits | V 23–61 Hz, H 15–68 kHz, max pixel clock 150 MHz | keeps sources at or below 1080p60 |
+| CTA-861 extension | revision 3; flags: basic audio, YCbCr 4:4:4, YCbCr 4:2:2 | 4:4:4 and RGB traced at 1080p (`T3`, `T4`); 4:2:2 is decoded by the IT6805 (UNVERIFIED end to end) |
+| Video data block | VIC 16 (native), 31, 34, 33, 32 (1080p 50/30/25/24), 4, 19 (720p 60/50), 2, 3 (480p), 17, 18 (576p), 1 (640×480p) | progressive CTA modes ≤ 1080p60. Interlaced and 2160p modes are left out (open questions 14, 24) |
+| Audio data block | LPCM, 2 channels, 48 kHz only, 16/20/24-bit; speaker allocation FL/FR | 48 kHz is the only rate traced (`audio.md`) |
+| HDMI VSDB | physical address 1.0.0.0, no deep colour, max TMDS 165 MHz | no HF-VSDB, so sources stay at HDMI 1.4 rates: no SCDC, scrambling or 4:2:0 |
+| Video capability data block | QS = 1 (RGB quantisation selectable) | lets RGB sources signal full or limited range in the AVI InfoFrame |
+
+Validate the image with `edid-decode` (no errors or warnings) in the test suite. Planned additions once verified with our driver: 2160p30 (VIC 95, 94, 93; dual-pixel DDR captures correctly under RD, `T4/S44`); 2160p60 4:2:0 only after open question 14. With this image the PC loopback source defaults to 1080p60.
 
 ## HDCP
 - No HDCP programming is needed for an unencrypted source. In every trace the HDCP paths stayed idle: splitter RX encryption status 0, IT6805 encryption event never set, splitter TX HDCP never started. (`S`,`T3`; C)
