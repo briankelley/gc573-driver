@@ -49,6 +49,6 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `11-v4l2-compliance` | M2 | `v4l2-compliance -s`: 0 failures; SKIP if not installed |
 | `12-video-stress` | M2 | `GC573_CYCLES` (default 100) start/stop cycles over the 6 formats with REQBUFS each cycle; underrun (all buffers held 500 ms, then requeued) and 1-buffer streaming, fully overwritten frames; I2C bus 1 IDs afterwards |
 | `13-video-unbind` | M2 | unbind while streaming with mapped buffers: stream stops, unbind < 5 s, application exits; rebind probes and streams |
-| `14-exp-slot-bits` | exp. | open question 8 result check via `exp_slot_mode`: ch0 slot-valid bits gate all channels; ch1/ch2 CH_CTRL has no visible effect |
+| `14-exp-slot-bits` | exp. | open question 8 result check via `exp_slot_mode` 1-5: ch0 CH_CTRL (run, slot-valid bits) gates all channels; ch1/ch2 CH_CTRL, even 0, has no visible effect |
 
 Helpers: `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep, stop/start, underrun, wait modes; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`. Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.

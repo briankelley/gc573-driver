@@ -6,9 +6,12 @@
 #   1  slot-valid bits on ch0 only (ch1/ch2: run bit only)
 #   2  ch1/ch2 CH_CTRL written once at start (all armed slots + run), never again
 #   4  ch1/ch2 CH_CTRL never written
+#   5  ch1/ch2 CH_CTRL = 0 at start (no run bit, no slot bits), never set
 #      result 2026-11: every plane of every frame written -> expect the same
 #   3  slot-valid bits on ch1/ch2 only, ch0 run bit only
 #      result 2026-11: no frame completes, no plane written -> expect the same
+# Mode 4 alone would not show that ch1/ch2 CH_CTRL are ignored (they cannot
+# be read back, and earlier streams wrote them); mode 5 writes them 0.
 # A FAIL here means the hardware answered differently from the recorded
 # result (another FPGA version?), not necessarily a driver bug.
 # shellcheck source=tests/lib.sh
@@ -22,7 +25,7 @@ cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 gc573_load || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
 bad=
-for m in 1 2 4; do
+for m in 1 2 4 5; do
 	echo "$m" > "$param"
 	for f in NV12 YV12; do
 		out=$("$cap" -d "$dev" -f "$f" -b 4 -n 60 -p 2>&1)
@@ -46,4 +49,4 @@ done
 echo 0 > "$param"
 gc573_unload || fail "rmmod failed"
 [ -z "$bad" ] || fail "differs from the recorded result:$bad"
-echo "ch0 slot-valid bits gate the frame for all channels; ch1/ch2 CH_CTRL had no visible effect"
+echo "ch0 CH_CTRL (run, slot-valid bits) gates every channel; ch1/ch2 CH_CTRL had no visible effect"

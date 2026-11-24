@@ -57,7 +57,7 @@
 static int exp_slot_mode;
 module_param(exp_slot_mode, int, 0644);
 MODULE_PARM_DESC(exp_slot_mode,
-		 "Experiment, spec/open-questions.md #8; read at stream start. 0: normal, 1: slot-valid bits on ch0 only, 2: ch1/ch2 CH_CTRL written at start only, 3: slot-valid bits on ch1/ch2 only, 4: ch1/ch2 CH_CTRL never written");
+		 "Experiment, spec/open-questions.md #8; read at stream start. 0: normal, 1: slot-valid bits on ch0 only, 2: ch1/ch2 CH_CTRL written at start only, 3: slot-valid bits on ch1/ch2 only, 4: ch1/ch2 CH_CTRL never written, 5: ch1/ch2 CH_CTRL = 0 at start, never set");
 
 static const u32 gc573_vch_base[GC573_VCH_NUM] = {
 	GC573_VCH0_BASE, GC573_VCH1_BASE, GC573_VCH2_BASE,
@@ -401,6 +401,7 @@ static bool gc573_vid_slots_writable(struct gc573_video *v, unsigned int c,
 	case 3:
 		return c != 0;
 	case 4:
+	case 5:
 		return c == 0;
 	default:
 		return true;
@@ -739,6 +740,8 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 
 	spin_lock(&v->slock);
 	v->exp_mode = READ_ONCE(exp_slot_mode);
+	if (v->exp_mode < 0 || v->exp_mode > 5)
+		v->exp_mode = 0;
 	v->next_arm = 0;
 	v->arm_seq = 0;
 	v->sequence = 0;
@@ -752,8 +755,10 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 		gc573_vid_program_slot(gc, n, first);
 	gc573_vid_fill(gc, true);
 	for (c = 0; c < v->fmt->nch; c++)
-		if (c == 0 || v->exp_mode != 4)
+		if (c == 0 || v->exp_mode < 4)
 			gc573_vid_ctrl(gc, c, GC573_VCH_CTRL_RUN, 0);
+		else if (v->exp_mode == 5)
+			gc573_vid_ctrl(gc, c, 0, ~0U);
 
 	v->running = true;
 	gc573_wr(gc, GC573_VIP_CTRL, v->vip_ctrl | GC573_VIP_CTRL_OUT_EN);
