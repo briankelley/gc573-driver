@@ -9,7 +9,8 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
   `tests/logs/<UTC stamp>_<kernel release>.log`.
 - On the target: `sudo tests/run.sh [CASE...]` with `gc573.ko` built in the
   repo root.
-- Env: `GC573_ITER` (load/unload cycles, default 50), `GC573_INPUT` (HDMI input
+- Env: `GC573_ITER` (load/unload cycles, default 50), `GC573_I2C_ROUNDS`
+  (`04-i2c-reads` rounds per reader, default 200), `GC573_INPUT` (HDMI input
   source and mode for the log, default `none`), `GC573_KO` (module path).
 - Leak, lockdep, KASAN and DMA-API gates need the debug kernel
   (`6.8.12-gc573dbg`); on other kernels the kmemleak result is SKIP.
@@ -36,3 +37,4 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `01-probe` | M0 | binds, MSI, FPGA VERSION logged, INT_ENABLE 0 after remove |
 | `02-load-unload` | M0 | 50 load/unload cycles; each probe binds, logs VERSION and reads both chip IDs OK |
 | `03-chip-id` | M1 | bus 1 chip IDs: 0x90 `54 49 05 68`, 0x58 `54 49 63 66`; 3 adapters; bus 0/2 transfers off |
+| `04-i2c-reads` | M1 | 2 parallel readers x 2000 read-only ID transfers via i2c-dev (`i2c-id-reads.py`), every byte checked, one IRQ per transfer; plain read refused before hardware |
