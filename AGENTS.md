@@ -38,7 +38,9 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
   - SPICE + Xfce autologin user `dev`; OBS 29.1.3 (last PPA build for focal).
   - SSH key `~/.ssh/gc573-vm`; user `dev`, NOPASSWD sudo.
 - `tools/devvm/create.sh` — builds `gc573-dev` VM: Ubuntu 24.04 cloud img, kernel 6.8 GA + headers. dkms, sparse, v4l-utils (v4l2-ctl, v4l2-compliance), edid-decode, alsa-utils, trace-cmd, ffmpeg, python3-numpy, OBS (PPA latest), Xfce autologin. Same user/key as ref VM.
-- One VM owns the card at a time. `virsh shutdown` the other before `virsh start`.
+- `tools/devvm/debug-kernel.sh` — builds Ubuntu 6.8 source + kmemleak, lockdep, DEBUG_ATOMIC_SLEEP, KASAN, DMA_API_DEBUG on host; installs `6.8.12-gc573dbg` in `gc573-dev` as extra entry (default boot stays generic). Boot once: `sudo grub-reboot "$(cat /etc/gc573-dbg-entry)" && sudo reboot`. Leak/lock/DMA gates run on this kernel.
+- checkpatch: `/lib/modules/$(uname -r)/build/scripts/checkpatch.pl --strict --no-tree -f <file>` (in `gc573-dev`).
+- One VM owns the card at a time. `virsh shutdown` the other before `virsh start` (desktop guests may ignore ACPI shutdown: `ssh <vm> sudo poweroff`).
 - Ghidra 12.x requires JDK 25. Headless: `ghidra-headless`.
 - Tracing: patch vendor source layer (`pci_model_mmio_*`, i2c wrappers, isr, dma alloc) in VM; `trace_printk`/ftrace ring. Cross-check: mmiotrace.
 - Tool ver changes → update scripts + this file same commit.
@@ -51,6 +53,17 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - vb2 (dma-sg or dma-contig per desc fmt). DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
 - Formats: NV12, YUYV min. RGB24 only if verified in OBS.
 - Style: kernel coding style, `scripts/checkpatch.pl --strict` clean. SPDX GPL-2.0 header every file.
+
+## Milestones (driver)
+Each gate passes in `gc573-dev` before the next starts.
+- M0 skeleton: probe/remove, BAR map, FPGA init + quiesce (`spec/init.md`), MSI + threaded IRQ. Gate: load/unload ×50, clean dmesg, VERSION read.
+- M1 I2C: bus-1 engine adapter; bus 0/2 OpenCores adapters. Gate: chip IDs (0x90 → `54 49 05 68`; 0x58 → `54 49 63 66`).
+- M2 video DMA, no input: vb2 dma-sg, 3 channels, 6 formats, free-running frames. Gate: pre-filled buffers overwritten; `v4l2-compliance -s` 0 fail.
+- M3 HDMI bring-up: splitter + IT6805 per `spec/hdmi-chips.md`, poll loop, DV timings, `V4L2_EVENT_SOURCE_CHANGE`. Gate: live 1080p59.94 capture, all formats, image verified.
+- M4 audio: ALSA PCM capture. Gate: capture with live source, A/V sync in OBS.
+- M5 EDID (`VIDIOC_G/S_EDID`), hotplug + mode-change stress, controls, scaling. Gate: test suite v1.
+- M6 DKMS, host validation, OBS, 2 h soak. Gate: "Done" (see Project).
+- Later: 2160p30, 2160p60 4:2:0 (open: black under RD), HDR.
 
 ## Tests
 - `tests/` = regression suite. Every behavior change ships w/ test(s). Every bug fix ships w/ failing-before test.
