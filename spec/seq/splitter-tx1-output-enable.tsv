@@ -1,0 +1,115 @@
+# title: TX port 1 path select (bypass), output enable, SCDC TMDS_Config, unmute (HDMI 1.4 link)
+# evidence: T3/S30 t=32083.7-32568.4 (2160p 4:2:0); T3/S31 t=27038.5-27520.5 and 37603.2-38191.3 (1080p, the second with
+#           the PLL-recovery rows); T3/S20 t=3879.1-4363.2; S
+# chapter: hdmi-splitter.md section 7.5
+# trigger: TX port 1 0x10 bit7 event or 0x03 levels after splitter-tx1-power-on.tsv.
+# clk > 310 MHz (HDMI 2.0 link) uses another link setup, UNVERIFIED (chapter 7.6).
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	R	6a	-	03	-	-	start condition: bit0 HPD, bit2 video stable, bit7 input clock (traced 9f)
+1	R	70	0	9e	-	-	RX H active [13:8] (informative)
+2	R	70	0	9d	-	-	RX H active [7:0] (informative)
+3	M	70	*	0f	03	02	
+4	R	70	2	15	-	-	AVI PB1: colour format bits 6:5
+5	M	70	*	0f	03	00	
+6	R	58	0	0d	-	-	path pre-step only if 00 and no port running
+7	M	58	0	0b	fc	fc	bits 7:2 pulse
+8	M	58	0	0b	fc	00	
+9	M	58	0	4e	0f	0c	
+10	D	-	-	-	-	10	RD sleep
+11	M	58	0	4e	0f	00	
+12	X	70	0	98	-	-	timing-read: RX timing measurement, informative (chapter 6.7)
+13	R	70	0	13	-	-	bit1: 1 = HDMI, 0 = DVI
+14	M	6a	-	c0	01	{hdmi}	hdmi = 0x13 bit1
+15	R	70	0	14	-	-	cond: RD reads it for RGB/4:4:4 input (bit7 selects its HDMI 2.0 path)
+16	M	6a	-	c1	f0	00	8-bit input
+17	M	6a	-	c1	04	00	no deep colour
+18	M	58	0	0d	0c	00	port 1 source = original (bypass)
+19	M	6a	-	ad	81	00	bypass
+20	M	6a	-	a0	30	00	
+21	W	6a	-	93	-	40	output enable; RD: RMW mask ff
+22	M	6a	-	18	0c	0c	DDC error/FIFO event enables
+23	W	6a	-	85	-	19	
+24	M	6a	-	1a	0b	0b	SCDC/DDC-hang event enables
+25	M	6a	-	83	08	00	link setup, HDMI 1.4 (clk <= 310 MHz)
+26	M	6a	-	c0	46	00	scrambling/clock-ratio bits off
+27	D	-	-	-	-	50	RD sleep
+28	M	6a	-	3a	03	00	
+29	R	6a	-	03	-	-	skip the transfer if bit0 (HPD) = 0
+30	M	6a	-	28	01	00	DDC: SCDC write offset 0x20
+31	W	6a	-	2e	-	09	FIFO clear
+32	W	6a	-	29	-	a8	SCDC slave
+33	W	6a	-	2a	-	20	offset
+34	W	6a	-	2b	-	01	count [7:0]
+35	M	6a	-	2c	03	00	count [9:8]
+36	W	6a	-	30	-	00	data into FIFO
+37	W	6a	-	2e	-	01	command: write
+38	P	6a	-	2f	80	80	done; every 1 ms, max 20 polls, then abort (chapter 7.7); traced 83
+39	M	6a	-	28	01	00	
+40	R	6a	-	03	-	-	skip the transfer if bit0 (HPD) = 0
+41	M	6a	-	28	01	00	DDC: SCDC read offset 0x20
+42	W	6a	-	2e	-	09	FIFO clear
+43	W	6a	-	29	-	a8	SCDC slave
+44	W	6a	-	2a	-	20	offset
+45	W	6a	-	2b	-	01	count [7:0]
+46	M	6a	-	2c	03	00	count [9:8]
+47	W	6a	-	2e	-	00	command: read
+48	M	6a	-	28	01	00	
+49	P	6a	-	2f	80	80	done; every 1 ms, max 20 polls; traced 81
+50	M	6a	-	28	01	00	
+51	R	6a	-	30	-	-	data
+52	D	-	-	-	-	100	RD sleep
+53	M	6a	-	c1	08	00	
+54	M	6a	-	c1	08	08	
+55	M	6a	-	c2	80	80	
+56	M	6a	-	c3	30	30	
+57	M	6a	-	88	03	00	TMDS output on
+58	D	-	-	-	-	150	RD sleep
+59	M	6a	-	83	08	00	link setup, HDMI 1.4 (clk <= 310 MHz)
+60	M	6a	-	c0	46	00	scrambling/clock-ratio bits off
+61	D	-	-	-	-	50	RD sleep
+62	M	6a	-	3a	03	00	
+63	R	6a	-	03	-	-	skip the transfer if bit0 (HPD) = 0
+64	M	6a	-	28	01	00	DDC: SCDC write offset 0x20
+65	W	6a	-	2e	-	09	FIFO clear
+66	W	6a	-	29	-	a8	SCDC slave
+67	W	6a	-	2a	-	20	offset
+68	W	6a	-	2b	-	01	count [7:0]
+69	M	6a	-	2c	03	00	count [9:8]
+70	W	6a	-	30	-	00	data into FIFO
+71	W	6a	-	2e	-	01	command: write
+72	P	6a	-	2f	80	80	done; every 1 ms, max 20 polls, then abort (chapter 7.7); traced 83
+73	M	6a	-	28	01	00	
+74	R	6a	-	03	-	-	skip the transfer if bit0 (HPD) = 0
+75	M	6a	-	28	01	00	DDC: SCDC read offset 0x20
+76	W	6a	-	2e	-	09	FIFO clear
+77	W	6a	-	29	-	a8	SCDC slave
+78	W	6a	-	2a	-	20	offset
+79	W	6a	-	2b	-	01	count [7:0]
+80	M	6a	-	2c	03	00	count [9:8]
+81	W	6a	-	2e	-	00	command: read
+82	M	6a	-	28	01	00	
+83	P	6a	-	2f	80	80	done; every 1 ms, max 20 polls; traced 81
+84	M	6a	-	28	01	00	
+85	R	6a	-	30	-	-	data
+86	R	6a	-	03	-	-	success if (value & 0x0f) == 0x0f; bit3 = 0: PLL recovery rows below
+87	W	6a	-	01	-	06	cond: PLL recovery, only if 0x03 bit3 = 0
+88	M	6a	-	94	01	01	cond: PLL recovery, only if 0x03 bit3 = 0
+89	M	6a	-	94	01	00	cond: PLL recovery, only if 0x03 bit3 = 0
+90	W	6a	-	01	-	04	cond: PLL recovery, only if 0x03 bit3 = 0
+91	W	6a	-	01	-	00	cond: PLL recovery, only if 0x03 bit3 = 0
+92	M	6a	-	c1	f0	80	cond: PLL recovery, only if 0x03 bit3 = 0
+93	D	-	-	-	-	100	cond: PLL recovery, only if 0x03 bit3 = 0; RD sleep
+94	R	6a	-	03	-	-	cond: PLL recovery, only if 0x03 bit3 = 0; re-check (T3/S31 t=38120.7: 9f)
+95	R	6a	-	c0	-	-	post-check: clear bit1 if set (clk < 340 MHz)
+96	R	6a	-	c0	-	-	cond: second check for 4:2:0 8-bit input (same rule)
+97	W	6a	-	12	-	ff	W1C
+98	X	-	-	-	-	-	next-cycle: RD unmutes one poll cycle later
+99	M	6a	-	91	10	00	unmute
+100	M	6a	-	c1	01	00	AV mute off

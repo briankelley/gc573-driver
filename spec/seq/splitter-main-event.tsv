@@ -1,0 +1,32 @@
+# title: main-block status pass: W1C acknowledge and timer-1 expiry
+# evidence: T3/S30 t=34660.9-34664.0; T3/S31 t=40224.0-40227.1, t=29807.6-29809.7 (inside the 5V-off pass); S
+# chapter: hdmi-splitter.md sections 5.2, 5.3, 9.6
+# RD's HDCP actions on 0x06 and 58/1 0x21-0x23 (chapter 5.2) never ran: these read 00 in every trace.
+# A timer-0 expiry (0x07 bit4) would run RD's HPD retry pulse (chapter 5.2); untraced.
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	R	58	0	05	-	40	summary: bit6 (main-block status)
+1	R	58	0	06	-	-	main-block status, W1C (HDCP-related bits, chapter 5.2)
+2	R	58	0	07	-	-	bit4 timer 0 expired, bit5 timer 1 expired
+3	W	58	0	06	-	{read}	W1C acknowledge
+4	W	58	0	07	-	{read}	
+5	M	58	*	0f	01	01	
+6	R	58	1	21	-	-	HDCP status, W1C (traced 00)
+7	R	58	1	22	-	-	
+8	R	58	1	23	-	-	
+9	W	58	1	21	-	{read}	
+10	W	58	1	22	-	{read}	
+11	W	58	1	23	-	{read}	
+12	M	58	*	0f	01	00	
+13	M	58	0	1a	02	00	cond: 0x07 bit5 (timer 1 expired); timer 1 stop
+14	W	58	0	19	-	0f	cond: 0x07 bit5 (timer 1 expired)
+15	W	58	0	1d	-	00	cond: 0x07 bit5 (timer 1 expired); count 0
+16	R	70	0	14	-	-	cond: 0x07 bit5 (timer 1 expired); lock bits 5:3
+17	R	70	0	13	-	-	cond: 0x07 bit5 and 0x70 reg 0x14 bits 5:3 = 0; if bit4 = 1 RD retries: toggle 70/3:e5 bits 3:2, set e5 bit4, re-arm timer 1 with 81 (untraced)
+18	R	70	0	14	-	-	cond: 0x07 bit5

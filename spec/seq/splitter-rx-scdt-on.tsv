@@ -1,0 +1,94 @@
+# title: RX video stable (SCDT on): FIFO reset and TX port 1 power-on
+# evidence: T3/S30 t=31884.4-32006.9; T3/S20 t=3684.1; T3/S31 t=26828.4, 37240.1; S
+# chapter: hdmi-splitter.md sections 6.3, 7.2, 9.4
+# TX port 1 power-on rows (from '58 0 08' to '18 80 80') are also table splitter-tx1-power-on.tsv.
+# variable r14: value read from 0x70 reg 0x14 in this table. The 'cond: 0x11 bit3' / '0x12' rows ran at
+# T3/S31 t=37240.1, where the AVI events arrived with SCDT on.
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	R	58	0	05	-	10	summary: RX event
+1	R	70	0	05	-	-	RX status/level snapshot
+2	R	70	0	06	-	-	
+3	R	70	0	07	-	40	
+4	R	70	0	08	-	40	
+5	R	70	0	09	-	-	
+6	R	70	0	10	-	02	
+7	R	70	0	11	-	-	
+8	R	70	0	12	-	-	
+9	R	70	0	13	-	-	
+10	R	70	0	14	-	-	
+11	R	70	0	15	-	-	
+12	R	70	0	19	-	b0	
+13	R	70	0	1a	-	-	
+14	R	70	0	1b	-	-	
+15	R	70	0	1d	-	-	
+16	W	70	0	05	-	{read}	W1C acknowledge
+17	W	70	0	06	-	{read}	
+18	W	70	0	07	-	{read}	
+19	W	70	0	08	-	{read}	
+20	W	70	0	09	-	{read}	
+21	W	70	0	10	-	{read}	
+22	W	70	0	11	-	{read}	
+23	M	70	0	40	03	00	cond: 0x10 bit2 set (traced in T3/S20 with 0x10 = 06)
+24	R	70	0	19	-	-	0x10 bit1 with 0x19 bit7 = 1: SCDT on
+25	M	70	0	40	03	00	
+26	W	58	0	0b	-	ff	video path/FIFO reset
+27	W	58	0	0b	-	00	
+28	M	58	0	4e	0f	0f	
+29	M	58	0	0c	08	08	bit3 pulse
+30	M	58	0	0c	08	00	
+31	M	58	0	4e	0f	00	
+32	R	6a	-	03	-	-	TX port 1 HPD (bit0) gates its power-on
+33	M	58	0	08	02	02	TX port 1 power-on: enable
+34	M	6a	-	c1	f0	80	
+35	M	6a	-	84	e0	80	AFE power-up
+36	M	6a	-	86	08	08	
+37	M	6a	-	02	01	00	
+38	M	6a	-	19	07	07	
+39	W	6a	-	10	-	c0	clear pending TX events
+40	W	6a	-	11	-	ff	
+41	W	6a	-	12	-	ff	
+42	W	6a	-	13	-	ff	
+43	W	6a	-	14	-	ff	
+44	W	6a	-	15	-	ff	
+45	W	6a	-	01	-	24	
+46	W	6a	-	01	-	00	
+47	X	6a	-	06	-	-	tx-clock-measure: measure TX clock -> clk [kHz], chapter 7.3
+48	R	70	0	98	-	-	input colour depth, bits 5:4 (scales clk for 10/12-bit)
+49	M	6a	-	af	c0	00	
+50	M	6a	-	84	07	{afe84}	AFE by clock, chapter 7.4
+51	M	6a	-	88	04	{afe88}	
+52	M	6a	-	87	1f	{afe87}	
+53	M	6a	-	89	bf	{afe89}	bit6 preserved
+54	M	6a	-	8a	0f	00	
+55	M	6a	-	8b	0f	{afe8b}	
+56	D	-	-	-	-	100	RD sleep
+57	W	6a	-	01	-	06	video-clock reset
+58	M	6a	-	94	01	01	
+59	M	6a	-	94	01	00	
+60	W	6a	-	01	-	04	
+61	W	6a	-	01	-	00	
+62	M	6a	-	18	80	80	video-stable event enable
+63	R	6c	-	03	-	-	TX port 2 HPD: no sink, skipped
+64	M	58	0	67	0f	00	
+65	W	58	0	68	-	00	RD: RMW mask ff
+66	R	70	0	14	-	-	
+67	M	70	*	0f	03	03	
+68	M	70	3	a7	40	{(r14 & 1) << 6}	bit6 = 0x14 bit0
+69	M	70	*	0f	03	00	
+70	R	70	0	98	-	-	cond: 0x11 bit3; input colour depth in bits 5:4
+71	R	70	0	1a	-	-	cond: 0x12 bit7; 0x12 bit7 detail
+72	R	70	0	1b	-	-	cond: 0x12 bit7
+73	W	70	0	1a	-	ff	cond: 0x12 bit7; clear
+74	W	70	0	1b	-	07	cond: 0x12 bit7; clear
+75	M	58	0	0c	08	08	cond: 0x12 bit7; bit3 pulse
+76	M	58	0	0c	08	00	cond: 0x12 bit7
+77	X	70	2	12	-	-	avi-read: cond: 0x12 bit0; read AVI InfoFrame, bank 2 regs 0x12-0x23, until stable (chapter 6.7)
+78	X	58	0	70	-	-	csc-program: cond: 0x12 bit0; optional: splitter CSC blocks, unused by the bypass path (chapter 6.7)
+79	W	70	0	12	-	{read}	W1C acknowledge of 0x12, last

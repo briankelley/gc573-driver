@@ -53,6 +53,11 @@ VIP_CTRL[0] = 0 → wait INT bit 0 (≤ 2 s) → reset domains (`init.md`). (`S`
 With no HDMI input the pipeline still completes ch0 lists every 16.6–16.7 ms (60 Hz). (`T1/S02`, `T2/S11`; C)
 Caveat: RD overwrites buffers with a CPU-drawn "no signal" image when there is no input, so no-input captures prove the slot/IRQ handshake but **not** that HW writes pixel data. First driver experiment: pre-fill buffers with a pattern, stream with no input, check whether HW overwrote them (all planes, all channels).
 
+## Card frame store (stale content)
+The card holds frames in on-board memory. In `T4/S41` the first frame after the stream start carried, in its last 76 lines (2084–2159 of 2160), picture content from a capture made hours earlier with another source. Meanwhile the driver had been unloaded and reloaded several times and the device reset by VM moves, but the card had stayed powered. Later frames were entirely new. So frame-store content survives driver reloads and device resets while the card is powered, and the first frame after a start can mix old and new lines. (`T4/S41`; C for the observation, U for the mechanism and for how many frames can be affected; open question 28)
+
+Driver: drop (or verify) the first frame after every start. Treat card memory as holding data from earlier sessions (privacy).
+
 ## Driver notes
 - Use `vb2_dma_sg`. Coalesce adjacent DMA segments; split each plane at its byte boundary; emit one descriptor per contiguous run; length field = bytes / 4.
 - Keep 4 slots full when buffers are available; the last free slot may stall the stream.

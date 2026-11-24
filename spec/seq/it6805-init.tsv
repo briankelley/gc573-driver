@@ -1,0 +1,257 @@
+# IT6805 initialisation at probe (fixed part, RD order)
+# evidence: T1/S01 (no input), T3/S20 (5 V present); identical up to the 5 V evaluation. Masks and loop rules: S
+# columns: n	op	dev	bank	reg	mask	value	note
+# op: W write value (mask ff) · M read-modify-write: new = (old & ~mask) | value · D delay, value = ms (RD nominal; RD's real sleeps were longer) · P poll until (reg & mask) == value · R read, value = traced (informative) · X step described in hdmi-it6805.md (§ in note)
+# dev: 8-bit I2C address on bus 1 (90 IT6805, e0 IT6805 sub-block). bank: bank in effect (reg 0x0f[2:0]); * = the bank register itself; - = not banked. All numbers hex except D values (decimal ms).
+# RD = reference driver. Values are what RD wrote. R rows are informative reads; RD also read most registers before writing them (omitted). RD's repeated selects of an already selected bank are omitted: the bank column gives the bank in effect.
+# Bank selects are written as plain writes (RD used read-modify-write of bits 2:0; bits 7:3 of 0x0f always read 0).
+# Steps (hdmi-it6805.md §3.2): ID · fixed table · calibration · tristate · factory data + trim · reference clock · EDID · output path · 5 V evaluation.
+# Replay check (D): applied to the read values of T1/S01 and T3/S20 and followed by the 5 V-branch tables, these rows reproduce every IT6805 register write of both loads in order, value and bank (bank-select writes compared via the bank column; EDID RAM bytes and X-step writes checked separately).
+0	R	90	0	00	ff	54	ID; must read 54 49 05 68 (RD reads before any bank select; reset bank = 0)
+1	R	90	0	01	ff	49	ID; must read 54 49 05 68 (RD reads before any bank select; reset bank = 0)
+2	R	90	0	02	ff	05	ID; must read 54 49 05 68 (RD reads before any bank select; reset bank = 0)
+3	R	90	0	03	ff	68	ID; must read 54 49 05 68 (RD reads before any bank select; reset bank = 0)
+4	R	90	0	04	ff	b1	revision; only b1 seen; b1-specific rows marked
+5	W	90	*	0f	ff	00	
+6	W	90	0	22	ff	08	bit 3 self-clears (reads 00 right after)
+7	W	90	0	22	ff	17	logic reset bits on
+8	W	90	0	23	ff	1f	port-0 reset bits on
+9	W	90	0	2b	ff	1f	port-1 reset bits on
+10	W	90	0	24	ff	f8	
+11	W	90	0	22	ff	10	release; resting value 10
+12	W	90	0	23	ff	a0	release; resting value a0
+13	W	90	0	2b	ff	a0	release; resting value a0
+14	W	90	0	24	ff	00	
+15	W	90	0	34	ff	00	
+16	W	90	*	0f	ff	03	
+17	W	90	3	aa	ff	ec	bits 4:0 = oscillator trim, rewritten by step 5
+18	W	90	*	0f	ff	03	
+19	W	90	3	ac	ff	40	bits 1:0 rewritten by power modes
+20	W	90	*	0f	ff	00	
+21	W	90	0	3a	ff	89	
+22	W	90	0	49	ff	e1	enable sub-block at I2C 0xe0
+23	W	90	0	43	ff	01	bits 7:5 later reflect the TMDS counter window (set by HW)
+24	W	90	*	0f	ff	04	
+25	W	90	4	43	ff	01	port-1 copy
+26	W	90	4	3a	ff	89	port-1 copy
+27	W	90	*	0f	ff	03	
+28	W	90	3	a8	ff	0b	bit 3 rewritten by power modes
+29	W	90	*	0f	ff	00	
+30	W	90	0	4f	ff	84	AV-mute control, resting 84
+31	W	90	0	44	ff	19	rewritten in step 6
+32	W	90	0	46	ff	15	rewritten in step 6
+33	W	90	0	47	ff	88	rewritten in step 6
+34	W	90	0	d9	ff	00	
+35	W	90	0	f0	ff	78	
+36	W	90	0	f1	ff	10	
+37	W	90	*	0f	ff	03	
+38	W	90	3	3a	ff	02	bit 7 used by calibration (step 3)
+39	W	90	*	0f	ff	00	
+40	W	90	0	28	ff	88	
+41	W	90	0	6e	ff	80	output control; a2 written at lock
+42	W	90	0	77	ff	87	
+43	W	90	0	7b	ff	00	
+44	W	90	0	86	ff	00	audio control
+45	W	90	0	36	ff	06	
+46	W	90	0	8f	ff	41	
+47	W	90	*	0f	ff	01	
+48	W	90	1	c0	ff	42	output interface: [7:6]=01, [2:1]=01 parallel (TTL) path, [0]=0 single pixel
+49	M	90	1	c4	70	00	
+50	M	90	1	c4	80	00	
+51	W	90	1	c5	ff	00	video output group A driven (tristated again in step 4)
+52	W	90	1	c6	ff	00	video output group B driven (tristated again in step 4)
+53	W	90	1	c7	ff	00	audio outputs driven
+54	W	90	1	c8	ff	00	
+55	W	90	1	c9	ff	99	
+56	W	90	1	ca	ff	99	
+57	W	90	*	0f	ff	00	
+58	M	90	0	86	0c	08	audio control [3:2]=10
+59	M	90	0	81	80	80	audio control bit 7
+60	W	90	*	0f	ff	01	
+61	W	90	1	10	ff	00	
+62	W	90	1	11	ff	00	
+63	W	90	1	12	ff	00	
+64	W	90	1	13	ff	00	
+65	W	90	1	28	ff	00	not reset by the GPIO chip reset
+66	W	90	1	29	ff	00	
+67	W	90	1	2a	ff	00	
+68	W	90	1	2b	ff	00	
+69	W	90	1	2c	ff	00	
+70	M	90	1	c0	c0	40	
+71	W	90	*	0f	ff	03	
+72	W	90	3	e3	ff	07	
+73	W	90	3	27	ff	9f	static receiver equaliser, channel 0
+74	W	90	3	28	ff	9f	channel 1
+75	W	90	3	29	ff	9f	channel 2
+76	M	90	3	a7	40	40	
+77	W	90	*	0f	ff	07	
+78	W	90	7	e3	ff	07	port-1 copy of bank 3 rows above
+79	W	90	7	27	ff	9f	
+80	W	90	7	28	ff	9f	
+81	W	90	7	29	ff	9f	
+82	M	90	7	a7	40	40	
+83	W	90	*	0f	ff	00	
+84	W	90	0	f8	ff	c3	access-unlock pair for bank-1 regs 0x50-0x5f
+85	W	90	0	f8	ff	a5	
+86	W	90	*	0f	ff	01	
+87	W	90	1	5f	ff	04	
+88	W	90	1	58	ff	12	
+89	W	90	1	58	ff	02	
+90	W	90	1	5f	ff	00	
+91	W	90	*	0f	ff	00	
+92	W	90	0	f8	ff	ff	
+93	W	90	*	0f	ff	05	
+94	M	90	5	20	03	01	bit 6 set at lock
+95	W	90	*	0f	ff	04	
+96	M	90	4	3c	20	00	
+97	W	90	*	0f	ff	00	
+98	M	90	0	91	40	40	bits 5:0 written in step 6
+99	W	90	*	0f	ff	03	
+100	W	90	3	f0	ff	c0	
+101	W	90	*	0f	ff	00	
+102	M	90	0	21	40	40	power register, rewritten by power modes
+103	M	90	0	ce	30	00	
+104	W	90	*	0f	ff	04	
+105	M	90	4	ce	30	00	
+106	W	90	*	0f	ff	00	
+107	M	90	0	7b	10	10	
+108	M	90	0	3c	21	00	bit 4 used by calibration
+109	W	90	0	3b	ff	23	
+110	W	90	0	f6	ff	08	
+111	W	90	*	0f	ff	04	
+112	M	90	4	3c	21	00	
+113	W	90	4	3b	ff	23	
+114	W	90	*	0f	ff	00	
+115	W	90	0	59	ff	00	not reset by the GPIO chip reset
+116	W	90	*	0f	ff	03	
+117	M	90	3	3a	80	00	port 0 calibration setup
+118	M	90	3	a0	80	80	
+119	M	90	3	a1	80	80	
+120	M	90	3	a2	80	80	
+121	M	90	3	a4	08	08	
+122	M	90	3	3b	c0	00	
+123	M	90	3	a7	10	10	
+124	M	90	3	48	80	80	
+125	W	90	*	0f	ff	00	
+126	M	90	0	29	01	01	
+127	M	90	0	2a	41	41	port 0 calibration trigger on (bit 6) + bit 0
+128	D	-	-	-	-	10	trigger pulse width
+129	M	90	0	2a	40	00	trigger off
+130	M	90	0	24	04	04	
+131	W	90	0	25	ff	00	
+132	W	90	0	26	ff	00	
+133	W	90	0	27	ff	00	
+134	W	90	0	28	ff	00	
+135	M	90	0	3c	10	00	
+136	W	90	*	0f	ff	07	
+137	M	90	7	3a	80	00	port 1 calibration setup
+138	M	90	7	a0	80	80	
+139	M	90	7	a1	80	80	
+140	M	90	7	a2	80	80	
+141	M	90	7	a4	08	08	
+142	M	90	7	3b	c0	00	
+143	M	90	7	a7	10	10	
+144	M	90	7	48	80	80	
+145	W	90	*	0f	ff	00	
+146	M	90	0	32	41	41	port 1 calibration trigger on (bit 6) + bit 0
+147	D	-	-	-	-	10	trigger pulse width
+148	M	90	0	32	40	00	trigger off
+149	M	90	0	2c	04	04	
+150	W	90	0	2d	ff	00	
+151	W	90	0	2e	ff	00	
+152	W	90	0	2f	ff	00	
+153	W	90	0	30	ff	00	
+154	W	90	*	0f	ff	04	
+155	M	90	4	3c	10	00	
+156	W	90	*	0f	ff	03	
+157	M	90	3	3a	80	80	
+158	W	90	*	0f	ff	07	
+159	M	90	7	3a	80	80	
+160	W	90	*	0f	ff	00	
+161	X	90	0	08	30	-	calibration wait (§3.3): until (0:08 & 30) != 0 and (0:0d & 30) != 0; 10 ms poll, re-trigger, give-up. Traced: both read 10 at the first check
+162	W	90	*	0f	ff	03	
+163	R	90	3	5a	ff	ff	informative (RD logs it)
+164	R	90	3	59	ff	8f	informative
+165	R	90	3	59	ff	8f	informative
+166	W	90	*	0f	ff	07	
+167	R	90	7	5a	ff	ff	informative
+168	R	90	7	59	ff	8f	informative
+169	R	90	7	59	ff	8f	informative
+170	W	90	*	0f	ff	00	
+171	M	90	0	08	30	30	W1C: clear port-0 calibration-done flags
+172	M	90	0	0d	30	30	W1C: clear port-1 calibration-done flags
+173	M	90	0	29	01	00	
+174	M	90	0	24	04	00	
+175	M	90	0	3c	10	10	
+176	M	90	0	2c	04	00	
+177	W	90	*	0f	ff	04	
+178	M	90	4	3c	10	10	
+179	W	90	*	0f	ff	03	
+180	M	90	3	3a	80	00	
+181	M	90	3	a0	80	00	
+182	M	90	3	a1	80	00	
+183	M	90	3	a2	80	00	
+184	W	90	*	0f	ff	07	
+185	M	90	7	3a	80	00	
+186	M	90	7	a0	80	00	
+187	M	90	7	a1	80	00	
+188	M	90	7	a2	80	00	
+189	W	90	*	0f	ff	00	
+190	W	90	0	28	ff	88	
+191	R	90	0	98	ff		RD reads this before every tristate change; informative
+192	W	90	*	0f	ff	01	
+193	W	90	1	c5	ff	ff	video outputs tristated (no stable video)
+194	W	90	1	c6	ff	ff	
+195	W	90	*	0f	ff	00	
+196	W	90	0	f8	ff	c3	access-unlock pair
+197	W	90	0	f8	ff	a5	
+198	W	90	0	34	ff	00	
+199	W	90	*	0f	ff	01	
+200	W	90	1	5f	ff	04	factory-data (OTP) access on
+201	W	90	1	5f	ff	05	
+202	W	90	1	58	ff	12	
+203	W	90	1	58	ff	02	
+204	W	90	1	57	ff	01	
+205	X	90	1	61	-	-	factory-data read: 4 read cycles (W 1:50 hi, W 1:51 lo, W 1:54 04, R 1:61, R 1:62), §3.4
+206	W	90	1	5f	ff	00	factory-data access off
+207	W	90	*	0f	ff	00	
+208	W	90	0	f8	ff	00	
+209	W	90	*	0f	ff	03	
+210	X	90	3	aa	1f	-	oscillator trim: RMW 3:aa[4:0] = value computed from the factory data (§3.4). Unit-specific; traced 13 (ec -> f3)
+211	W	90	*	0f	ff	00	
+212	M	e0	-	01	70	40	sub-block 0xe0 reg 1 bits 6:4 = 4 (read 40 in all traces)
+213	M	90	0	91	3f	16	reference-clock setting: 22 (integer MHz of 1.1 x 20.5 MHz), §3.5
+214	W	90	0	92	ff	8c	fraction 0.55 MHz x 256
+215	W	90	*	0f	ff	01	
+216	W	90	1	fd	ff	cd	205 = 20.5 MHz in 100 kHz units (revision b1 only)
+217	M	90	1	fe	20	00	
+218	M	90	1	fe	0f	0c	
+219	M	90	1	fe	10	10	
+220	M	90	1	fe	80	80	result 9c
+221	W	90	*	0f	ff	00	
+222	W	90	0	45	ff	83	
+223	W	90	0	44	ff	1a	
+224	W	90	0	46	ff	11	
+225	W	90	0	47	ff	07	
+226	W	90	0	4b	ff	a9	enable EDID RAM at I2C 0xa8
+227	X	-	-	-	-	-	HPD low (FPGA GPIO 0x040 bit 2 = 0), §5. RD requests it here but the request is dropped at load; RD then sleeps 2 ms per request
+228	X	-	-	-	-	-	EDID load (§4): 127 bytes -> 0xa8 offsets 00-7e; 0:c9 and 4:c9 = block-0 checksum; 127 bytes -> offsets 80-fe; 0:c6 = PA offset, 0:c7/0:c8 = port-0 PA, 0:ca = port-0 block-1 checksum, 4:c7/4:c8/4:ca = port-1 values
+229	W	90	*	0f	ff	00	
+230	M	90	0	c5	01	00	EDID control, port 0 (read 03 -> 02)
+231	W	90	*	0f	ff	04	
+232	M	90	4	c5	01	00	port 1
+233	W	90	*	0f	ff	00	
+234	M	90	0	c5	10	10	port-0 EDID control pulse
+235	D	-	-	-	-	1	
+236	M	90	0	c5	10	00	
+237	W	90	*	0f	ff	04	
+238	M	90	4	c5	10	10	port-1 EDID control pulse
+239	D	-	-	-	-	1	
+240	M	90	4	c5	10	00	
+241	W	90	*	0f	ff	01	
+242	M	90	1	c0	06	02	parallel output path
+243	M	90	1	c1	02	02	DDR bit on (init default; cleared at the first lock)
+244	M	90	1	c1	20	00	separate syncs
+245	W	90	*	0f	ff	00	
+246	X	-	-	-	-	-	5 V evaluation (§3.6): R 0:13; bit 0 = 0 -> it6805-unplug.tsv, it6805-power-saving.tsv, HPD low; bit 0 = 1 -> it6805-power-standby.tsv, video tristate (W 1:c5 ff, W 1:c6 ff), HPD high
+247	X	-	-	-	-	-	start polling (§7) about 10 ms later; first poll: M 0:6e 02 02

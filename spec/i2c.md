@@ -57,7 +57,7 @@ Carries all HDMI-chip traffic. One register-addressed transfer per command; comp
 | 0x90 | IT6805 HDMI receiver. Regs 0x00–0x03 = `54 49 05 68`, 0x04 = revision | `T1/S01` | C |
 | 0xa8, 0xe0 | IT6805 sub-devices: EDID RAM, calibration block (enables in `hdmi-chips.md`) | `T1/S01`,`S` | C |
 | 0x58 | HDMI splitter main. Regs 0x00–0x03 = `54 49 63 66` (device 0x6663) | `T1/S01` | C |
-| 0x70, 0x96, 0x68/0x6a/0x6c/0x6e, 0xd8 | splitter sub-devices: RX core, TX common, TX ports 0–3, RX EDID RAM (`hdmi-chips.md`) | `T1/S01`,`T3/S20`,`S` | C |
+| 0x70, 0x96, 0x68/0x6a/0x6c/0x6e, 0xd8, 0xe0 | splitter sub-devices: RX core, TX common, TX ports 0–3, RX EDID RAM, RX sub-block. 0xe0 is also mapped by the IT6805: order rule in `hdmi-chips.md` | `T1/S01`,`T3/S20`,`S` | C |
 
 Idle traffic (no input, RD): ~300 transactions/s, dominated by 0x90, 0x70, 0x58. (`T1/S01i`; C)
 

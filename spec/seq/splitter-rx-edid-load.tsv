@@ -1,0 +1,70 @@
+# title: load the source-facing EDID (RX EDID RAM 0xd8), 256 bytes
+# evidence: T3/S20 t=511.4-1107.6 (RD copy path; DDC reads omitted); S
+# chapter: hdmi-splitter.md sections 6.5, 8.3
+# rows from 'c5 01 01' to the end of the second HPD-high block run only when the source already saw
+# HPD high; at driver init (HPD low, no source) skip them and raise HPD later on 5V.
+# RAM offsets 0x7f and 0xff are never written; the checksums go to 0x70 regs 0xc9/0xca.
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	M	70	0	34	01	00	EDID RAM update start
+1	W	70	0	c6	-	00	
+2	W	70	0	c7	-	{pa_ab}	physical address byte AB of the image (traced 10)
+3	W	70	0	c8	-	{pa_cd}	physical address byte CD (traced 00)
+4	W	70	0	4b	-	d9	EDID RAM at 0xd8
+5	W	70	0	c9	-	{csum0}	block 0 checksum (image byte 0x7f)
+6	X	d8	-	00	-	-	edid-block0: 127 single-byte writes, image bytes 0x00-0x7e to RAM 0x00-0x7e
+7	X	d8	-	80	-	-	edid-block1: 127 single-byte writes, image bytes 0x80-0xfe to RAM 0x80-0xfe
+8	W	70	0	ca	-	{csum1}	block 1 checksum (image byte 0xff)
+9	M	58	*	0f	01	01	
+10	M	58	1	10	40	{hdmi_sink << 6}	1 if the image has an HDMI VSDB (RD)
+11	M	58	*	0f	01	00	
+12	M	70	0	c5	01	01	cond: HPD was high (content change while connected)
+13	M	70	*	0f	03	03	source HPD low
+14	R	70	3	ab	-	-	next three writes only if it reads ca
+15	W	70	3	ab	-	4a	cond: ab was ca
+16	W	70	3	ab	-	00	cond: ab was ca
+17	W	70	3	ac	-	00	cond: ab was ca
+18	M	70	*	0f	03	00	
+19	W	70	0	26	-	ff	
+20	W	70	0	55	-	00	RX 0x07 event enables off
+21	M	70	0	53	e0	00	RX power-down: event enables off
+22	M	70	0	54	ff	00	RD: RMW mask ff
+23	M	70	0	55	07	00	
+24	M	70	0	57	0f	00	
+25	M	70	0	c5	10	10	bit4 pulse
+26	M	70	0	c5	10	00	
+27	M	58	0	0a	04	04	RX-side reset pulse
+28	D	-	-	-	-	1	RD busy-wait
+29	M	58	0	0a	04	00	
+30	M	70	*	0f	03	03	source HPD low
+31	R	70	3	ab	-	-	next three writes only if it reads ca
+32	W	70	3	ab	-	4a	cond: ab was ca
+33	W	70	3	ab	-	00	cond: ab was ca
+34	W	70	3	ac	-	00	cond: ab was ca
+35	M	70	*	0f	03	00	
+36	W	70	0	26	-	ff	
+37	W	70	0	55	-	00	RX 0x07 event enables off
+38	M	70	*	0f	03	03	EQ back to defaults
+39	W	70	3	27	-	9f	
+40	W	70	3	28	-	9f	
+41	W	70	3	29	-	9f	
+42	W	70	3	20	-	1b	
+43	W	70	3	21	-	03	
+44	M	70	*	0f	03	00	
+45	D	-	-	-	-	500	cond: RD sleep with HPD low
+46	R	70	0	13	-	-	gate: continue only if bit0 (5V) = 1
+47	M	70	*	0f	03	03	source HPD high
+48	R	70	3	ab	-	-	next write only if it does not read ca
+49	W	70	3	ab	-	ca	cond: ab was not ca; bit7 = HPD level
+50	M	70	*	0f	03	00	
+51	W	70	0	26	-	00	
+52	W	70	0	55	-	ff	RX 0x07 event enables on
+53	M	70	0	c5	01	00	cond: end of the change toggle
+54	M	70	0	c5	01	00	EDID valid
+55	M	70	0	34	01	01	EDID RAM update end

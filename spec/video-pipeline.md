@@ -97,7 +97,12 @@ Live downscale 1920×1080 → 1280×720 (`T3/S33`; C, image clean): V: HEIGHT_IN
 | none | 0xffffffff | 0x0000000e | 0x2 | free-running 60 Hz, black (RD draws image) |
 | 1080p59.94 | 0x0019745b (59.94 Hz) | 0x0000000e | 0x0 | correct images, all formats |
 | 2160p59.94 YUV 4:2:0 (AVI: VIC 97, BT.709, limited; no HDR packet) | 0x0019745b | 0x0008002e (bit19 4:2:0, bit5 dual-pixel) | 0x1 (dual, SDR) | **all frames black** (Y=16, C=128; RGB 0) at native and downscaled sizes |
+| 2160p60 YUV 4:2:0, PC source without HDCP (`T4/S41`) | 0x00196daf (60.006 Hz) | 0x0008002e | 0x1 (dual, SDR) | **all frames black** again, apart from stale lines in the first frame (`video-dma.md`) |
+| 1080p60 RGB 4:4:4, DVI mode, PC source (`T4/S42`,`S43`) | 0x00196daf | 0x00000004 with BGR24 out (both CSCs off) | 0x0 | correct: BGR24 equal to the source within +1 (below) |
+| 2160p29.97 RGB 4:4:4, DVI mode, PC source (`T4/S44`) | 0x0032e886 (29.973 Hz) | 0x00000026 (bit1 RGB→YUV, bit5 dual-pixel) | 0x3 (dual, DDR) | correct: BT.709 limited luma of the colour bars exact, 1-pixel checkerboard intact |
 
+- A PC source without HDCP reproduces the 2160p60 4:2:0 black frames (`T4/S41`), so the Roku and the HDCP stripper are not the cause. 2160p30 RGB in dual-pixel DDR mode captures correctly (`T4/S44`), so dual-pixel input works in general. The FPGA input detector reads the same line structure for both modes (IN_WIDTH 960 bus clocks, IN_HEIGHT 2160; `T4/S45`). Remaining candidates: the 4:2:0 processing path (COLOR_CTRL[19]) or its pairing with dual-pixel SDR (PIX_MODE 1) as RD sets them, or the IT6805's 4:2:0 output arrangement. (`T4`; C for the observations)
+- RGB input (PC source, DVI mode) to BGR24 with both CSCs off: equal to the source except +1 on one pixel in four, in a fixed diagonal pattern of period 4, identical in every frame; 255 stays 255. Which stage adds it (GPU output, splitter, IT6805 or FPGA) is unknown (open question 29). Tests: allow +1. The source GPU's own temporal dithering must be off: it adds ±1 noise that changes per frame. (`T4/S42`,`S43`; C for the observation)
 - 2160p60 4:2:0 capture is not working with RD's configuration. Ruled out: HDCP (no encryption at any chip), AV mute, signal lock (IT6805 locked with coherent timing), colour depth (8-bit, unscrambled). Black is exact YUV black (an all-zero bus would give green in RGB formats). Leading candidate: the FPGA 4:2:0 dual-pixel SDR input path as RD configures it (clip 3840 wide while the bus carries 1920 TMDS slots per line). Second: genuinely black upstream picture. Open: `open-questions.md` #14. Target 1080p first. (`S`,`T3`; L)
 - RD sets the frame-rate limiter from a wrong pixel-clock-based estimate (52 fps for 59.94 Hz input); frames still arrive. Use IN_FRAME_PERIOD for the true rate. (`T3/S20`,`S32`; C)
 
@@ -107,7 +112,7 @@ RATE_CTRL[1] = input is YUV; [2] = output is RGB; [3] not written by RD (preserv
 Frame rate source: IN_FRAME_PERIOD (0x1010), not the IT6805 clock estimate (RD's estimate reads ~13 % low because it assumes a 20.5 MHz reference) (`S`,`T3`; C).
 
 ## Pixel mode
-PIX_MODE (0x1088) = dual | (DDR << 1), copied from the IT6805 output-bus decision: single-pixel SDR for ≤1080p60-class input, dual-pixel SDR for 4:2:0 input, dual-pixel DDR for other large/fast modes (`hdmi-chips.md`). Observed: 0 (1080p), 1 (2160p 4:2:0), 2 (no input: RD writes a flag not derived from an input) (`S`,`T1`,`T3`; L).
+PIX_MODE (0x1088) = dual | (DDR << 1), copied from the IT6805 output-bus decision: single-pixel SDR for ≤1080p60-class input, dual-pixel SDR for 4:2:0 input, dual-pixel DDR for other large/fast modes (`hdmi-chips.md`). Observed: 0 (1080p), 1 (2160p 4:2:0), 2 (no input: RD copies the DDR bit, bank-1 reg 0xc1 bit 1 = 1, that the IT6805 init leaves set; COLOR_CTRL bits 0/5/19 are 0) (`S`,`T1`,`T3`; L).
 
 ## Driver notes
 - V4L2: advertise only the six verified formats. Implement DV timings from input measurement + IT6805 status; emit `V4L2_EVENT_SOURCE_CHANGE` on change.

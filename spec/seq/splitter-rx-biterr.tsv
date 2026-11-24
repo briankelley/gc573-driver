@@ -1,0 +1,30 @@
+# title: RX bit-error check (per channel error counters)
+# evidence: T3/S30 t=32080.6-32083.6 and every 6th poll cycle; T3/S20 t=3875.7; T3/S31 t=578.0, 26769.8; S
+# chapter: hdmi-splitter.md section 6.6
+# pass: eb bit7 = 1 and ea <= 0x50 (RD compares the low byte only). Every trace: ea = 00, eb = 80.
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	M	70	0	3b	08	08	bit-error check
+1	M	70	*	0f	03	03	
+2	M	70	3	55	80	00	
+3	W	70	3	e9	-	00	
+4	W	70	3	e9	-	00	select channel 0
+5	R	70	3	ea	-	-	error count [7:0] (traced 00)
+6	R	70	3	eb	-	-	bit7 = count valid, [6:0] = count [14:8] (traced 80)
+7	R	70	3	27	-	-	current EQ code, cond: RD reads it only if valid and count <= 0x50
+8	W	70	3	e9	-	20	select channel 1
+9	R	70	3	ea	-	-	error count [7:0] (traced 00)
+10	R	70	3	eb	-	-	bit7 = count valid, [6:0] = count [14:8] (traced 80)
+11	R	70	3	28	-	-	current EQ code, cond: RD reads it only if valid and count <= 0x50
+12	W	70	3	e9	-	40	select channel 2
+13	R	70	3	ea	-	-	error count [7:0] (traced 00)
+14	R	70	3	eb	-	-	bit7 = count valid, [6:0] = count [14:8] (traced 80)
+15	R	70	3	29	-	-	current EQ code, cond: RD reads it only if valid and count <= 0x50
+16	W	70	3	e9	-	80	end
+17	M	70	*	0f	03	00	

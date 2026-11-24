@@ -1,0 +1,19 @@
+# title: deassert HPD toward the HDMI source
+# evidence: T3/S20 t=593.6; T3/S30 t=22100.4; T3/S31 t=29776.1; T1/S01 (no-op form); S
+# chapter: hdmi-splitter.md section 6.4
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	M	70	*	0f	03	03	source HPD low
+1	R	70	3	ab	-	-	next three writes only if it reads ca
+2	W	70	3	ab	-	4a	cond: ab was ca
+3	W	70	3	ab	-	00	cond: ab was ca
+4	W	70	3	ac	-	00	cond: ab was ca
+5	M	70	*	0f	03	00	
+6	W	70	0	26	-	ff	
+7	W	70	0	55	-	00	RX 0x07 event enables off

@@ -1,0 +1,35 @@
+# title: RX power-down (includes HPD low and EQ defaults)
+# evidence: T1/S01 init; T3/S20 t=594.6; T3/S30 t=22097.5; T3/S31 t=29773.2; S
+# chapter: hdmi-splitter.md section 6.3
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	M	70	0	53	e0	00	RX power-down: event enables off
+1	M	70	0	54	ff	00	RD: RMW mask ff
+2	M	70	0	55	07	00	
+3	M	70	0	57	0f	00	
+4	M	70	0	c5	10	10	bit4 pulse
+5	M	70	0	c5	10	00	
+6	M	58	0	0a	04	04	RX-side reset pulse
+7	D	-	-	-	-	1	RD busy-wait
+8	M	58	0	0a	04	00	
+9	M	70	*	0f	03	03	source HPD low
+10	R	70	3	ab	-	-	next three writes only if it reads ca
+11	W	70	3	ab	-	4a	cond: ab was ca
+12	W	70	3	ab	-	00	cond: ab was ca
+13	W	70	3	ac	-	00	cond: ab was ca
+14	M	70	*	0f	03	00	
+15	W	70	0	26	-	ff	
+16	W	70	0	55	-	00	RX 0x07 event enables off
+17	M	70	*	0f	03	03	EQ back to defaults
+18	W	70	3	27	-	9f	
+19	W	70	3	28	-	9f	
+20	W	70	3	29	-	9f	
+21	W	70	3	20	-	1b	
+22	W	70	3	21	-	03	
+23	M	70	*	0f	03	00	

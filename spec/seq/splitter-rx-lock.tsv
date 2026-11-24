@@ -1,0 +1,101 @@
+# title: TMDS arrives: clock stable, symbol lock, AVI InfoFrame, HDMI 1.x EQ search start
+# evidence: T3/S30 t=31648.5-31831.1 (replug, 2160p 4:2:0); T3/S20 t=3592.2-3631; T3/S31 t=26732.5, 37171.0 (1080p); S
+# chapter: hdmi-splitter.md sections 6.3, 6.6, 9.4
+# variables eq0..eq2: stored EQ codes (re-use rows only). Rows marked 'cond: 0x11 bit3' / '0x12 bit7' /
+# '0x12 bit0' run only when that event bit was read set; at T3/S31 t=37171.0 the 0x11/0x12 (AVI) events came
+# one poll later, with SCDT on, and RD handled them there. The re-use rows replay T3/S31 t=26732.5 (1080p after
+# the mode change, codes fe/fe/bf).
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	R	58	0	05	-	10	summary: RX event
+1	R	70	0	05	-	16	RX status/level snapshot
+2	R	70	0	06	-	01	
+3	R	70	0	07	-	-	
+4	R	70	0	08	-	-	
+5	R	70	0	09	-	-	
+6	R	70	0	10	-	-	
+7	R	70	0	11	-	08	
+8	R	70	0	12	-	91	
+9	R	70	0	13	-	bd	
+10	R	70	0	14	-	3b	
+11	R	70	0	15	-	-	
+12	R	70	0	19	-	-	
+13	R	70	0	1a	-	-	
+14	R	70	0	1b	-	-	
+15	R	70	0	1d	-	-	
+16	W	70	0	05	-	{read}	W1C acknowledge
+17	W	70	0	06	-	{read}	
+18	W	70	0	07	-	{read}	
+19	W	70	0	08	-	{read}	
+20	W	70	0	09	-	{read}	
+21	W	70	0	10	-	{read}	
+22	W	70	0	11	-	{read}	
+23	R	70	0	13	-	-	0x05 bit2 with 0x13 bit3 = 1: clock stable
+24	W	70	0	05	-	04	W1C bit2
+25	M	70	0	53	e0	00	
+26	M	70	0	54	ff	00	RD: RMW mask ff
+27	M	70	0	55	07	00	
+28	W	70	0	05	-	e8	W1C bits 7,6,5,3
+29	W	70	0	06	-	fe	W1C bits 7:1
+30	R	70	0	13	-	-	bit3: 1 = clock stable, 0 = clock lost
+31	M	70	0	23	02	00	
+32	R	68	-	03	-	-	RD snapshots RxSense of every TX port
+33	R	6a	-	03	-	-	RD snapshots RxSense of every TX port
+34	R	6c	-	03	-	-	RD snapshots RxSense of every TX port
+35	R	6e	-	03	-	-	RD snapshots RxSense of every TX port
+36	M	70	0	54	01	01	
+37	R	70	0	14	-	-	lock bits 5:3
+38	M	58	0	1a	02	00	timer 1 arm (RX lock re-check, ~3 s)
+39	W	58	0	19	-	0f	
+40	W	58	0	1d	-	a0	count
+41	W	58	0	19	-	3f	
+42	W	58	0	07	-	ff	W1C
+43	M	58	0	1a	02	02	timer 1 enable
+44	R	70	0	13	-	-	bit7 = 1 required for the lock action
+45	M	70	0	53	e0	e0	RX event enables on
+46	M	70	0	55	07	07	
+47	M	70	0	57	0f	0f	
+48	M	70	0	5d	06	06	
+49	M	70	0	5e	08	08	
+50	M	70	0	5f	01	01	
+51	M	70	*	0f	03	03	cond: stored EQ result for this mode; EQ re-use instead of a search (chapter 6.6)
+52	W	70	3	20	-	36	cond: stored EQ result for this mode
+53	W	70	3	21	-	0e	cond: stored EQ result for this mode
+54	M	70	3	22	40	00	cond: stored EQ result for this mode
+55	W	70	3	27	-	{eq0}	cond: stored EQ result for this mode; stored code, channel 0
+56	W	70	3	28	-	{eq1}	cond: stored EQ result for this mode
+57	W	70	3	29	-	{eq2}	cond: stored EQ result for this mode
+58	M	70	*	0f	03	00	cond: stored EQ result for this mode
+59	R	70	0	98	-	-	cond: 0x11 bit3; input colour depth in bits 5:4
+60	R	70	0	1a	-	-	cond: 0x12 bit7; 0x12 bit7 detail
+61	R	70	0	1b	-	-	cond: 0x12 bit7
+62	W	70	0	1a	-	ff	cond: 0x12 bit7; clear
+63	W	70	0	1b	-	07	cond: 0x12 bit7; clear
+64	M	58	0	0c	08	08	cond: 0x12 bit7; bit3 pulse
+65	M	58	0	0c	08	00	cond: 0x12 bit7
+66	X	70	2	12	-	-	avi-read: cond: 0x12 bit0; read AVI InfoFrame, bank 2 regs 0x12-0x23, until stable (chapter 6.7)
+67	X	58	0	70	-	-	csc-program: cond: 0x12 bit0; optional: splitter CSC blocks (RD reads 0x70 reg 0x14 first), unused by the bypass path (chapter 6.7)
+68	W	70	0	12	-	{read}	W1C acknowledge of 0x12, last
+69	R	70	0	14	-	-	EQ step of the same poll cycle
+70	R	70	0	13	-	-	bit4 = 1 required to start EQ
+71	W	70	0	07	-	ff	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead); W1C all
+72	W	70	0	23	-	b0	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead)
+73	W	70	0	23	-	a0	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead)
+74	M	70	*	0f	03	03	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead); HDMI 1.x EQ search start
+75	W	70	3	20	-	36	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead)
+76	W	70	3	21	-	0e	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead)
+77	W	70	3	26	-	00	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead)
+78	W	70	3	27	-	1f	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead); search start code
+79	W	70	3	28	-	1f	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead)
+80	W	70	3	29	-	1f	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead)
+81	M	70	3	22	38	38	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead); per-channel search enables
+82	M	70	3	22	04	04	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead); start pulse
+83	D	-	-	-	-	1	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead); RD busy-wait
+84	M	70	3	22	04	00	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead)
+85	M	70	*	0f	03	00	cond: no stored EQ result (with a stored result RD runs splitter-rx-biterr.tsv here instead)

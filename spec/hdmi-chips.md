@@ -26,16 +26,19 @@ HDMI IN ─► splitter RX core (0x70) ─► splitter TX port 1 (0x6a) ─► I
 | 0xd8 | splitter RX EDID RAM (what the source reads) | 0x70 reg 0x4b = 0xd9 | splitter |
 | 0x90 | IT6805; regs 0x00–0x03 = `54 49 05 68`, 0x04 = revision (0xb1) | fixed | IT6805 |
 | 0xa8 | IT6805 EDID RAM | 0x90 reg 0x4b = 0xa9 | IT6805 |
-| 0xe0 | IT6805 sub-block (one calibration access) | 0x90 reg 0x49 = 0xe1 | IT6805 |
+| 0xe0 | IT6805 sub-block (one calibration access at init) | 0x90 reg 0x49 = 0xe1 | IT6805 |
+| 0xe0 | splitter RX sub-block (RD never accesses it) | 0x70 reg 0x49 = 0xe1 | splitter |
 
 Rule for sub-device enables: value = 8-bit address | 1. (`T1/S01`,`T3/S20`,`S`; C)
+
+Address 0xe0 is mapped by both chips. RD's only 0xe0 access, the IT6805 calibration write, happens before the splitter maps its own block, and nothing accesses 0xe0 afterwards. Keep that order. (`T1/S01`; C)
 
 Banked devices: 0x90, 0x58 and 0x70 each select a register bank with their own reg 0x0f. The bank is per-device state, so a driver must hold a per-device lock across a bank select and the accesses that depend on it. Interleaving transfers to different devices is harmless. (`S`,`T1`; C)
 
 ## Control model
 - No chip interrupt reaches the host. Across all traces the only interrupt is INT bit 11 (I2C done). (`T1`,`T3`; C)
 - RD polls each chip from a periodic task: nominally every 50 ms (20 ms after a power-on), observed every 60–68 ms because each cycle's I2C time adds to the delay. (`S`,`T3`; C)
-- Per IT6805 cycle about 54 transfers (event registers read and written back, status reads). The splitter takes a few reads per cycle when idle, bursts on events, plus a periodic RX equaliser routine. At RD's ≈0.3 ms per transfer polling occupies roughly a quarter of the bus time; at the 0.13–0.15 ms our driver measured (`i2c.md`), about an eighth. (`T3`,`D`; L)
+- Transfers per IT6805 poll cycle depend on its state: no 5 V 9 (24 every 4th cycle), waiting for sync 38 (53), stable 56 (61) (`hdmi-it6805.md` §7.1). The splitter takes a few reads per cycle when idle, bursts on events, plus a periodic RX equaliser routine. At RD's ≈0.3 ms per transfer polling occupies roughly a quarter of the bus time; at the 0.13–0.15 ms our driver measured (`i2c.md`), about an eighth. (`T3`,`D`; L)
 - GPIO bit 10 (`regmap.md`) may be a chip interrupt line. If confirmed, a driver could skip I2C polling while it is inactive. (U, open question 21)
 
 ## FPGA GPIO lines used by the front-end
@@ -43,8 +46,8 @@ Banked devices: 0x90, 0x58 and 0x70 each select a register bank with their own r
 |---|---|---|---|
 | 4, 6 | enables, set during FPGA init (`init.md`) | `S`,`T1` | L |
 | 5, 8 | active-low reset pulses (`init.md`). One of them resets the IT6805: its registers read reset values at every load. Which bit drives which chip is unresolved | `T1`,`T3/S20` | L |
-| 2 | **HPD input of splitter TX port 1**, i.e. the IT6805-side hot-plug line. 1 = high. RD drives it low when the IT6805 loses 5 V and high when 5 V returns and the receiver is powered. Once after load RD pulses it: 1, 10 ms, 0, 100 ms, 1. Evidence: TX port 1 HPD status rose 108 and 110 ms after bit 2 went high; it stayed low while bit 2 was low (9 s, 3.8 s); it returned 137 ms after a splitter TX reset while bit 2 stayed high. Fall latency unmeasured: the status still read high 60 ms after bit 2 went low, then the splitter's own TX reset (≈73 ms) forced it low | `S`,`T3/S30`,`S31` | C (fall latency U) |
-| 10 | input, not driven by the host. Correlates with pending splitter events: candidate interrupt output (`regmap.md`, open question 21) | `T1`,`T2`,`T3` | U |
+| 2 | **HPD input of splitter TX port 1**, i.e. the IT6805-side hot-plug line. 1 = high. RD drives it low when the IT6805 loses 5 V and high when 5 V returns and the receiver is powered. Once after load RD pulses it: 1, 10 ms, 0, 100 ms, 1. Evidence: TX port 1 latched its HPD event 84–104 ms after bit 2 went high (bounded by polls; first status reads showing high at 108 and 110 ms); it stayed low while bit 2 was low (9 s, 3.8 s); after a splitter TX reset with bit 2 still high, HPD was re-detected 70–133 ms later (`hdmi-splitter.md` §2.2). Fall latency unmeasured: the status still read high 60 ms after bit 2 went low, then the splitter's own TX reset (≈73 ms) forced it low | `S`,`T3/S30`,`S31` | C (fall latency U) |
+| 10 | input, not driven by the host. Correlates with pending chip events: candidate interrupt output of the splitter or the IT6805 (`regmap.md`, open question 21) | `T1`,`T2`,`T3` | U |
 
 ## Bring-up order (RD, no input and with input)
 1. FPGA init including the GPIO steps (`init.md` steps 1–11).
@@ -53,7 +56,7 @@ Banked devices: 0x90, 0x58 and 0x70 each select a register bank with their own r
 4. GPIO bit 2 HPD pulse (above), then periodic polling of both chips. (`T1`,`T3/S20`; C)
 5. With a source present, the splitter detects TX port 1 HPD. It then reads the IT6805 EDID over DDC, copies it into its own EDID RAM (0xd8), and toggles HPD toward the source low (≈0.5 s) then high. (`T3/S20`,`S`; C) RD had already raised the source HPD at ≈454 ms, before that RAM was loaded (≈540–593 ms); the toggle made the source read the EDID again. (`T3/S20`; C)
 
-Ordering a driver must keep: load the EDID RAMs before raising any HPD the source can see, and keep the bank lock per device.
+Ordering a driver must keep: the IT6805's 0xe0 access before the splitter maps 0xe0; load the EDID RAMs before raising any HPD the source can see; keep the bank lock per device.
 
 ## Lock timing (observed)
 | Step | 2160p 4:2:0 replug (`T3/S30`), ms | 1080p after 5 V cycle (`T3/S31`), ms |
@@ -103,7 +106,15 @@ RD derives the FPGA configuration from the IT6805 state when streaming starts (`
 - The test setup used an external HDCP stripper. Behaviour with an encrypting source and no stripper is untested. (U)
 
 ## 2160p status
-- 2160p59.94 4:2:0 input locks cleanly through both chips (unencrypted, 8-bit, coherent timing), but the FPGA delivered exact-black frames under RD's configuration. Analysis and experiments: `video-pipeline.md`, open question 14. (`T3`; C for the observation)
+- 2160p59.94 4:2:0 input locks cleanly through both chips (unencrypted, 8-bit, coherent timing), but the FPGA delivered exact-black frames under RD's configuration, from the Roku (`T3`) and from a PC source without HDCP (`T4/S41`). Analysis and experiments: `video-pipeline.md`, open question 14. (`T3`,`T4`; C for the observation)
+- 2160p29.97 RGB 4:4:4 (dual-pixel DDR) captures correctly (`T4/S44`).
+
+## PC loopback source (`T4`)
+A host GPU output (GT 710, DVI-D, through a DVI-to-HDMI cable) feeds HDMI IN. Facts about this source, for tests (`T4`; C):
+- With RD's EDID the GPU picked 2160p60 YCbCr 4:2:0 in HDMI mode (AVI InfoFrame present) by default: 297 MHz TMDS through a DVI connector.
+- 1080p60 and 2160p29.97 arrived as RGB 4:4:4 8-bit in DVI mode (no InfoFrames, so no audio). The splitter and the IT6805 reported DVI; RD's colour path treated the input as full-range RGB.
+- Frame rate 60.006 Hz at 1080p60 and 2160p60 (IN_FRAME_PERIOD 0x00196daf), 29.973 Hz at 2160p29.97.
+- The GPU dithers its output by default; turn that off for exact tests (`tools/testsrc/show.sh` does).
 
 ## Driver notes
 - One polling work item per chip (or one combined), every 50 ms. Event registers are write-1-to-clear: read, then write back the value read (exceptions per chip chapter).

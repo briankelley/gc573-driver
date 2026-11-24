@@ -27,7 +27,7 @@ Reset value read at first probe: `0x0001f850`.
 | 6 | enable; same handling as bit 4 | `S`,`T1` | L |
 | 5 | active-low reset of an on-board chip (pulse 1→0 10 ms→1) | `S`,`T1` | L (which chip U) |
 | 8 | active-low reset of an on-board chip (pulse 1→0 2 ms→1) | `S`,`T1` | L (which chip U) |
-| 10 | **input** (changes with no write; sampled only during RD's read-modify-writes). `T3` (source present): 1 at load, 0 after bit 5 went low, 1 after chip init; 1 when RD handled the IT6805's 5 V loss (before the splitter task ran), 0 when 5 V returned. `T1`/`T2` (no source): 0 in every sample except one (1 at 612 ms after load in `T2`, 0 again 19 ms later). Fits a level output that is high while splitter events are pending: candidate splitter interrupt output (open question 21) | `T1`,`T2`,`T3/S20`,`S30`,`S31` | U |
+| 10 | **input** (changes with no write; sampled only during RD's read-modify-writes). `T3` (source present): 1 at load, 0 after bit 5 went low, 1 after chip init; 1 when RD handled the IT6805's 5 V loss (before the splitter task ran), 0 when 5 V returned. `T1`/`T2` (no source): 0 in every sample except one (1 at 612 ms after load in `T2`, 0 again 19 ms later). Fits a level output that is high while chip events are pending. Candidates: the splitter's interrupt output (its events were unserviced at every 1-sample), or the IT6805's (bit 10 dropped while the bit-5 reset was low). Open question 21 | `T1`,`T2`,`T3/S20`,`S30`,`S31` | U |
 | 11–16 | set at power-up, never written by RD | `T1` | U |
 
 Write via read-modify-write. Bit roles not listed: preserve.
@@ -71,9 +71,9 @@ Descriptor format and protocol: `video-dma.md`.
 | Off | Name | Acc | Fields | Ev | Conf |
 |---|---|---|---|---|---|
 | 0x1000 | VIP_CTRL | RW | [0] output enable (gates frames into DMA) · [3:2] flip (always 0) · [6] cleared when enabling output · [7] 1 = scaler in path, 0 = bypass · [15:8] output pixel format code (`video-pipeline.md`) · [23:16] sharpness | `T2/S11`,`S` | C ([0],[7],[15:8]); L (rest) |
-| 0x1004 | IN_STATUS | RO | [1:0] input timing stable | `S` | L |
-| 0x1008 | IN_WIDTH | RO | [15:0] detected active width | `S` | L |
-| 0x100c | IN_HEIGHT | RO | [15:0] detected active height; [31:16] second measurement (field) | `S` | L |
+| 0x1004 | IN_STATUS | RO | [1:0] input timing stable: 3 with a stable input (1080p60, 2160p60 4:2:0, 2160p29.97), also while not streaming. No-input value not yet read | `S`,`T4/S45` | C |
+| 0x1008 | IN_WIDTH | RO | [15:0] bus clocks per active line, not pixels: 0x780 (1920) at single-pixel 1080p60; 0x3c0 (960) at dual-pixel 2160p, both 4:2:0 SDR (60 Hz) and RGB DDR (29.97 Hz). Read while not streaming (PIX_MODE 0) | `S`,`T4/S45` | C |
+| 0x100c | IN_HEIGHT | RO | [15:0] detected active lines (0x438 at 1080p, 0x870 at 2160p); [31:16] second measurement (field), 0 for progressive input | `S`,`T4/S45` | C |
 | 0x1010 | IN_FRAME_PERIOD | RO | input frame period in 100 MHz ticks; fps = 1e8/val. `0xffffffff` with no input | `T1/S02`,`S` | C |
 | 0x1020 | CLIP_LEFT | RW | | `T1/S02`,`S` | C |
 | 0x1024 | CLIP_WIDTH | RW | | same | C |

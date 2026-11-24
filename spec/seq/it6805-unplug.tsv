@@ -1,0 +1,23 @@
+# IT6805 "no 5 V" state entry (also part of a full logic reset)
+# evidence: T1/S01 (init, no input), T3/S30 22077 ms, T3/S31 29754 ms; S
+# columns: n	op	dev	bank	reg	mask	value	note
+# op: W write value (mask ff) · M read-modify-write: new = (old & ~mask) | value · D delay, value = ms (RD nominal; RD's real sleeps were longer) · P poll until (reg & mask) == value · R read, value = traced (informative) · X step described in hdmi-it6805.md (§ in note)
+# dev: 8-bit I2C address on bus 1 (90 IT6805, e0 IT6805 sub-block). bank: bank in effect (reg 0x0f[2:0]); * = the bank register itself; - = not banked. All numbers hex except D values (decimal ms).
+# RD = reference driver. Values are what RD wrote. R rows are informative reads; RD also read most registers before writing them (omitted). RD's repeated selects of an already selected bank are omitted: the bank column gives the bank in effect.
+# Followed by it6805-power-saving.tsv.
+0	W	90	*	0f	ff	03	
+1	M	90	3	e5	1c	00	clear equaliser override bits 4:2
+2	W	90	*	0f	ff	00	
+3	W	90	0	08	ff	04	W1C
+4	W	90	0	0d	ff	04	W1C, port 1
+5	W	90	0	22	ff	12	audio logic reset pulse (bit 1)
+6	W	90	0	22	ff	10	
+7	W	90	0	23	ff	ac	port-0 reset pulse (bits 3:2)
+8	W	90	0	23	ff	a0	
+9	W	90	0	2b	ff	ac	port-1 reset pulse
+10	W	90	0	2b	ff	a0	
+11	R	90	0	98	ff		RD reads this before every tristate change; informative
+12	W	90	*	0f	ff	01	
+13	W	90	1	c5	ff	ff	video outputs tristated (no stable video)
+14	W	90	1	c6	ff	ff	
+15	W	90	*	0f	ff	00	

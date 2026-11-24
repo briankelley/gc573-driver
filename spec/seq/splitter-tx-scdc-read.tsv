@@ -1,0 +1,23 @@
+# title: TX port DDC master: SCDC read (offset 0x20 shown)
+# evidence: T3/S30 t=32191.2-32193.8; T3/S20, S31; S
+# chapter: hdmi-splitter.md section 7.7
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	R	6a	-	03	-	-	skip the transfer if bit0 (HPD) = 0
+1	M	6a	-	28	01	00	DDC: SCDC read offset 0x20
+2	W	6a	-	2e	-	09	FIFO clear
+3	W	6a	-	29	-	a8	SCDC slave
+4	W	6a	-	2a	-	20	offset
+5	W	6a	-	2b	-	01	count [7:0]
+6	M	6a	-	2c	03	00	count [9:8]
+7	W	6a	-	2e	-	00	command: read
+8	M	6a	-	28	01	00	
+9	P	6a	-	2f	80	80	done; every 1 ms, max 20 polls; traced 81
+10	M	6a	-	28	01	00	
+11	R	6a	-	30	-	-	data

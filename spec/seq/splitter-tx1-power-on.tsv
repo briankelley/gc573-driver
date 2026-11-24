@@ -1,0 +1,43 @@
+# title: TX port 1 power-on with clock measurement, AFE and video-clock reset
+# evidence: T3/S30 t=31892.3-32005.4 (2160p 4:2:0); T3/S31 t=26837.2-26952.8, 37245.6-37358.9 (1080p); T3/S20 t=3689.7; S
+# chapter: hdmi-splitter.md section 7.2
+# variables: afe84, afe88, afe87, afe89, afe8b from the AFE table (chapter 7.4) for the measured clk.
+# 1080p60 (traced, T3/S31): afe84=04 afe88=00 afe87=03 afe89=80 afe8b=03.
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	M	58	0	08	02	02	TX port 1 power-on: enable
+1	M	6a	-	c1	f0	80	
+2	M	6a	-	84	e0	80	AFE power-up
+3	M	6a	-	86	08	08	
+4	M	6a	-	02	01	00	
+5	M	6a	-	19	07	07	
+6	W	6a	-	10	-	c0	clear pending TX events
+7	W	6a	-	11	-	ff	
+8	W	6a	-	12	-	ff	
+9	W	6a	-	13	-	ff	
+10	W	6a	-	14	-	ff	
+11	W	6a	-	15	-	ff	
+12	W	6a	-	01	-	24	
+13	W	6a	-	01	-	00	
+14	X	6a	-	06	-	-	tx-clock-measure: measure TX clock -> clk [kHz], chapter 7.3
+15	R	70	0	98	-	-	input colour depth, bits 5:4 (scales clk for 10/12-bit)
+16	M	6a	-	af	c0	00	
+17	M	6a	-	84	07	{afe84}	AFE by clock, chapter 7.4
+18	M	6a	-	88	04	{afe88}	
+19	M	6a	-	87	1f	{afe87}	
+20	M	6a	-	89	bf	{afe89}	bit6 preserved
+21	M	6a	-	8a	0f	00	
+22	M	6a	-	8b	0f	{afe8b}	
+23	D	-	-	-	-	100	RD sleep
+24	W	6a	-	01	-	06	video-clock reset
+25	M	6a	-	94	01	01	
+26	M	6a	-	94	01	00	
+27	W	6a	-	01	-	04	
+28	W	6a	-	01	-	00	
+29	M	6a	-	18	80	80	video-stable event enable

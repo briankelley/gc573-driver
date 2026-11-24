@@ -1,0 +1,46 @@
+# title: TX port 1 power-down followed by port reset
+# evidence: T1/S01 init; T3/S30 t=22107.3, 31401.9; T3/S20 t=1167.0; S
+# chapter: hdmi-splitter.md section 7.2
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	M	58	0	08	02	00	TX port 1 power-down: enable off
+1	M	6a	-	18	dc	00	keep HPD/RxSense event enables
+2	M	6a	-	19	07	00	
+3	W	6a	-	1a	-	00	RD: RMW mask ff
+4	W	6a	-	1b	-	00	RD: RMW mask ff
+5	W	6a	-	1c	-	00	RD: RMW mask ff
+6	M	6a	-	84	60	60	AFE power-down
+7	M	6a	-	86	08	00	
+8	M	6a	-	88	03	03	TMDS output off
+9	M	6a	-	01	26	26	
+10	M	58	0	0d	0c	00	source = original
+11	R	6a	-	03	-	-	port 1 HPD (bit0)
+12	R	6c	-	03	-	-	port 2 HPD (bit0)
+13	M	58	0	1a	02	00	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+14	W	58	0	19	-	0f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+15	W	58	0	1d	-	af	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+16	W	58	0	19	-	3f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+17	W	58	0	07	-	ff	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+18	M	58	0	1a	02	02	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+19	W	6a	-	01	-	06	video-clock reset
+20	M	6a	-	94	01	01	
+21	M	6a	-	94	01	00	
+22	W	6a	-	01	-	04	
+23	W	6a	-	01	-	00	
+24	M	6a	-	01	20	20	bit5 pulse
+25	M	6a	-	01	20	00	
+26	W	58	0	0c	-	20	TX port 1 reset pulse
+27	W	58	0	0c	-	00	
+28	M	6a	-	18	80	00	
+29	W	6a	-	19	-	00	
+30	W	6a	-	1a	-	00	
+31	W	6a	-	1b	-	00	
+32	W	6a	-	1c	-	00	
+33	M	6a	-	35	10	10	bit4 pulse
+34	M	6a	-	35	10	00	
