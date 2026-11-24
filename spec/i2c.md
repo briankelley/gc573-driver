@@ -42,7 +42,7 @@ Carries all HDMI-chip traffic. One register-addressed transfer per command; comp
 `ADDR=addr|1; 0x188=0; SUBADDR=reg; 0x18c=0; LEN=n; CMD=0x10; CMD=0x08;` wait INT bit 11; STATUS bit2 = success; `CMD=0x10`; RXFIFO → byte × n.
 
 - RD timeout 20 ms, one retry. Observed transaction time ≈ 0.3 ms per single byte including interrupt latency (`T1/S01`; C).
-- Max LEN: RD uses LEN 2 only for the splitter ID reads (0x58 regs 0x00, 0x02); everything else is LEN 1, including the EDID RAM load (254 single-byte writes, registers 0x00–0xfe). FIFO depth unknown (`U`).
+- LEN: with no input RD uses LEN 2 only for the splitter ID reads (0x58 regs 0x00, 0x02), everything else LEN 1, including EDID RAM loads (254 single-byte writes, registers 0x00–0xfe) (`T1`,`T2`; C). With an input present RD also reads 32 bytes per transfer (0x6a reg 0x30, a DDC FIFO) and writes 18 bytes (0x58 regs 0x73, 0x93) and 3 bytes (0x58 regs 0x70, 0x88) (`T3/S20`,`S30`,`S31`; C). Engine FIFO depth ≥ 32 bytes; upper limit unknown (U).
 - Exact register order matters? RD write path writes CMD=0x10 before LEN; read path after LEN. Both work. (`T1`; C)
 
 ## Device inventory (bus 1)

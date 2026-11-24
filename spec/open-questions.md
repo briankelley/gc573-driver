@@ -20,6 +20,7 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 | 16 | Descriptor limits: max COUNT, min address alignment, ctrl bits | driver experiment with crafted lists | no |
 | 17 | TLP_ALIGN (0x004) need | sizes whose dword count is not a multiple of 32; check corruption with/without | no |
 | 18 | FPGA part / firmware variants | board markings photo; VERSION register on other cards | — |
+| 21 | GPIO bit 10 (input): HDMI chip interrupt line? If yes, poll one MMIO bit instead of ~50 I2C ops per cycle | our driver: sample 0x040 at 1 kHz while hot-plugging and changing modes; correlate with chip status registers | yes |
 | 20 | Input pixel clock: RD's estimate reads ~13 % low (129 MHz at 1080p60, 257 MHz at 2160p60 4:2:0) | find the IT6805 clock-measurement registers and reference clock; cross-check with FPGA IN_FRAME_PERIOD | yes |
 
 ## Resolved

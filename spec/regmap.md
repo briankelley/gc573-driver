@@ -22,11 +22,12 @@ Reset value read at first probe: `0x0001f850`.
 | Bit | Role | Ev | Conf |
 |---|---|---|---|
 | 1 | cleared during init (purpose unknown) | `S`,`T1` | U |
-| 2 | HDMI hot-plug (HPD) control. RD pulse to force source re-detect: 1, 10 ms, 0, 100 ms, 1. Polarity unverified | `S` | U |
+| 2 | HDMI hot-plug (HPD) control. RD pulse to force source re-detect: 1, 10 ms, 0, 100 ms, 1. RD clears it when the input loses 5 V and sets it when 5 V returns (before video lock). Which HPD line it drives (input connector vs IT6805 side) unverified | `S`,`T3/S30`,`S31` | L |
 | 4 | enable; set during init, poll until it reads back 1 (≤ 21 × 5 ms) | `S`,`T1` | L |
 | 6 | enable; same handling as bit 4 | `S`,`T1` | L |
 | 5 | active-low reset of an on-board chip (pulse 1→0 10 ms→1) | `S`,`T1` | L (which chip U) |
 | 8 | active-low reset of an on-board chip (pulse 1→0 2 ms→1) | `S`,`T1` | L (which chip U) |
+| 10 | **input** (changes with no write): 1 before chip resets are released, 0 right after release, 1 after init; 1 just after input loss was serviced, 0 just after 5 V returned. Candidate: HDMI chip interrupt line, active low. Only sampled during RD's read-modify-writes | `T3/S20`,`S30`,`S31` | U |
 | 11–16 | set at power-up, never written by RD | `T1` | U |
 
 Write via read-modify-write. Bit roles not listed: preserve.
