@@ -12,9 +12,9 @@ All I2C addresses are 8-bit (7-bit address << 1).
 HDMI IN ─► splitter RX core (0x70) ─► splitter TX port 1 (0x6a) ─► IT6805 port 0 (0x90) ─► parallel video + audio ─► FPGA
                                    └► TX ports 0/2/3 (0x68/0x6c/0x6e): one drives HDMI OUT (pass-through)
 ```
-- TX port 1 feeds the IT6805. DDC reads through 0x6a return the IT6805's EDID, and TX port 1 HPD/RxSense follow the IT6805 side. (`T3/S20`,`S30`; C)
+- TX port 1 feeds the IT6805. DDC reads through 0x6a return the IT6805's EDID, and TX port 1 HPD follows GPIO bit 2 (below). (`T3/S20`,`S30`,`S31`; C)
 - IT6805 port 0 status follows the input: `0x13` = 0xbf locked, 0x00 unplugged. Port 1 is initialised but unused. (`T3`,`S`; C)
-- Pass-through output: probably TX port 2 (0x6c), the only other port with live status changes and serviced events. Nothing was plugged into HDMI OUT during the traces. (`T3/S20`,`S`; U)
+- Pass-through output: probably TX port 2 (0x6c), by elimination only: the only other port with status changes and serviced events. Nothing was plugged into HDMI OUT during the traces. (`T3/S20`,`S`; U)
 
 ## Devices on bus 1
 | Addr | Block | Enabled by | Chapter |
@@ -43,14 +43,15 @@ Banked devices: 0x90, 0x58 and 0x70 each select a register bank with their own r
 |---|---|---|---|
 | 4, 6 | enables, set during FPGA init (`init.md`) | `S`,`T1` | L |
 | 5, 8 | active-low reset pulses (`init.md`). One of them resets the IT6805: its registers read reset values at every load. Which bit drives which chip is unresolved | `T1`,`T3/S20` | L |
-| 2 | **HPD seen by splitter TX port 1**, i.e. the IT6805-side hot-plug line. 1 = high. RD drives it low when the IT6805 loses 5 V and high when 5 V returns and the receiver is powered. Once after load RD pulses it: 1, 10 ms, 0, 100 ms, 1 | `S`,`T3/S20`,`S30`,`S31` | C |
+| 2 | **HPD input of splitter TX port 1**, i.e. the IT6805-side hot-plug line. 1 = high. RD drives it low when the IT6805 loses 5 V and high when 5 V returns and the receiver is powered. Once after load RD pulses it: 1, 10 ms, 0, 100 ms, 1. Evidence: TX port 1 HPD status rose 108 and 110 ms after bit 2 went high; it stayed low while bit 2 was low (9 s, 3.8 s); it returned 137 ms after a splitter TX reset while bit 2 stayed high. Fall latency unmeasured: the status still read high 60 ms after bit 2 went low, then the splitter's own TX reset (≈73 ms) forced it low | `S`,`T3/S30`,`S31` | C (fall latency U) |
+| 10 | input, not driven by the host. Correlates with pending splitter events: candidate interrupt output (`regmap.md`, open question 21) | `T1`,`T2`,`T3` | U |
 
 ## Bring-up order (RD, no input and with input)
 1. FPGA init including the GPIO steps (`init.md` steps 1–11).
 2. IT6805 init, ≈220 ms. It includes loading its EDID RAM and ends in power-saving (no 5 V) or standby (5 V present). `hdmi-it6805.md`. (`T1/S01`,`T3/S20`; C)
 3. Splitter init, in RD's own task starting ≈190 ms after load and interleaved with step 2. `hdmi-splitter.md`. (`T1/S01`; C)
 4. GPIO bit 2 HPD pulse (above), then periodic polling of both chips. (`T1`,`T3/S20`; C)
-5. With a source present, the splitter detects TX port 1 HPD. It then reads the IT6805 EDID over DDC, copies it into its own EDID RAM (0xd8), and toggles HPD toward the source low (≈0.5 s) then high. (`T3/S20`,`S`; C)
+5. With a source present, the splitter detects TX port 1 HPD. It then reads the IT6805 EDID over DDC, copies it into its own EDID RAM (0xd8), and toggles HPD toward the source low (≈0.5 s) then high. (`T3/S20`,`S`; C) RD had already raised the source HPD at ≈454 ms, before that RAM was loaded (≈540–593 ms); the toggle made the source read the EDID again. (`T3/S20`; C)
 
 Ordering a driver must keep: load the EDID RAMs before raising any HPD the source can see, and keep the bank lock per device.
 
@@ -58,13 +59,17 @@ Ordering a driver must keep: load the EDID RAMs before raising any HPD the sourc
 | Step | 2160p 4:2:0 replug (`T3/S30`), ms | 1080p after 5 V cycle (`T3/S31`), ms |
 |---|---|---|
 | splitter RX 5 V detected | 31272 | 33540 |
-| IT6805 5 V detected (TX port 1 powered) | 31285 | 33550 |
+| IT6805 5 V detected | 31285 | 33550 |
 | splitter RX clock detected | 31648 | 37171 |
 | splitter RX stable | 32007 | 37526 |
 | IT6805 video sync detected | 32508 | 38130 |
 | IT6805 stable (0x13 = 0xbf) | 32570 | 38192 |
 
 RX clock to IT6805 stable takes ≈0.9–1.0 s. The source's own delay from 5 V to sending TMDS ranged from 0.4 s to 3.6 s. (`T3`; C) A driver should use timeouts of several seconds, not fixed delays.
+
+Cross-chip rules:
+- The IT6805 receives Clear-AVMUTE only after the splitter unmutes TX port 1 (TX port 1 reg 0xc1 bit 0 cleared; `hdmi-splitter.md`). In all 4 traced locks the IT6805 event appeared at its first poll after that write, never before. A driver must complete the splitter TX output enable, or the IT6805 output stays muted. (`T3/S20`,`S30`,`S31`; C)
+- Decide on individual status bits (for example 5 V = bit 0 of the 0x13 status registers), not on whole-register values: intermediate values differ between unplug events (IT6805 0x13: bf→20→00 in `S30`, bf→00 in `S31`; splitter RX 0x13: 0xa0 in `S30`, 0x80 in `S31`). (`T3`; C)
 
 ## FPGA hand-off at stream start
 RD derives the FPGA configuration from the IT6805 state when streaming starts (`video-pipeline.md` has the registers):
@@ -101,6 +106,8 @@ RD derives the FPGA configuration from the IT6805 state when streaming starts (`
 - 2160p59.94 4:2:0 input locks cleanly through both chips (unencrypted, 8-bit, coherent timing), but the FPGA delivered exact-black frames under RD's configuration. Analysis and experiments: `video-pipeline.md`, open question 14. (`T3`; C for the observation)
 
 ## Driver notes
-- One polling work item per chip (or one combined), every 50 ms. Event registers are write-1-to-clear: read, then write back the value read.
+- One polling work item per chip (or one combined), every 50 ms. Event registers are write-1-to-clear: read, then write back the value read (exceptions per chip chapter).
+- All observed I2C timeouts were on the IT6805 bank register; retry and bank-resync rules in `i2c.md`.
+- On unload RD writes nothing to the chips or the GPIO register: the chips keep running and HPD stays as it was. (`T3/S36`; C) Whether a driver should drop HPD or enter power saving on remove is a design choice; untested.
 - Report lock and unlock as `V4L2_EVENT_SOURCE_CHANGE`. Report DV timings from the IT6805 timing registers plus FPGA 0x1010. Stop streaming on unlock.
 - The chips are separate I2C devices on the bus-1 adapter. Implement them as v4l2 subdevices or internal helpers. All their I2C goes through the bus-1 adapter.
