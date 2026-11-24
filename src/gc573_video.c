@@ -168,6 +168,17 @@ static bool gc573_layout_ok(const struct gc573_fmt *f, u32 w, u32 h)
 }
 
 /*
+ * TODO(spec): spec/ has no line-length rule for the pixel packer. Widths
+ * seen to complete frames in all six formats with no input: 640, 1280 and
+ * 1920 (tests/cases/10-video-capture.sh). At 720 (720x576p50) YV12 never
+ * completed a frame: Y was written in full, but each chroma plane (360-byte
+ * lines) received 2016 bytes less than its size, so the slot stayed pending
+ * and INT bit 1 never came; NV12 and the packed formats worked. Until spec/
+ * has the rule, offer only the widths seen to work.
+ */
+static const u32 gc573_widths[] = { 640, 1280, 1920 };
+
+/*
  * v4l2_check_dv_timings_fnc: sizes every format can be captured at.
  * TLP_ALIGN (0x004) is never written; RD would leave it 0 only for frames
  * of a multiple of 32 dwords at 16 bpp (spec/regmap.md), so only those.
@@ -177,6 +188,11 @@ static bool gc573_timings_fit(const struct v4l2_dv_timings *t, void *handle)
 	u32 w = t->bt.width, h = t->bt.height;
 	unsigned int i;
 
+	for (i = 0; i < ARRAY_SIZE(gc573_widths); i++)
+		if (w == gc573_widths[i])
+			break;
+	if (i == ARRAY_SIZE(gc573_widths))
+		return false;
 	if ((w * h * 2 / 4) % 32)
 		return false;
 	for (i = 0; i < ARRAY_SIZE(gc573_fmts); i++)
