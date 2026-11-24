@@ -40,6 +40,12 @@
 #define GC573_GPIO_EN_WAIT_US		5000
 #define GC573_GPIO_EN_TRIES		21
 
+/*
+ * spec/init.md step 11: at least 50 ms from the last chip-reset release to
+ * the first bus-1 transfer (RD: 52.3-52.5 ms; the minimum is unverified)
+ */
+#define GC573_CHIP_RESET_SETTLE_MS	50
+
 static void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val)
 {
 	u32 v;
@@ -209,6 +215,7 @@ static int gc573_hw_init(struct gc573 *gc)
 	/* 10, 11: on-board chip resets */
 	gc573_gpio_reset_pulse(gc, GC573_GPIO_RST5_N, 5000, 10000, 5000);
 	gc573_gpio_reset_pulse(gc, GC573_GPIO_RST8_N, 2000, 2000, 2000);
+	msleep(GC573_CHIP_RESET_SETTLE_MS);
 
 	dev_dbg(dev, "init done: GPIO=%#010x\n", gc573_rd(gc, GC573_GPIO));
 	return 0;
