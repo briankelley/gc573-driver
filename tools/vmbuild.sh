@@ -50,10 +50,11 @@ build() {
 check() {
 	local out rc=0
 	echo "== checkpatch --strict"
-	# src/compat.h is where the kernel-version tests live (AGENTS.md), so
-	# only there is checkpatch's LINUX_VERSION_CODE warning ignored.
+	# Kernel C only: src/ and the test modules in tests/*/ (userspace test
+	# tools are not kernel code). src/compat.h is where the kernel-version
+	# tests live (AGENTS.md), so only there is LINUX_VERSION_CODE ignored.
 	vm "cd $VMDIR && cp=\"/lib/modules/\$(uname -r)/build/scripts/checkpatch.pl --strict --no-tree --show-types\" && r=0 &&
-		{ \$cp -f \$(ls src/*.[ch] | grep -vx src/compat.h) Makefile Kbuild \$(ls tests/*.c tests/*/*.c 2>/dev/null) || r=1; } &&
+		{ \$cp -f \$(ls src/*.[ch] | grep -vx src/compat.h) Makefile Kbuild \$(ls tests/*/*.c 2>/dev/null) || r=1; } &&
 		{ \$cp --ignore LINUX_VERSION_CODE -f src/compat.h || r=1; } && exit \$r" || rc=1
 	echo "== sparse (C=2)"
 	vm "make -s -C $VMDIR clean >/dev/null"
