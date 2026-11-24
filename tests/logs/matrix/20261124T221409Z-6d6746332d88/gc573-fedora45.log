@@ -1,0 +1,31 @@
+vm: gc573-fedora45  ref: 6d6746332d88  date: 2026-11-24T22:14:09Z
+distro: Fedora Linux 45 (Cloud Edition)
+running: 7.3.4-300.fc45.x86_64
+cc: gcc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)
+=== build 7.3.4-300.fc45.x86_64
+make -C /lib/modules/7.3.4-300.fc45.x86_64/build M=/home/dev/gc573-matrix/gc573 CC=gcc modules
+make[1]: Entering directory '/usr/src/kernels/7.3.4-300.fc45.x86_64'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/kernels/7.3.4-300.fc45.x86_64'
+RESULT	7.3.4-300.fc45.x86_64	build	PASS	7.3.4-300.fc45.x86_64
+=== load 7.3.4-300.fc45.x86_64
+gc573                  28672  0
+RESULT	7.3.4-300.fc45.x86_64	load	PASS	init/exit (no card)
+=== dkms gc573/0.1
+Deprecated feature: CLEAN (/usr/src/gc573-0.1/dkms.conf)
+Signing key: /var/lib/dkms/mok.key
+Public certificate (MOK): /var/lib/dkms/mok.pub
+
+Building module(s)... done.
+Signing module /var/lib/dkms/gc573/0.1/build/gc573.ko
+RESULT	7.3.4-300.fc45.x86_64	dkms	PASS	build
