@@ -68,7 +68,7 @@ kill "$srv" 2>/dev/null || true; srv=
 sudo virt-xml "$NAME" --remove-device --disk device=cdrom >/dev/null || true
 sudo virt-xml "$NAME" --edit --boot kernel=,initrd=,cmdline= >/dev/null 2>&1 || true
 sudo virt-customize -q -a "$IMGDIR/$NAME.qcow2" --network \
-  --run-command 'apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server build-essential dkms git rsync pciutils v4l-utils edid-decode alsa-utils >/dev/null' \
+  --run-command 'apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server build-essential dkms dwarves git rsync pciutils v4l-utils edid-decode alsa-utils >/dev/null' \
   --run-command 'k=$(ls /lib/modules | sort -V | tail -1); DEBIAN_FRONTEND=noninteractive apt-get install -y -qq linux-headers-$k >/dev/null' \
   --run-command 'systemctl enable ssh' \
   --ssh-inject "dev:file:$KEY.pub" \

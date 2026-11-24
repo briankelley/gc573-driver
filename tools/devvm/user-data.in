@@ -19,6 +19,7 @@ packages:
   - build-essential
   - git
   - dkms
+  - dwarves
   - sparse
   - pciutils
   - v4l-utils                # v4l2-ctl, v4l2-compliance

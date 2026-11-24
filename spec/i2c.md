@@ -42,6 +42,9 @@ Carries all HDMI-chip traffic. One register-addressed transfer per command; comp
 `ADDR=addr|1; 0x188=0; SUBADDR=reg; 0x18c=0; LEN=n; CMD=0x10; CMD=0x08;` wait INT bit 11; STATUS bit2 = success; `CMD=0x10`; RXFIFO → byte × n.
 
 - RD timeout 20 ms, one retry. Observed transaction time ≈ 0.3 ms per single byte including interrupt latency (`T1/S01`; C).
+- Our driver measured 0.13–0.15 ms per 1–2-byte transfer including interrupt and thread wake-up (4000 reads in 521–588 ms). RD's ≈0.3 ms includes its own overhead. (`tests/logs/20261124-215628_6.8.0-151-generic.log` case 04; C)
+- No transfer ever failed in any trace, so STATUS and INT behaviour for a NACK or an absent device are unknown (open question 26).
+- Registers 0x00–0x0e of the banked devices (0x90, 0x58, 0x70) were only ever accessed in bank 0: whether they are bank-independent is untested. RD reads the IT6805 ID right after its chip reset and selects bank 0 before the splitter ID read. Select bank 0 before reading IDs. (`T1`,`T2`,`T3`; C)
 - Missing completions: 4 timeouts (no INT bit 11 within 20 ms) in ≈230k transfers across all trace sessions. In each case RD's retry, ≈22–24 ms after the start, completed normally. All 4 were transfers to IT6805 0x90 reg 0x0f, its bank register (3 writes, 1 read). Cause unknown; whether the timed-out transfer reached the chip is unknown. STATUS was only ever 0x01 or 0x04 after an interrupt. (`T1`,`T2`,`T3/S32-BGR3`; C for the observation, open question 22)
 - RD's retry once loaded a wrong data byte (0xaa instead of 0x00 for a bank select). The IT6805 then read back bank 2, and two transfers went to the wrong bank until RD's next bank select. (`T3/S32-BGR3`; C)
 - Driver rules: on timeout, reprogram the whole transfer (all engine registers, including TX data) before retrying. After a failed or timed-out access to a banked device, re-read its bank register before any banked access.

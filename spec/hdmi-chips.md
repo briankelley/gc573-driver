@@ -35,7 +35,7 @@ Banked devices: 0x90, 0x58 and 0x70 each select a register bank with their own r
 ## Control model
 - No chip interrupt reaches the host. Across all traces the only interrupt is INT bit 11 (I2C done). (`T1`,`T3`; C)
 - RD polls each chip from a periodic task: nominally every 50 ms (20 ms after a power-on), observed every 60–68 ms because each cycle's I2C time adds to the delay. (`S`,`T3`; C)
-- Per IT6805 cycle about 54 transfers (event registers read and written back, status reads). The splitter takes a few reads per cycle when idle, bursts on events, plus a periodic RX equaliser routine. At ≈0.3 ms per transfer, polling occupies roughly a quarter of the bus time. (`T3`,`D`; L)
+- Per IT6805 cycle about 54 transfers (event registers read and written back, status reads). The splitter takes a few reads per cycle when idle, bursts on events, plus a periodic RX equaliser routine. At RD's ≈0.3 ms per transfer polling occupies roughly a quarter of the bus time; at the 0.13–0.15 ms our driver measured (`i2c.md`), about an eighth. (`T3`,`D`; L)
 - GPIO bit 10 (`regmap.md`) may be a chip interrupt line. If confirmed, a driver could skip I2C polling while it is inactive. (U, open question 21)
 
 ## FPGA GPIO lines used by the front-end

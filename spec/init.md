@@ -6,7 +6,7 @@ All timings are what RD uses; minimums are not known. Keep them until experiment
 | # | Step | Detail | Ev | Conf |
 |---|---|---|---|---|
 | 1 | PCI enable | bus master, map BAR0, MSI | `pci.md` | C |
-| 2 | Reset domains | for bit in (0x001, 0x100, 0x200): write RESET(0x00c) = bit; poll every 1 ms (≤ 11 tries) until `RESET & bit`; sleep 30 ms | `T1/S01`,`S` | C |
+| 2 | Reset domains | for bit in (0x001, 0x100, 0x200): write RESET(0x00c) = bit; poll every 1 ms (≤ 11 tries) until `RESET & bit`; sleep 30 ms. The bits are sticky: fresh after a device reset RESET reads 0x001 and goes 0x009 → 0x109 → 0x309 with the three writes; after that it reads 0x309 before and after every domain write (reloads `T2/S10`, `T3/S20`; stream starts in all traces). So the poll confirms only the first bring-up after a device reset (open question 27). Bit 3 sets with bit 0; meaning unknown | `T1/S01`,`T2`,`T3`,`S`, `tests/logs/20261124-215628_6.8.0-151-generic.log` | C |
 | 3 | DDR check | read DDR_STATUS (0x107c); bit0 must be 1. If 0: write 8, write 1, sleep 2 s, re-read; ≤ 3 tries; still 0 → fail probe | `T1/S01` (read 0x3),`S` | L |
 | 4 | Version | read VERSION (0x000); log | `T1/S01` | C |
 | 5 | I2C clocks | bus0: 0x120=0x3d, 0x124=0, 0x128=0x80 · bus1: 0x180=0x138 · bus2: 0x100=0xf9, 0x104=0, 0x108=0x80 | `T1/S01`,`S` | C |
@@ -15,10 +15,12 @@ All timings are what RD uses; minimums are not known. Keep them until experiment
 | 8 | GPIO enables | GPIO|=bit4, sleep 5 ms, repeat until bit4 reads 1 (≤ 21); same for bit6 | `T1/S01`,`S` | C |
 | 9 | GPIO | sleep 2 ms; clear bit1; sleep 2 ms | `S`,`T1/S01` | C |
 | 10 | Chip reset A | bit5: 1, 5 ms, 0, 10 ms, 1, 5 ms | `T1/S01` | C |
-| 11 | Chip reset B | bit8: 1, 2 ms, 0, 2 ms, 1, 2 ms | `T1/S01` | C |
+| 11 | Chip reset B | bit8: 1, 2 ms, 0, 2 ms, 1, 2 ms. Then wait ≥ 50 ms before the first bus-1 transfer: RD's first transfer came 52.3–52.5 ms after this release in every session (minimum unverified) | `T1/S01`,`T2/S10`,`T3/S20` | C (minimum U) |
 | 12 | HDMI chips | IT6805 init and splitter init over I2C bus 1, then the GPIO bit 2 HPD pulse and polling: `hdmi-chips.md` (order), `hdmi-it6805.md`, `hdmi-splitter.md` | `T1/S01`,`S` | C |
 
 Observed GPIO value sequence for steps 8–11 (T1/S01): `0x1f850` → (bit4, bit6 already 1) → `0x1f870` → `0x1f850` → `0x1f870` → `0x1f970` → `0x1f870` → `0x1f970`.
+
+Timeouts in steps 2, 3 and 8 never happened in any trace (every poll succeeded at its first read), so RD's handling is unobserved. Recommended: fail the probe.
 
 ## Stream start (video)
 See `video-dma.md` §Start. Summary: configure pipeline (`video-pipeline.md`), program slots, set CH_CTRL run bit on each used channel, then VIP_CTRL[0] = 1.

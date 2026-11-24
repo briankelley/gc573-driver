@@ -57,6 +57,8 @@ ssh "$VM" sudo bash -s -- "$krel" $(for d in $debs; do printf '/tmp/%s ' "$d"; d
 set -euo pipefail
 krel=$1; shift
 dpkg -i "$@" >/dev/null
+# Ubuntu's top Makefile adds -I ubuntu/include; bindeb-pkg headers lack the dir (W=1: -Wmissing-include-dirs)
+mkdir -p "$(readlink -f /lib/modules/$krel/build)/ubuntu/include"
 sed -i 's/^GRUB_DEFAULT=.*/GRUB_DEFAULT=saved/' /etc/default/grub
 update-grub >/dev/null 2>&1
 cfg=/boot/grub/grub.cfg

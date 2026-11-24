@@ -23,4 +23,5 @@
 - Probe: `pcim_enable_device`, `pci_set_master`, map BAR0 (512 KiB).
 - Prefer MSI (single vector); fall back to INTx (shared).
 - Use a 32-bit DMA mask until 64-bit is verified by experiment (see `open-questions.md`).
+- A VM reboot (VFIO resets the device) does restore power-on values: the first probe after one read GPIO 0x0001f850 and RESET 0x00000001. Across driver reloads without it, the registers keep their last values (GPIO 0x0001f970/0x0001f974, RESET 0x00000309). (`tests/logs/20261124-215628_6.8.0-151-generic.log`, `T1`,`T2`,`T3`; C)
 - There is no function-level reset: device state persists across driver unload/reload. The driver must quiesce the device on remove and must not assume power-on register state at probe (run the full init sequence every probe).
