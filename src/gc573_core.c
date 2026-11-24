@@ -316,10 +316,9 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return dev_err_probe(dev, -ENODEV, "BAR0 too small: %pR\n",
 				     &pdev->resource[0]);
 
-	ret = pcim_iomap_regions(pdev, BIT(0), KBUILD_MODNAME);
-	if (ret)
-		return dev_err_probe(dev, ret, "cannot map BAR0\n");
-	gc->mmio = pcim_iomap_table(pdev)[0];
+	gc->mmio = gc573_pcim_iomap_region(pdev, 0, KBUILD_MODNAME);
+	if (IS_ERR(gc->mmio))
+		return dev_err_probe(dev, PTR_ERR(gc->mmio), "cannot map BAR0\n");
 
 	/* 64-bit DMA is untested (spec/pci.md) */
 	ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32));
