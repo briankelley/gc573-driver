@@ -60,6 +60,18 @@ struct pci_dev;
 #define GC573_OC_PRERHI			0x04		/* OpenCores prescale high */
 #define GC573_OC_CTR			0x08		/* OpenCores control */
 #define GC573_OC_CTR_EN			BIT(7)		/* core enable */
+#define GC573_OC_TXR			0x0c		/* write: byte to send */
+#define GC573_OC_RXR			0x0c		/* read: byte received */
+#define GC573_OC_CR			0x10		/* write: command */
+#define GC573_OC_SR			0x10		/* read: status */
+#define GC573_OC_CR_STA			BIT(7)		/* (repeated) START */
+#define GC573_OC_CR_STO			BIT(6)		/* STOP */
+#define GC573_OC_CR_RD			BIT(5)		/* read a byte */
+#define GC573_OC_CR_WR			BIT(4)		/* write a byte */
+#define GC573_OC_CR_ACK			BIT(3)		/* 1 = answer NACK */
+#define GC573_OC_SR_RXACK		BIT(7)		/* 1 = no ACK received */
+#define GC573_OC_SR_AL			BIT(5)		/* arbitration lost */
+#define GC573_OC_SR_TIP			BIT(1)		/* transfer in progress */
 #define GC573_I2C0_PRESCALE		0x3d
 #define GC573_I2C2_PRESCALE		0xf9
 #define GC573_I2C1_PRESCALE		0x180		/* bus 1 engine prescale */
@@ -91,6 +103,13 @@ struct pci_dev;
 #define GC573_SCALER_RESET		0x50000
 #define GC573_SCALER_RUN		0x3		/* both scaler cores out of reset */
 
+/* OpenCores-compatible byte master (I2C bus 0 or bus 2) */
+struct gc573_ocbus {
+	struct gc573 *gc;
+	struct i2c_adapter adap;
+	u32 base;			/* GC573_I2C0_BASE or GC573_I2C2_BASE */
+};
+
 struct gc573 {
 	struct pci_dev *pdev;
 	void __iomem *mmio;
@@ -108,6 +127,8 @@ struct gc573 {
 	struct i2c_adapter i2c1;	/* bus 1 engine: HDMI chips */
 	struct completion i2c1_done;	/* bus 1 transfer ended (INT bit 11) */
 	u8 i2c1_status;			/* GC573_I2C1_STATUS latched at INT bit 11 */
+	struct gc573_ocbus i2c0;	/* byte master, devices unknown */
+	struct gc573_ocbus i2c2;	/* byte master, devices unknown */
 };
 
 int gc573_i2c_init(struct gc573 *gc);

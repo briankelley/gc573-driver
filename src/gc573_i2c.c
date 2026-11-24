@@ -7,16 +7,28 @@
  * at one device register and raises INT bit 11 when it ends. It is an
  * i2c_adapter whose transfers sleep on a completion that the IRQ thread
  * signals; a mutex serialises transfers and no spinlock is held across one.
+ *
+ * Buses 0 and 2 are OpenCores-compatible byte masters, driven by polling.
+ * Nothing is known about the devices on them (an EEPROM or authentication
+ * chip may be there; spec/open-questions.md #12), so their adapters refuse
+ * every transfer unless the i2c_bus02 parameter is set at load time.
  */
 
 #include <linux/completion.h>
 #include <linux/device.h>
 #include <linux/i2c.h>
+#include <linux/iopoll.h>
 #include <linux/jiffies.h>
+#include <linux/moduleparam.h>
 #include <linux/mutex.h>
 #include <linux/pci.h>
 
 #include "gc573.h"
+
+static bool i2c_bus02;
+module_param(i2c_bus02, bool, 0444);
+MODULE_PARM_DESC(i2c_bus02,
+		 "Allow transfers on I2C buses 0 and 2, whose devices are not identified yet (default: off)");
 
 /* spec/i2c.md: RD's transfer timeout is 20 ms, with one retry */
 #define GC573_I2C1_TIMEOUT_MS		20
@@ -162,6 +174,124 @@ static const struct i2c_adapter_quirks gc573_i2c1_quirks = {
 	.max_comb_2nd_msg_len	= GC573_I2C1_MAX_READ,
 };
 
+/*
+ * Byte masters. spec/i2c.md gives RD's sequence (TXR, CR, poll SR.TIP,
+ * check SR.RxACK) and command bytes; register semantics per P:OC-I2C.
+ * A byte takes about 90 us at 100 kHz; allow 5 ms for clock stretching.
+ */
+#define GC573_OC_POLL_US		10
+#define GC573_OC_TIMEOUT_US		5000
+
+static int gc573_oc_cmd(struct gc573_ocbus *bus, u32 cmd, u32 *sr)
+{
+	struct gc573 *gc = bus->gc;
+
+	gc573_wr(gc, bus->base + GC573_OC_CR, cmd);
+	return read_poll_timeout(ioread32, *sr, !(*sr & GC573_OC_SR_TIP),
+				 GC573_OC_POLL_US, GC573_OC_TIMEOUT_US, false,
+				 gc->mmio + bus->base + GC573_OC_SR);
+}
+
+/* One message: (repeated) START and address byte, then the data bytes. */
+static int gc573_oc_msg(struct gc573_ocbus *bus, struct i2c_msg *msg,
+			bool last)
+{
+	struct gc573 *gc = bus->gc;
+	bool rd = msg->flags & I2C_M_RD;
+	u32 sr, cmd;
+	int ret;
+	u16 i;
+
+	gc573_wr(gc, bus->base + GC573_OC_TXR, i2c_8bit_addr_from_msg(msg));
+	ret = gc573_oc_cmd(bus, GC573_OC_CR_STA | GC573_OC_CR_WR, &sr);
+	if (ret)
+		goto stop;
+	if (sr & GC573_OC_SR_AL)
+		return -EAGAIN;
+	if (sr & GC573_OC_SR_RXACK) {
+		ret = -ENXIO;
+		goto stop;
+	}
+
+	for (i = 0; i < msg->len; i++) {
+		bool final = last && i == msg->len - 1;
+
+		if (rd) {
+			cmd = GC573_OC_CR_RD;
+			if (i == msg->len - 1)
+				cmd |= GC573_OC_CR_ACK;	/* NACK the last byte */
+		} else {
+			gc573_wr(gc, bus->base + GC573_OC_TXR, msg->buf[i]);
+			cmd = GC573_OC_CR_WR;
+		}
+		if (final)
+			cmd |= GC573_OC_CR_STO;
+
+		ret = gc573_oc_cmd(bus, cmd, &sr);
+		if (ret)
+			goto stop;
+		if (sr & GC573_OC_SR_AL)
+			return -EAGAIN;
+		if (rd) {
+			msg->buf[i] = gc573_rd(gc, bus->base + GC573_OC_RXR) & 0xff;
+		} else if (sr & GC573_OC_SR_RXACK) {
+			if (final)		/* STOP already sent */
+				return -EIO;
+			ret = -EIO;
+			goto stop;
+		}
+	}
+	return 0;
+
+stop:
+	gc573_oc_cmd(bus, GC573_OC_CR_STO, &sr);
+	return ret;
+}
+
+static int gc573_oc_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+			 int num)
+{
+	struct gc573_ocbus *bus = i2c_get_adapdata(adap);
+	int i, ret = 0;
+
+	if (!i2c_bus02) {
+		dev_notice_ratelimited(&bus->gc->pdev->dev,
+				       "%s: transfer refused (i2c_bus02=0)\n",
+				       adap->name);
+		return -EPERM;
+	}
+
+	for (i = 0; i < num; i++) {
+		if (msgs[i].flags & ~(I2C_M_RD | I2C_M_DMA_SAFE))
+			return -EOPNOTSUPP;
+		if (msgs[i].addr > 0x7f)
+			return -EINVAL;
+	}
+
+	/* bus 0 may share wires with the bus 1 engine (spec/i2c.md) */
+	mutex_lock(&bus->gc->i2c_lock);
+	for (i = 0; i < num && !ret; i++)
+		ret = gc573_oc_msg(bus, &msgs[i], i == num - 1);
+	mutex_unlock(&bus->gc->i2c_lock);
+
+	return ret ? ret : num;
+}
+
+static u32 gc573_oc_func(struct i2c_adapter *adap)
+{
+	return I2C_FUNC_I2C | (I2C_FUNC_SMBUS_EMUL & ~I2C_FUNC_SMBUS_QUICK);
+}
+
+static const struct i2c_algorithm gc573_oc_algo = {
+	.master_xfer	= gc573_oc_xfer,
+	.functionality	= gc573_oc_func,
+};
+
+/* Zero-length messages are not in spec/i2c.md: no address-only probes. */
+static const struct i2c_adapter_quirks gc573_oc_quirks = {
+	.flags		= I2C_AQ_NO_ZERO_LEN,
+};
+
 /* Register an adapter; devres deletes it before the quiesce runs. */
 static int gc573_i2c_add(struct gc573 *gc, struct i2c_adapter *adap, int bus,
 			 const struct i2c_algorithm *algo,
@@ -184,15 +314,30 @@ static int gc573_i2c_add(struct gc573 *gc, struct i2c_adapter *adap, int bus,
 	return 0;
 }
 
+/* Clocks and core enables are set by the FPGA init (spec/init.md step 5). */
 int gc573_i2c_init(struct gc573 *gc)
 {
 	int ret;
 
-	ret = gc573_i2c_add(gc, &gc->i2c1, 1, &gc573_i2c1_algo,
-			    &gc573_i2c1_quirks, gc);
+	gc->i2c0.gc = gc;
+	gc->i2c0.base = GC573_I2C0_BASE;
+	gc->i2c2.gc = gc;
+	gc->i2c2.base = GC573_I2C2_BASE;
+
+	ret = gc573_i2c_add(gc, &gc->i2c0.adap, 0, &gc573_oc_algo,
+			    &gc573_oc_quirks, &gc->i2c0);
+	if (!ret)
+		ret = gc573_i2c_add(gc, &gc->i2c1, 1, &gc573_i2c1_algo,
+				    &gc573_i2c1_quirks, gc);
+	if (!ret)
+		ret = gc573_i2c_add(gc, &gc->i2c2.adap, 2, &gc573_oc_algo,
+				    &gc573_oc_quirks, &gc->i2c2);
 	if (ret)
 		return ret;
 
-	dev_info(&gc->pdev->dev, "I2C bus 1: %s\n", dev_name(&gc->i2c1.dev));
+	dev_info(&gc->pdev->dev,
+		 "I2C bus 0: %s, bus 1: %s, bus 2: %s (bus 0/2 transfers %s)\n",
+		 dev_name(&gc->i2c0.adap.dev), dev_name(&gc->i2c1.dev),
+		 dev_name(&gc->i2c2.adap.dev), i2c_bus02 ? "on" : "off");
 	return 0;
 }
