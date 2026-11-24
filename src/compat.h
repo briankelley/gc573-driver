@@ -5,9 +5,10 @@
  * Supported kernels: every regression-matrix VM kernel (AGENTS.md). All
  * kernel-version differences live in this file; no version checks elsewhere.
  *
- * APIs used by the driver and checked against upstream v5.14 and v7.0:
- * pcim_iomap_regions()/pcim_iomap_table() and i2c_algorithm.master_xfer
- * exist in both, so they need no wrapper.
+ * Built and tested on 6.8 only. Against the upstream headers of v5.14,
+ * v7.0 and v7.3 (the matrix ends), pcim_iomap_regions()/pcim_iomap_table()
+ * and i2c_algorithm.master_xfer exist in all, so they need no wrapper.
+ * Other matrix kernels: not built yet.
  */
 #ifndef GC573_COMPAT_H
 #define GC573_COMPAT_H
