@@ -8,7 +8,11 @@
 # 2. Every DV timing the driver enumerates x six formats, GC573_SWEEP_FRAMES
 #    (default 30) frames each, same checks: each offered mode must work.
 # No sequence gaps or error flags. Cadence (no input: 60 Hz whatever the
-# timings): mean interval 16.6-16.75 ms, every interval 15-18.4 ms.
+# timings): mean interval 16.6-16.75 ms; every interval within half a period
+# of 16.67 ms (8.4-25 ms), so a lost or doubled frame, which moves an
+# interval by a whole period, fails. Timestamps come from the hard IRQ, and
+# in the VM one can arrive a few ms late under host load (seen: a 19.5 ms
+# interval followed by 13.9 ms on the debug kernel while other VMs booted).
 # Logs the FPGA input registers (no input: 1010 reads 0xffffffff) and what
 # the hardware wrote (the most common word per plane).
 # shellcheck source=tests/lib.sh
@@ -49,9 +53,15 @@ n=$(grep -c '^RESULT capture ' "$tmp/sweep")
 cat "$tmp/gate" "$tmp/sweep" | awk '/^RESULT capture / {
 	for (i = 3; i <= NF; i++) { split($i, kv, "="); v[kv[1]] = kv[2] }
 	if (v["ivl_ms_mean"] < 16.6 || v["ivl_ms_mean"] > 16.75 ||
-	    v["min"] < 15 || v["max"] > 18.4) {
+	    v["min"] < 8.4 || v["max"] > 25) {
 		print "cadence out of range: " $3 " " $4; bad = 1
 	}
 } END { exit bad }' || fail "frame cadence"
 echo "pattern: every plane of every frame overwritten, 6 formats x $nt timings"
-echo "cadence: mean 16.6-16.75 ms, all intervals 15-18.4 ms"
+cat "$tmp/gate" "$tmp/sweep" | awk '/^RESULT capture / {
+	for (i = 3; i <= NF; i++) { split($i, kv, "="); v[kv[1]] = kv[2] }
+	if (!n++ || v["min"] < lo) lo = v["min"]
+	if (v["max"] > hi) hi = v["max"]
+} END {
+	printf "cadence: mean 16.6-16.75 ms; intervals %.3f-%.3f ms (limit 8.4-25)\n", lo, hi
+}'
