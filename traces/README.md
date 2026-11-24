@@ -8,7 +8,7 @@ Golden reference data: register and bus traces of the reference driver (RD), run
 | `T1.tsv.xz` | none | S01 load · S01 30 s idle · S02 query + YUYV 1080p stream · S03 unload |
 | `T2.tsv.xz` | none | S10 load · S11-`<fmt>` 1080p stream per pixel format · S12 720p · S13 audio · S14 unload |
 | `T3.tsv.xz` | Roku Ultra → HDCP stripper → GC573 | S20 load with 2160p59.94 4:2:0 (BT.709) present · S21–S23 4K YUYV/NV12/YV12 · S24–S26 4K→1080p YUYV/BGR24/XBGR32 · S27 audio · S30 cable unplug/replug · S31 source 2160p→1080p · S32-`<fmt>` 1080p59.94 all formats · S33 1080p→720p · S34 audio · S36 unload |
-| `T4.tsv.xz` | host GT 710 DVI-D → DVI-to-HDMI cable → GC573 (PC loopback, no HDCP) | S40 load (GPU picks 2160p60 4:2:0) · S41 2160p60 4:2:0 YUYV (black) · S42 1080p60 RGB DVI-mode BGR24 · S43 same, GPU dithering off · S44 2160p29.97 RGB YUYV · S45 FPGA input-detector reads · S46 unload |
+| `T4.tsv.xz` | host GT 710 DVI-D → DVI-to-HDMI cable → GC573 (PC loopback, no HDCP) | S40 load (GPU picks 2160p60 4:2:0) · S41 2160p60 4:2:0 YUYV (black) · S42 1080p60 RGB BGR24 · S43 same, GPU dithering off · S44 2160p29.97 RGB YUYV · S45 2160p60 then 2160p29.97, not streaming · S46 unload |
 
 ## Format
 TSV, `#` comment lines. Read: `xz -dc traces/T3.tsv.xz | ...`
@@ -37,6 +37,8 @@ Bus-1 engine registers 0x180–0x1a4 are omitted from MMIO; their transfers appe
 ## Known artifacts
 - `I2C W` values are the values RD requested. The engine's data register is not in these files.
 - `T3` t = 410834909 µs (S32-1080-BGR3): `W 90 * 0f 00` timed out and RD's retry sent 0xaa. The IT6805 was in bank 2 for the next two transfers (`R`/`W 90 0 12`, really bank-2 reg 0x12) until RD's next bank select read 0x0f = 0x02. Bank labels come from RD's bank-select writes, so they inherit such failures. (`spec/i2c.md`)
+
+- `T4`: I2C events of the first 2.35 s after the S40 MARK are missing: the trace ring overwrote them before it was drained, so there is no init. Interrupt lines remain. The FPGA input-detector values cited for `T4/S45` were read from userspace and are not in the file.
 
 ## Use
 - Spec evidence: `T<n>/<scenario>` tags refer to the MARK windows here.

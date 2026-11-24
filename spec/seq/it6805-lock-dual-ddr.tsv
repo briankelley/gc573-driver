@@ -1,0 +1,90 @@
+# IT6805 stable-entry sequence, dual-pixel DDR (rule d). Values for 2160p29.97 RGB 4:4:4 8-bit
+# evidence: T4/S43 91337 ms, T4/S45 1580 ms (PC source); S
+# columns: n	op	dev	bank	reg	mask	value	note
+# op: W write value (mask ff) · M read-modify-write: new = (old & ~mask) | value · D delay, value = ms (RD nominal; RD's real sleeps were longer) · P poll until (reg & mask) == value · R read, value = traced (informative) · X step described in hdmi-it6805.md (§ in note)
+# dev: 8-bit I2C address on bus 1 (90 IT6805, e0 IT6805 sub-block). bank: bank in effect (reg 0x0f[2:0]); * = the bank register itself; - = not banked. All numbers hex except D values (decimal ms).
+# RD = reference driver. Values are what RD wrote. R rows are informative reads; RD also read most registers before writing them (omitted). RD's repeated selects of an already selected bank are omitted: the bank column gives the bank in effect.
+# Rows whose note starts with MODE depend on the input (§10). FPGA side: PIX_MODE 3, COLOR_CTRL bit 5 = 1 (§10.4); frames were captured correctly (T4/S44).
+# Replay check (D): reproduces every IT6805 register write of both traced entries in order, value and bank, except the bus-setting 0:6b row at T4/S45 1580 (RD writes the previous output colour).
+# Runs once, in the 4th poll after the poll that detected sync (§7.5).
+0	W	90	*	0f	ff	00	
+1	W	90	0	90	ff	8f	meaning unknown; RD writes it at every stable entry
+2	X	-	-	-	-	-	measurement (§8): timing registers 0:98-0:aa (needed); clock counters 0:48/0:43 and 0:99/0:9a (optional: RD spends 10 x 10 ms + 5 x 3 ms here)
+3	R	90	0	1b	ff	08	pixel repetition bits 5:4 (0 = none)
+4	W	90	*	0f	ff	01	
+5	M	90	1	b0	01	01	MODE: 1 if pixel clock / repetition >= 25 MHz
+6	W	90	*	0f	ff	02	
+7	R	90	2	15	ff	00	AVI PB1: Y = 0 (RGB); input to the mode-dependent rows (§9)
+8	R	90	2	16	ff	28	AVI PB2; input to the mode-dependent rows (§9)
+9	R	90	2	17	ff	88	AVI PB3: Q = 2 (full range); input to the mode-dependent rows (§9)
+10	R	90	2	18	ff	5f	AVI PB4: VIC 95; input to the mode-dependent rows (§9)
+11	R	90	2	19	ff	00	AVI PB5; input to the mode-dependent rows (§9)
+12	W	90	*	0f	ff	00	
+13	M	90	0	64	04	00	even/odd pixel split (only matters for dual pixel)
+14	M	90	0	64	02	02	bit 1 pulse
+15	M	90	0	64	02	00	
+16	W	90	*	0f	ff	05	
+17	M	90	5	20	40	40	internal down-scaler bypassed
+18	W	90	*	0f	ff	01	
+19	M	90	1	c0	01	00	dual-pixel flag off first
+20	M	90	1	c0	06	02	parallel output path
+21	M	90	1	c1	02	02	MODE: SDR 00 / DDR 02
+22	M	90	1	c1	20	00	separate syncs
+23	W	90	*	0f	ff	00	
+24	M	90	0	6b	0c	00	MODE: output colour [3:2] = input colour (RGB 00, YCbCr 4:2:2 04, 4:4:4 08, 4:2:0 0c), §10.3. RD writes its previously programmed output colour here, or nothing at the first lock after load; the final value is written below while the outputs are still tristated
+25	W	90	*	0f	ff	01	
+26	M	90	1	c0	01	01	MODE: dual pixel only
+27	W	90	*	0f	ff	05	
+28	M	90	5	d1	01	00	
+29	M	90	5	d1	0c	04	
+30	M	90	5	da	10	00	
+31	W	90	5	d0	ff	f3	
+32	W	90	*	0f	ff	01	
+33	M	90	1	bd	30	10	MODE: single 00 / dual 10
+34	W	90	1	be	ff	00	
+35	M	90	1	fe	10	10	
+36	W	90	1	c4	ff	10	MODE: 10 only for dual-pixel DDR
+37	W	90	*	0f	ff	00	
+38	M	90	0	64	04	00	
+39	M	90	0	64	02	02	bit 1 pulse
+40	M	90	0	64	02	00	
+41	R	90	0	13	ff	bf	bit 1 = HDMI (1) / DVI (0)
+42	M	90	0	6b	30	00	MODE: input colour [5:4] from AVI Y (RGB 00, 4:2:2 10, 4:4:4 20, 4:2:0 30); DVI: 10
+43	M	90	0	6b	01	00	MODE: 0 = HDMI, 1 = DVI
+44	W	90	*	0f	ff	01	
+45	M	90	1	c0	06	02	
+46	M	90	1	c1	02	02	MODE: as in the bus setting
+47	M	90	1	c1	20	00	
+48	W	90	*	0f	ff	00	
+49	M	90	0	6b	0c	00	MODE: output colour = input colour (RGB 00, YCbCr 4:2:2 04, 4:4:4 08, 4:2:0 0c)
+50	W	90	0	6e	ff	a2	
+51	W	90	*	0f	ff	01	
+52	W	90	1	86	ff	00	
+53	W	90	*	0f	ff	00	
+54	M	90	0	6c	03	00	colour converter bypassed
+55	W	90	*	0f	ff	01	
+56	W	90	1	85	ff	00	colour converter bypassed
+57	W	90	*	0f	ff	00	
+58	R	90	0	98	ff	08	bits 7:4 = deep-colour code (4 = 24 bit, 0 = none)
+59	M	90	0	6b	03	00	MODE: output depth 0 = 8 bit (0:98[7:4] 5 -> 1, 6 -> 2)
+60	M	90	0	4f	a0	a0	AV mute on
+61	W	90	*	0f	ff	01	
+62	M	90	1	c5	80	80	AV mute on
+63	W	90	*	0f	ff	00	
+64	M	90	0	81	40	00	audio off: no forced sample rate
+65	W	90	*	0f	ff	01	
+66	W	90	1	c7	ff	7f	audio off: audio outputs tristated
+67	W	90	*	0f	ff	00	
+68	M	90	0	22	01	01	video logic reset
+69	D	-	-	-	-	1	
+70	M	90	0	22	01	00	
+71	M	90	0	10	02	02	W1C: write-back clears every bit that read 1 (traced 42 in T3, 02 in T4)
+72	M	90	0	12	80	80	W1C bit 7
+73	R	90	0	98	ff		informative
+74	W	90	*	0f	ff	01	
+75	M	90	1	c5	80	00	tristate off
+76	M	90	1	c6	80	00	tristate off
+77	W	90	1	c6	ff	00	MODE: dual pixel: c6 = 00, c5 stays 7f; single pixel instead W 1:c5 18
+78	W	90	*	0f	ff	00	
+79	M	90	0	8c	10	10	audio: wait-ready pulse
+80	M	90	0	8c	10	00	

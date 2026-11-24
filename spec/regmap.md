@@ -71,9 +71,9 @@ Descriptor format and protocol: `video-dma.md`.
 | Off | Name | Acc | Fields | Ev | Conf |
 |---|---|---|---|---|---|
 | 0x1000 | VIP_CTRL | RW | [0] output enable (gates frames into DMA) · [3:2] flip (always 0) · [6] cleared when enabling output · [7] 1 = scaler in path, 0 = bypass · [15:8] output pixel format code (`video-pipeline.md`) · [23:16] sharpness | `T2/S11`,`S` | C ([0],[7],[15:8]); L (rest) |
-| 0x1004 | IN_STATUS | RO | [1:0] input timing stable: 3 with a stable input (1080p60, 2160p60 4:2:0, 2160p29.97), also while not streaming. No-input value not yet read | `S`,`T4/S45` | C |
-| 0x1008 | IN_WIDTH | RO | [15:0] bus clocks per active line, not pixels: 0x780 (1920) at single-pixel 1080p60; 0x3c0 (960) at dual-pixel 2160p, both 4:2:0 SDR (60 Hz) and RGB DDR (29.97 Hz). Read while not streaming (PIX_MODE 0) | `S`,`T4/S45` | C |
-| 0x100c | IN_HEIGHT | RO | [15:0] detected active lines (0x438 at 1080p, 0x870 at 2160p); [31:16] second measurement (field), 0 for progressive input | `S`,`T4/S45` | C |
+| 0x1004 | IN_STATUS | RO | [1:0] input timing stable: 3 with a stable input (1080p60, 2160p60 4:2:0, 2160p29.97), also while not streaming. No-input value not yet read | `S`,`E` (during `T4/S45`) | C |
+| 0x1008 | IN_WIDTH | RO | [15:0] bus clocks per active line, not pixels: 0x780 (1920) at single-pixel 1080p60; 0x3c0 (960) at dual-pixel 2160p, both 4:2:0 SDR (60 Hz) and RGB DDR (29.97 Hz). Read while not streaming (PIX_MODE 0) | `S`,`E` (during `T4/S45`) | C |
+| 0x100c | IN_HEIGHT | RO | [15:0] detected active lines (0x438 at 1080p, 0x870 at 2160p); [31:16] second measurement (field), 0 for progressive input | `S`,`E` (during `T4/S45`) | C |
 | 0x1010 | IN_FRAME_PERIOD | RO | input frame period in 100 MHz ticks; fps = 1e8/val. `0xffffffff` with no input | `T1/S02`,`S` | C |
 | 0x1020 | CLIP_LEFT | RW | | `T1/S02`,`S` | C |
 | 0x1024 | CLIP_WIDTH | RW | | same | C |

@@ -6,6 +6,7 @@ Conventions:
 - I2C addresses are 8-bit. `B:RR` = bank B, register 0xRR (hex). "Bank 0" unless stated. W1C = write 1 to clear.
 - RD = reference driver (`README.md`). Register meanings come from how RD uses a register (`S`) and from traced values (`T…`). Unlisted registers and bits are unknown: write them only as the sequences do.
 - Trace times are ms after the first `I2C` line that follows the scenario's MARK in `traces/T<n>.tsv.xz`. Scenarios used most: `T1/S01` load with no input (first load after power-up); `T2/S10` load with no input (reload); `T3/S20` load with 2160p59.94 4:2:0 input (reload); `T3/S30` cable unplug at ≈22 s and replug at ≈31 s; `T3/S31` source switch 2160p→1080p through a 2.7 s signal loss, then a 5 V cycle and 1080p re-lock at ≈38 s; `T3/S21`… and `T3/S32` streaming.
+- `T4` is the PC loopback: a GPU output (DVI-D connector, DVI-to-HDMI cable) through the splitter, 5 V present throughout, with the GPU switching modes (`hdmi-chips.md`). Its I2C capture starts 2.35 s after the `S40` load MARK: the IT6805 init and the first polls are not in `T4` (3126 bus-1 completion interrupts in that gap carry no transfer data); MMIO, including the HPD pulse, is. Modes and stable entries: 2160p60 YCbCr 4:2:0 (`T4/S40` 953 ms, first lock after load; `T4/S44` 51820 ms), 1080p60 RGB (`T4/S41` 92588 ms, `T4/S44` 2956 ms, `T4/S45` 8890 ms), 2160p29.97 RGB (`T4/S43` 91337 ms, `T4/S45` 1580 ms). Every mode change kept 5 V and went through a sync loss (§7.9).
 
 ## Sequence files
 | File | Content |
@@ -13,11 +14,15 @@ Conventions:
 | `seq/it6805-init.tsv` | probe initialisation (§3) |
 | `seq/it6805-unplug.tsv` | "no 5 V" state entry (§7.5) |
 | `seq/it6805-power-saving.tsv`, `-power-standby.tsv`, `-power-normal.tsv` | power modes (§6) |
-| `seq/it6805-lock.tsv` | stable entry: output bus, colour, mute, video logic reset, unblank, with 1080p59.94 values (§7.6, §10) |
+| `seq/it6805-lock.tsv` | stable entry, single-pixel SDR: output bus, colour, mute, video logic reset, unblank. 1080p59.94 YCbCr 4:4:4 values; MODE notes give RGB values (§7.6, §10) |
+| `seq/it6805-lock-dual-sdr.tsv` | stable entry, dual-pixel SDR (rule a): 2160p60 YCbCr 4:2:0 values (§10) |
+| `seq/it6805-lock-dual-ddr.tsv` | stable entry, dual-pixel DDR (rule d): 2160p29.97 RGB values (§10) |
 
 Columns `n op dev bank reg mask value note`. Ops: W write; M read-modify-write `new = (old & ~mask) | value`; D delay (ms); P poll; R read (informative); X step described here (the note names the section). Small sequences (AV-mute release, audio on/off, sync loss) are given inline in §7 and §11.
 
-Replay check (`D`): applying the tables to the read values in the traces reproduces, in order, value and bank, every IT6805 register write of the `T1/S01` load (209 writes) and the `T3/S20` load (182), all power transitions in `T3/S20`/`S30`/`S31`, and the 1080p stable entry at `T3/S31` 38385 ms (46 writes). Not counted: bank selects (checked through the bank column; RD often re-selects the bank already selected, and the tables omit those repeats), EDID RAM bytes, X-step writes (checked separately). The second 1080p entry (`T3/S31` 27718 ms) differs in one intermediate write (row note in `it6805-lock.tsv`). The dual-pixel variant of §10.2 reproduces `T3/S30` 32766–33069 ms. At the first lock after a load (`T3/S20` 4557 ms) RD omits the first 0:6b write of the bus setting; the final register state is the same.
+Replay check (`D`): applying the tables to the read values in the traces reproduces, in order, value and bank, every IT6805 register write of the `T1/S01` load (209 writes) and the `T3/S20` load (182), all power transitions in `T3/S20`/`S30`/`S31`, and the 1080p stable entry at `T3/S31` 38385 ms (46 writes). Not counted: bank selects (checked through the bank column; RD often re-selects the bank already selected, and the tables omit those repeats), EDID RAM bytes, X-step writes (checked separately). The second 1080p entry (`T3/S31` 27718 ms) differs in one intermediate write (row note in `it6805-lock.tsv`). At the first lock after a load (`T3/S20` 4557 ms) RD omits the first 0:6b write of the bus setting; the final register state is the same.
+
+Replay against `T4` (`D`): the init, unplug, SAVING and STANDBY tables are not exercised (init not captured; no 5 V loss). NORMAL reproduces `T4/S40` 700.7 ms (22 writes). All 7 stable entries replay without error with the table of their bus mode and the MODE values of their input (46–47 writes each), apart from RD's bus-setting 0:6b write, which carries the previous lock's output colour (`T4/S41` 92588, `S44` 51820, `S45` 1580) or is omitted at the first lock after load (`T4/S40` 953). The published single-pixel table with its YCbCr 4:4:4 values differs from the RGB entries in exactly its three 0:6b MODE rows. The inline sequences of §7 (sync off, sync on, AV-mute release) reproduce all `T4` instances (6, 7, 7). Every IT6805 write in `T4` belongs to one of these sequences or to the poll's write-backs.
 
 ## 1. Device and access model
 
@@ -79,16 +84,16 @@ Ev/Conf apply to the meaning as stated. "RD" columns describe what RD does with 
 | Reg | Bit | Meaning | RD action | Ev | Conf |
 |---|---|---|---|---|---|
 | 0x05 | 0 | port-0 5 V changed | 5 V handler (§7.4) | `T3/S30`,`S31`,`S` | C |
-| | 1 | set when the TMDS clock arrives after 5 V (seen in 0x56) | first one after a 5 V return → NORMAL power (§6) | `T3/S20`,`S30`,`S31`,`S` | C (when set); U (meaning) |
+| | 1 | set when the TMDS clock arrives (0x56, 0x16): after a 5 V return and after a sync loss with 5 V held | first one after a 5 V return → NORMAL power (§6); otherwise none | `T3/S20`,`S30`,`S31`,`T4`,`S` | C (when set); U (meaning) |
 | | 2 | input clock changed | clears its symbol-loss counters; reads 0:13 | `S`,`T3` | L |
-| | 3 | set at signal loss (0x0c, 0x0d) | none | `T3/S30`,`S31` | U |
-| | 4 | HDMI/DVI mode changed | if 0:13 bit 3: HDMI → restart audio when stable; DVI → audio off and re-run the output enable when stable | `S` | L |
+| | 3 | set at signal loss (0x0c, 0x0d; 0x4c, 0x4e at the `T4` sync losses) | none | `T3/S30`,`S31`,`T4` | U |
+| | 4 | HDMI/DVI mode changed (RD's usage). Traced: set at every TMDS arrival; not set when 0:13 bit 1 later went 0 → 1 (`T4`, 6 of 6) | if 0:13 bit 3: HDMI → restart audio when stable; DVI → audio off and re-run the output enable when stable | `S`,`T3`,`T4` | L (meaning); C (observations) |
 | | 5 | ECC error | counted; recovery §7.9 | `S` | L (never seen) |
 | | 6 | deskew error | counted only | `S` | L |
 | 0x06 | 0 | symbol lock changed | log | `S`,`T3` | L |
-| | 4, 5, 6 | symbol lock lost on channel 0, 1, 2 | counted; §7.9 | `S`,`T3` (0xf1 at 5 V loss) | L |
+| | 4, 5, 6 | symbol lock lost on channel 0, 1, 2 | counted; §7.9 | `S`,`T3` (0xf1 at 5 V loss), `T4` (0xf1 at every sync loss) | L |
 | 0x07 | 3 | link mode (HDMI/MHL) changed | if 0:13 bit 6: NORMAL power. Written back alone (`value & 0x08`) | `S`,`T` | L |
-| | 0, 1 | set on every poll while unlocked (0x01 `S30`, 0x03 `S31`) | never cleared | `T3` | U |
+| | 0, 1, 2 | set at signal loss, then read on every poll while unlocked (0x01 `S30`, 0x03 `S31`, 0x07 after every `T4` sync loss); 0x00 before the first signal after a load (`T4/S40`) | never cleared | `T3`,`T4` | U |
 | | 4–7 | adaptive-equaliser done/fail flags | none (adaptive EQ unused) | `S` | L |
 | 0x08 | 0 | — | → WAIT_SYNC | `S` | L (never seen) |
 | | 2 | — | written 1 in the no-5 V entry | `T` | U |
@@ -98,18 +103,18 @@ Ev/Conf apply to the meaning as stated. "RD" columns describe what RD does with 
 | 0x0a | 0 | port-1 5 V changed | written back alone (`value & 0x01`) | `S`,`T` | C (always 0) |
 | 0x0d | 4, 5 | port-1 calibration done | init only | `T1`,`T3/S20` | C |
 | | 2 | — | written 1 in the no-5 V entry | `T` | U |
-| 0x10 | 1 | sync detect (0:19 bit 7) changed. Also set once ≈130 ms after each video logic reset with sync unchanged | edge handler (§7.4): acts only if 0:19 bit 7 differs from the stored value | `T3`,`S` | C |
-| | 2 | — | none; seen at signal arrival (0x16) and in the poll before audio on | `T3` | U |
-| | 4 | Set_AVMUTE received | when STABLE: AV mute on | `S`,`T3/S31` | L |
-| | 5 | Clear_AVMUTE received. Arrives only after the splitter unmutes TX port 1 (`hdmi-chips.md` cross-chip rules) | when STABLE: AV mute off | `S`,`T3` | C (arrival rule); L (action) |
-| | 6 | — | none; set by every video logic reset (0x42 read right after it) and at sync edges (0x52, 0x56, 0xc2) | `T3` | U |
+| 0x10 | 1 | sync detect (0:19 bit 7) changed. Also set once after each video logic reset with sync unchanged: first seen 127–136 ms after the reset at 60 Hz (still clear at 63–66 ms), 190–191 ms after it at 29.97 Hz (still clear at 127–129 ms) | edge handler (§7.4): acts only if 0:19 bit 7 differs from the stored value | `T3`,`T4`,`S` | C |
+| | 2 | — | none; seen at signal arrival (0x16), in the poll before audio on (`T3`), and near the splitter unmute (0x04, 0x24; `T4`) | `T3`,`T4` | U |
+| | 4 | Set_AVMUTE received. Seen at every TMDS arrival (`T3`, `T4`), while the splitter's TX port 1 is still muted, and at the `T3/S31` sync loss (0x52); not at the `T4` sync losses (0x02) | when STABLE: AV mute on | `S`,`T3`,`T4` | L |
+| | 5 | Clear_AVMUTE received. Arrives only after the splitter unmutes TX port 1 (`hdmi-chips.md` cross-chip rules): 1.9–72.5 ms after it in `T3`; 58–71 ms in `T4`, where the first poll after the unmute (its 0:10 read 1.8–3.1 ms after it) never had it | when STABLE: AV mute off | `S`,`T3`,`T4` | C (arrival rule); L (action) |
+| | 6 | — | none. `T3` (source with audio): set by every video logic reset (0x42 read right after it) and at sync edges (0x52, 0x56, 0xc2). `T4` (no audio): never set; 0x02 after every reset | `T3`,`T4` | U |
 | | 7 | audio event | when STABLE: audio logic reset and audio enable; also blocks "audio ready" | `S`,`T3` (0xc2 at unplug) | L |
 | 0x11 | 0, 1 | — | RD writes 0x11 = 0x01 / 0x02 | `S` | U |
 | | 2 | — | reads 2:28–2:2c and discards them | `S` | U |
 | | 3 | — | none (0x08 seen in `S31`) | `T3` | U |
 | | 6 | — | excluded from the write-back | `S` | U (never seen) |
 | 0x12 | 0 | AVI InfoFrame changed | reads 2:14/2:15 and compares with the stored copy (§7.8) | `S`,`T3` | C |
-| | 4 | — | none; seen at signal arrival | `T3` | U |
+| | 4 | — | none; seen at signal arrival in `T3` (0x91), not in `T4` (0x81) | `T3`,`T4` | U |
 | | 5 | DRM InfoFrame received | DRM check (§9.2) | `S` | L (never seen) |
 | | 7 | video parameters changed. Also reads 1 at the first poll after every video logic reset | read 0:1a, 0:1b; write 0x12 = 0x80; re-read HActive (§7.8) | `S`,`T3` | C |
 | 0x1d | 3 | HDCP encryption state changed (then 0:d6 bit 3 = encrypted) | log | `S` | L (never seen) |
@@ -123,40 +128,41 @@ Decide on single bits, not on whole values: intermediate values differ between e
 | Reg | Bit | Meaning | Observed | Ev | Conf |
 |---|---|---|---|---|---|
 | 0x13 | 0 | port-0 5 V present | 1 whenever the cable is powered | `T3`,`S` | C |
-| | 1 | HDMI (1) / DVI (0) | After a splitter TX reset it reads 0 until the splitter unmutes TX port 1, then 1 within 2.3 ms (`T3/S30`,`S31`). With no TX reset (`T3/S20`) it read 1 66 ms before the unmute. Cause unknown (`hdmi-splitter.md` §7.5) | `T3`,`S` | C |
+| | 1 | HDMI (1) / DVI (0) | After a splitter TX port soft reset it reads 0 from TMDS arrival until the splitter unmutes TX port 1, then 1 at the first poll after the unmute, within 2.3 ms (`T3/S30`,`S31`; all 6 `T4` mode changes, each with a soft reset: 1.2–2.0 ms). With no soft reset since init it read 1 from TMDS arrival, 65–66 ms before the unmute (`T3/S20`, `T4/S40`). Cause unknown (`hdmi-splitter.md` §7.5). 1 at every traced stable entry, PC source included (§9.1) | `T3`,`T4`,`S` | C |
 | | 3 | input clock present (RD's usage; RD bases its decisions on this bit) | set with signal | `S`,`T3` | L |
 | | 4 | input clock stable (RD's usage; RD only logs it). Bits 3 and 4 were set together in every trace, so the two names are not separable; code against the bit numbers | set with signal | `S`,`T3` | L |
 | | 6 | MHL link mode | 0 | `S`,`T` | L |
-| | 2, 5, 7 | — | set with signal; bit 5 alone for ≈100 ms after one unplug | `T3` | U |
-| | whole | 0x00 no cable · 0x01 5 V only · 0xbd clock and sync, HDMI not yet detected · 0xbf locked HDMI | | `T3` | C |
+| | 2, 5, 7 | — | set with signal; bit 5 alone for ≈100 ms after one unplug and for < 177 ms after one `T4` sync loss (0x21) | `T3`,`T4` | U |
+| | whole | 0x00 no cable · 0x01 5 V only · 0xbd clock and sync, HDMI not yet detected · 0xbf locked HDMI | | `T3`,`T4` | C |
 | 0x14 | 5:3 | symbol lock, channels 0–2 | 111 locked | `S`,`T3` | C |
 | | 6 | HDMI 2.0 mode (1/40 TMDS clock ratio) | 0 | `S` | U |
 | | 7 | scrambling active | 0 | `S` | U |
 | | 0 | — | always 1 | `T` | U |
-| | 1 | — | 1 after a 297 MHz link, 0 after 148.5 MHz; kept until 5 V loss | `T3` | U |
-| | whole | 0x01 no signal · 0x03 signal lost after 2160p · 0x39 1080p · 0x3b 2160p 4:2:0 | | `T3` | C |
+| | 1 | — | 1 with a 297 MHz link (2160p 4:2:0, 2160p29.97 RGB), 0 with 148.5 MHz. After a loss it stayed 1 in `T3/S31` (0x03 until the 5 V loss) but cleared at every `T4` sync loss (0x01) | `T3`,`T4` | C (values); U (meaning) |
+| | whole | 0x01 no signal · 0x03 signal lost after 2160p (`T3/S31` only) · 0x39 1080p · 0x3b 2160p (297 MHz link) | | `T3`,`T4` | C |
 | 0x15 | 5:2 | HDMI 2.x detection state | 0 | `S` | U |
-| | 7:6 | — | 11 in all 1996 reads | `T` | U |
+| | 7:6 | — | 11 in all reads (1996 in `T3`, 5987 in `T4`) | `T` | U |
 | 0x16–0x18 | | port-1 copies of 0x13–0x15 | 0 | `S`,`T` | L |
 | 0x19 | 7 | video sync detected ("sync") | 1 with sync | `S`,`T3` | C |
-| | 6:0 | — | 0x3e with sync. Without sync 0x20 (with or without 5 V) or 0x30 (bit 4 toggling, only seen with 5 V) | `T3` | U |
+| | 6:0 | — | 0x3e with sync (0x3c in 2 of 1993 `T4` reads). Without sync 0x20 (with or without 5 V) or 0x30 (bit 4 toggling, only seen with 5 V) | `T3`,`T4` | U |
 | 0x1a | 6, 3, 1 | any set at a parameter change → reconfigure | 0x01 with signal, 0x00 after loss | `S`,`T3` | L |
 | 0x1b | 1 | set at a parameter change → reconfigure | 0x08 always | `S`,`T3` | L |
 | | 5:4 | pixel repetition: 0 none, 1 → ×2, 3 → ×4 | 0 | `S`,`T3` | L (repetition never traced) |
-| 0x43 | 7:5 | TMDS-counter window, set by hardware (§8.2). RD writes 0x01 once at init | 0x21 at 297 MHz, 0x01 at 148.5 MHz | `T3`,`S` | C |
+| 0x43 | 7:5 | TMDS-counter window, set by hardware (§8.2). RD writes 0x01 once at init | 0x21 at 297 MHz (2160p 4:2:0, 2160p29.97 RGB), 0x01 at 148.5 MHz | `T3`,`T4`,`S` | C |
 | 0x48 | all | TMDS-clock count (§8.2) | 0x13/0x14 | `T3`,`S` | C |
 | 0x98 | 1 | interlaced | 0 | `S`,`T3` | L (interlace never traced) |
-| | 7:4 | deep-colour code from the source's GCP: 4 = 24 bit, 5 = 30, 6 = 36, other = 24 | 0x48 at 1080p, 0x08 at 2160p (no code), 0x00 right after the video logic reset | `S`,`T3` | C (4 and 0); U (5, 6) |
+| | 7:4 | deep-colour code from the source's GCP: 4 = 24 bit, 5 = 30, 6 = 36, other = 24 | 0x48 at 1080p from the Roku (`T3`); 0x08 (no code) at 2160p and in every mode of the PC source (`T4`); 0x00 right after the video logic reset | `S`,`T3`,`T4` | C (4 and 0); U (5, 6) |
 | | 3 | — | 1 during measurement | `T3` | U |
 | 0x99, 0x9a | | pixel-clock counter (§8.2) | | `S`,`T3` | C |
 | 0x9b–0xa8 | | timing registers (§8.1) | | `S`,`T3` | C |
 | 0xaa | 3 | source AV mute (GCP Set_AVMUTE state) | 0 | `S`,`T3` | L |
-| | 5 | HSYNC polarity, 1 = positive | 1 | `S`,`T3`,`D` | L |
-| | 6 | VSYNC polarity, 1 = positive | 1 | `S`,`T3`,`D` | L |
+| | 5 | HSYNC polarity, 1 = positive | 1 | `S`,`T3`,`T4`,`D` | L |
+| | 6 | VSYNC polarity, 1 = positive | 1 | `S`,`T3`,`T4`,`D` | L |
+| | 0 | — | 1 only at 2160p29.97 (0x61; `T4/S43`, `S45`); 0 in the other traced modes (0x60) | `T4` | U |
 | 0xb0–0xb9 | | audio status (§2.7) | | | |
 | 0xd6 | 3 | HDCP encryption active | never read in traces | `S` | U |
 
-Polarity: both traced modes (VIC 16 and VIC 97) have positive syncs per CTA-861 and read bits 6:5 = 11 (`D`). No negative-polarity source was traced (open question 24).
+Polarity: all traced modes (VIC 16, 95 and 97) have positive syncs per CTA-861 and read bits 6:5 = 11 (`T3`,`T4`,`D`). No negative-polarity source was traced (open question 24).
 
 ### 2.3 Reset, power and PHY control
 | Reg | Use | Values | Ev | Conf |
@@ -214,7 +220,7 @@ Traced porches were < 256, so the upper-bit fields of 0xa1/0xa8 read 0 in every 
 | 6:10, 6:11, 6:12 | DRM HB0 (type 0x87), HB1 (version), HB2 (length) | `S` | L |
 | 6:13… | DRM PB0 (checksum), PB1… | `S` | L |
 
-Layout check (`D`, `T3/S30`, `S31`): with HB = 82 02 0d and PB0 at 2:14, PB1 at 2:15, both traced AVI frames sum to 0 mod 256 (2160p: PB0–PB5 = 06 60 a8 00 61 00; 1080p: 77 40 a8 00 10 00; PB6–PB13 = 0).
+Layout check (`D`, `T3/S30`, `S31`, `T4`): with HB = 82 02 0d and PB0 at 2:14, PB1 at 2:15, all five traced AVI frames sum to 0 mod 256. PB0–PB5: Roku 2160p 06 60 a8 00 61 00; Roku 1080p 77 40 a8 00 10 00; PC 1080p60 af 00 28 88 10 00; PC 2160p29.97 60 00 28 88 5f 00; PC 2160p60 82 60 a8 84 61 00. PB6–PB13 = 0 (for the PC frames read from the splitter's copy, `hdmi-splitter.md` §6.7, whose PB0–PB5 are the same).
 
 ### 2.6 Output path
 | Reg | Field | Meaning and values | Ev | Conf |
@@ -222,8 +228,8 @@ Layout check (`D`, `T3/S30`, `S31`): with HB = 82 02 0d and PB0 at 2:14, PB1 at 
 | 0:64 | bit 2 | dual-pixel split: 0 = even/odd pixels (RD), 1 = left/right halves | `S` | L |
 | | bit 1 | pulsed 1→0 before and after every bus setting (0x81→0x83→0x81) | `T3` | C (writes); U |
 | 0:6b | bit 6 | 1 (reset value 0x40) | `T3` | C |
-| | 5:4 | input colour format: 0 RGB, 1 YCbCr 4:2:2, 2 YCbCr 4:4:4, 3 YCbCr 4:2:0 (AVI Y). DVI: 1 | `S`,`T3` | C |
-| | 3:2 | output colour format, same coding. RD: = input | `S`,`T3` | C |
+| | 5:4 | input colour format: 0 RGB, 1 YCbCr 4:2:2, 2 YCbCr 4:4:4, 3 YCbCr 4:2:0 (AVI Y). DVI: 1 | `S`,`T3`,`T4` | C (0, 2, 3); L (1) |
+| | 3:2 | output colour format, same coding. RD: = input | `S`,`T3`,`T4` | C (0, 2, 3); L (1) |
 | | 1:0 | output depth: 0 = 8, 1 = 10, 2 = 12 bit (from 0:98[7:4]) | `S`,`T3` | C (0); U (1, 2) |
 | | 0 | 0 = HDMI, 1 = DVI (shares bit 0 with the depth field in RD's usage; RD writes both) | `S` | U |
 | 0:6c | 1:0 | colour converter: 0 bypass (RD), 2 RGB→YCbCr, 3 YCbCr→RGB | `S`,`T3` | C (0); U (2, 3) |
@@ -236,10 +242,10 @@ Layout check (`D`, `T3/S30`, `S31`): with HB = 82 02 0d and PB0 at 2:14, PB1 at 
 | 1:c0 | 0 | dual-pixel output | `S`,`T3` | C |
 | | 2:1 | 01 = parallel output path | `S`,`T` | C |
 | | 7:6 | 01 from init; selects the 1:c5 unblank value (§10.5) | `S`,`T` | L |
-| 1:c1 | 1 | DDR (data on both clock edges) | `S`,`T` | L (only 0 traced with video) |
+| 1:c1 | 1 | DDR (data on both clock edges): 1 at 2160p29.97 RGB, frames correct | `S`,`T`,`T4/S43`,`S45` | C |
 | | 0 | half-bus DDR; never selected | `S` | U |
 | | 5 | embedded sync (0 = separate syncs, RD) | `S` | L |
-| 1:c4 | | 0x10 for dual-pixel DDR, 0x00 otherwise; init clears bits 7:4 | `S`,`T3` | L |
+| 1:c4 | | 0x10 for dual-pixel DDR, 0x00 otherwise; init clears bits 7:4 | `S`,`T3`,`T4` | C |
 | 1:c5, 1:c6 | | output enable / tristate groups (§10.5); exact bit groups unknown | `S`,`T3` | C (values) |
 | 1:fe | 4 | set at every bus setting; 1:fe also holds reference-clock bits (§3.5) | `T` | C (writes) |
 | 5:20 | 6 | 1 = internal down-scaler bypassed (set at every bus setting) | `S`,`T3` | L |
@@ -391,7 +397,7 @@ Mechanism (`T1/S01`,`T3/S20`; C · `S` for the physical-address search; L):
 | Line | FPGA GPIO 0x040 bit 2 drives the HPD input of splitter TX port 1, i.e. the IT6805 side. No IT6805 register is involved: RD's HPD requests only raise an event that the board code maps to this bit | `S`,`T3/S20`,`S30`,`S31` | C |
 | Polarity | 1 = asserted (high). TX port 1 latched its HPD event 84–104 ms after bit 2 went high (`hdmi-splitter.md` §2.2). The fall latency is unmeasured (open question 23). Evidence: `hdmi-chips.md`, `hdmi-splitter.md` | `T3` | C (rise); U (fall) |
 | Access | read-modify-write of 0x040; preserve the other bits | `T`,`S` | C |
-| Load pulse | after the IT6805 init RD writes bit 2 = 1, waits 10 ms, writes 0, waits 100 ms, writes 1 (measured 17.8–19.2 ms and 108.1–108.2 ms; `T1/S01` 240.6/259.3/367.5 ms, `T2/S10` 232.2/251.4/359.5 ms, `T3/S20` 181.8/199.6/307.7 ms). End state 1, even with no input | `T1/S01`,`T2/S10`,`T3/S20` | C |
+| Load pulse | after the IT6805 init RD writes bit 2 = 1, waits 10 ms, writes 0, waits 100 ms, writes 1 (measured 16.0–19.2 ms and 108.1–108.2 ms; `T1/S01` 240.6/259.3/367.5 ms, `T2/S10` 232.2/251.4/359.5 ms, `T3/S20` 181.8/199.6/307.7 ms, `T4/S40` −1754.8/−1738.8/−1630.6 ms, i.e. before its first captured transfer). End state 1, even with no input | `T1/S01`,`T2/S10`,`T3/S20`,`T4/S40` | C |
 | 5 V loss | bit 2 = 0, written twice 9.4 ms apart (`T3/S30` 22055.1/22064.5, `S31` 29731.0/29740.4), before the no-5 V entry | `T3/S30`,`S31` | C |
 | 5 V return | bit 2 = 1, written once, after the STANDBY sequence, 5.5–7.5 ms after the 0:05 read (`T3/S30` 31292.5, `S31` 33555.6) | `T3/S30`,`S31` | C |
 | During init | RD's requests are dropped (no GPIO write during IT6805 init) | `T1/S01`,`T3/S20` | C |
@@ -433,8 +439,8 @@ Three modes, selected by port-0 5 V and by the TMDS clock arriving. Sequences: `
 |---|---|---|---|---|
 | → SAVING | port-0 5 V absent: at init, or 0:05 bit 0 with 0:13 bit 0 = 0 | `T1/S01` init; `T3/S30` 22081; `S31` 29758 | `T`,`S` | C |
 | SAVING → STANDBY | 5 V present (init, the NO_5V state's poll of 0:13, or 0:05 bit 0) and the current mode is SAVING. Every 5 V-on also arms "NORMAL on the next 0:05 bit 1" | `T3/S20` init; `S30` 31288; `S31` 33552 | `T`,`S` | C |
-| STANDBY → NORMAL | first 0:05 bit 1 while armed; then disarmed | `T3/S20` 4298; `S30` 32503; `S31` 38124 | `T`,`S` | C |
-| none | sync lost and found with 5 V held | `T3/S31` 24713–27455 | `T` | C |
+| STANDBY → NORMAL | first 0:05 bit 1 while armed; then disarmed | `T3/S20` 4298; `S30` 32503; `S31` 38124; `T4/S40` 700.7 | `T`,`S` | C |
+| none | sync lost and found with 5 V held | `T3/S31` 24713–27455; all 6 `T4` mode changes (§7.9) | `T` | C |
 | → NORMAL | link-mode (MHL) change: 0:07 bit 3 with 0:13 bit 6 = 1 | never | `S` | L |
 
 - Port 1 keeps its SAVING values after the first SAVING entry; STANDBY and NORMAL touch port-0 registers only. (`S`,`T`; C)
@@ -442,8 +448,8 @@ Three modes, selected by port-0 5 V and by the TMDS clock arriving. Sequences: `
 
 ## 7. Runtime
 ### 7.1 Poll loop
-- RD re-queues its poll 50 ms after each cycle ends (20 ms after a resume). Measured interval in `T3/S30`: median 64.5 ms, 10–90 % range 62.4–67.8 ms, minimum 57.6 ms. A cycle containing the stable entry takes ≈0.3 s (§7.6); other work of RD delayed single cycles by up to 0.7 s (`T3/S20` 416–1108 ms). (`S`,`T3`; C)
-- Transfers per cycle, bank selects included: NO_5V 9 (24 every 4th cycle); WAIT_SYNC 38 (53 every 4th); STABLE 56 (61 every 4th). (`T1/S01`,`T3`; C)
+- RD re-queues its poll 50 ms after each cycle ends (20 ms after a resume). Measured interval in `T3/S30`: median 64.5 ms, 10–90 % range 62.4–67.8 ms, minimum 57.6 ms; in `T4/S42`, `S43` (STABLE, no audio): median 63.9 ms, 10–90 % 60.0–64.5 ms. A cycle containing the stable entry takes ≈0.3 s (§7.6); other work of RD delayed single cycles by up to 0.7 s (`T3/S20` 416–1108 ms). (`S`,`T3`; C)
+- Transfers per cycle, bank selects included: NO_5V 9 (24 every 4th cycle); WAIT_SYNC 38 (53 every 4th); STABLE 56 (61 every 4th with audio ON; 68 every 3rd while audio waits in WAIT_READY, §11.1). (`T1/S01`,`T3`,`T4`; C)
 - RD's IT6805 code has no unbounded register wait; its only loop, the calibration wait, gives up after ≈0.4 s (§3.3). RD has no timeout for "5 V but no sync": it stays in WAIT_SYNC indefinitely. Driver: keep polling, report "no signal" while waiting, and give every wait it adds its own limit. (`S`,`T3`; L)
 
 ### 7.2 Poll order (RD)
@@ -484,7 +490,7 @@ Traced pairs: 0:12 read 0x91 → wrote 0x11, then 0x80; 0:12 read 0x80 → wrote
 | 0:05 bit 5, 0:06 bits 4–6 | counters; §7.9 | `S` | L |
 | 0:08 bit 0 | state WAIT_SYNC | `S` | L |
 | 0:08 bit 7 | M 0:4c 80 80 | `S` | L |
-| 0:10 bit 1 | read 0:19; compare bit 7 with the stored value; act only on a change (the event also fires ≈130 ms after each video logic reset with sync unchanged: `T3/S20` 4985, `S30` 33200, `S31` 28147, 38808). On: M 0:40 03 00, state DEBOUNCE (count 4). Off: M 0:40 03 02, state WAIT_SYNC (tristate), audio off (§11) | `T3`,`S` | C |
+| 0:10 bit 1 | read 0:19; compare bit 7 with the stored value; act only on a change (the event also fires once after each video logic reset with sync unchanged, §2.1: `T3/S20` 4985, `S30` 33200, `S31` 28147, 38808, and after all 7 `T4` entries). On: M 0:40 03 00, state DEBOUNCE (count 4). Off: M 0:40 03 02, state WAIT_SYNC (tristate), audio off (§11) | `T3`,`T4`,`S` | C |
 | 0:10 bit 4, STABLE | AV mute on (§7.7) | `T3/S31`,`S` | L |
 | 0:10 bit 5, STABLE | AV mute off (§7.7) | `S` | L |
 | 0:10 bit 7, STABLE | audio logic reset, then audio enable (§11) | `S` | L |
@@ -499,30 +505,30 @@ Traced pairs: 0:12 read 0x91 → wrote 0x11, then 0x80; 0:12 read 0x80 → wrote
 |---|---|---|---|---|---|
 | NO_5V | `seq/it6805-unplug.tsv`: 3:e5[4:2] = 0; W1C 0:08 = 0x04, 0:0d = 0x04; audio-logic pulse 0:22 = 0x12 → 0x10; port resets 0:23 and 0:2b = 0xac → 0xa0; tristate. Clears all video and audio flags | 5 V: 0:13 bit 0 polled, or 0:05 bit 0 | WAIT_SYNC via the 5 V handler | `T`,`S` | C |
 | WAIT_SYNC | tristate (1:c5 = 1:c6 = 0xff); clear the stable flags | 0:19 bit 7 = 1 (polled), or the 0:10 bit 1 handler with sync on | DEBOUNCE | `T3`,`S` | C |
-| DEBOUNCE | count = 4 | count reaches 0: the stable entry runs in the 4th poll after the one that saw sync (252–258 ms in all 4 traced locks) | STABLE | `T3`,`S` | C |
+| DEBOUNCE | count = 4 | count reaches 0: the stable entry runs in the 4th poll after the one that saw sync (246–266 ms after the sync-on write in all 11 traced locks, 4 in `T3`, 7 in `T4`) | STABLE | `T3`,`T4`,`S` | C |
 | STABLE | stable entry (§7.6) | sync off (0:10 bit 1) → WAIT_SYNC; 5 V off → NO_5V; 0:08 bit 0 → WAIT_SYNC | | `T3`,`S` | C |
 
 - After a 5 V loss RD runs the NO_5V entry and then, in the same poll, handles the sync-off event, which moves it to WAIT_SYNC. It then polls all event registers until 5 V returns. Harmless. (`T3/S30` 22077–22094; C)
-- A sync loss during DEBOUNCE returns to WAIT_SYNC (`S`; L). Driver: also require 0:13 bit 0 and bits 3/4 set and 0:14 bits 5:3 = 111 before the stable entry (all held at every traced entry; `T3`; C for the observation, L as a rule).
+- A sync loss during DEBOUNCE returns to WAIT_SYNC (`S`; L). Driver: also require 0:13 bit 0 and bits 3/4 set and 0:14 bits 5:3 = 111 before the stable entry (all held at every traced entry; `T3`,`T4`; C for the observation, L as a rule).
 
-### 7.6 Stable entry (`seq/it6805-lock.tsv`)
-Runs once per lock. RD order (`T3/S20` 4557–4855, `S30` 32766–33068, `S31` 27718–28016 and 38385–38680; C):
+### 7.6 Stable entry (`seq/it6805-lock*.tsv`)
+Runs once per lock. One table per bus mode (§10.2): `it6805-lock.tsv` single SDR, `it6805-lock-dual-sdr.tsv`, `it6805-lock-dual-ddr.tsv`. RD order (`T3/S20` 4557–4855, `S30` 32766–33068, `S31` 27718–28016 and 38385–38680; the 7 `T4` entries listed under Conventions; C):
 1. 0:90 = 0x8f (purpose unknown; replay it).
 2. Measurement (§8): RD samples the TMDS counter (10 × 10 ms) and the pixel counter (5 × 3 ms), then reads the timing registers. Only the timing registers are needed, plus a coarse clock class (§10.1).
 3. 1:b0 bit 0 from the pixel clock (§10.2).
 4. Read the AVI InfoFrame (§9.1).
-5. Output-bus setting (§10.2).
+5. Output-bus setting (§10.2). Its 0:6b write carries the output colour of the previous lock (none at the first lock after a load); step 6 writes the final value while the outputs are still tristated. A driver can write the new value here.
 6. Output enable: colour format, converter bypass, depth (§10.3).
 7. AV mute on: 0:4f bits 7, 5 = 1; 1:c5 bit 7 = 1.
 8. Audio off (state REQUEST): 0:81 bit 6 = 0; 1:c7 = 0x7f.
-9. Video logic reset: 0:22 bit 0 = 1, ≥ 1 ms (measured 9–12 ms), = 0. Then M 0:10 02 02 (clears every pending 0:10 bit) and M 0:12 80 80.
+9. Video logic reset: 0:22 bit 0 = 1, ≥ 1 ms (measured 9–13 ms), = 0. Then M 0:10 02 02 (clears every pending 0:10 bit) and M 0:12 80 80.
 10. Unblank (§10.5): 1:c5 bit 7 = 0, 1:c6 bit 7 = 0; single pixel: 1:c5 = 0x18; dual pixel: 1:c6 = 0x00.
 11. Audio WAIT_READY: 0:8c bit 4 pulse (§11).
 
-Step 1 to step 10 took 293–302 ms in RD (`T3/S20` 297.7, `S30` 301.5, `S31` 297.3 and 293.5), nearly all of it the counter sleeps of step 2. After the video logic reset, 0:12 bit 7 reads 1 again at the next poll; RD ignores this first event after an entry (§7.8). (`T3`; C)
+Step 1 to step 10 took 293–305 ms in RD (`T3/S20` 297.7, `S30` 301.5, `S31` 297.3 and 293.5; `T4` 293.3–304.2), nearly all of it the counter sleeps of step 2. After the video logic reset, 0:12 bit 7 reads 1 again at the next poll; RD ignores this first event after an entry (§7.8). (`T3`; C)
 
 ### 7.7 AV mute
-- On (RD), at every stable entry and on 0:10 bit 4 while STABLE: M 0:4f a0 a0 (0x84 → 0xa4); M 1:c5 80 80. (`T3`; C)
+- On (RD), at every stable entry and on 0:10 bit 4 while STABLE: M 0:4f a0 a0 (0x84 → 0xa4); M 1:c5 80 80. (`T3`,`T4`; C)
 - Release (RD), checked every STABLE poll: when 0:4f bit 5 = 1 and the source AV mute 0:aa bit 3 = 0:
 
   | op | reg | mask | value | note |
@@ -533,14 +539,14 @@ Step 1 to step 10 took 293–302 ms in RD (`T3/S20` 297.7, `S30` 301.5, `S31` 29
   | M | 0:4f | a0 | a0 | |
   | M | 0:4f | a0 | 80 | 0xa4 → 0x84 |
 
-  Traced: single pixel 1:c5 18 → 19 → 18 (`T3/S31` 38746); dual 7f → 7e → 7f (`T3/S20` 4920.9–4922.2, `S30` 33136). First release one poll after the stable entry (≈65 ms). (`T3`; C)
-- The source's AV mute clears only after the splitter unmutes TX port 1 (`hdmi-chips.md`, cross-chip rules). Until then 0:aa bit 3 stays 1 and the output stays muted. (`T3`; C for the order in 4 of 4 locks)
+  Traced: single pixel 1:c5 18 → 19 → 18 (`T3/S31` 38746; `T4/S41` 92961, `S44` 3320, `S45` 9250); dual 7f → 7e → 7f (`T3/S20` 4920.9–4922.2, `S30` 33136; `T4/S40` 1315, `S43` 91698, `S44` 52181, `S45` 1941). `T4` times are those of the final 0:4f write. First release one poll after the stable entry (≈65 ms; 65–69 ms after the unblank in `T4`). (`T3`,`T4`; C)
+- The source's AV mute clears only after the splitter unmutes TX port 1 (`hdmi-chips.md`, cross-chip rules). Until then 0:aa bit 3 stays 1 and the output stays muted. (`T3`,`T4`; C for the order in 11 of 11 locks.) In every traced lock the Clear_AVMUTE arrived before the stable entry, so the release ran at the first STABLE poll.
 - RD's release does not clear 1:c5 bit 7. After a source AV mute while STABLE, 1:c5 bit 7 would stay set until the next stable entry; this never happened in the traces. Driver: after the release, rewrite the unblank value of §10.5. UNVERIFIED: needs a source that toggles AV mute while locked. (`S`; U)
 
 ### 7.8 Changes while STABLE
 - AVI change (0:12 bit 0 with a new 2:14/2:15): RD reconfigures in the next poll: re-measure, re-read AVI, 1:b0, bus setting, output enable, video logic reset, unblank. No AV-mute cycle. (`S`; L, never traced)
 - Parameter change (0:12 bit 7): the first one after a stable entry is self-induced (video logic reset) and ignored. For a later one RD distinguishes two cases. If a reconfiguration has run since the stable entry, it reconfigures when HActive (0x9d/0x9e) changed, or 0:1a & 0x4a ≠ 0, or 0:1b & 0x02 ≠ 0. Otherwise it re-evaluates only the DDR rule (§10.1; this rewrites 1:c0[2:1], 1:c1 and 1:c4) and reconfigures only if DDR is now required; in that re-evaluation HActive = 2880 also counts as SDR. (`S`,`T3` for the self-induced event; L)
-- In the traces every source mode change went through sync loss (`T3/S31`: sync lost at 24713, found at 27455, new stable entry at 27718). (`T3`; C)
+- In the traces every source mode change went through sync loss: `T3/S31` (sync lost at 24713, found at 27455, new stable entry at 27718) and all 6 GPU mode changes of `T4` (§7.9). The AVI-change and parameter-change paths above were never exercised. (`T3`,`T4`; C)
 - Driver: while STABLE, re-read the timing registers on 0:12 bit 7 or bit 0; if HTotal, VTotal, HActive, VActive, interlace or AVI Y differ from the values programmed, run the stable entry again and emit a source change. Mode change while streaming is untested (open question 24). (`D`; U)
 
 ### 7.9 Loss, re-lock and recovery
@@ -550,10 +556,13 @@ Step 1 to step 10 took 293–302 ms in RD (`T3/S20` 297.7, `S30` 301.5, `S31` 29
 | Signal returns, 5 V held | 0:05 = 0x56; 0:06 = 0x01; 0:13 → 0xbd; 0:14 → 0x39; 0:10 = 0x56; 0:12 = 0x91; 0:19 = 0xbe | no power change; sync on: 0:40 = 0, DEBOUNCE; stable entry 4 polls later | `T3/S31` 27455 | C |
 | 5 V loss | 0:05 bit 0 (0x05, 0x0d); 0:06 = 0xf1; 0:13 bit 0 = 0; 0:10 = 0xc2, read later in the same poll | HPD low; NO_5V entry; SAVING; then sync-off handling | `T3/S30` 22051; `S31` 29728 | C |
 | 5 V return | 0:05 = 0x01; 0:13 = 0x01 | STANDBY; WAIT_SYNC; HPD high | `T3/S30` 31285; `S31` 33550 | C |
-| TMDS arrival after a 5 V return | 0:05 = 0x56; 0:06 = 0x01; 0:13 → 0xbd (0xbf in `S20`); then in the same poll 0:10 = 0x12 or 0x16, 0:12 = 0x91, 0:19 = 0xbe | NORMAL, then sync on as above | `T3/S20` 4296; `S30` 32501; `S31` 38122 | C |
+| TMDS arrival after a 5 V return | 0:05 = 0x56 (0x16 in `T4/S40`); 0:06 = 0x01; 0:13 → 0xbd (0xbf at the first signal after a load: `T3/S20`, `T4/S40`); then in the same poll 0:10 = 0x12 or 0x16, 0:12 = 0x91 (0x81 in `T4`), 0:19 = 0xbe | NORMAL, then sync on as above | `T3/S20` 4296; `S30` 32501; `S31` 38122; `T4/S40` 698 | C |
+| Sync loss at a source mode change, 5 V held (PC source) | in one poll: 0:05 = 0x4c or 0x4e; 0:06 = 0xf1; 0:07 = 0x07; 0:10 = 0x02 (no Set_AVMUTE); 0:13 0xbf → 0x01 (0x21 once); 0:14 → 0x01; 0:19 = 0x20 or 0x30. Once (`T4/S41` 91428) the poll before already read 0:19 = 0x20 with 0:13 = 0xbf and no event | sync off: 0:40 = 2, WAIT_SYNC, tristate, audio off. No power change, no HPD write | `T4/S41` 91492, `S43` 90078, `S44` 1860, 50594, `S45` 262, 7812 | C |
+| Signal returns after the mode change (PC source) | 0.81–1.06 s after the loss, in one poll: 0:05 = 0x56; 0:06 = 0x01; 0:13 = 0xbd; 0:14 = 0x39 (1080p) or 0x3b (2160p); 0:10 = 0x12 or 0x16; 0:12 = 0x81; 0:19 = 0xbe (0xbc once). Then 0:13 → 0xbf at the first poll after the splitter's TX port 1 unmute (64–68 ms after TMDS) and Clear_AVMUTE (0:10 = 0x20, 0x24) one poll later | sync on in the same poll: 0:40 = 0, DEBOUNCE. Stable entry 248–265 ms after sync on, unblank 293–304 ms after the entry, AV-mute release one poll later (§7.7). Loss to release 1.43–1.67 s. No power change | `T4/S41` 92318, `S43` 91084, `S44` 2699, 51562, `S45` 1324, 8629 | C |
 | ECC errors | more than 10 ECC events (0:05 bit 5) count one round; action at the 3rd round. The event count restarts on 0:05 bit 1, on 0:09 bit 0 or 3, and at the no-5 V entry | equaliser reset: 3:2c = 0, 3:2d = 7, 0:07 = 0xff, 0:23 = 0xb0, 1 ms, 0:23 = 0xa0, 3:27–3:29 = 0x9f, 3:22 = 0, 3:4b bit 7 = 0; then full logic reset: HPD low, 0:08 = 0x04, 0:22 = 0x12 → 0x10, 0:23 = 0xac → 0xa0; then the 5 V handler | `S` | L (never traced) |
 | Persistent symbol-lock loss | all three channel counters (0:06 bits 4–6) above 20, HDMI 1.x, no override yet; the counters restart on 0:05 bit 2 | 3:e5 bits 4:2 = 111 | `S` | L (never traced) |
 
+- The Roku source switch (`T3/S31` 24713) and the GPU mode changes (`T4`) differ only in the events: at the loss 0:05 = 0x0c, 0:10 = 0x52 (Set_AVMUTE first) and 0:14 = 0x03 in `T3`; at the return 0:10 = 0x56 and 0:12 = 0x91. RD wrote the same registers. (`T3`,`T4`; C)
 - The timing registers keep their last values after a loss (`T3/S30`: 1920 × 2160 read with no signal) and read garbage before the first lock (`T1/S01`: HActive 180). Read them only in STABLE. (`T`; C)
 - No adaptive equalisation runs; the static values and the calibration are the only link training. HDMI 2.0 rates (> 340 MHz, scrambling) need no host action in RD and were never traced. (`S`,`T`; C for the traces, U for HDMI 2.0)
 - The recovery paths are code-only. If implemented, bound them: at most one full logic reset per few seconds, and report "no signal" while recovering. (`D`; U)
@@ -565,22 +574,22 @@ RD's "locked" = STABLE and the stable entry done. Lock is reported at the start 
 ### 8.1 Timing registers
 Valid in STABLE only (§7.9). Bank 0.
 
-| Quantity | Formula | 1080p59.94 (`T3/S31`) | 2160p59.94 4:2:0 (`T3/S30`) |
-|---|---|---|---|
-| HTotal | 0x9b + 256 × (0x9c & 0x3f) | 2200 | 2200 |
-| HActive | 0x9d + 256 × (0x9e & 0x3f) | 1920 | 1920 |
-| HFrontPorch | 0xa0 + 256 × (0xa1 >> 4) | 88 | 88 |
-| HSync | 0x9f + 256 × (0xa1 & 1) | 44 | 44 |
-| HBackPorch | HTotal − HActive − HFrontPorch − HSync | 148 | 148 |
-| VTotal | 0xa2 + 256 × (0xa3 & 0x3f) | 1125 | 2250 |
-| VActive | 0xa4 + 256 × (0xa5 & 0x3f) | 1080 | 2160 |
-| VFrontPorch | 0xa7 + 256 × (0xa8 >> 4) | 4 | 8 |
-| VSync | 0xa6 + 256 × (0xa8 & 1) | 5 | 10 |
-| VBackPorch | VTotal − VActive − VFrontPorch − VSync | 36 | 72 |
-| Interlaced | 0x98 bit 1 | 0 | 0 |
-| H / V sync positive | 0xaa bit 5 / bit 6 | 1 / 1 | 1 / 1 |
+| Quantity | Formula | 1080p59.94 (`T3/S31`) | 2160p59.94 4:2:0 (`T3/S30`) | 2160p29.97 RGB (`T4/S43`,`S45`) |
+|---|---|---|---|---|
+| HTotal | 0x9b + 256 × (0x9c & 0x3f) | 2200 | 2200 | 4400 |
+| HActive | 0x9d + 256 × (0x9e & 0x3f) | 1920 | 1920 | 3840 |
+| HFrontPorch | 0xa0 + 256 × (0xa1 >> 4) | 88 | 88 | 176 |
+| HSync | 0x9f + 256 × (0xa1 & 1) | 44 | 44 | 88 |
+| HBackPorch | HTotal − HActive − HFrontPorch − HSync | 148 | 148 | 296 |
+| VTotal | 0xa2 + 256 × (0xa3 & 0x3f) | 1125 | 2250 | 2250 |
+| VActive | 0xa4 + 256 × (0xa5 & 0x3f) | 1080 | 2160 | 2160 |
+| VFrontPorch | 0xa7 + 256 × (0xa8 >> 4) | 4 | 8 | 8 |
+| VSync | 0xa6 + 256 × (0xa8 & 1) | 5 | 10 | 10 |
+| VBackPorch | VTotal − VActive − VFrontPorch − VSync | 36 | 72 | 72 |
+| Interlaced | 0x98 bit 1 | 0 | 0 | 0 |
+| H / V sync positive | 0xaa bit 5 / bit 6 | 1 / 1 | 1 / 1 | 1 / 1 |
 
-- Both columns match CTA-861 VIC 16 and VIC 97 with horizontal values halved for 4:2:0 (`D`). (`T3`,`S`; C)
+- The columns match CTA-861 VIC 16, VIC 97 (horizontal values halved for 4:2:0) and VIC 95 (`D`). HTotal 4400 uses 0x9c bit 4. The PC source's 1080p60 and 2160p60 4:2:0 read the same values as the `T3` columns (`T4`). (`T3`,`T4`,`S`; C)
 - 4:2:0 input: horizontal values count TMDS clocks, half the pixels; multiply by 2 for the picture (RD doubles HActive). (`T3/S30`,`S`; C)
 - Interlaced input: RD doubles the field height. Pixel repetition (0:1b[5:4]): RD divides. Neither was traced; UNVERIFIED (open question 24). (`S`; U)
 - RD programs no sync polarity anywhere (IT6805 output or FPGA); it only reads 0:aa. Negative-polarity sources are UNVERIFIED (open question 24). (`S`,`T3`; U)
@@ -588,13 +597,13 @@ Valid in STABLE only (§7.9). Bank 0.
 ### 8.2 Clock counters
 - Pixel clock: per sample, M 0:9a 80 00; read 0:9a and 0:99; M 0:9a 80 80. count = (0:9a & 7) << 8 | 0:99 = reference cycles per 512 counted clocks, so f = f_ref × 512 / count. RD takes 5 samples 3 ms apart: f = f_ref × 2560 / Σcount. For 4:2:0 the counted clock is the TMDS clock (half the pixel rate). (`S`,`T3`; C)
 - TMDS clock: per sample read 0:48; RD sums (value + 1) over 10 samples 10 ms apart. The window is 128 × 2^k TMDS clocks, with k = 3 if 0:43 bit 7, else 2 if bit 6, else 1 if bit 5, else 0; the hardware sets these bits. f_TMDS = f_ref × 128 × 2^k × 10 / Σ(value + 1). (`S`,`T3`; C)
-- Traced counts: 1080p59.94 pixel 0x51/0x52 (Σ 405, 407), TMDS 0x13 (Σ(value + 1) 200, 201; 0:43 = 0x01, window 128); 2160p 4:2:0 pixel 0x28/0x29 (Σ 200, 204), TMDS 0x13/0x14 (Σ 201, 202; 0:43 = 0x21, window 256). (`T3/S20`,`S30`,`S31`; C)
+- Traced counts: 1080p59.94 pixel 0x51/0x52 (Σ 405, 407), TMDS 0x13 (Σ(value + 1) 200, 201; 0:43 = 0x01, window 128); 2160p 4:2:0 pixel 0x28/0x29 (Σ 200, 204), TMDS 0x13/0x14 (Σ 201, 202; 0:43 = 0x21, window 256). (`T3/S20`,`S30`,`S31`; C) PC source: 1080p60 RGB pixel Σ 405, 405, 409, TMDS Σ 200, 200, 201 (0:43 = 0x01); 2160p60 4:2:0 pixel Σ 201, 204, TMDS Σ 203, 204; 2160p29.97 RGB pixel Σ 203, 202, TMDS Σ 200, 203 (both 0:43 = 0x21). (`T4`; C)
 
 ### 8.3 Do not take the frame rate from the IT6805
-- RD assumes f_ref = 20 500 kHz (§3.5). The traced counts at known rates give f_ref = 23.2–23.6 MHz on this unit, about 23.4 MHz: from 1080p59.94 (148.35 MHz) the pixel counts give 23.47 and 23.59 MHz and the TMDS counts 23.18 and 23.30 MHz; from 2160p 4:2:0 (296.70 MHz TMDS) 23.18–23.64 MHz. (`T3`,`D`; C)
-- So every RD clock figure is ≈0.876 × the true value: 129.58 MHz instead of 148.35 at 1080p, 257.25 instead of 296.70 at 2160p. RD's frame rate, pixel clock / (HTotal × VTotal) rounded, comes out as 52 Hz for 59.94 Hz input in both modes, which is what RD reported. (`T3`,`S`,`D`; C)
+- RD assumes f_ref = 20 500 kHz (§3.5). The traced counts at known rates give f_ref = 23.2–23.7 MHz on this unit, about 23.4 MHz. Roku (`T3`): from 1080p59.94 (148.35 MHz) the pixel counts give 23.47 and 23.59 MHz and the TMDS counts 23.18 and 23.30 MHz; from 2160p 4:2:0 (296.70 MHz TMDS) 23.18–23.64 MHz. PC source (`T4`, clocks from 0x1010): 1080p60 (148.52 MHz) 23.21–23.73 MHz, 2160p60 4:2:0 (297.03 MHz TMDS) 23.32–23.67 MHz, 2160p29.97 (296.73 MHz) 23.18–23.53 MHz; mean of the 14 `T4` samples 23.45 MHz. (`T3`,`T4`,`D`; C)
+- So every RD clock figure is ≈0.876 × the true value: 129.58 MHz instead of 148.35 at 1080p, 257.25 instead of 296.70 at 2160p, 258.5–259.8 instead of 296.73 at 2160p29.97 (`T4`). RD's frame rate, pixel clock / (HTotal × VTotal) rounded, comes out as 52 Hz for 59.94 Hz input in both modes, which is what RD reported. (`T3`,`S`,`D`; C)
 - Even with a calibrated f_ref, one count is 1.2 % (1080p) or 2.5 % (2160p 4:2:0) of a pixel-counter sample, and 0.25 % / 0.5 % of RD's 5-sample sum: too coarse to tell 60 Hz from 59.94 Hz (0.1 %). The spread between units is unknown. (`D`; C)
-- Frame rate: FPGA IN_FRAME_PERIOD 0x1010 (`video-pipeline.md`): 0x0019745b → 59.945 Hz in both modes (`T3/S21`–`S26`, `S32`). Pixel clock: HTotal × VTotal × frame rate (2200 × 1125 × 59.945 = 148.36 MHz). (`T3`; C)
+- Frame rate: FPGA IN_FRAME_PERIOD 0x1010 (`video-pipeline.md`): 0x0019745b → 59.945 Hz in both modes (`T3/S21`–`S26`, `S32`); PC source 0x00196dad–0x00196daf → 60.0068 Hz at 1080p60 and 2160p60, 0x0032e886 → 29.9731 Hz at 2160p29.97 (`T4`). Pixel clock: HTotal × VTotal × frame rate (2200 × 1125 × 59.945 = 148.36 MHz). (`T3`,`T4`; C)
 - The IT6805 counters remain usable for coarse decisions before the output runs, e.g. 148.5 vs 297 MHz (§10.1), using f_ref ≈ 23.4 MHz or a value calibrated against 0x1010 at a previous lock. (`D`; L)
 
 ## 9. InfoFrames
@@ -606,7 +615,8 @@ Field decoding follows CTA-861 (`D`). RD uses Y, C, EC, Q, VIC and YQ. (`S`,`T3`
 | PB1 | 2:15 | 6:5 | Y colour format: 0 RGB, 1 4:2:2, 2 4:4:4, 3 4:2:0 |
 | PB2 | 2:16 | 7:6 | C colorimetry: 0 none, 1 BT.601, 2 BT.709, 3 extended (see EC) |
 | | | 5:4 | picture aspect ratio |
-| PB3 | 2:17 | 6:4 | EC extended colorimetry; 5 or 6 = BT.2020 |
+| PB3 | 2:17 | 7 | ITC: IT content (RD ignores it) |
+| | | 6:4 | EC extended colorimetry; 5 or 6 = BT.2020 |
 | | | 3:2 | Q RGB quantisation: 0 default, 1 limited, 2 full |
 | PB4 | 2:18 | 7:0 | VIC (RD keeps only bits 6:0, which misreads VIC ≥ 128; use all 8 bits) |
 | PB5 | 2:19 | 7:6 | YQ YCbCr quantisation: 0 limited, 1 full |
@@ -616,15 +626,19 @@ Field decoding follows CTA-861 (`D`). RD uses Y, C, EC, Q, VIC and YQ. (`S`,`T3`
 |---|---|---|
 | 2160p59.94 (`T3/S20`,`S30`) | 06 60 a8 00 61 00 | YCbCr 4:2:0, BT.709, 16:9, EC 0, Q default, VIC 97, YQ limited |
 | 1080p59.94 (`T3/S31`) | 77 40 a8 00 10 00 | YCbCr 4:4:4, BT.709, 16:9, VIC 16 |
+| 1080p60, PC source (`T4/S41`,`S44`,`S45`) | af 00 28 88 10 00 | RGB, no colorimetry, 16:9, IT content, Q full, VIC 16 |
+| 2160p29.97, PC source (`T4/S43`,`S45`) | 60 00 28 88 5f 00 | RGB, no colorimetry, 16:9, IT content, Q full, VIC 95 |
+| 2160p60, PC source (`T4/S40`,`S44`) | 82 60 a8 84 61 00 | YCbCr 4:2:0, BT.709, 16:9, IT content, EC 0, Q limited (unused for YCbCr), VIC 97, YQ limited |
 
 - RGB default range: RD treats Q = 0 as limited unless VIC < 2 (then full), which matches CTA-861's default for VIC 1 and IT formats. (`S`,`D`; L)
 - Change detection: RD compares 2:14 (checksum) and 2:15 with its stored copy on 0:12 bit 0. (`S`,`T3`; C)
-- DVI sources send no AVI. RD then keeps the stale AVI values and sets 0:6b[5:4] = 1 (§10.3). Untested; for DVI assume RGB full range. (`S`; U)
+- The PC source was not in DVI mode: through the DVI-to-HDMI cable the GPU sent HDMI with an AVI InfoFrame in every mode (0:13 bit 1 = 1 at every entry, valid AVI checksums). The only DVI reading was the transient 0:13 bit 1 = 0 before the splitter unmute (§2.2), which the Roku showed too. Its RGB therefore took RD's HDMI branch: 0:6b = 0x40 (input and output RGB, 8 bit), 0:6c = 0x00 and 1:85 = 0x00 (converter bypassed). Q = 2 (full) was explicit. The IT6805 applies no range conversion: full-range RGB reaches the FPGA unchanged, and the FPGA's handling is in `video-pipeline.md`. (`T4`; C)
+- DVI sources send no AVI. RD then keeps the stale AVI values and sets 0:6b[5:4] = 1 (§10.3). Still untested: no traced source was in DVI mode. For DVI assume RGB full range. (`S`; U)
 
 ### 9.2 DRM / HDR (bank 6)
 - Layout: 6:10 HB0 (type, 0x87 when present), 6:11 HB1 (version), 6:12 HB2 (length), 6:13 PB0 (checksum), then PB1… RD reads HB2 + 1 bytes from 6:13. (`S`; L)
 - RD acceptance, STABLE only: each poll read 0:12 (write back bit 5 only) and 6:10. On bit 5 with HB0 = 0, RD drops any stored packet; with HB0 ≠ 0 it counts; after more than 6 such events it treats DRM as present and from then on re-reads the packet on every bit-5 event. RD never passes DRM data on. (`S`; L)
-- Traced: 0:12 bit 5 never set, 6:10 always 0x00 (1625 reads, 0 writes). The EDID RD loaded advertises no HDR, so none was sent. HDR is UNVERIFIED end to end. (`T3`; C for the absence)
+- Traced: 0:12 bit 5 never set, 6:10 always 0x00 (1625 reads in `T3`, 5932 in `T4`; 0 writes). The EDID RD loaded advertises no HDR, so none was sent. HDR is UNVERIFIED end to end. (`T3`,`T4`; C for the absence)
 - Decoding of PB1… follows CTA-861.3 (EOTF in PB1 bits 2:0, 2 = PQ). (`D`; U on this chip)
 
 ### 9.3 Other packets
@@ -636,10 +650,10 @@ H = HActive (×2 for 4:2:0); PCLK = RD's pixel-clock figure (≈0.876 × true, �
 
 | Rule | Condition | Bus | Traced | Ev | Conf |
 |---|---|---|---|---|---|
-| a | input YCbCr 4:2:0 (AVI Y = 3) | dual pixel, SDR | 2160p59.94 4:2:0 | `S`,`T3/S20`,`S30` | C |
-| b | H ≤ 1920 and PCLK ≤ 150 000 kHz | single pixel, SDR | 1080p59.94 4:4:4 | `S`,`T3/S31` | C |
+| a | input YCbCr 4:2:0 (AVI Y = 3) | dual pixel, SDR | 2160p59.94 4:2:0 (Roku), 2160p60 4:2:0 (PC) | `S`,`T3/S20`,`S30`,`T4/S40`,`S44` | C |
+| b | H ≤ 1920 and PCLK ≤ 150 000 kHz | single pixel, SDR | 1080p59.94 4:4:4, 1080p60 RGB (RD's PCLK 128.3–129.6 MHz) | `S`,`T3/S31`,`T4/S41`,`S44`,`S45` | C |
 | c | H < 1920 and VActive < 2160 | single pixel, SDR | — | `S` | L |
-| d | otherwise (e.g. 2160p30 4:4:4, 1080p120, 1440p60) | dual pixel, DDR | — | `S` | L (never traced) |
+| d | otherwise (e.g. 2160p30 4:4:4, 1080p120, 1440p60) | dual pixel, DDR | 2160p29.97 RGB (H = 3840, RD's PCLK 258.5–259.8 MHz) | `S`,`T4/S43`,`S45` | C |
 
 - Because RD's PCLK reads low, rule b in true terms is "pixel clock ≤ ≈171 MHz" on this unit. Use 170 MHz on the true or calibrated clock: it keeps every 148.5 MHz mode single-pixel with margin, and 1080p120 (297 MHz) goes to rule d. (`D`; L)
 - 1080p60 and every mode up to 1920 × 1200 reduced blanking (154 MHz) select single-pixel SDR. (`D`; L)
@@ -649,7 +663,7 @@ H = HActive (×2 for 4:2:0); PCLK = RD's pixel-clock figure (≈0.876 × true, �
 ### 10.2 IT6805 programming per bus mode
 Rows of `seq/it6805-lock.tsv` marked MODE. Order: 0:64 bit 2 = 0 and bit 1 pulse; 5:20 bit 6 = 1; 1:c0 bit 0 = 0; 1:c0[2:1] = 01; 1:c1 bit 1 = DDR; 1:c1 bit 5 = 0; 0:6b[3:2] = output colour; 1:c0 bit 0 = 1 if dual; 5:d1 bit 0 = 0, 5:d1[3:2] = 01, 5:da bit 4 = 0, 5:d0 = 0xf3; 1:bd[5:4]; 1:be = 0; 1:fe bit 4 = 1; 1:c4; 0:64 bit 1 pulse again.
 
-| Register | Single SDR (1080p59.94) | Dual SDR (4:2:0) | Dual DDR |
+| Register | Single SDR (1080p) | Dual SDR (2160p 4:2:0) | Dual DDR (2160p29.97 RGB) |
 |---|---|---|---|
 | 1:c0 | 0x42 | 0x43 | 0x43 |
 | 1:c1 | 0x00 | 0x00 | 0x02 |
@@ -660,33 +674,36 @@ Rows of `seq/it6805-lock.tsv` marked MODE. Order: 0:64 bit 2 = 0 and bit 1 pulse
 | 5:d0, 5:d1, 5:da | 0xf3, 0x04, 0x01 | same | same |
 | 1:b0 bit 0 | 1 | 1 | 1 |
 | 1:c5 / 1:c6 after unblank | 0x18 / 0x7f | 0x7f / 0x00 | 0x7f / 0x00 |
-| Ev | `T3/S31`,`S32` | `T3/S20`,`S30`,`S21` | `S` |
-| Conf | C | C | U (never traced) |
+| Ev | `T3/S31`,`S32`; `T4/S41`,`S44`,`S45` | `T3/S20`,`S30`,`S21`; `T4/S40`,`S44` | `S`; `T4/S43`,`S45` |
+| Conf | C | C | C |
 
 - 1:b0 bit 0 = 1 when pixel clock ÷ repetition ≥ 25 MHz (repetition from 0:1b[5:4]: 1 → 2, 3 → 4). RD applies its low clock figure: 25.175 MHz VGA would get 0 under RD. Use the true clock. Below 1080p UNVERIFIED. (`S`,`D`; L)
 - 0:64 bit 2 = 0 selects even/odd pixel distribution on the two pixel lanes; left/right halves (1) is never used. (`S`; L)
+- Rule d as traced: the dual-SDR writes plus 1:c1 bit 1 = 1 (in the bus setting and again in the output enable) and 1:c4 = 0x10; nothing else differs. The FPGA captured correct frames (§10.4). (`T4/S43`,`S45`; C)
+- The PC source's 2160p60 4:2:0 entries (`T4/S40`, `S44`) wrote the same sequence and final values as the Roku's (`T3/S20`, `S30`); the dual-SDR table replays all four. Only the input differed: AVI PB3 0x84 (IT content, Q limited) instead of 0x00, 60.0068 instead of 59.945 Hz, no HDCP. The FPGA captured black frames with both sources (open question 14). (`T3`,`T4`; C)
 
 ### 10.3 Colour format and depth (output enable)
-1. HDMI (0:13 bit 1 = 1): 0:6b[5:4] = AVI Y; 0:6b bit 0 = 0. DVI: 0:6b[5:4] = 1, bit 0 = 1 (`S`; U).
+1. HDMI (0:13 bit 1 = 1): 0:6b[5:4] = AVI Y; 0:6b bit 0 = 0 (traced with Y = 0, 2 and 3). DVI: 0:6b[5:4] = 1, bit 0 = 1 (`S`; U).
 2. 0:6b[3:2] = same as the input: the IT6805 converts nothing. Re-apply 1:c0[2:1] = 01, 1:c1 bits 1/5 as in §10.2.
 3. W 0:6e 0xa2; W 1:86 0x00.
 4. Converter bypass: M 0:6c 03 00; W 1:85 0x00.
 5. Depth: 0:6b[1:0] = 1 if 0:98[7:4] = 5, 2 if 6, else 0.
 
-Results: 0:6b = 0x68 at 1080p 4:4:4 8 bit, 0x7c at 2160p 4:2:0 8 bit. (`T3`; C)
+Results: 0:6b = 0x68 at 1080p 4:4:4 8 bit, 0x7c at 2160p 4:2:0 8 bit (`T3`, `T4`), 0x40 at RGB 8 bit (1080p60, 2160p29.97; `T4`); 0:6c = 0x00 in all. (`T3`,`T4`; C)
 - The IT6805 has a colour converter (0:6c select, 1:70–1:85 coefficients) and an internal down-scaler (bank 5 0x21–0x41, 0:33 bit 3, 5:20 bit 6 = 0). RD never uses either. Both are possible alternatives for the 2160p path (open question 14); UNVERIFIED. (`S`; U)
 - Deep colour (10/12 bit) output, and what the FPGA does with it: UNVERIFIED (open question 24). Do not advertise deep colour in the EDID (`hdmi-chips.md`).
 
 ### 10.4 Matching FPGA configuration
-FPGA registers: `video-pipeline.md`. The FPGA must mirror the IT6805 bus. (`S`,`T3`; C where traced)
+FPGA registers: `video-pipeline.md`. The FPGA must mirror the IT6805 bus. (`S`,`T3`,`T4`; C where traced)
 
 | Input | IT6805 bus | COLOR_CTRL bit 0 | bit 5 | bit 19 | PIX_MODE | Clip width | Result | Conf |
 |---|---|---|---|---|---|---|---|---|
 | 1080p59.94 YCbCr 4:4:4 | single SDR | 0 | 0 | 0 | 0 | 1920 | correct images, all formats (`T3/S32`) | C |
 | ≤ 1080p60 YCbCr 4:2:2 | single SDR | 1 | 0 | 0 | 0 | H | never traced | U |
-| ≤ 1080p60 RGB | single SDR | 0 | 0 | 0 | 0 | H | never traced; FPGA CSC choice per `video-pipeline.md` | U |
-| 2160p59.94 YCbCr 4:2:0 | dual SDR | 0 | 1 | 1 | 1 | 3840 | black frames (open question 14) | C (values) |
-| rule d modes | dual DDR | 0 / 1 per Y | 1 | 0 | 3 | H | never traced | U |
+| 1080p60 RGB (PC source) | single SDR | 0 | 0 | 0 | 0 | 1920 | correct: BGR24 equal to the source within +1 (`T4/S42`,`S43`; `video-pipeline.md`) | C |
+| 2160p59.94/60 YCbCr 4:2:0 | dual SDR | 0 | 1 | 1 | 1 | 3840 | black frames with both sources (`T3/S21`, `T4/S41`; open question 14) | C (values) |
+| 2160p29.97 RGB (PC source, rule d) | dual DDR | 0 | 1 | 0 | 3 | 3840 | correct (`T4/S44`, YUYV out: COLOR_CTRL = 0x26, adding bit 1 RGB→YUV and bit 2 colour adjust) | C |
+| other rule d modes | dual DDR | 0 / 1 per Y | 1 | 0 | 3 | H | never traced | U |
 | no input | outputs tristated; flags from init (dual 0, DDR 1) | 0 | 0 | 0 | 2 | — | free-running frames | C |
 
 - PIX_MODE = dual \| (DDR << 1); COLOR_CTRL bit 5 = dual; bit 0 = input 4:2:2; bit 19 = input 4:2:0. (`video-pipeline.md`; `S`,`T3`; C)
@@ -694,9 +711,9 @@ FPGA registers: `video-pipeline.md`. The FPGA must mirror the IT6805 bus. (`S`,`
 
 ### 10.5 Tristate, unblank and video logic reset
 - Tristate on (init, NO_5V entry, every WAIT_SYNC entry): W 1:c5 0xff; W 1:c6 0xff. RD reads 0:98 first (no effect). (`T`; C)
-- Unblank, after the video logic reset: M 1:c5 80 00; M 1:c6 80 00; then single pixel W 1:c5 0x18, or dual pixel W 1:c6 0x00 (1:c5 stays 0x7f). Final values: single 0x18 / 0x7f, dual 0x7f / 0x00. (`T3`; C)
+- Unblank, after the video logic reset: M 1:c5 80 00; M 1:c6 80 00; then single pixel W 1:c5 0x18, or dual pixel W 1:c6 0x00 (1:c5 stays 0x7f). Final values: single 0x18 / 0x7f, dual 0x7f / 0x00, SDR and DDR alike. (`T3`,`T4`; C)
 - RD picks the single-pixel value by 1:c0[7:6] (01 → 0x18; 10 would give 0x03) and has variants (0x78, 0x38) for 0:98[7:4] = 1 or 2, codes that do not occur (0:98 reads 0 right after the reset). Use 0x18. (`S`,`T3`; L)
-- The bit groups of 1:c5/1:c6 are unknown. Whether dual-pixel 1:c5 = 0x7f leaves part of the bus undriven is a candidate cause in open question 14. (`S`; U)
+- The bit groups of 1:c5/1:c6 are unknown. Dual-pixel DDR used the same final values (1:c5 = 0x7f, 1:c6 = 0x00) and captured correctly (`T4/S44`), so 0x7f does not leave the dual-pixel DDR bus undriven. Whether dual SDR needs lanes that 0x7f leaves off remains a candidate in open question 14. (`S`,`T4`; U)
 - Audio outputs are separate: 1:c7 (§11).
 
 ## 11. Audio
@@ -713,6 +730,7 @@ FPGA registers: `video-pipeline.md`. The FPGA must mirror the IT6805 bus. (`S`,`
 - Audio logic reset: 0:22 bit 1 pulse; RD then reads 0:8a and writes it back 4 times. Never traced. (`S`; L)
 - Timing: WAIT_READY to ON took 3 polls; audio on 127–137 ms after the AV-mute release (`T3/S20` 4923.0 → 5056.0, `S30` 33138.6 → 33275.7, `S31` 28085.1 → 28221.5 and 38748.1 → 38875.3). (`T3/S20`,`S30`,`S31`; C)
 - Streaming and FPGA audio DMA start/stop cause no IT6805 access. (`T3/S21`–`S27`,`S32`–`S34`; C)
+- Source without audio (`T4`: 0:b1 = 0x00 in every read, FPGA 0x10a0 = 0xffffffff): RD stayed in WAIT_READY. The ready check (0:b9, 0:19, 0:10, 0:b1) ran every 3rd poll and failed on 0:b1 bit 7; 1:c7 stayed 0x7f and 0:86 was never written. (`T4`; C)
 
 ### 11.2 Audio on and off
 On (`T3/S31` 38875.2–38877.5; C):
@@ -744,8 +762,8 @@ Everything below was traced, except items marked D (derived from RD).
 4. 5 V evaluation (§3.6): NO_5V + SAVING, or STANDBY + WAIT_SYNC.
 5. HPD high (RD: pulse 1, 10 ms, 0, 100 ms, 1; end state high). Splitter bring-up per `hdmi-splitter.md` and the order in `hdmi-chips.md`.
 6. Poll every 50 ms (§7.2, §7.3). Handle 5 V (§7.4): loss → HPD low, unplug, SAVING; return → STANDBY, HPD high; then the first 0:05 bit 1 → NORMAL.
-7. Sync (0:19 bit 7) → DEBOUNCE 4 polls → stable entry (`seq/it6805-lock.tsv`). Check before it: AVI Y = 2 (4:4:4; 4:2:2 and RGB untested), HActive ≤ 1920, VActive ≤ 1080, coarse clock ≤ 170 MHz (§10.1) → single-pixel SDR. Otherwise report the mode unsupported.
-8. FPGA: COLOR_CTRL bits 0/5/19 = 0, PIX_MODE = 0, clip = HActive × VActive (§10.4). Frame rate from 0x1010 (§8.3). DV timings from §8.1 plus that rate.
+7. Sync (0:19 bit 7) → DEBOUNCE 4 polls → stable entry (`seq/it6805-lock.tsv`). Check before it: AVI Y = 2 (4:4:4) or 0 (RGB, `T4`; 4:2:2 untested), HActive ≤ 1920, VActive ≤ 1080, coarse clock ≤ 170 MHz (§10.1) → single-pixel SDR, with the MODE values of §10.3. Otherwise report the mode unsupported.
+8. FPGA: COLOR_CTRL bits 0/5/19 = 0 (CSC bits per input and output format, `video-pipeline.md`), PIX_MODE = 0, clip = HActive × VActive (§10.4). Frame rate from 0x1010 (§8.3). DV timings from §8.1 plus that rate.
 9. Next poll: AV-mute release (§7.7); requires the splitter TX port 1 unmute (`hdmi-chips.md`). Then audio WAIT_READY → ON (§11).
 10. Sync loss: M 0:40 03 02, tristate, audio off, WAIT_SYNC, source-change event (§7.9, §7.10).
 
@@ -759,12 +777,13 @@ Everything below was traced, except items marked D (derived from RD).
 | PA substitution, and 0:ca without a VSDB (§4) | DDC readback of a test EDID through the splitter |
 | TX port 1 HPD fall latency (§5; open question 23) | drop bit 2 with the splitter TX idle |
 | AV-mute release leaving 1:c5 bit 7 set (§7.7) | a source that toggles AV mute while locked |
-| Mode change while STABLE without sync loss (§7.8) | PC source changing modes; open question 24 |
-| RGB, YCbCr 4:2:2, full-range and DVI input (§9.1, §10.4) | PC source; open question 24 |
+| Reconfiguration while STABLE: AVI or timing change without sync loss (§7.8). All 6 `T4` GPU mode changes dropped sync | a source that changes the colour format or timing without dropping sync; open question 24 |
+| YCbCr 4:2:2, limited-range RGB and DVI input (§9.1, §10.4). Full-range RGB over HDMI is traced (`T4`) | a source in DVI mode (EDID without the HDMI block) or sending 4:2:2 or limited RGB; open question 24 |
 | Interlaced input, pixel repetition, 720p, < 25 MHz clocks, negative sync polarity (§8.1, §10.2) | sources with these modes; open question 24 |
 | Deep colour output and FPGA acceptance (§10.3) | 10/12-bit source with an EDID that allows it |
-| Dual-pixel DDR modes (rule d) | 2160p30 4:4:4 or 1080p120; open question 14 |
-| 2160p 4:2:0 black frames; 1:c5 = 0x7f in dual mode; converter or down-scaler as alternatives (§10) | open question 14 |
+| Rule d with other inputs: 1080p120, 1440p60, YCbCr at 2160p30 (§10.1); only 2160p29.97 RGB is traced | sources with these modes |
+| 2160p 4:2:0 black frames (Roku and PC source); 1:c5 = 0x7f in dual SDR; converter or down-scaler as alternatives (§10) | open question 14 |
+| Source-dependent status bits of unknown meaning: 0:10 bit 6 (`T3` only), 0:14 bit 1 after a loss, 0:aa bit 0 (2160p29.97 only) (§2.1, §2.2) | more sources and modes |
 | HDMI 2.0 rates (> 340 MHz, scrambling); 0:14 bits 6/7, 0:15 | 2160p60 4:4:4 source with a 600 MHz upstream path |
 | HDCP (0:1d, 0:d6) with an encrypting source | open questions 15, 25 |
 | DRM / HDR InfoFrames (§9.2) | HDR source and an EDID with an HDR block |
@@ -775,3 +794,5 @@ Everything below was traced, except items marked D (derived from RD).
 | Which GPIO bit (5 or 8) resets the IT6805; minimum delay after reset (§1.6) | open question 10 |
 | GPIO bit 10 as an interrupt line (§5) | open question 21 |
 | FPGA 0x1010 validity while the IT6805 outputs are still tristated, i.e. whether the frame rate is known before unblank (§8.3) | read 0x1010 during the stable entry |
+
+Settled by `T4` and moved out of this list: dual-pixel DDR programming (rule d, §10.2) with its FPGA configuration (§10.4); full-range RGB input over HDMI (§9.1, §10.3); source mode changes with 5 V held, which went through sync loss every time (§7.9).

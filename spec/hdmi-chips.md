@@ -71,7 +71,7 @@ Ordering a driver must keep: the IT6805's 0xe0 access before the splitter maps 0
 RX clock to IT6805 stable takes ≈0.9–1.0 s. The source's own delay from 5 V to sending TMDS ranged from 0.4 s to 3.6 s. (`T3`; C) A driver should use timeouts of several seconds, not fixed delays.
 
 Cross-chip rules:
-- The IT6805 receives Clear-AVMUTE only after the splitter unmutes TX port 1 (TX port 1 reg 0xc1 bit 0 cleared; `hdmi-splitter.md`). In all 4 traced locks the IT6805 event appeared at its first poll after that write, never before. A driver must complete the splitter TX output enable, or the IT6805 output stays muted. (`T3/S20`,`S30`,`S31`; C)
+- The IT6805 receives Clear-AVMUTE only after the splitter unmutes TX port 1 (TX port 1 reg 0xc1 bit 0 cleared; `hdmi-splitter.md`). The IT6805 event appeared at its first poll after that write in all 4 `T3` locks and at its second poll (58–71 ms after) in all 7 `T4` locks, never before. A driver must complete the splitter TX output enable, or the IT6805 output stays muted. (`T3/S20`,`S30`,`S31`,`T4`; C)
 - Decide on individual status bits (for example 5 V = bit 0 of the 0x13 status registers), not on whole-register values: intermediate values differ between unplug events (IT6805 0x13: bf→20→00 in `S30`, bf→00 in `S31`; splitter RX 0x13: 0xa0 in `S30`, 0x80 in `S31`). (`T3`; C)
 
 ## FPGA hand-off at stream start
@@ -125,7 +125,9 @@ Validate the image with `edid-decode` (no errors or warnings) in the test suite.
 ## PC loopback source (`T4`)
 A host GPU output (GT 710, DVI-D, through a DVI-to-HDMI cable) feeds HDMI IN. Facts about this source, for tests (`T4`; C):
 - With RD's EDID the GPU picked 2160p60 YCbCr 4:2:0 in HDMI mode (AVI InfoFrame present) by default: 297 MHz TMDS through a DVI connector.
-- 1080p60 and 2160p29.97 arrived as RGB 4:4:4 8-bit in DVI mode (no InfoFrames, so no audio). The splitter and the IT6805 reported DVI; RD's colour path treated the input as full-range RGB.
+- 1080p60 and 2160p29.97 arrived as RGB 4:4:4 8-bit in HDMI mode with an AVI InfoFrame (RGB, full range, IT content); both chips read 0x13 = 0xbf. During each mode change both briefly report DVI (0x13 = 0xbd) until the splitter unmutes TX port 1; RD logs that transient.
+- No audio: the GPU sent no audio packets (the host's HDMI audio output is off). Enabling it may make the loopback an audio source too (UNVERIFIED).
+- Mode changes at the source with 5 V held: sync is lost and regained (TMDS back after 0.8–1.1 s) with no HPD or power-mode change; stable again 1.4–1.7 s after the loss (`hdmi-it6805.md`).
 - Frame rate 60.006 Hz at 1080p60 and 2160p60 (IN_FRAME_PERIOD 0x00196daf), 29.973 Hz at 2160p29.97.
 - The GPU dithers its output by default; turn that off for exact tests (`tools/testsrc/show.sh` does).
 
