@@ -57,7 +57,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - MSI if cap present else INTx. Threaded IRQ.
 - No sleeping under spinlock. FPGA i2c master → `i2c_adapter`, sleepable. HDMI rx event handling in threaded irq / workqueue. (vendor drv: scheduling-while-atomic.)
 - IT6805 / splitter (ITE 0x6663) → v4l2 subdevs preferred.
-- vb2 allocator: `videobuf2-vmalloc` + driver-built `sg_table` (`vmalloc_to_page` → `dma_map_sgtable`) → descriptor lists. Only allocator present on every matrix kernel (EL9 5.14 ships neither dma-sg nor dma-contig). MMAP (+ USERPTR optional); no DMABUF export. DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
+- vb2 memory: driver-private `vb2_mem_ops` (EL9 5.14 ships neither videobuf2-dma-sg nor -dma-contig). Pages from `alloc_pages(GFP_KERNEL | __GFP_DMA32)` while the DMA mask is 32-bit; `vmap` for kernel access; `sg_table` → `dma_map_sgtable` → descriptor lists; mmap by page insertion. Not videobuf2-vmalloc: its pages land above 4 GB, which a 32-bit mask bounces through swiotlb when no IOMMU translates (VM, `iommu=pt`): small pool, a copy per frame. MMAP first; USERPTR/DMABUF import later. Mem-ops signature differences across kernels in `src/compat.h`. DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
 - Formats: NV12, YUYV min. RGB24 only if verified in OBS.
 - Style: kernel coding style, `scripts/checkpatch.pl --strict` clean. SPDX GPL-2.0 header every file.
 - Kernel range: every regression-matrix VM kernel (today 5.14 EL9 → 7.3 Fedora 45). Kernel-version differences only in `src/compat.h` (`LINUX_VERSION_CODE` / `RHEL_RELEASE_CODE`); no #ifdef elsewhere.
@@ -66,7 +66,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 Each gate passes in `gc573-dev` before the next starts.
 - M0 skeleton: probe/remove, BAR map, FPGA init + quiesce (`spec/init.md`), MSI + threaded IRQ. Gate: load/unload ×50, clean dmesg, VERSION read.
 - M1 I2C: bus-1 engine adapter; bus 0/2 OpenCores adapters. Gate: chip IDs (0x90 → `54 49 05 68`; 0x58 → `54 49 63 66`).
-- M2 video DMA, no input: vb2 vmalloc + driver sg_table (see design constraints), 3 channels, 6 formats, free-running frames. Gate: pre-filled buffers overwritten; `v4l2-compliance -s` 0 fail.
+- M2 video DMA, no input: vb2 with driver mem ops (see design constraints), 3 channels, 6 formats, free-running frames. Gate: pre-filled buffers overwritten; `v4l2-compliance -s` 0 fail.
 - M3 HDMI bring-up: splitter + IT6805 per `spec/hdmi-chips.md`, poll loop, DV timings, `V4L2_EVENT_SOURCE_CHANGE`. Gate: live 1080p59.94 capture, all formats, image verified.
 - M4 audio: ALSA PCM capture. Gate: capture with live source, A/V sync in OBS.
 - M5 EDID (`VIDIOC_G/S_EDID`), hotplug + mode-change stress, controls, scaling. Gate: test suite v1.
