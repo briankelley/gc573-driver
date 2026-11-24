@@ -19,6 +19,8 @@ Clean-room hardware description of the AVerMedia Live Gamer 4K (GC573). The driv
 | `D` | derived: arithmetic/standards applied to traced values |
 | `E` | direct experiment on hardware |
 
+Trace times in the spec (e.g. `T3/S30` 22055.1 ms) are ms after the first `I2C` line that follows the scenario's MARK in `traces/T<n>.tsv.xz`. Public-trace time = quoted time + that line's time: `T1/S01` +380.1 ms, `T2/S10` +380.1, `T3/S20` +358.8, `T3/S30` +279342.6, `T3/S31` +327422.6. Durations need no conversion.
+
 Confidence: **C** confirmed (observed directly, or two independent evidence types agree) · **L** likely (one evidence type, consistent) · **U** unverified.
 
 ## Files
@@ -29,6 +31,9 @@ Confidence: **C** confirmed (observed directly, or two independent evidence type
 | `init.md` | bring-up and teardown sequences |
 | `interrupts.md` | status/enable/ack |
 | `i2c.md` | three I2C masters, device inventory |
+| `hdmi-chips.md` | HDMI front-end overview: topology, sub-devices, GPIO lines, bring-up order, lock timing, FPGA hand-off, EDID policy, cross-chip rules |
+| `hdmi-it6805.md` | IT6805 HDMI receiver: registers, init, EDID RAM, power modes, polling, state machine, output bus, audio, 1080p60 recipe |
+| `seq/*.tsv` | machine-readable register sequences for the HDMI chips (format in each file's header) |
 | `video-dma.md` | descriptor format, channels, slots, start/stop |
 | `video-pipeline.md` | input measurement, clip, colour, pixel formats, scalers, frame-rate limiter |
 | `audio.md` | audio capture DMA |

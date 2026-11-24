@@ -1,0 +1,36 @@
+# IT6805 power mode NORMAL
+# evidence: T3/S20 4298 ms, T3/S30 32503 ms, T3/S31 38124 ms; S
+# columns: n	op	dev	bank	reg	mask	value	note
+# op: W write value (mask ff) · M read-modify-write: new = (old & ~mask) | value · D delay, value = ms (RD nominal; RD's real sleeps were longer) · P poll until (reg & mask) == value · R read, value = traced (informative) · X step described in hdmi-it6805.md (§ in note)
+# dev: 8-bit I2C address on bus 1 (90 IT6805, e0 IT6805 sub-block). bank: bank in effect (reg 0x0f[2:0]); * = the bank register itself; - = not banked. All numbers hex except D values (decimal ms).
+# RD = reference driver. Values are what RD wrote. R rows are informative reads; RD also read most registers before writing them (omitted). RD's repeated selects of an already selected bank are omitted: the bank column gives the bank in effect.
+# Entered on the first 0:05 bit 1 event after a 5 V return.
+0	W	90	*	0f	ff	00	
+1	W	90	0	25	ff	00	
+2	W	90	0	26	ff	00	
+3	W	90	0	27	ff	00	
+4	W	90	0	2a	ff	01	
+5	W	90	*	0f	ff	03	
+6	M	90	3	a8	08	08	
+7	W	90	*	0f	ff	00	
+8	M	90	0	ee	80	80	
+9	W	90	0	f8	ff	c3	access-unlock pair (left unlocked)
+10	W	90	0	f8	ff	a5	
+11	W	90	*	0f	ff	01	
+12	W	90	1	5f	ff	04	
+13	W	90	1	58	ff	02	
+14	W	90	*	0f	ff	03	
+15	M	90	3	aa	60	60	keeps trim bits 4:0
+16	M	90	3	ac	03	00	
+17	W	90	*	0f	ff	05	
+18	M	90	5	c1	03	00	
+19	M	90	5	c2	03	00	
+20	M	90	5	c6	20	20	
+21	W	90	5	c7	ff	00	
+22	W	90	5	c8	ff	00	
+23	W	90	5	c9	ff	00	
+24	W	90	5	ca	ff	00	
+25	M	90	5	cb	0f	00	
+26	W	90	*	0f	ff	00	
+27	W	90	0	21	ff	40	
+28	W	90	0	20	ff	00	

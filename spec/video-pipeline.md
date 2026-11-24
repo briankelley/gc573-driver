@@ -107,7 +107,7 @@ RATE_CTRL[1] = input is YUV; [2] = output is RGB; [3] not written by RD (preserv
 Frame rate source: IN_FRAME_PERIOD (0x1010), not the IT6805 clock estimate (RD's estimate reads ~13 % low because it assumes a 20.5 MHz reference) (`S`,`T3`; C).
 
 ## Pixel mode
-PIX_MODE (0x1088) = dual | (DDR << 1), copied from the IT6805 output-bus decision: single-pixel SDR for ≤1080p60-class input, dual-pixel SDR for 4:2:0 input, dual-pixel DDR for other large/fast modes (`hdmi-chips.md`). Observed: 0 (1080p), 1 (2160p 4:2:0), 2 (no input: RD writes a flag not derived from an input) (`S`,`T1`,`T3`; L).
+PIX_MODE (0x1088) = dual | (DDR << 1), copied from the IT6805 output-bus decision: single-pixel SDR for ≤1080p60-class input, dual-pixel SDR for 4:2:0 input, dual-pixel DDR for other large/fast modes (`hdmi-chips.md`). Observed: 0 (1080p), 1 (2160p 4:2:0), 2 (no input: RD copies the DDR bit, bank-1 reg 0xc1 bit 1 = 1, that the IT6805 init leaves set; COLOR_CTRL bits 0/5/19 are 0) (`S`,`T1`,`T3`; L).
 
 ## Driver notes
 - V4L2: advertise only the six verified formats. Implement DV timings from input measurement + IT6805 status; emit `V4L2_EVENT_SOURCE_CHANGE` on change.

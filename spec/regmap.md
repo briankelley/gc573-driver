@@ -27,7 +27,7 @@ Reset value read at first probe: `0x0001f850`.
 | 6 | enable; same handling as bit 4 | `S`,`T1` | L |
 | 5 | active-low reset of an on-board chip (pulse 1→0 10 ms→1) | `S`,`T1` | L (which chip U) |
 | 8 | active-low reset of an on-board chip (pulse 1→0 2 ms→1) | `S`,`T1` | L (which chip U) |
-| 10 | **input** (changes with no write; sampled only during RD's read-modify-writes). `T3` (source present): 1 at load, 0 after bit 5 went low, 1 after chip init; 1 when RD handled the IT6805's 5 V loss (before the splitter task ran), 0 when 5 V returned. `T1`/`T2` (no source): 0 in every sample except one (1 at 612 ms after load in `T2`, 0 again 19 ms later). Fits a level output that is high while splitter events are pending: candidate splitter interrupt output (open question 21) | `T1`,`T2`,`T3/S20`,`S30`,`S31` | U |
+| 10 | **input** (changes with no write; sampled only during RD's read-modify-writes). `T3` (source present): 1 at load, 0 after bit 5 went low, 1 after chip init; 1 when RD handled the IT6805's 5 V loss (before the splitter task ran), 0 when 5 V returned. `T1`/`T2` (no source): 0 in every sample except one (1 at 612 ms after load in `T2`, 0 again 19 ms later). Fits a level output that is high while chip events are pending. Candidates: the splitter's interrupt output (its events were unserviced at every 1-sample), or the IT6805's (bit 10 dropped while the bit-5 reset was low). Open question 21 | `T1`,`T2`,`T3/S20`,`S30`,`S31` | U |
 | 11–16 | set at power-up, never written by RD | `T1` | U |
 
 Write via read-modify-write. Bit roles not listed: preserve.
