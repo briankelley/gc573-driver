@@ -11,3 +11,4 @@ Module.symvers
 # vendor reference material never enters this repo
 vendor-ref/
 *.o_shipped
+.claude/
