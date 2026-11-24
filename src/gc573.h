@@ -32,6 +32,7 @@ struct sg_table;
 
 /* Core block, spec/regmap.md */
 #define GC573_VERSION			0x000		/* FPGA build date, BCD YYYYMMDD */
+#define GC573_TLP_ALIGN			0x004		/* read only (debugfs) */
 #define GC573_RESET			0x00c
 #define GC573_INT_STATUS		0x010		/* write 1 to clear */
 #define GC573_INT_ENABLE		0x01c
@@ -132,6 +133,9 @@ struct sg_table;
 #define GC573_VIP_CTRL_OUT_EN		BIT(0)		/* gates frames into DMA */
 #define GC573_VIP_CTRL_SCALER		BIT(7)		/* 1 = scalers in path */
 #define GC573_VIP_CTRL_FMT		GENMASK(15, 8)	/* pixel format code */
+#define GC573_IN_STATUS			0x1004		/* [1:0] timing stable */
+#define GC573_IN_WIDTH			0x1008		/* bus clocks per line */
+#define GC573_IN_HEIGHT			0x100c		/* active lines */
 #define GC573_IN_FRAME_PERIOD		0x1010		/* 100 MHz ticks, ~0 = none */
 #define GC573_CLIP_LEFT			0x1020
 #define GC573_CLIP_WIDTH		0x1024
@@ -211,6 +215,23 @@ struct gc573_vev {
 	u8 armed;			/* slots armed afterwards */
 };
 
+/* Statistics since the last stream start, for debugfs */
+struct gc573_vstats {
+	u32 irqs;			/* INT bit 1 serviced while running */
+	u32 frames;			/* buffers delivered */
+	u32 skipped;			/* frames dropped after the start */
+	u32 multi;			/* INT bit 1 that completed > 1 slot */
+	u32 unarmed;			/* INT bit 1 for a slot not armed */
+	u32 order;			/* earlier-armed slot still valid */
+	u32 bad_status;			/* CH_STATUS slot field not 1..4 */
+	u32 stale;			/* INT bit 1 while not running */
+	u32 terms;			/* INT bit 0 */
+	u32 term_missing;		/* stop without INT bit 0 */
+	u32 underruns;			/* no slot armed after a frame */
+	struct gc573_vev ev[GC573_VEV_NUM];
+	unsigned int ev_head;
+};
+
 struct gc573_video {
 	struct video_device vdev;
 	struct vb2_queue queue;
@@ -232,20 +253,9 @@ struct gc573_video {
 	u32 ch_ctrl[GC573_VCH_NUM];	/* CH_CTRL values written (ch1, ch2) */
 	u32 vip_ctrl;			/* VIP_CTRL while streaming, w/o OUT_EN */
 	u32 sequence;
-
-	/* statistics since the last stream start, for debugfs */
-	u32 st_irqs;			/* INT bit 1 serviced while running */
-	u32 st_frames;			/* buffers completed */
-	u32 st_multi;			/* INT bit 1 that completed > 1 slot */
-	u32 st_unarmed;			/* INT bit 1 for a slot not armed */
-	u32 st_order;			/* earlier-armed slot still pending */
-	u32 st_bad_status;		/* CH_STATUS slot field not 1..4 */
-	u32 st_stale;			/* INT bit 1 while not running */
-	u32 st_terms;			/* INT bit 0 */
-	u32 st_term_timeouts;
-	u32 st_underruns;		/* a slot left unarmed, no buffer */
-	struct gc573_vev ev[GC573_VEV_NUM];
-	unsigned int ev_head;
+	unsigned int skip;		/* completions still to drop */
+	int exp_mode;			/* exp_slot_mode for this stream */
+	struct gc573_vstats st;
 };
 
 struct gc573 {
