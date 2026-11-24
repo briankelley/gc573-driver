@@ -19,7 +19,6 @@ set -uo pipefail
 [ -f "$GC573_KO" ] || { echo "run.sh: no module at $GC573_KO" >&2; exit 2; }
 [ -n "$GC573_BDF" ] || { echo "run.sh: no $GC573_PCI_ID device" >&2; exit 2; }
 
-KML=/sys/kernel/debug/kmemleak
 DMA_DBG=/sys/kernel/debug/dma-api
 kcfg() { sed -n "s/^CONFIG_$1=//p" "/boot/config-$(uname -r)" 2>/dev/null; }
 
@@ -55,10 +54,9 @@ if gc573_loaded; then
 	gc573_unload || exit 2
 fi
 
-if [ -w "$KML" ]; then
+if kml_available; then
 	echo scan=off > "$KML"	# no automatic scans while cases run
-	echo scan > "$KML"	# report leaks older than the suite...
-	echo clear > "$KML"	# ...and forget them
+	kml_reset		# report leaks older than the suite, forget them
 fi
 
 npass=0
@@ -118,10 +116,8 @@ done
 
 echo
 echo "## kmemleak (whole suite)"
-if [ -w "$KML" ]; then
-	sleep 6			# kmemleak ignores objects younger than 5 s
-	echo scan > "$KML"
-	leaks=$(cat "$KML")
+if kml_available; then
+	leaks=$(kml_report)
 	echo scan=on > "$KML"
 	if [ -z "$leaks" ]; then
 		echo "  no new unreferenced objects"

@@ -57,7 +57,7 @@ build() {
 check() {
 	local out rc=0
 	echo "== checkpatch --strict"
-	vm "cd $VMDIR && /lib/modules/\$(uname -r)/build/scripts/checkpatch.pl --strict --no-tree --show-types -f src/*.[ch] Makefile Kbuild" || rc=1
+	vm "cd $VMDIR && /lib/modules/\$(uname -r)/build/scripts/checkpatch.pl --strict --no-tree --show-types -f src/*.[ch] Makefile Kbuild tests/kmemleak-canary/*.c" || rc=1
 	echo "== sparse (C=2)"
 	vm "make -s -C $VMDIR clean >/dev/null"
 	out=$(vm "make -C $VMDIR C=2 2>&1") || rc=1

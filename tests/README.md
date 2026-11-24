@@ -23,8 +23,11 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
   holds a kernel warning, oops, KASAN/UBSAN, lockdep, atomic-sleep or DMA-API
   report, or a driver error/timeout/MISMATCH message (`KMSG_BAD`,
   `KMSG_DRV_BAD` in `lib.sh`).
-- `run.sh` pauses kmemleak's automatic scan, clears old reports, and scans once
-  after the last case: any unreferenced object fails the `kmemleak` result.
+- `run.sh` pauses kmemleak's automatic scan, reports and clears old leaks,
+  and checks once after the last case: any unreferenced object fails the
+  `kmemleak` result. kmemleak only reports an object after two consecutive
+  scans found it unreferenced and unchanged, so every check scans twice
+  (`kml_reset`, `kml_report` in `lib.sh`); a single scan reports no new leak.
 - `debug-checkers` result: lockdep must still be on (`debug_locks=1`) and the
   DMA-API debug error count unchanged after the last case.
 
@@ -36,6 +39,7 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 ## Cases
 | Case | Gate | Checks |
 |---|---|---|
+| `00-kmemleak-selftest` | harness | builds `kmemleak-canary/` (8 x 128 B leaked at load, 0xa5 fill); the suite's report step must list them; SKIP without kmemleak |
 | `01-probe` | M0 | binds, MSI, FPGA VERSION logged, INT_ENABLE 0 after remove |
 | `02-load-unload` | M0 | 50 load/unload cycles; each probe binds, logs VERSION and reads both chip IDs OK |
 | `03-chip-id` | M1 | bus 1 chip IDs: 0x90 `54 49 05 68`, 0x58 `54 49 63 66`; 3 adapters; bus 0/2 transfers off |

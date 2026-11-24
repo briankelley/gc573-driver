@@ -26,6 +26,27 @@ KMSG_BAD+='|blocked for more than|rcu.*stall|sysfs: cannot create'
 # "refused": something tried a bus 0/2 I2C transfer, which nothing should do.
 KMSG_DRV_BAD="$GC573_MOD [^ ]+: .*(error|timeout|not ready|unexpected|failed|MISMATCH|refused)"
 
+# kmemleak reports an object only after two consecutive scans found it
+# unreferenced with unchanged contents: a scan that sees a changed checksum
+# (every new object starts at 0) greys the object instead (mm/kmemleak.c,
+# update_checksum). So every check scans twice; one scan reports nothing new.
+KML=/sys/kernel/debug/kmemleak
+kml_available() { [ -w "$KML" ]; }
+# Report what leaked so far, then forget it.
+kml_reset() {
+	echo scan > "$KML"
+	echo scan > "$KML"
+	echo clear > "$KML"
+}
+# Print the leaks since the last kml_reset. Objects younger than 5 s are
+# skipped by kmemleak, hence the wait.
+kml_report() {
+	sleep 6
+	echo scan > "$KML"
+	echo scan > "$KML"
+	cat "$KML"
+}
+
 fail() { echo "FAIL: $*"; exit "$T_FAIL"; }
 skip() { echo "SKIP: $*"; exit "$T_SKIP"; }
 
