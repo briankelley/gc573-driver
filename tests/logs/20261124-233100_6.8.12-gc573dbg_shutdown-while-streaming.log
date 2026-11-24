@@ -1,0 +1,34 @@
+# GC573 manual test: reboot while streaming (.shutdown)
+date:    2026-11-24 ~23:31 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg (KASAN, lockdep, kmemleak, DMA-API debug)
+rev:     0bb03ab (driver code as at 9f3ad74)
+input:   none
+procedure:
+  insmod gc573.ko dyndbg=+p; dmesg -n 8 (all kernel messages to the serial
+  console); gc573-cap -d /dev/video0 -f NV12 -b 4 -n 100000 in the
+  background (streaming: 114 frames done when checked); then
+  systemctl reboot -ff (reboot(2) without stopping services, so
+  device_shutdown() calls the driver's .shutdown with the stream running
+  and the video file open).
+result:
+  .shutdown stopped the video (VIP_CTRL[0] = 0, INT bit 0, domain reset:
+  104 ms in all), quiesced (INT_ENABLE 0) and the machine restarted. No warning, KASAN, lockdep or
+  DMA-API report on the serial console. The enp1s0 line is virtio-net's
+  own shutdown message.
+
+serial console (/var/log/libvirt/qemu/gc573-dev-serial.log), reboot
+request to restart:
+  [  314.492866] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  [  314.527961] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  [  314.561985] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  [  314.593944] gc573 0000:07:00.0: video stopped in 104 ms
+  [  314.596320] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  [  314.630955] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  [  314.664996] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  [  314.682967] net enp1s0: Unexpected TXQ (0) queue failure: -5
+  [  314.696893] gc573 0000:07:00.0: quiesced: INT_ENABLE=0x00000000 INT_STATUS=0x00000000 RESET=0x00000309
+  [  314.745037] ACPI: PM: Preparing to enter system sleep state S5
+  [  314.745941] kvm: exiting hardware virtualization
+  [  314.746222] reboot: Restarting system
+  [  314.746416] reboot: machine restart
