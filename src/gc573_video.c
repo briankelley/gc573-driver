@@ -27,7 +27,6 @@
 #include <linux/pci.h>
 #include <linux/scatterlist.h>
 #include <linux/seq_file.h>
-#include <linux/sizes.h>
 #include <linux/string.h>
 #include <linux/v4l2-dv-timings.h>
 #include <media/v4l2-dv-timings.h>
@@ -47,11 +46,8 @@
 #define GC573_VID_TERM_MS		2000
 /* spec/video-dma.md: RD's lists hold up to 2048 descriptors */
 #define GC573_DL_MAX			2048
-/*
- * Descriptor chunk cap. RD's traced lists used chunks of 4 MB and more
- * (T3/S22: 2 descriptors for an 8294400-byte plane); the limit is unknown.
- */
-#define GC573_DESC_MAX			SZ_2M
+/* descriptor chunk cap: the DMA max segment size (gc573.h) */
+#define GC573_DESC_MAX			GC573_DMA_SEG_MAX
 /*
  * spec/video-dma.md "Card frame store": the first frame after a start can
  * carry stale lines from an earlier session. It is never delivered.

@@ -390,6 +390,8 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32));
 	if (ret)
 		return dev_err_probe(dev, ret, "no 32-bit DMA\n");
+	/* one descriptor per segment: tell the DMA layer how long they get */
+	dma_set_max_seg_size(dev, GC573_DMA_SEG_MAX);
 
 	pci_set_master(pdev);
 

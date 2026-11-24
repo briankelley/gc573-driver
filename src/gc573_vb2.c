@@ -32,8 +32,8 @@
 
 #include "gc573.h"
 
-/* largest block tried: 2 MiB */
-#define GC573_MEM_MAX_ORDER	9
+/* largest block tried: GC573_DMA_SEG_MAX (2 MiB) */
+#define GC573_MEM_MAX_ORDER	(ilog2(GC573_DMA_SEG_MAX) - PAGE_SHIFT)
 
 struct gc573_mem {
 	struct device *dev;
@@ -103,9 +103,11 @@ static void *gc573_mem_alloc(struct vb2_buffer *vb, struct device *dev,
 	if (ret)
 		goto err_free_array;
 
-	ret = sg_alloc_table_from_pages(&m->sgt, m->pages, m->n_pages, 0,
-					(unsigned long)m->n_pages << PAGE_SHIFT,
-					GFP_KERNEL);
+	/* segments no longer than the device's DMA max segment size */
+	ret = sg_alloc_table_from_pages_segment(&m->sgt, m->pages, m->n_pages,
+						0,
+						(unsigned long)m->n_pages << PAGE_SHIFT,
+						GC573_DMA_SEG_MAX, GFP_KERNEL);
 	if (ret)
 		goto err_free_pages;
 

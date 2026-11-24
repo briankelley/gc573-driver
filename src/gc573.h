@@ -17,6 +17,7 @@
 #include <linux/io.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
+#include <linux/sizes.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
 #include <media/v4l2-dev.h>
@@ -120,6 +121,14 @@ struct sg_table;
 #define GC573_VCH_LIST_LO(n)		(0x08 + 12 * (n))
 #define GC573_VCH_LIST_HI(n)		(0x0c + 12 * (n))
 #define GC573_VCH_COUNT(n)		(0x10 + 12 * (n))
+
+/*
+ * Longest contiguous chunk one descriptor describes, and the DMA max
+ * segment size the driver declares. RD's traced lists used chunks of 4 MB
+ * and more (T3/S22: 2 descriptors for an 8294400-byte plane); the hardware
+ * limit is unknown.
+ */
+#define GC573_DMA_SEG_MAX		SZ_2M
 
 /* Video DMA descriptor, 4 little-endian words, spec/video-dma.md */
 #define GC573_DESC_WORDS		4
