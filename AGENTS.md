@@ -21,7 +21,7 @@ Audience: AI agents. Humans → README.md.
 - Vendor-derived driver (lg4k-linux forks) runs ONLY in reference VM. Never insmod on host — crashes 6.x.
 
 ## Layout (target; created as work lands)
-- `spec/` hw spec. regmap, irq, dma desc fmt, i2c master, it6805/it6664 seqs, audio, auth chip.
+- `spec/` hw spec. regmap, irq, dma desc fmt, i2c master, it6805/splitter seqs, audio, auth chip.
 - `traces/` sanitized trace captures (offset/value/dir/ts). Scenario-named.
 - `src/` driver.
 - `dkms.conf`, `Makefile` + `Kbuild` (out-of-tree kbuild).
@@ -43,6 +43,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - `tools/vmbuild.sh [load|unload|check|test [CASE..]]` — host side. rsyncs Makefile, Kbuild, dkms.conf, `src/`, `tests/` to `gc573-dev:~/gc573-driver` (env VM/VMDIR), clean `W=1` build against the VM's running kernel; any warning fails (one exempt: `6.8.12-gc573dbg` headers lack `ubuntu/include`). `load` (re)loads with INSMOD_ARGS and prints the probe's dmesg; `unload`; `check` = checkpatch --strict on `src/` + sparse `C=2`; `test` runs `tests/run.sh` as root in the VM, log → `tests/logs/<UTC>_<krel>.log` (commit it). Never loads on the host.
 - Regression VM matrix: Ubuntu, Mint, RHEL-family; one VM per distro version, named `gc573-<distro><ver>`, built by scripts in `tools/`. Retain all: never delete or rebuild over an existing regression VM; add new versions alongside.
   - `tools/vms/create.sh <profile> [IP]` (cloud images; profiles in `tools/vms/profiles/`), `tools/vms/mint.sh <ver> [edition] [IP]` (ISO unattended install + virt-customize). Disks standalone (no shared backing). No persistent card.
+  - `tools/vms/matrix-build.sh [-r REF] [-j N] [--load] [--dkms] [VM...]` builds REF (git archive) in each VM against every kernel with headers: W=1, any warning fails; `--load` = insmod/rmmod smoke test (no card: init/exit + symbols); `--dkms` = dkms add/build per kernel. Starts/stops VMs. Logs + `summary.tsv` → `tests/logs/matrix/<UTC>-<sha>/` (commit them). Default VMs: all but `gc573-ref`, `gc573-dev`. No tty: set `SUDO_ASKPASS` to a helper printing the sudo password.
   - `tools/vms/card.sh <vm>` moves the card between running VMs (live PCI unplug/plug; detach fails if the guest driver does not release it). `--where` shows the holder.
   - Current (VM: distro, kernel, IP): `gc573-ref` Ubuntu 20.04, 5.4, .39 (vendor drv only) · `gc573-dev` Ubuntu 24.04, 6.8.0 (+ debug 6.8.12), .40 · `gc573-alma9` AlmaLinux 9.9, 5.14, .41 · `gc573-alma10` AlmaLinux 10.3, 6.12, .42 · `gc573-fedora45` Fedora 45, 7.3, .43 · `gc573-ubuntu2604` Ubuntu 26.04, 7.0, .44 · `gc573-mint223` Mint 22.3, 6.14 HWE, .45. Host: Mint 22, 6.8.0. ssh aliases = VM names.
   - Gaps: EL10 has no v4l2-compliance package (build v4l-utils from source there). EL9 kernel lacks videobuf2-dma-sg/-dma-contig (see design constraints).
@@ -55,8 +56,8 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - `pcim_*` managed resources. `pci_enable_device` + `pci_set_master` + iomap. (vendor drv omitted → dead BAR.)
 - MSI if cap present else INTx. Threaded IRQ.
 - No sleeping under spinlock. FPGA i2c master → `i2c_adapter`, sleepable. HDMI rx event handling in threaded irq / workqueue. (vendor drv: scheduling-while-atomic.)
-- IT6805 / IT6664 → v4l2 subdevs preferred.
-- vb2 allocator: `videobuf2-vmalloc` + driver-built `sg_table` (`vmalloc_to_page` → `dma_map_sgtable`) → descriptor lists. Only allocator present on every matrix kernel (EL9 5.14 ships neither dma-sg nor dma-contig). MMAP (+ USERPTR optional); no DMABUF export. DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
+- IT6805 / splitter (ITE 0x6663) → v4l2 subdevs preferred.
+- vb2 memory: driver-private `vb2_mem_ops` (EL9 5.14 ships neither videobuf2-dma-sg nor -dma-contig). Pages from `alloc_pages(GFP_KERNEL | __GFP_DMA32)` while the DMA mask is 32-bit; `vmap` for kernel access; `sg_table` → `dma_map_sgtable` → descriptor lists; mmap by page insertion. Not videobuf2-vmalloc: its pages land above 4 GB, which a 32-bit mask bounces through swiotlb when no IOMMU translates (VM, `iommu=pt`): small pool, a copy per frame. MMAP first; USERPTR/DMABUF import later. Mem-ops signature differences across kernels in `src/compat.h`. DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
 - Formats: NV12, YUYV min. RGB24 only if verified in OBS.
 - Style: kernel coding style, `scripts/checkpatch.pl --strict` clean. SPDX GPL-2.0 header every file.
 - Kernel range: every regression-matrix VM kernel (today 5.14 EL9 → 7.3 Fedora 45). Kernel-version differences only in `src/compat.h` (`LINUX_VERSION_CODE` / `RHEL_RELEASE_CODE`); no #ifdef elsewhere.
@@ -65,7 +66,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 Each gate passes in `gc573-dev` before the next starts.
 - M0 skeleton: probe/remove, BAR map, FPGA init + quiesce (`spec/init.md`), MSI + threaded IRQ. Gate: load/unload ×50, clean dmesg, VERSION read.
 - M1 I2C: bus-1 engine adapter; bus 0/2 OpenCores adapters. Gate: chip IDs (0x90 → `54 49 05 68`; 0x58 → `54 49 63 66`).
-- M2 video DMA, no input: vb2 vmalloc + driver sg_table (see design constraints), 3 channels, 6 formats, free-running frames. Gate: pre-filled buffers overwritten; `v4l2-compliance -s` 0 fail.
+- M2 video DMA, no input: vb2 with driver mem ops (see design constraints), 3 channels, 6 formats, free-running frames. Gate: pre-filled buffers overwritten; `v4l2-compliance -s` 0 fail.
 - M3 HDMI bring-up: splitter + IT6805 per `spec/hdmi-chips.md`, poll loop, DV timings, `V4L2_EVENT_SOURCE_CHANGE`. Gate: live 1080p59.94 capture, all formats, image verified.
 - M4 audio: ALSA PCM capture. Gate: capture with live source, A/V sync in OBS.
 - M5 EDID (`VIDIOC_G/S_EDID`), hotplug + mode-change stress, controls, scaling. Gate: test suite v1.
@@ -76,7 +77,7 @@ Each gate passes in `gc573-dev` before the next starts.
 - `tests/` = regression suite. Every behavior change ships w/ test(s). Every bug fix ships w/ failing-before test.
 - PR must include run log of full suite on real GC573 hw: pass/fail per case, kernel ver, card fw ver, input source + mode.
 - Required gates per PR:
-  - build: clean kbuild, zero warnings, W=1.
+  - build: clean kbuild, zero warnings, W=1, on every matrix VM kernel (`tools/vms/matrix-build.sh --load --dkms`).
   - checkpatch --strict clean.
   - `v4l2-compliance -d <dev> -s` 0 fail.
   - load/unload x50, no leaks (kmemleak), no WARN/BUG in dmesg.

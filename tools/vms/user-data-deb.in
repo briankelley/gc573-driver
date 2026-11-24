@@ -15,6 +15,7 @@ packages:
   - linux-headers-generic
   - build-essential
   - dkms
+  - dwarves
   - git
   - rsync
   - pciutils

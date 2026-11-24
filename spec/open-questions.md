@@ -26,6 +26,8 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 | 23 | TX port 1 HPD fall latency after GPIO bit 2 goes low (masked by a splitter TX reset in every trace) | our driver: drop bit 2 while the splitter TX is idle; read TX port 1 status every 5 ms | yes |
 | 24 | Input types never traced: RGB or full-range input, deep colour, interlaced (1080i, 480i/576i), native 720p, negative sync polarity, mode change while streaming, load with no source then plug-in | M3/M5 test suite with a PC source and the Roku | yes |
 | 25 | Encrypting source without the external HDCP stripper: splitter RX and IT6805 behaviour | M5: Roku direct; the driver must report no signal, not hang | yes |
+| 26 | Bus-1 engine on NACK or absent device: STATUS value, INT behaviour; does reading STATUS have side effects? | read IT6805 reg 0x4b; if bit 0 is clear (EDID RAM slave off), read 0xa8 reg 0x00, where nothing answers, and record STATUS and INT | no |
+| 27 | RESET (0x00c): what clears bits 0/3/8/9 besides a device reset; what bit 3 means; can a later domain reset be confirmed at all? | after a VM reboot, write the domains one at a time and read RESET plus the DMA/VIP registers each domain covers | no |
 
 ## Resolved
 | # | Question | Answer | Ev |

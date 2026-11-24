@@ -26,7 +26,7 @@ packages:
 runcmd:
   - [sh, -c, 'grep -q "^ID=fedora" /etc/os-release || { dnf -y install epel-release && { dnf config-manager --set-enabled crb || crb enable; }; }']
   - [sh, -c, 'dnf -y install dkms']
-  - [sh, -c, 'for p in v4l-utils edid-decode; do dnf -y install $p || echo "gc573: $p unavailable"; done']
+  - [sh, -c, 'for p in dwarves v4l-utils edid-decode; do dnf -y install $p || echo "gc573: $p unavailable"; done']
   - [sh, -c, 'rpm -q kernel-devel dkms v4l-utils > /var/log/gc573-provision.txt 2>&1 || true']
   - touch /etc/cloud/cloud-init.disabled
 power_state:
