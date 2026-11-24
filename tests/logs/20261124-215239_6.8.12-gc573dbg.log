@@ -1,0 +1,400 @@
+# GC573 regression suite
+date:    2026-11-24 21:52:39 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #3 SMP PREEMPT_DYNAMIC Tue Nov 24 13:47:06 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion D769CF64D08635B6E53F399
+rev:     a51a8190c9cb
+input:   none
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+
+## 01-probe
+  FPGA version 20200811 (spec/regmap.md: 20200811)
+  MSI in use
+  quiesce: INT_ENABLE reads 0 after remove
+  -- kernel log (16 lines)
+  | [ 3841.001044] gc573-test: 1795557164019168139-27842 probe
+  | [ 3841.036644] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3841.036669] gc573 0000:07:00.0: state at probe: RESET=0x00000309 INT_ENABLE=0x00000000 INT_STATUS=0x00000000 GPIO=0x0001f970
+  | [ 3841.038017] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [ 3841.072113] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [ 3841.106112] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [ 3841.138055] gc573 0000:07:00.0: DDR_STATUS=0x3
+  | [ 3841.138086] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3841.219340] gc573 0000:07:00.0: init done: GPIO=0x0001f970
+  | [ 3841.228312] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3841.250929] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3841.251335] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3841.269994] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [ 3841.304090] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [ 3841.338465] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [ 3841.370045] gc573 0000:07:00.0: quiesced: INT_ENABLE=0x00000000 INT_STATUS=0x00000000 RESET=0x00000309
+RESULT 01-probe             PASS (1s)
+
+## 02-load-unload
+  50 load/unload cycles in 28 s
+  -- kernel log (300 lines)
+  | [ 3841.712898] gc573-test: 1795557164731213535-16977 iteration 1
+  | [ 3841.748836] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3841.850198] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3841.944207] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3841.966946] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3841.967349] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3842.288593] gc573-test: 1795557165306342744-25864 iteration 2
+  | [ 3842.324277] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3842.426194] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3842.518568] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3842.543564] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3842.544000] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3842.844524] gc573-test: 1795557165862789147-12574 iteration 3
+  | [ 3842.876070] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3842.978203] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3843.074317] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3843.097939] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3843.098335] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3843.386193] gc573-test: 1795557166404364436-9357 iteration 4
+  | [ 3843.421358] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3843.522110] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3843.614225] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3843.637043] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3843.637482] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3843.938473] gc573-test: 1795557166955843459-12753 iteration 5
+  | [ 3843.981739] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3844.083167] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3844.174033] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3844.196792] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3844.197238] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3844.498096] gc573-test: 1795557167516357728-11079 iteration 6
+  | [ 3844.530717] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3844.631157] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3844.719374] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3844.741860] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3844.742851] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3845.049044] gc573-test: 1795557168066970727-10260 iteration 7
+  | [ 3845.082889] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3845.185146] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3845.277684] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3845.300010] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3845.300430] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3845.607280] gc573-test: 1795557168625659848-2578 iteration 8
+  | [ 3845.640643] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3845.742138] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3845.829461] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3845.851811] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3845.852735] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3846.144416] gc573-test: 1795557169162777925-19425 iteration 9
+  | [ 3846.175166] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3846.277141] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3846.361102] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3846.383937] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3846.384315] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3846.627957] gc573-test: 1795557169646280246-9930 iteration 10
+  | [ 3846.664184] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3846.766053] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3846.849336] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3846.871801] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3846.872188] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3847.126043] gc573-test: 1795557170144391372-24562 iteration 11
+  | [ 3847.158216] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3847.260120] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3847.352628] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3847.374860] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3847.375254] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3847.657593] gc573-test: 1795557170675715656-32088 iteration 12
+  | [ 3847.693620] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3847.795103] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3847.891912] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3847.914868] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3847.915271] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3848.193867] gc573-test: 1795557171212276078-4115 iteration 13
+  | [ 3848.227500] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3848.329103] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3848.423979] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3848.447886] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3848.448545] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3848.750384] gc573-test: 1795557171768627961-12897 iteration 14
+  | [ 3848.786478] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3848.888088] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3848.985163] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3849.009467] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3849.009914] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3849.317302] gc573-test: 1795557172335273802-17437 iteration 15
+  | [ 3849.351647] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3849.453029] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3849.546219] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3849.568700] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3849.569866] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3849.830678] gc573-test: 1795557172849137891-20757 iteration 16
+  | [ 3849.865231] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3849.967380] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3850.061740] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3850.084734] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3850.085055] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3850.375983] gc573-test: 1795557173394460578-1754 iteration 17
+  | [ 3850.405097] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3850.507067] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3850.598294] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3850.620861] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3850.621260] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3850.938381] gc573-test: 1795557173956569929-18424 iteration 18
+  | [ 3850.976271] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3851.078106] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3851.172463] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3851.195722] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3851.196074] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3851.488595] gc573-test: 1795557174506160173-18507 iteration 19
+  | [ 3851.537980] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3851.640039] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3851.733632] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3851.755698] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3851.756021] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3852.061860] gc573-test: 1795557175080301585-7539 iteration 20
+  | [ 3852.090793] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3852.193087] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3852.293344] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3852.317785] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3852.318220] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3852.622286] gc573-test: 1795557175640655551-4836 iteration 21
+  | [ 3852.654095] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3852.754977] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3852.848200] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3852.870776] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3852.871159] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3853.146071] gc573-test: 1795557176164613699-17211 iteration 22
+  | [ 3853.178339] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3853.280077] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3853.374324] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3853.397712] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3853.398140] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3853.690486] gc573-test: 1795557176708880299-19186 iteration 23
+  | [ 3853.719535] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3853.821049] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3853.910987] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3853.934437] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3853.934875] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3854.222916] gc573-test: 1795557177241346809-24542 iteration 24
+  | [ 3854.255090] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3854.357056] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3854.443138] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3854.467659] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3854.468533] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3854.756895] gc573-test: 1795557177774233585-8935 iteration 25
+  | [ 3854.798223] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3854.900025] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3854.992867] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3855.015705] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3855.016830] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3855.307042] gc573-test: 1795557178325418290-12927 iteration 26
+  | [ 3855.340856] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3855.443023] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3855.535488] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3855.557699] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3855.558103] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3855.864102] gc573-test: 1795557178882240151-27574 iteration 27
+  | [ 3855.904485] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3856.006012] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3856.099676] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3856.121727] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3856.122144] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3856.429748] gc573-test: 1795557179448194042-20625 iteration 28
+  | [ 3856.465845] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3856.566867] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3856.643079] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3856.666626] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3856.667117] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3856.925054] gc573-test: 1795557179943432627-520 iteration 29
+  | [ 3856.961396] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3857.061797] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3857.150880] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3857.173942] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3857.174359] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3857.492266] gc573-test: 1795557180509963775-26127 iteration 30
+  | [ 3857.529027] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3857.630991] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3857.730887] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3857.753630] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3857.754021] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3858.055638] gc573-test: 1795557181074210178-32158 iteration 31
+  | [ 3858.092612] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3858.193846] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3858.287505] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3858.310644] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3858.311076] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3858.608586] gc573-test: 1795557181626770167-24657 iteration 32
+  | [ 3858.647146] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3858.748970] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3858.838638] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3858.860569] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3858.860939] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3859.154582] gc573-test: 1795557182173060730-155 iteration 33
+  | [ 3859.187892] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3859.289963] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3859.383242] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3859.405820] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3859.406226] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3859.708902] gc573-test: 1795557182727038178-17626 iteration 34
+  | [ 3859.746414] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3859.847979] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3859.947128] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3859.969515] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3859.969993] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3860.269262] gc573-test: 1795557183287797227-12915 iteration 35
+  | [ 3860.305478] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3860.406915] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3860.499739] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3860.522736] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3860.523184] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3860.813033] gc573-test: 1795557183831590555-17212 iteration 36
+  | [ 3860.847609] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3860.948762] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3861.042731] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3861.065552] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3861.065929] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3861.355018] gc573-test: 1795557184373626763-7279 iteration 37
+  | [ 3861.390168] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3861.491931] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3861.578330] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3861.600687] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3861.601077] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3861.900556] gc573-test: 1795557184919184068-13786 iteration 38
+  | [ 3861.935942] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3862.037872] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3862.132866] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3862.156490] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3862.157699] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3862.470361] gc573-test: 1795557185487889642-4619 iteration 39
+  | [ 3862.513833] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3862.615838] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3862.705812] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3862.729755] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3862.730133] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3863.023772] gc573-test: 1795557186041755940-29502 iteration 40
+  | [ 3863.065656] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3863.167904] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3863.259805] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3863.283198] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3863.283655] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3863.596994] gc573-test: 1795557186615439277-8250 iteration 41
+  | [ 3863.629575] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3863.731896] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3863.818643] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3863.841614] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3863.842055] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3864.120489] gc573-test: 1795557187138257039-22140 iteration 42
+  | [ 3864.157886] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3864.259809] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3864.358384] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3864.381477] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3864.382665] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3864.682591] gc573-test: 1795557187700222654-5891 iteration 43
+  | [ 3864.722089] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3864.823885] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3864.914580] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3864.937799] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3864.938204] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3865.237693] gc573-test: 1795557188256301433-3909 iteration 44
+  | [ 3865.288083] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3865.389714] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3865.484834] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3865.507552] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3865.507940] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3865.799222] gc573-test: 1795557188817847406-29842 iteration 45
+  | [ 3865.839491] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3865.940861] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3866.027496] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3866.051235] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3866.051675] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3866.342490] gc573-test: 1795557189361157731-25135 iteration 46
+  | [ 3866.378974] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3866.480684] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3866.557220] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3866.579459] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3866.580983] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3866.850403] gc573-test: 1795557189868801266-27682 iteration 47
+  | [ 3866.881732] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3866.983643] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3867.066781] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3867.089562] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3867.089955] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3867.390171] gc573-test: 1795557190408185529-18026 iteration 48
+  | [ 3867.432557] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3867.535639] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3867.625718] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3867.648393] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3867.648787] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3867.943333] gc573-test: 1795557190962006681-10998 iteration 49
+  | [ 3867.977402] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3868.078809] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3868.172937] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3868.195680] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3868.196094] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [ 3868.468744] gc573-test: 1795557191487276465-12246 iteration 50
+  | [ 3868.503480] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3868.605019] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3868.697708] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3868.720410] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3868.720760] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+RESULT 02-load-unload       PASS (28s)
+
+## 03-chip-id
+  adapters:
+    gc573 0000:07:00.0 bus 0
+    gc573 0000:07:00.0 bus 1
+    gc573 0000:07:00.0 bus 2
+  bus 0/2 transfers: off (i2c_bus02=N)
+  interrupts during probe: 6 (6 bus-1 transfers expected)
+  match: 0x90 (IT6805): id 54 49 05 68
+  match: 0x58 (splitter): id 54 49 63 66
+  -- kernel log (6 lines)
+  | [ 3869.116905] gc573-test: 1795557192135677887-14102 chip-id
+  | [ 3869.149778] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3869.251816] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3869.349387] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3869.372549] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3869.372976] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+RESULT 03-chip-id           PASS (0s)
+
+## 04-i2c-reads
+  bus 1: /dev/i2c-2
+  reader 1: 200 rounds, 2000 transfers, 0 mismatches
+  reader 2: 200 rounds, 2000 transfers, 0 mismatches
+  4000 transfers in 584 ms, 4000 interrupts
+  plain read: ENOTSUP
+  plain read refused before the hardware (no interrupt)
+  -- kernel log (5 lines)
+  | [ 3869.836960] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3869.938779] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3870.029568] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3870.052361] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [ 3870.052736] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+RESULT 04-i2c-reads         PASS (2s)
+
+## 05-dkms-build
+  dkms-3.0.11: built gc573.ko for 6.8.12-gc573dbg
+  -- kernel log (0 lines)
+  | 
+RESULT 05-dkms-build        PASS (5s)
+
+## kmemleak (whole suite)
+  no new unreferenced objects
+RESULT kmemleak             PASS 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 01-probe             PASS (1s)
+RESULT 02-load-unload       PASS (28s)
+RESULT 03-chip-id           PASS (0s)
+RESULT 04-i2c-reads         PASS (2s)
+RESULT 05-dkms-build        PASS (5s)
+RESULT kmemleak             PASS 
+RESULT debug-checkers       PASS 
+SUMMARY pass=7 fail=0 skip=0
