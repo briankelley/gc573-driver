@@ -25,6 +25,8 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
   `KMSG_DRV_BAD` in `lib.sh`).
 - `run.sh` pauses kmemleak's automatic scan, clears old reports, and scans once
   after the last case: any unreferenced object fails the `kmemleak` result.
+- `debug-checkers` result: lockdep must still be on (`debug_locks=1`) and the
+  DMA-API debug error count unchanged after the last case.
 
 ## Log
 Header: date, kernel, debug options, card IDs, module srcversion, source rev,

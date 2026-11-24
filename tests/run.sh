@@ -20,7 +20,18 @@ set -uo pipefail
 [ -n "$GC573_BDF" ] || { echo "run.sh: no $GC573_PCI_ID device" >&2; exit 2; }
 
 KML=/sys/kernel/debug/kmemleak
+DMA_DBG=/sys/kernel/debug/dma-api
 kcfg() { sed -n "s/^CONFIG_$1=//p" "/boot/config-$(uname -r)" 2>/dev/null; }
+
+# Debug checkers' state: lockdep turns itself off after its first report,
+# DMA-API debug counts errors. "-" = not in this kernel.
+debug_state() {
+	local dl=- de=- dd=-
+	[ -r /proc/lockdep_stats ] && dl=$(awk '/debug_locks:/ { print $2 }' /proc/lockdep_stats)
+	[ -r "$DMA_DBG/error_count" ] && de=$(cat "$DMA_DBG/error_count")
+	[ -r "$DMA_DBG/disabled" ] && dd=$(cat "$DMA_DBG/disabled")
+	echo "lockdep debug_locks=$dl, DMA-API error_count=$de disabled=$dd"
+}
 
 [ $# -gt 0 ] || set -- "$GC573_TESTS"/cases/*.sh
 
@@ -36,6 +47,8 @@ echo "         subsystem $(lspci -n -v -s "$GC573_BDF" | sed -n 's/.*Subsystem: 
 echo "module:  $GC573_KO srcversion $(modinfo -F srcversion "$GC573_KO")"
 echo "rev:     ${GC573_REV:-unknown}"
 echo "input:   ${GC573_INPUT:-none}"
+dbg_before=$(debug_state)
+echo "checks:  $dbg_before"
 
 if gc573_loaded; then
 	echo "$GC573_MOD already loaded: unloading"
@@ -120,6 +133,20 @@ if [ -w "$KML" ]; then
 else
 	echo "  kmemleak not available on this kernel"
 	result kmemleak SKIP
+fi
+
+echo
+echo "## debug checkers (whole suite)"
+dbg_after=$(debug_state)
+echo "  before: $dbg_before"
+echo "  after:  $dbg_after"
+if [ "$dbg_before" = "lockdep debug_locks=-, DMA-API error_count=- disabled=-" ]; then
+	result debug-checkers SKIP "(no lockdep or DMA-API debug)"
+elif [ "$dbg_after" = "$dbg_before" ] && [[ "$dbg_after" != *"debug_locks=0"* ]] &&
+     [[ "$dbg_after" != *"disabled=Y"* ]]; then
+	result debug-checkers PASS
+else
+	result debug-checkers FAIL "(a checker reported or is off)"
 fi
 
 echo
