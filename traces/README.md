@@ -33,6 +33,10 @@ Bus-1 engine registers 0x180–0x1a4 are omitted from MMIO; their transfers appe
 - DMA addresses are guest-physical and meaningless outside the session; buffers renumbered `bufN`.
 - Raw captures stay private.
 
+## Known artifacts
+- `I2C W` values are the values RD requested. The engine's data register is not in these files.
+- `T3` t = 410834909 µs (S32-1080-BGR3): `W 90 * 0f 00` timed out and RD's retry sent 0xaa. The IT6805 was in bank 2 for the next two transfers (`R`/`W 90 0 12`, really bank-2 reg 0x12) until RD's next bank select read 0x0f = 0x02. Bank labels come from RD's bank-select writes, so they inherit such failures. (`spec/i2c.md`)
+
 ## Use
 - Spec evidence: `T<n>/<scenario>` tags refer to the MARK windows here.
 - Tests: compare register state per scenario (values, not order) against these.

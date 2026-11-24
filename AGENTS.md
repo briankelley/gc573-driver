@@ -58,13 +58,13 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - vb2 allocator: `videobuf2-vmalloc` + driver-built `sg_table` (`vmalloc_to_page` → `dma_map_sgtable`) → descriptor lists. Only allocator present on every matrix kernel (EL9 5.14 ships neither dma-sg nor dma-contig). MMAP (+ USERPTR optional); no DMABUF export. DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
 - Formats: NV12, YUYV min. RGB24 only if verified in OBS.
 - Style: kernel coding style, `scripts/checkpatch.pl --strict` clean. SPDX GPL-2.0 header every file.
-- Kernel range: every regression-matrix VM kernel (today 5.14 EL9 → 7.0 Ubuntu 26.04). Kernel-version differences only in `src/compat.h` (`LINUX_VERSION_CODE` / `RHEL_RELEASE_CODE`); no #ifdef elsewhere.
+- Kernel range: every regression-matrix VM kernel (today 5.14 EL9 → 7.3 Fedora 45). Kernel-version differences only in `src/compat.h` (`LINUX_VERSION_CODE` / `RHEL_RELEASE_CODE`); no #ifdef elsewhere.
 
 ## Milestones (driver)
 Each gate passes in `gc573-dev` before the next starts.
 - M0 skeleton: probe/remove, BAR map, FPGA init + quiesce (`spec/init.md`), MSI + threaded IRQ. Gate: load/unload ×50, clean dmesg, VERSION read.
 - M1 I2C: bus-1 engine adapter; bus 0/2 OpenCores adapters. Gate: chip IDs (0x90 → `54 49 05 68`; 0x58 → `54 49 63 66`).
-- M2 video DMA, no input: vb2 dma-sg, 3 channels, 6 formats, free-running frames. Gate: pre-filled buffers overwritten; `v4l2-compliance -s` 0 fail.
+- M2 video DMA, no input: vb2 vmalloc + driver sg_table (see design constraints), 3 channels, 6 formats, free-running frames. Gate: pre-filled buffers overwritten; `v4l2-compliance -s` 0 fail.
 - M3 HDMI bring-up: splitter + IT6805 per `spec/hdmi-chips.md`, poll loop, DV timings, `V4L2_EVENT_SOURCE_CHANGE`. Gate: live 1080p59.94 capture, all formats, image verified.
 - M4 audio: ALSA PCM capture. Gate: capture with live source, A/V sync in OBS.
 - M5 EDID (`VIDIOC_G/S_EDID`), hotplug + mode-change stress, controls, scaling. Gate: test suite v1.

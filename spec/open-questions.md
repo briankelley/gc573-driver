@@ -20,8 +20,12 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 | 16 | Descriptor limits: max COUNT, min address alignment, ctrl bits | driver experiment with crafted lists | no |
 | 17 | TLP_ALIGN (0x004) need | sizes whose dword count is not a multiple of 32; check corruption with/without | no |
 | 18 | FPGA part / firmware variants | board markings photo; VERSION register on other cards | — |
-| 21 | GPIO bit 10 (input): HDMI chip interrupt line? If yes, poll one MMIO bit instead of ~50 I2C ops per cycle | our driver: sample 0x040 at 1 kHz while hot-plugging and changing modes; correlate with chip status registers | yes |
+| 21 | GPIO bit 10 (input): splitter interrupt output? Samples fit "high while splitter events are pending" (`regmap.md`). If yes, the splitter needs I2C polling only when the bit is set | our driver: sample 0x040 at every poll together with splitter 0x58 reg 0x05 and the IT6805 event registers, while hot-plugging and changing modes | yes |
 | 20 | Input pixel clock: RD's estimate reads ~13 % low (129 MHz at 1080p60, 257 MHz at 2160p60 4:2:0) | find the IT6805 clock-measurement registers and reference clock; cross-check with FPGA IN_FRAME_PERIOD | yes |
+| 22 | Missing I2C completions, all on IT6805 reg 0x0f (`i2c.md`): engine or chip? Did the timed-out transfer reach the chip? | our driver: count timeouts per device and register; on timeout read STATUS and the bank register before retrying | no |
+| 23 | TX port 1 HPD fall latency after GPIO bit 2 goes low (masked by a splitter TX reset in every trace) | our driver: drop bit 2 while the splitter TX is idle; read TX port 1 status every 5 ms | yes |
+| 24 | Input types never traced: RGB or full-range input, deep colour, interlaced (1080i, 480i/576i), native 720p, negative sync polarity, mode change while streaming, load with no source then plug-in | M3/M5 test suite with a PC source and the Roku | yes |
+| 25 | Encrypting source without the external HDCP stripper: splitter RX and IT6805 behaviour | M5: Roku direct; the driver must report no signal, not hang | yes |
 
 ## Resolved
 | # | Question | Answer | Ev |
