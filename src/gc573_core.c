@@ -345,7 +345,12 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return ret;
 
 	/* I2C adapters: devres removes them before the quiesce above runs */
-	return gc573_i2c_init(gc);
+	ret = gc573_i2c_init(gc);
+	if (ret)
+		return ret;
+
+	gc573_i2c_check_ids(gc);
+	return 0;
 }
 
 static const struct pci_device_id gc573_pci_ids[] = {

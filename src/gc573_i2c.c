@@ -15,6 +15,7 @@
  */
 
 #include <linux/completion.h>
+#include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/i2c.h>
 #include <linux/iopoll.h>
@@ -22,6 +23,7 @@
 #include <linux/moduleparam.h>
 #include <linux/mutex.h>
 #include <linux/pci.h>
+#include <linux/string.h>
 
 #include "gc573.h"
 
@@ -340,4 +342,67 @@ int gc573_i2c_init(struct gc573 *gc)
 		 dev_name(&gc->i2c0.adap.dev), dev_name(&gc->i2c1.dev),
 		 dev_name(&gc->i2c2.adap.dev), i2c_bus02 ? "on" : "off");
 	return 0;
+}
+
+/*
+ * HDMI chip IDs, registers 0x00-0x03 on bus 1 (spec/i2c.md "Device
+ * inventory"). Read with the transfers RD uses at load (T1/S01): IT6805
+ * one byte per transfer, splitter two. Read-only: RD's bank-select write
+ * (0x0f = 0) before the splitter reads is left out.
+ */
+struct gc573_chip_id {
+	const char *name;
+	u16 addr;		/* 7-bit */
+	u8 step;		/* bytes per read transfer */
+	u8 id[4];
+};
+
+static const struct gc573_chip_id gc573_chip_ids[] = {
+	{ "IT6805", 0x48, 1, { 0x54, 0x49, 0x05, 0x68 } },
+	{ "splitter", 0x2c, 2, { 0x54, 0x49, 0x63, 0x66 } },
+};
+
+static int gc573_i2c_read_id(struct gc573 *gc,
+			     const struct gc573_chip_id *chip, u8 *id)
+{
+	u8 reg;
+	int ret;
+
+	for (reg = 0; reg < sizeof(chip->id); reg += chip->step) {
+		struct i2c_msg msgs[] = {
+			{ .addr = chip->addr, .len = 1, .buf = &reg },
+			{ .addr = chip->addr, .flags = I2C_M_RD,
+			  .len = chip->step, .buf = id + reg },
+		};
+
+		ret = i2c_transfer(&gc->i2c1, msgs, 2);
+		if (ret != 2)
+			return ret < 0 ? ret : -EIO;
+	}
+	return 0;
+}
+
+/* M1 gate: read and log both chip IDs. A mismatch is logged, not fatal. */
+void gc573_i2c_check_ids(struct gc573 *gc)
+{
+	struct device *dev = &gc->pdev->dev;
+	u8 id[sizeof(gc573_chip_ids[0].id)];
+	unsigned int i;
+	int ret;
+
+	/* T1/S01: RD waits 2 x 10 ms after the chip resets before bus 1 use */
+	msleep(20);
+
+	for (i = 0; i < ARRAY_SIZE(gc573_chip_ids); i++) {
+		const struct gc573_chip_id *chip = &gc573_chip_ids[i];
+
+		ret = gc573_i2c_read_id(gc, chip, id);
+		if (ret)
+			dev_err(dev, "I2C bus 1 0x%02x (%s): id read failed: %d\n",
+				chip->addr << 1, chip->name, ret);
+		else
+			dev_info(dev, "I2C bus 1 0x%02x (%s): id %*ph %s\n",
+				 chip->addr << 1, chip->name, (int)sizeof(id), id,
+				 memcmp(id, chip->id, sizeof(id)) ? "MISMATCH" : "OK");
+	}
 }

@@ -34,4 +34,5 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | Case | Gate | Checks |
 |---|---|---|
 | `01-probe` | M0 | binds, MSI, FPGA VERSION logged, INT_ENABLE 0 after remove |
-| `02-load-unload` | M0 | 50 load/unload cycles, each probe binds and logs VERSION |
+| `02-load-unload` | M0 | 50 load/unload cycles; each probe binds, logs VERSION and reads both chip IDs OK |
+| `03-chip-id` | M1 | bus 1 chip IDs: 0x90 `54 49 05 68`, 0x58 `54 49 63 66`; 3 adapters; bus 0/2 transfers off |

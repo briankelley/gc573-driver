@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0
-# M0 gate: load/unload x50 (GC573_ITER). Every probe must bind the card and log
-# the FPGA version; every remove must unbind it. run.sh scans the kernel log of
-# the whole loop for warnings, sanitizer, lockdep and DMA-API reports and driver
-# errors, and kmemleak covers it at the end of the suite.
+# M0 gate: load/unload x50 (GC573_ITER). Every probe must bind the card, log
+# the FPGA version and (M1) read both HDMI chip IDs OK over I2C bus 1; every
+# remove must unbind it. run.sh scans the kernel log of the whole loop for
+# warnings, sanitizer, lockdep and DMA-API reports and driver errors, and
+# kmemleak covers it at the end of the suite.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
@@ -18,7 +19,10 @@ for i in $(seq 1 "$n"); do
 	fi
 	gc573_unload || fail "iteration $i: rmmod failed"
 	gc573_bound && fail "iteration $i: still bound after rmmod"
-	kmsg_since "$tag" | grep -q ': FPGA version ' ||
+	log=$(kmsg_since "$tag")
+	echo "$log" | grep -q ': FPGA version ' ||
 		fail "iteration $i: no FPGA version line"
+	[ "$(echo "$log" | grep -c ': I2C bus 1 0x[0-9a-f]* (.*): id .* OK$')" = 2 ] ||
+		fail "iteration $i: chip IDs not both OK"
 done
 echo "$n load/unload cycles in $(($(date +%s) - start)) s"

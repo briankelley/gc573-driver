@@ -133,6 +133,7 @@ struct gc573 {
 
 int gc573_i2c_init(struct gc573 *gc);
 void gc573_i2c1_irq(struct gc573 *gc);
+void gc573_i2c_check_ids(struct gc573 *gc);
 
 static inline u32 gc573_rd(struct gc573 *gc, u32 off)
 {

@@ -23,7 +23,8 @@ KMSG_BAD+='|sleeping function called from invalid context|soft lockup|hard LOCKU
 KMSG_BAD+='|blocked for more than|rcu.*stall|sysfs: cannot create'
 
 # Driver messages that fail any case: the driver's error and warning wording.
-KMSG_DRV_BAD="$GC573_MOD [^ ]+: .*(error|timeout|not ready|unexpected|failed|MISMATCH)"
+# "refused": something tried a bus 0/2 I2C transfer, which nothing should do.
+KMSG_DRV_BAD="$GC573_MOD [^ ]+: .*(error|timeout|not ready|unexpected|failed|MISMATCH|refused)"
 
 fail() { echo "FAIL: $*"; exit "$T_FAIL"; }
 skip() { echo "SKIP: $*"; exit "$T_SKIP"; }
