@@ -5,7 +5,7 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 | # | Question | Plan | Needs input |
 |---|---|---|---|
 | 2 | HDMI chip init + mode-change sequences (IT6805, splitter 0x6663) | traces captured (`T3/S20` load with input, `S30` replug, `S31` 2160p→1080p); extract → `hdmi-chips.md` | done (capture) |
-| 14 | **2160p59.94 YUV 4:2:0 BT.2020 input → all-black frames under RD** (RD sets COLOR_CTRL[19], [5], PIX_MODE[0]) | candidates: wrong pipeline config for 4:2:0; IT6805 output setup; HDCP 2.2 not stripped by the HDCP splitter at 4K. Test: source at 2160p30 4:4:4/4:2:2 SDR; 2160p60 SDR; compare IT6805 HDCP status regs | yes (4K source) |
+| 14 | **2160p59.94 YUV 4:2:0 (BT.709) input → exact-black frames under RD** (COLOR_CTRL[19]+[5], PIX_MODE=1). HDCP, AV mute, lock, depth ruled out (`video-pipeline.md`) | read 0x1004/0x1008/0x100c with 4:2:0 and 1080p input; vary PIX_MODE {0,1,3}, COLOR_CTRL[19], clip width 1920 vs 3840; 2160p30 4:4:4 (dual DDR) to separate dual-pixel from 4:2:0; check pass-through output picture; PC GPU 4:2:0 source | yes (4K source) |
 | 19 | EDID seen by the source: composed by the splitter from its outputs and the IT6805. Which EDID makes the source pick a mode we can capture? | decode RD's EDID writes (`T1/S01`); design our own EDID; verify the source's chosen mode | yes |
 | 5 | Audio PCM layout, channel order, multichannel | capture a known tone; vary rates if source allows | yes |
 | 6 | INT bits 2, 3, 8, 9, 31 meanings | provoke: DMA underrun (no buffers queued), stop/start races; log status | no |
