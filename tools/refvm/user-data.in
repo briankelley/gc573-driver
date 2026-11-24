@@ -1,0 +1,46 @@
+#cloud-config
+# Reference VM guest config. @SSH_PUBKEY@ substituted by create.sh.
+hostname: gc573-ref
+users:
+  - name: dev
+    groups: [sudo, video, audio]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - @SSH_PUBKEY@
+apt:
+  sources:
+    obs:
+      source: ppa:obsproject/obs-studio
+package_update: true
+packages:
+  - linux-generic            # 5.4 GA kernel; vendor blobs fail on newer
+  - linux-headers-generic
+  - build-essential
+  - git
+  - dkms
+  - pciutils
+  - v4l-utils
+  - gstreamer1.0-tools
+  - gstreamer1.0-plugins-good
+  - alsa-utils
+  - trace-cmd
+  - xubuntu-core
+  - spice-vdagent
+  - obs-studio               # 29.1.3: last PPA build for focal
+write_files:
+  - path: /etc/lightdm/lightdm.conf.d/50-autologin.conf
+    content: |
+      [Seat:*]
+      autologin-user=dev
+      autologin-session=xubuntu
+runcmd:
+  # obs deps pull gdm3; force lightdm
+  - echo /usr/sbin/lightdm > /etc/X11/default-display-manager
+  - DEBIAN_FRONTEND=noninteractive dpkg-reconfigure lightdm
+  - ln -sf /lib/systemd/system/lightdm.service /etc/systemd/system/display-manager.service
+  - systemctl set-default graphical.target
+  - touch /etc/cloud/cloud-init.disabled
+power_state:
+  mode: poweroff
+  condition: true

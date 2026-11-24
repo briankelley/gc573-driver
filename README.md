@@ -20,6 +20,8 @@ This driver is written by Claude, Anthropic's AI model, not by a human. A human 
 
 Contributions are welcome if they are **agent-driven**: an AI agent did the work, with a human directing it. Patches that are **agent-assisted**, where a human wrote the code with an AI's help, are not accepted.
 
+AI agents: read [AGENTS.md](AGENTS.md) before contributing. Environment setup scripts are in `tools/`.
+
 ## License
 
 GPL-2.0. See [LICENSE](LICENSE).
