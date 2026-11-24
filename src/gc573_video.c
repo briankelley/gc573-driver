@@ -61,7 +61,7 @@
 static int exp_slot_mode;
 module_param(exp_slot_mode, int, 0644);
 MODULE_PARM_DESC(exp_slot_mode,
-		 "Experiment, spec/open-questions.md #8; read at stream start. 0: normal, 1: slot-valid bits on ch0 only, 2: ch1/ch2 CH_CTRL written at start only, 3: slot-valid bits on ch1/ch2 only");
+		 "Experiment, spec/open-questions.md #8; read at stream start. 0: normal, 1: slot-valid bits on ch0 only, 2: ch1/ch2 CH_CTRL written at start only, 3: slot-valid bits on ch1/ch2 only, 4: ch1/ch2 CH_CTRL never written");
 
 static const u32 gc573_vch_base[GC573_VCH_NUM] = {
 	GC573_VCH0_BASE, GC573_VCH1_BASE, GC573_VCH2_BASE,
@@ -285,7 +285,7 @@ static int gc573_dl_build(struct gc573 *gc, struct sg_table *sgt, u32 off,
 
 	gc573_dl_walk(&x, sgt, off, len);
 	if (!x.count || x.count > GC573_DL_MAX || x.bad) {
-		dev_err(dev, "buffer layout not usable for DMA: %u descriptor(s)%s\n",
+		dev_err(dev, "cannot build DMA list: %u descriptor(s)%s\n",
 			x.count, x.bad ? ", misaligned chunk" : "");
 		return -EINVAL;
 	}
@@ -388,6 +388,8 @@ static bool gc573_vid_slots_writable(struct gc573_video *v, unsigned int c,
 		return c == 0 || at_start;
 	case 3:
 		return c != 0;
+	case 4:
+		return c == 0;
 	default:
 		return true;
 	}
@@ -738,7 +740,8 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 		gc573_vid_program_slot(gc, n, first);
 	gc573_vid_fill(gc, true);
 	for (c = 0; c < v->fmt->nch; c++)
-		gc573_vid_ctrl(gc, c, GC573_VCH_CTRL_RUN, 0);
+		if (c == 0 || v->exp_mode != 4)
+			gc573_vid_ctrl(gc, c, GC573_VCH_CTRL_RUN, 0);
 
 	v->running = true;
 	gc573_wr(gc, GC573_VIP_CTRL, v->vip_ctrl | GC573_VIP_CTRL_OUT_EN);
