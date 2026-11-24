@@ -36,20 +36,13 @@ sync_tree() {
 		-e "ssh -o BatchMode=yes" "$ROOT/" "$VM:$VMDIR/"
 }
 
-# Warnings the kernel tree itself causes, not the driver: the 6.8.12-gc573dbg
-# headers package lacks the ubuntu/include dir its Makefile adds (W=1 reports it).
-KTREE_WARN='^cc1: warning: \./ubuntu/include: No such file or directory \[-Wmissing-include-dirs\]$'
-
 build() {
 	local out
 	echo "== build ($VM, $(vm uname -r))"
 	vm "make -s -C $VMDIR clean >/dev/null"
 	out=$(vm "make -C $VMDIR W=1 2>&1") || { echo "$out"; die "build failed"; }
 	echo "$out" | grep -vE '^make(\[[0-9]+\])?: (Entering|Leaving) directory' || true
-	if echo "$out" | grep -qE "$KTREE_WARN"; then
-		echo "note: ignored kernel-tree warning (not driver code): missing ./ubuntu/include"
-	fi
-	if echo "$out" | grep -vE "$KTREE_WARN" | grep -qE 'warning:|error:'; then
+	if echo "$out" | grep -qE 'warning:|error:'; then
 		die "build has warnings"
 	fi
 }
@@ -57,7 +50,11 @@ build() {
 check() {
 	local out rc=0
 	echo "== checkpatch --strict"
-	vm "cd $VMDIR && /lib/modules/\$(uname -r)/build/scripts/checkpatch.pl --strict --no-tree --show-types -f src/*.[ch] Makefile Kbuild tests/kmemleak-canary/*.c" || rc=1
+	# src/compat.h is where the kernel-version tests live (AGENTS.md), so
+	# only there is checkpatch's LINUX_VERSION_CODE warning ignored.
+	vm "cd $VMDIR && cp=\"/lib/modules/\$(uname -r)/build/scripts/checkpatch.pl --strict --no-tree --show-types\" && r=0 &&
+		{ \$cp -f \$(ls src/*.[ch] | grep -vx src/compat.h) Makefile Kbuild \$(ls tests/*.c tests/*/*.c 2>/dev/null) || r=1; } &&
+		{ \$cp --ignore LINUX_VERSION_CODE -f src/compat.h || r=1; } && exit \$r" || rc=1
 	echo "== sparse (C=2)"
 	vm "make -s -C $VMDIR clean >/dev/null"
 	out=$(vm "make -C $VMDIR C=2 2>&1") || rc=1
