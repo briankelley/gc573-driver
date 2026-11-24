@@ -31,12 +31,14 @@ Audience: AI agents. Humans → README.md.
 ## Tooling (canonical; use these, don't substitute)
 Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - `tools/host-setup.sh` — idempotent. qemu/libvirt/virt-manager/OVMF, driverctl, v4l-utils, OBS (obsproject PPA, latest), OpenJDK 25, Ghidra (pinned ver, sha256 verified) → /opt/ghidra. Binds card → vfio-pci (persistent).
-- `tools/refvm/create.sh` — builds `gc573-ref` VM:
+- `tools/refvm/create.sh` — builds `gc573-ref` VM (env NAME/RELEASE/OSINFO/USERDATA/START; START=0 = provision only):
   - Ubuntu 20.04 cloud img, kernel 5.4 GA (`linux-generic`) + modules-extra + headers. Vendor blobs reject newer kernels.
   - UEFI, Secure Boot OFF (non-.ms OVMF). Required: unsigned modules + mmiotrace; lockdown must = none.
   - Card passthrough via hostdev. Card must be sole member of its IOMMU group.
   - SPICE + Xfce autologin user `dev`; OBS 29.1.3 (last PPA build for focal).
   - SSH key `~/.ssh/gc573-vm`; user `dev`, NOPASSWD sudo.
+- `tools/devvm/create.sh` — builds `gc573-dev` VM: Ubuntu 24.04 cloud img, kernel 6.8 GA + headers. dkms, sparse, v4l-utils (v4l2-ctl, v4l2-compliance), edid-decode, alsa-utils, trace-cmd, ffmpeg, python3-numpy, OBS (PPA latest), Xfce autologin. Same user/key as ref VM.
+- One VM owns the card at a time. `virsh shutdown` the other before `virsh start`.
 - Ghidra 12.x requires JDK 25. Headless: `ghidra-headless`.
 - Tracing: patch vendor source layer (`pci_model_mmio_*`, i2c wrappers, isr, dma alloc) in VM; `trace_printk`/ftrace ring. Cross-check: mmiotrace.
 - Tool ver changes → update scripts + this file same commit.
@@ -63,7 +65,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
   - audio: capture, A/V drift bound.
   - soak: 2h continuous (release-tagged PRs; others: 10 min).
 - Harness + case format: TBD in `tests/README` once driver probes. Until then: no driver PRs without manual equivalent log.
-- Host kernel tests run on host w/ new driver only. Vendor drv tests VM only.
+- New driver: bring-up + suite in `gc573-dev` VM (crash containment). Release validation on host. Vendor drv: `gc573-ref` VM only.
 
 ## Process
 - Small commits. One concern each. Imperative subject ≤72 ch.

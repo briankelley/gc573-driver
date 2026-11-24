@@ -1,0 +1,51 @@
+#cloud-config
+# Dev VM guest config (new driver). @SSH_PUBKEY@ substituted by create.sh.
+hostname: gc573-dev
+users:
+  - name: dev
+    groups: [sudo, video, audio]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - @SSH_PUBKEY@
+apt:
+  sources:
+    obs:
+      source: ppa:obsproject/obs-studio
+package_update: true
+packages:
+  - linux-generic            # 6.8 GA kernel (pulls modules-extra: videodev, videobuf2, snd)
+  - linux-headers-generic
+  - build-essential
+  - git
+  - dkms
+  - sparse
+  - pciutils
+  - v4l-utils                # v4l2-ctl, v4l2-compliance
+  - edid-decode
+  - alsa-utils
+  - trace-cmd
+  - ffmpeg
+  - python3-numpy
+  - xubuntu-core
+  - spice-vdagent
+  - obs-studio               # PPA, latest
+write_files:
+  - path: /etc/lightdm/lightdm.conf.d/50-autologin.conf
+    content: |
+      [Seat:*]
+      autologin-user=dev
+      autologin-session=xubuntu
+  - path: /etc/udev/rules.d/90-gc573-pulse-ignore.rules
+    content: |
+      # keep PulseAudio/PipeWire off the card during module load/unload tests
+      SUBSYSTEM=="sound", ATTRS{vendor}=="0x1461", ATTRS{device}=="0x0054", ENV{PULSE_IGNORE}="1"
+runcmd:
+  - echo /usr/sbin/lightdm > /etc/X11/default-display-manager
+  - DEBIAN_FRONTEND=noninteractive dpkg-reconfigure lightdm
+  - ln -sf /lib/systemd/system/lightdm.service /etc/systemd/system/display-manager.service
+  - systemctl set-default graphical.target
+  - touch /etc/cloud/cloud-init.disabled
+power_state:
+  mode: poweroff
+  condition: true
