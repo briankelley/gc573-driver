@@ -3,9 +3,11 @@
  * gc573-cap: V4L2 capture test tool for the GC573 driver (tests/cases).
  *
  * gc573-cap -d /dev/videoN [-f FMT[,FMT..]|all] [-b BUFS] [-n FRAMES]
- *           [-p] [-c CYCLES] [-u] [-w MS] [-D DEBUGFS_FILE]
+ *           [-p] [-T IDX|all] [-c CYCLES] [-u] [-w MS] [-D DEBUGFS_FILE]
  *
  *   default  capture -n frames per format (requeue each buffer at once)
+ *   -T IDX   first S_DV_TIMINGS to ENUM_DV_TIMINGS entry IDX; "all": run
+ *            the format list once per enumerated timing (capture mode)
  *   -p       pattern check: before every QBUF the whole buffer is filled
  *            with a pattern unique to that queueing; after DQBUF every
  *            32-byte block (the DMA length unit) of every plane must differ
@@ -204,6 +206,27 @@ static uint64_t plane_sig(const struct buf *b, size_t off, size_t len,
 }
 
 /* ---- buffers ---- */
+
+/* S_DV_TIMINGS to enumerated entry idx; -1 if there is no such entry */
+static int set_timings(unsigned int idx)
+{
+	struct v4l2_enum_dv_timings et = { .index = idx };
+	const struct v4l2_bt_timings *bt = &et.timings.bt;
+	double frame;
+
+	if (xioctl(VIDIOC_ENUM_DV_TIMINGS, &et)) {
+		if (errno == EINVAL)
+			return -1;
+		die("ENUM_DV_TIMINGS");
+	}
+	if (xioctl(VIDIOC_S_DV_TIMINGS, &et.timings))
+		die("S_DV_TIMINGS");
+	frame = (double)V4L2_DV_BT_FRAME_WIDTH(bt) *
+		V4L2_DV_BT_FRAME_HEIGHT(bt);
+	printf("TIMINGS index=%u %ux%u%s %.2f\n", idx, bt->width, bt->height,
+	       bt->interlaced ? "i" : "p", frame ? bt->pixelclock / frame : 0);
+	return 0;
+}
 
 static void set_fmt(uint32_t fourcc)
 {
@@ -667,15 +690,17 @@ static unsigned int parse_fmts(const char *s, uint32_t *list)
 int main(int argc, char **argv)
 {
 	const char *dev = NULL, *fl = "YUYV";
-	unsigned int nb = 4, nc = 0, wait_ms = 0, nl, i;
+	const char *tl = NULL;
+	unsigned int nb = 4, nc = 0, wait_ms = 0, nl, i, t, t_end;
 	unsigned long n = 60;
 	uint32_t list[NFMTS];
 	int opt, pattern = 0, under = 0;
 
-	while ((opt = getopt(argc, argv, "d:f:b:n:pc:uw:D:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:f:b:n:pT:c:uw:D:")) != -1) {
 		switch (opt) {
 		case 'd': dev = optarg; break;
 		case 'f': fl = optarg; break;
+		case 'T': tl = optarg; break;
 		case 'b': nb = atoi(optarg); break;
 		case 'n': n = strtoul(optarg, NULL, 0); break;
 		case 'p': pattern = 1; break;
@@ -700,15 +725,28 @@ int main(int argc, char **argv)
 		die(dev);
 	setvbuf(stdout, NULL, _IOLBF, 0);
 
-	if (nc)
-		failed |= cycles(list, nl, nc, nb, n);
-	else if (under)
-		failed |= underrun(list[0], nb);
-	else if (wait_ms)
-		failed |= waitcheck(list[0], nb, wait_ms);
-	else
-		for (i = 0; i < nl; i++)
-			failed |= capture(list[i], nb, n, pattern);
+	/* one pass with the current timings unless -T is given */
+	t = tl && strcmp(tl, "all") ? strtoul(tl, NULL, 0) : 0;
+	t_end = tl && !strcmp(tl, "all") ? ~0U : t + 1;
+	for (; t < t_end; t++) {
+		if (tl && set_timings(t)) {
+			if (t_end == t + 1) {
+				fprintf(stderr, "gc573-cap: no timings %u\n",
+					t);
+				return 2;
+			}
+			break;
+		}
+		if (nc)
+			failed |= cycles(list, nl, nc, nb, n);
+		else if (under)
+			failed |= underrun(list[0], nb);
+		else if (wait_ms)
+			failed |= waitcheck(list[0], nb, wait_ms);
+		else
+			for (i = 0; i < nl; i++)
+				failed |= capture(list[i], nb, n, pattern);
+	}
 
 	close(fd);
 	return failed ? 1 : 0;
