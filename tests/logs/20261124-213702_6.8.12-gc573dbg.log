@@ -1,0 +1,198 @@
+# GC573 regression suite
+date:    2026-11-24 21:37:02 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #3 SMP PREEMPT_DYNAMIC Tue Nov 24 13:47:06 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion A39AB3B5320C45E57E93741
+rev:     4ce42b9031b3
+input:   none
+
+## 01-probe
+  FPGA version 20200811 (spec/regmap.md: 20200811)
+  MSI in use
+  quiesce: INT_ENABLE reads 0 after remove
+  -- kernel log (13 lines)
+  | [ 2903.787036] gc573-test: 1795556226790483460-23903 probe
+  | [ 2903.822942] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2903.822976] gc573 0000:07:00.0: state at probe: RESET=0x00000309 INT_ENABLE=0x00000000 INT_STATUS=0x00000000 GPIO=0x0001f970
+  | [ 2903.824740] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [ 2903.858904] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [ 2903.893149] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [ 2903.924918] gc573 0000:07:00.0: DDR_STATUS=0x3
+  | [ 2903.924956] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2904.005501] gc573 0000:07:00.0: init done: GPIO=0x0001f970
+  | [ 2904.039818] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [ 2904.073848] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [ 2904.108153] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [ 2904.139950] gc573 0000:07:00.0: quiesced: INT_ENABLE=0x00000000 INT_STATUS=0x00000000 RESET=0x00000309
+RESULT 01-probe             PASS (1s)
+
+## 02-load-unload
+  50 load/unload cycles in 24 s
+  -- kernel log (150 lines)
+  | [ 2904.482936] gc573-test: 1795556227486572718-13605 iteration 1
+  | [ 2904.517220] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2904.618930] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2904.961603] gc573-test: 1795556227964139040-14385 iteration 2
+  | [ 2905.002106] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2905.103937] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2905.423010] gc573-test: 1795556228426518873-30992 iteration 3
+  | [ 2905.459604] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2905.560927] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2905.872815] gc573-test: 1795556228876349929-16053 iteration 4
+  | [ 2905.907350] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2906.008723] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2906.303751] gc573-test: 1795556229306994624-31666 iteration 5
+  | [ 2906.338414] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2906.439818] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2906.748245] gc573-test: 1795556229751625563-21478 iteration 6
+  | [ 2906.781825] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2906.883803] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2907.213892] gc573-test: 1795556230217288378-9188 iteration 7
+  | [ 2907.251702] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2907.353903] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2907.723746] gc573-test: 1795556230727230507-27930 iteration 8
+  | [ 2907.759137] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2907.860900] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2908.207521] gc573-test: 1795556231210486066-27644 iteration 9
+  | [ 2908.249433] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2908.350883] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2908.695067] gc573-test: 1795556231698665558-21114 iteration 10
+  | [ 2908.729643] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2908.831878] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2909.193039] gc573-test: 1795556232196652863-11693 iteration 11
+  | [ 2909.229906] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2909.331914] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2909.681715] gc573-test: 1795556232685302282-19484 iteration 12
+  | [ 2909.718367] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2909.819998] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2910.174119] gc573-test: 1795556233177715626-10946 iteration 13
+  | [ 2910.215204] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2910.316852] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2910.651524] gc573-test: 1795556233655085475-6742 iteration 14
+  | [ 2910.682113] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2910.783854] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2911.131200] gc573-test: 1795556234134470274-29774 iteration 15
+  | [ 2911.169007] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2911.270839] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2911.639925] gc573-test: 1795556234643594223-31839 iteration 16
+  | [ 2911.672901] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2911.774834] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2912.127827] gc573-test: 1795556235131396036-28667 iteration 17
+  | [ 2912.172615] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2912.274833] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2912.616573] gc573-test: 1795556235620233164-22825 iteration 18
+  | [ 2912.650298] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2912.751829] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2913.100572] gc573-test: 1795556236103967420-16611 iteration 19
+  | [ 2913.137963] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2913.239826] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2913.576983] gc573-test: 1795556236580665908-5677 iteration 20
+  | [ 2913.614326] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2913.715705] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2914.011939] gc573-test: 1795556237015575845-22207 iteration 21
+  | [ 2914.049463] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2914.149655] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2914.475045] gc573-test: 1795556237478716600-28591 iteration 22
+  | [ 2914.506094] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2914.607791] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2914.950437] gc573-test: 1795556237953654940-17125 iteration 23
+  | [ 2914.989820] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2915.091785] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2915.454561] gc573-test: 1795556238458278022-32718 iteration 24
+  | [ 2915.484846] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2915.585859] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2915.928659] gc573-test: 1795556238930800984-17922 iteration 25
+  | [ 2915.968196] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2916.069764] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2916.412287] gc573-test: 1795556239415795232-20100 iteration 26
+  | [ 2916.448451] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2916.549618] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2916.842596] gc573-test: 1795556239846206540-11571 iteration 27
+  | [ 2916.878204] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2916.978792] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2917.329047] gc573-test: 1795556240332709799-14760 iteration 28
+  | [ 2917.364051] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2917.465739] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2917.816377] gc573-test: 1795556240820103304-21271 iteration 29
+  | [ 2917.846516] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2917.948727] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2918.312602] gc573-test: 1795556241316320605-18147 iteration 30
+  | [ 2918.349407] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2918.450726] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2918.810314] gc573-test: 1795556241814018922-278 iteration 31
+  | [ 2918.854247] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2918.955791] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2919.289781] gc573-test: 1795556242293575052-14879 iteration 32
+  | [ 2919.326784] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2919.428710] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2919.783221] gc573-test: 1795556242786879698-1977 iteration 33
+  | [ 2919.813930] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2919.915709] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2920.267006] gc573-test: 1795556243270743811-12651 iteration 34
+  | [ 2920.301079] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2920.402696] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2920.737223] gc573-test: 1795556243740934196-8804 iteration 35
+  | [ 2920.770107] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2920.872687] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2921.232033] gc573-test: 1795556244235837638-24837 iteration 36
+  | [ 2921.261491] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2921.363679] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2921.727079] gc573-test: 1795556244730828409-30838 iteration 37
+  | [ 2921.759940] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2921.860716] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2922.207212] gc573-test: 1795556245211001462-1408 iteration 38
+  | [ 2922.241346] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2922.342547] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2922.687406] gc573-test: 1795556245691187776-8014 iteration 39
+  | [ 2922.720894] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2922.822661] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2923.187079] gc573-test: 1795556246190523863-28804 iteration 40
+  | [ 2923.219528] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2923.321653] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2923.656017] gc573-test: 1795556246659778487-31706 iteration 41
+  | [ 2923.691926] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2923.793652] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2924.146135] gc573-test: 1795556247149806087-16796 iteration 42
+  | [ 2924.177399] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2924.279698] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2924.623087] gc573-test: 1795556247626668189-20561 iteration 43
+  | [ 2924.653406] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2924.755634] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2925.113731] gc573-test: 1795556248117505509-28550 iteration 44
+  | [ 2925.153900] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2925.255624] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2925.616454] gc573-test: 1795556248620281830-28285 iteration 45
+  | [ 2925.646129] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2925.747615] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2926.071322] gc573-test: 1795556249074940200-14823 iteration 46
+  | [ 2926.105817] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2926.207623] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2926.535584] gc573-test: 1795556249539398121-17322 iteration 47
+  | [ 2926.570904] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2926.672510] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2927.010067] gc573-test: 1795556250013397022-7965 iteration 48
+  | [ 2927.049535] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2927.151533] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2927.506988] gc573-test: 1795556250510482633-2409 iteration 49
+  | [ 2927.539182] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2927.639410] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2927.981595] gc573-test: 1795556250985474973-32758 iteration 50
+  | [ 2928.010826] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2928.112575] gc573 0000:07:00.0: FPGA version 20200811
+RESULT 02-load-unload       PASS (24s)
+
+## kmemleak (whole suite)
+  no new unreferenced objects
+RESULT kmemleak             PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 01-probe             PASS (1s)
+RESULT 02-load-unload       PASS (24s)
+RESULT kmemleak             PASS 
+SUMMARY pass=3 fail=0 skip=0
