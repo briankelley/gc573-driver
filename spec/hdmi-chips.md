@@ -106,7 +106,15 @@ RD derives the FPGA configuration from the IT6805 state when streaming starts (`
 - The test setup used an external HDCP stripper. Behaviour with an encrypting source and no stripper is untested. (U)
 
 ## 2160p status
-- 2160p59.94 4:2:0 input locks cleanly through both chips (unencrypted, 8-bit, coherent timing), but the FPGA delivered exact-black frames under RD's configuration. Analysis and experiments: `video-pipeline.md`, open question 14. (`T3`; C for the observation)
+- 2160p59.94 4:2:0 input locks cleanly through both chips (unencrypted, 8-bit, coherent timing), but the FPGA delivered exact-black frames under RD's configuration, from the Roku (`T3`) and from a PC source without HDCP (`T4/S41`). Analysis and experiments: `video-pipeline.md`, open question 14. (`T3`,`T4`; C for the observation)
+- 2160p29.97 RGB 4:4:4 (dual-pixel DDR) captures correctly (`T4/S44`).
+
+## PC loopback source (`T4`)
+A host GPU output (GT 710, DVI-D, through a DVI-to-HDMI cable) feeds HDMI IN. Facts about this source, for tests (`T4`; C):
+- With RD's EDID the GPU picked 2160p60 YCbCr 4:2:0 in HDMI mode (AVI InfoFrame present) by default: 297 MHz TMDS through a DVI connector.
+- 1080p60 and 2160p29.97 arrived as RGB 4:4:4 8-bit in DVI mode (no InfoFrames, so no audio). The splitter and the IT6805 reported DVI; RD's colour path treated the input as full-range RGB.
+- Frame rate 60.006 Hz at 1080p60 and 2160p60 (IN_FRAME_PERIOD 0x00196daf), 29.973 Hz at 2160p29.97.
+- The GPU dithers its output by default; turn that off for exact tests (`tools/testsrc/show.sh` does).
 
 ## Driver notes
 - One polling work item per chip (or one combined), every 50 ms. Event registers are write-1-to-clear: read, then write back the value read (exceptions per chip chapter).
