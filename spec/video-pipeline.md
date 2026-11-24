@@ -17,17 +17,18 @@ CLIP_LEFT 0x1020, CLIP_WIDTH 0x1024, CLIP_TOP 0x1028, CLIP_HEIGHT 0x102c. RD set
 ## Pixel format code (VIP_CTRL 0x1000[15:8])
 Determined by streaming each format and reading the programmed value. (`T2/S11-*`; C)
 
-| V4L2 fourcc | Code | Planes / channels | COLOR_CTRL 0x1040 (stream) | RATE_CTRL 0x1080[2:1] |
-|---|---|---|---|---|
-| YUYV | 0x00 | 1 / ch0 | 0xe | 0b01 |
-| UYVY | 0x09 | 1 / ch0 | 0xe | 0b01 |
-| BGR24 (`BGR3`) | 0x02 | 1 / ch0 | 0xc | 0b11 |
-| XRGB32 (`RGB4`) | 0x06 | 1 / ch0 | 0xc | 0b11 |
-| NV12 | 0x0f | 2 / ch0, ch1 | 0xe | 0b01 |
-| YV12 (`YVU420`) | 0x10 | 3 / ch0, ch1, ch2 | 0xe | 0b01 |
+| V4L2 format | Code | Memory layout (verified with live source, `T3/S32`) | Planes / channels | COLOR_CTRL 0x1040 (stream) | RATE_CTRL 0x1080[2:1] |
+|---|---|---|---|---|---|
+| YUYV | 0x00 | Y0 Cb Y1 Cr | 1 / ch0 | 0xe | 0b01 |
+| UYVY | 0x09 | Cb Y0 Cr Y1 | 1 / ch0 | 0xe | 0b01 |
+| BGR24 (`BGR3`) | 0x02 | B G R | 1 / ch0 | 0xc | 0b11 |
+| **XBGR32 (`XR24`)** | 0x06 | B G R X | 1 / ch0 | 0xc | 0b11 |
+| NV12 | 0x0f | Y plane; CbCr interleaved (Cb first) | 2 / ch0, ch1 | 0xe | 0b01 |
+| YV12 (`YVU420`) | 0x10 | Y; Cr plane; Cb plane | 3 / ch0, ch1 (Cr), ch2 (Cb) | 0xe | 0b01 |
 
-Other codes exist in the hardware (RD's code table is sparse); untested codes: do not use.
-Third-party report: RGB24 output had problems in OBS with RD; verify colour order of BGR24/XRGB32 with a real source. (U)
+- Code 0x06 writes B,G,R,X per pixel = V4L2 `XBGR32` ('XR24'). RD advertises it as `RGB32` ('RGB4', defined as X,R,G,B in memory): wrong label, wrong colours in applications. Advertise 'XR24'. (`T3/S32-1080-RGB4`; C)
+- All six formats produce correct images at 1080p59.94 from a live source. (`T3/S32-*`; C)
+- Other codes exist in the hardware (RD's code table is sparse); untested codes: do not use.
 
 ## COLOR_CTRL (0x1040)
 | Bit | Meaning | Ev | Conf |
@@ -86,13 +87,25 @@ Sequence used by RD before every stream start:
 4. Start each: AP_CTRL = 0x80 (auto-restart), then 0x81 (start). V before H.
 5. VIP_CTRL[7] = 1 if scaling (in ≠ out), 0 to bypass.
 Observed AP_CTRL read before start: 0x84 (idle). Colour mode 0 = RGB in Xilinx numbering → scalers run on RGB data. (`T1/S02`,`P:XV-*`; L)
-With no input, RD sets in = out (scaler bypassed); real scaling not yet traced. (`T2/S12`; C)
+With no input, RD sets in = out (scaler bypassed). (`T2/S12`; C)
+Live downscale 1920×1080 → 1280×720 (`T3/S33`; C, image clean): V: HEIGHT_IN 0x438, WIDTH 0x780, HEIGHT_OUT 0x2d0, LINE_RATE 0x18000 · H: HEIGHT 0x2d0, WIDTH_IN 0x780, WIDTH_OUT 0x500, COLOR_MODE 0, PIXEL_RATE 0x18000 · VIP_CTRL 0x80 → 0x81.
+
+## Observed configurations with live input (`T3`)
+| Input | IN_FRAME_PERIOD 0x1010 | COLOR_CTRL 0x1040 (YUYV out) | PIX_MODE 0x1088 | Result |
+|---|---|---|---|---|
+| none | 0xffffffff | 0x0000000e | 0x2 | free-running 60 Hz, black (RD draws image) |
+| 1080p59.94 | 0x0019745b (59.94 Hz) | 0x0000000e | 0x0 | correct images, all formats |
+| 2160p59.94 YUV 4:2:0, BT.2020 | 0x0019745b | 0x0008002e (bit19 4:2:0, bit5 dual-pixel) | 0x1 | **all frames black** (Y=16, C=128; RGB 0) at native and downscaled sizes |
+
+- PIX_MODE[1] is set only with no input: likely selects internal free-running timing. (`T1`,`T2`,`T3`; L)
+- 2160p60 4:2:0 capture is not working with RD's configuration. Cause unknown (pipeline config, IT6805 output mode, or HDR/BT.2020 handling). Open: `open-questions.md` #14. Target 1080p first.
+- RD sets the frame-rate limiter from a wrong pixel-clock-based estimate (52 fps for 59.94 Hz input); frames still arrive. Use IN_FRAME_PERIOD for the true rate. (`T3/S20`,`S32`; C)
 
 ## Frame-rate limiter
 RATE_CTRL (0x1080)[31:16] = output frame rate in fps; RD clamps 5..60 and writes 5 with no input. (`T1/S02`,`S`; L)
 
 ## Pixel mode
-PIX_MODE (0x1088): [0] dual-pixel (mirror COLOR_CTRL[5]); [1] input property, 1 in all traces. (`S`,`T1`; L/U)
+PIX_MODE (0x1088): [0] dual-pixel (mirror COLOR_CTRL[5]); [1] set only with no input (likely internal timing). (`S`,`T1`,`T3`; L)
 
 ## Driver notes
 - V4L2: advertise only the six verified formats. Implement DV timings from input measurement + IT6805 status; emit `V4L2_EVENT_SOURCE_CHANGE` on change.

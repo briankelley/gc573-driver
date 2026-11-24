@@ -18,11 +18,11 @@ Scatter-gather, descriptor lists in host memory, three channels (one per image p
 ## Channels and planes
 | Format | ch0 | ch1 | ch2 | Bytes per plane at 1920×1080 | Ev |
 |---|---|---|---|---|---|
-| packed (YUYV, UYVY, BGR24, XRGB32) | whole frame | — | — | 4147200 / 4147200 / 6220800 / 8294400 | `T2/S11-*` |
+| packed (YUYV, UYVY, BGR24, XBGR32) | whole frame | — | — | 4147200 / 4147200 / 6220800 / 8294400 | `T2/S11-*` |
 | NV12 | Y | CbCr interleaved | — | 2073600 / 1036800 | `T2/S11-NV12` |
-| YV12 | Y | 2nd plane in memory (Cr for YV12) | 3rd plane (Cb) | 2073600 / 518400 / 518400 | `T2/S11-YV12` |
+| YV12 | Y | Cr (2nd plane in memory) | Cb (3rd plane) | 2073600 / 518400 / 518400 | `T2/S11-YV12`,`T3/S32-YV12` |
 
-Which chroma component the HW writes to ch1 vs ch2 for YV12 is not verified (no-input captures do not show HW pixel data, see below). (U)
+HW writes real pixel data on ch0, ch1 and ch2; plane contents and chroma order verified against a live source (`T3/S32-NV12`,`S32-YV12`; C).
 
 RD builds one scatter list over a single contiguous-format buffer (`V4L2_PIX_FMT_NV12`, `YVU420`), then splits it at plane byte boundaries into per-channel lists. (`S`, `T2`; C)
 

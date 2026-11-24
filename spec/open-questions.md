@@ -4,11 +4,10 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 
 | # | Question | Plan | Needs input |
 |---|---|---|---|
-| 1 | Does HW write pixel data on every channel (incl. ch1/ch2)? | Our driver: pre-fill buffers with a pattern, stream with no input, diff | no |
-| 2 | HDMI chip init + mode-change sequences (IT6805, splitter 0x6663) | trace RD: hotplug, lock 1080p60, 720p60, 2160p30/60, HDR, unplug; extract register tables → `hdmi-chips.md` | yes |
-| 3 | Real scaling (in ≠ out) | trace RD: 1080p input → 1280×720 output; validate H/V scaler programming against `P:XV-*` | yes |
-| 4 | YV12 chroma order on ch1/ch2; BGR24/XRGB32 byte order | capture known colour bars from a source | yes |
-| 5 | Audio PCM layout, channel order, rate detection | capture known tone; vary rates if source allows | yes |
+| 2 | HDMI chip init + mode-change sequences (IT6805, splitter 0x6663) | traces captured (`T3/S20` load with input, `S30` replug, `S31` 2160p→1080p); extract → `hdmi-chips.md` | done (capture) |
+| 14 | **2160p59.94 YUV 4:2:0 BT.2020 input → all-black frames under RD** (RD sets COLOR_CTRL[19], [5], PIX_MODE[0]) | candidates: wrong pipeline config for 4:2:0; IT6805 output setup; HDCP 2.2 not stripped by the HDCP splitter at 4K. Test: source at 2160p30 4:4:4/4:2:2 SDR; 2160p60 SDR; compare IT6805 HDCP status regs | yes (4K source) |
+| 19 | EDID seen by the source: composed by the splitter from its outputs and the IT6805. Which EDID makes the source pick a mode we can capture? | decode RD's EDID writes (`T1/S01`); design our own EDID; verify the source's chosen mode | yes |
+| 5 | Audio PCM layout, channel order, multichannel | capture a known tone; vary rates if source allows | yes |
 | 6 | INT bits 2, 3, 8, 9, 31 meanings | provoke: DMA underrun (no buffers queued), stop/start races; log status | no |
 | 7 | CH0 STATUS (0x300) upper bits | log per frame with/without input, different sizes | partly |
 | 8 | ch1/ch2 CH_CTRL slot semantics (write-only) | driver experiment: arm ch1 slot only vs ch0 only; observe completion and data | no |
@@ -17,10 +16,17 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 | 11 | Front LEDs (stay red under RD) | GPIO bits 11–16 experiments; scan I2C bus 0 and bus 2 for devices | no |
 | 12 | Devices on I2C bus 0 / bus 2 (auth chip expected on one) | address scan with OpenCores master (read-only probe) | no |
 | 13 | Reset domain contents (0x00c bits 0/8/9), 0x00c bit 3 | reset one at a time; observe which blocks return to defaults | no |
-| 14 | Dual-pixel threshold, COLOR_CTRL[19] (4:2:0) | trace RD with 4K60 4:2:0 source | yes (4K source) |
-| 15 | HDCP state source | IT6805 registers during protected content (behind HDCP filter: expect "not encrypted") | yes |
+| 15 | HDCP state source | IT6805/splitter registers during protected content | yes |
 | 16 | Descriptor limits: max COUNT, min address alignment, ctrl bits | driver experiment with crafted lists | no |
 | 17 | TLP_ALIGN (0x004) need | sizes whose dword count is not a multiple of 32; check corruption with/without | no |
 | 18 | FPGA part / firmware variants | board markings photo; VERSION register on other cards | — |
+| 20 | Input pixel clock: RD's estimate reads ~13 % low (129 MHz at 1080p60, 257 MHz at 2160p60 4:2:0) | find the IT6805 clock-measurement registers and reference clock; cross-check with FPGA IN_FRAME_PERIOD | yes |
 
-Status: traces so far cover load, idle, no-input streaming in all formats, audio start/stop, unload (`T1`, `T2`).
+## Resolved
+| # | Question | Answer | Ev |
+|---|---|---|---|
+| 1 | HW writes pixel data on all channels? | yes: ch0, ch1, ch2 carry real image data | `T3/S32-NV12`,`S32-YV12` |
+| 3 | Real scaling | 1920×1080 → 1280×720 clean; programming values in `video-pipeline.md` | `T3/S33` |
+| 4 | YV12 chroma order; RGB byte order | YV12 ch1 = Cr, ch2 = Cb. Code 0x02 = B,G,R. Code 0x06 = B,G,R,X (X = 0) → V4L2 XBGR32 | `T3/S32-*` |
+
+Status: traces cover load, idle, no-input streaming in all formats, audio start/stop, unload (`T1`, `T2`); live 1080p59.94 and 2160p59.94 4:2:0 input, all formats, scaling, audio, replug, mode change (`T3`).
