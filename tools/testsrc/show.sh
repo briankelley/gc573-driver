@@ -7,11 +7,19 @@
 # The output stays "disconnected" until a driver runs the HDMI chips (EDID loaded, HPD high).
 # Sets OUTPUT right of the primary screen, turns NVIDIA dithering off on it (it adds +-1 temporal noise),
 # and shows pattern.py's image full-screen there with ffplay.
-# Run --off before the card resets or moves: X moves the window to the main screen when OUTPUT disconnects.
+# A watchdog closes the window as soon as OUTPUT disconnects (driver unload, card reset or move),
+# so it never lands on the main screen. --off closes it explicitly.
 set -euo pipefail
 export DISPLAY=${DISPLAY:-:0} XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
 run=${XDG_RUNTIME_DIR:-/tmp}/gc573-testsrc; mkdir -p "$run"; pidf=$run/ffplay.pid
-stop() { [ -f "$pidf" ] && kill "$(cat "$pidf")" 2>/dev/null; rm -f "$pidf"; }
+wdf=$run/watchdog.pid
+stop() {
+  for f in "$wdf" "$pidf"; do
+    if [ -f "$f" ]; then kill "$(cat "$f")" 2>/dev/null || true; fi
+    rm -f "$f"
+  done
+  return 0
+}
 if [ "${1:-}" = --off ]; then stop; exit 0; fi
 out=${1:-DVI-D-0} mode=${2:-1920x1080} rate=${3:-60}
 w=${mode%x*} h=${mode#*x}
@@ -25,4 +33,9 @@ png=$run/pattern-${w}x$h.png
 stop
 ffplay -loglevel error -noborder -left "$x" -top 0 -x "$w" -y "$h" -loop 0 -window_title gc573-pattern "$png" >/dev/null 2>&1 &
 echo $! > "$pidf"
+# --current: no re-probe; hotplug events keep RandR state current
+setsid bash -c 'while kill -0 "$1" 2>/dev/null; do
+  xrandr --current | grep -q "^$2 connected" || { kill "$1"; exit 0; }; sleep 1; done' _ "$(cat "$pidf")" "$out" \
+  >/dev/null 2>&1 < /dev/null &
+echo $! > "$wdf"
 echo "pattern $png on $out ($mode@$rate at +$x+0), pid $(cat "$pidf")"
