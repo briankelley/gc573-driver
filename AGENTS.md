@@ -54,6 +54,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - vb2 (dma-sg or dma-contig per desc fmt). DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
 - Formats: NV12, YUYV min. RGB24 only if verified in OBS.
 - Style: kernel coding style, `scripts/checkpatch.pl --strict` clean. SPDX GPL-2.0 header every file.
+- Kernel range: every regression-matrix VM kernel (today 5.14 EL9 → 7.0 Ubuntu 26.04). Kernel-version differences only in `src/compat.h` (`LINUX_VERSION_CODE` / `RHEL_RELEASE_CODE`); no #ifdef elsewhere.
 
 ## Milestones (driver)
 Each gate passes in `gc573-dev` before the next starts.
