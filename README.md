@@ -6,7 +6,7 @@ The card has no working Linux driver. Community ports of AVerMedia's old CL511HN
 
 ## Status
 
-**Early: tooling and reference environment only. No driver code yet.**
+**Hardware spec in progress (`spec/`). No driver code yet.**
 
 Targets: 1080p60 capture first, then 4K60/HDR. Packaged with DKMS.
 
