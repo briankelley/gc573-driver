@@ -80,7 +80,7 @@ Each gate passes in `gc573-dev` before the next starts.
   - hotplug + mode-change stress.
   - audio: capture, A/V drift bound.
   - soak: 2h continuous (release-tagged PRs; others: 10 min).
-- Harness + case format: TBD in `tests/README` once driver probes. Until then: no driver PRs without manual equivalent log.
+- Harness + case format: `tests/README.md` (`tests/run.sh`, cases in `tests/cases/`, logs in `tests/logs/`).
 - New driver: bring-up + suite in `gc573-dev` VM (crash containment). Release validation on host. Vendor drv: `gc573-ref` VM only.
 
 ## Process
