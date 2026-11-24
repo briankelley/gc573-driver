@@ -61,4 +61,18 @@ gc573_pcim_iomap_region(struct pci_dev *pdev, int bar, const char *name)
 }
 #endif
 
+/*
+ * struct vb2_ops .wait_prepare/.wait_finish: up to v6.12, vb2 drops the
+ * queue lock while a blocking DQBUF waits only through these callbacks;
+ * v6.13 does it itself when they are NULL; v7.0 removed them (EL9.9 and
+ * EL10.3 have the removal). Used inside the vb2_ops initializer.
+ */
+#if KERNEL_VERSION(7, 0, 0) > LINUX_VERSION_CODE && !GC573_RHEL_CODE
+#define GC573_VB2_WAIT_OPS \
+	.wait_prepare	= vb2_ops_wait_prepare, \
+	.wait_finish	= vb2_ops_wait_finish,
+#else
+#define GC573_VB2_WAIT_OPS
+#endif
+
 #endif /* GC573_COMPAT_H */
