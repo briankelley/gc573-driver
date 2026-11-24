@@ -18,6 +18,7 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/i2c.h>
+#include <linux/interrupt.h>
 #include <linux/iopoll.h>
 #include <linux/jiffies.h>
 #include <linux/moduleparam.h>
@@ -147,6 +148,8 @@ static int gc573_i2c1_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
 					       m->buf + 1, m->len - 1);
 		if (ret != -ETIMEDOUT)
 			break;
+		/* let a late INT bit 11 land before the retry re-arms the wait */
+		synchronize_irq(gc->irq);
 	}
 	mutex_unlock(&gc->i2c_lock);
 
