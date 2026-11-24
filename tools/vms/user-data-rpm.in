@@ -1,0 +1,34 @@
+#cloud-config
+# Regression VM, RPM family (Fedora / EL). @NAME@ and @SSH_PUBKEY@ substituted by create.sh.
+hostname: @NAME@
+users:
+  - name: dev
+    groups: [wheel, video, audio]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - @SSH_PUBKEY@
+package_update: true
+package_upgrade: true          # kernel upgraded here; kernel-devel below matches it after reboot
+packages:
+  - kernel-devel
+  - gcc
+  - make
+  - bc
+  - perl
+  - elfutils-libelf-devel
+  - git
+  - rsync
+  - pciutils
+  - alsa-utils
+# dnf aborts a whole install if any one package is missing: base-repo packages above only;
+# EPEL/CRB and per-distro optional packages below, one at a time.
+runcmd:
+  - [sh, -c, 'grep -q "^ID=fedora" /etc/os-release || { dnf -y install epel-release && { dnf config-manager --set-enabled crb || crb enable; }; }']
+  - [sh, -c, 'dnf -y install dkms']
+  - [sh, -c, 'for p in v4l-utils edid-decode; do dnf -y install $p || echo "gc573: $p unavailable"; done']
+  - [sh, -c, 'rpm -q kernel-devel dkms v4l-utils > /var/log/gc573-provision.txt 2>&1 || true']
+  - touch /etc/cloud/cloud-init.disabled
+power_state:
+  mode: poweroff
+  condition: true

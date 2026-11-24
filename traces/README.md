@@ -7,7 +7,7 @@ Golden reference data: register and bus traces of the reference driver (RD), run
 |---|---|---|
 | `T1.tsv.xz` | none | S01 load · S01 30 s idle · S02 query + YUYV 1080p stream · S03 unload |
 | `T2.tsv.xz` | none | S10 load · S11-`<fmt>` 1080p stream per pixel format · S12 720p · S13 audio · S14 unload |
-| `T3.tsv.xz` | Roku Ultra → HDCP stripper → GC573 | S20 load with 2160p59.94 4:2:0 BT.2020 present · S21–S23 4K YUYV/NV12/YV12 · S24–S26 4K→1080p YUYV/BGR24/XBGR32 · S27 audio · S30 cable unplug/replug · S31 source 2160p→1080p · S32-`<fmt>` 1080p59.94 all formats · S33 1080p→720p · S34 audio · S36 unload |
+| `T3.tsv.xz` | Roku Ultra → HDCP stripper → GC573 | S20 load with 2160p59.94 4:2:0 (BT.709) present · S21–S23 4K YUYV/NV12/YV12 · S24–S26 4K→1080p YUYV/BGR24/XBGR32 · S27 audio · S30 cable unplug/replug · S31 source 2160p→1080p · S32-`<fmt>` 1080p59.94 all formats · S33 1080p→720p · S34 audio · S36 unload |
 
 ## Format
 TSV, `#` comment lines. Read: `xz -dc traces/T3.tsv.xz | ...`

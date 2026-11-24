@@ -86,7 +86,7 @@ Descriptor format and protocol: `video-dma.md`.
 | 0x1068 | SATURATION | RW | default 0x80 | same | C |
 | 0x107c | DDR_STATUS | RW | [0] on-board DDR ready. Recovery write sequence: 8, then 1, wait 2 s, re-check. Read at init: `0x3` | `T1/S01`,`S` | L |
 | 0x1080 | RATE_CTRL | RW | [31:16] output frame-rate limit in fps (RD clamps 5..60; 5 with no input) · [2:1] CSC range/table select (YUV out `0b01`, RGB out `0b11` in bits [2:1]) · [3] set at reset, preserve | `T1/S02`,`T2/S11`,`S` | L |
-| 0x1088 | PIX_MODE | RW | [0] dual-pixel · [1] input property (=1 in all traces) | `T1/S02`,`S` | L |
+| 0x1088 | PIX_MODE | RW | [0] dual-pixel input bus · [1] DDR input bus (see `video-pipeline.md`) | `S`,`T1`,`T3` | L |
 | 0x10a0 | AUDIO_SAMPLE_PERIOD | RO | audio sample period in 100 MHz ticks; fs = 1e8/val. `0xffffffff` with no input | `T1`,`T2/S13`,`S` | C |
 | 0x10c0–0x10d8 | CSC_RGB2YUV | RW | 7 words, format in `video-pipeline.md` | `T1/S02`,`D` | C |
 | 0x10e0–0x10f8 | CSC_YUV2RGB | RW | 7 words | same | C |

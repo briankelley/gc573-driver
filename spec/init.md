@@ -16,7 +16,7 @@ All timings are what RD uses; minimums are not known. Keep them until experiment
 | 9 | GPIO | sleep 2 ms; clear bit1; sleep 2 ms | `S`,`T1/S01` | C |
 | 10 | Chip reset A | bit5: 1, 5 ms, 0, 10 ms, 1, 5 ms | `T1/S01` | C |
 | 11 | Chip reset B | bit8: 1, 2 ms, 0, 2 ms, 1, 2 ms | `T1/S01` | C |
-| 12 | HDMI chips | splitter init, then IT6805 init over I2C bus 1 (sequences: TODO `hdmi-chips.md`) | `T1/S01` | — |
+| 12 | HDMI chips | IT6805 init and splitter init over I2C bus 1, then the GPIO bit 2 HPD pulse and polling: `hdmi-chips.md` (order), `hdmi-it6805.md`, `hdmi-splitter.md` | `T1/S01`,`S` | C |
 
 Observed GPIO value sequence for steps 8–11 (T1/S01): `0x1f850` → (bit4, bit6 already 1) → `0x1f870` → `0x1f850` → `0x1f870` → `0x1f970` → `0x1f870` → `0x1f970`.
 

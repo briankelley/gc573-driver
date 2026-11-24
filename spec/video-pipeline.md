@@ -33,14 +33,14 @@ Determined by streaming each format and reading the programmed value. (`T2/S11-*
 ## COLOR_CTRL (0x1040)
 | Bit | Meaning | Ev | Conf |
 |---|---|---|---|
-| 0 | input is YUV 4:2:2 (0 = 4:4:4 / RGB) | `S` | L |
+| 0 | input sampling 4:2:2. RD sets it only for 4:2:2 input (0 for RGB, 4:4:4, 4:2:0) | `S`,`T3/S32` | L |
 | 1 | RGB→YUV CSC enable (set for YUV outputs) | `T2/S11` | C |
 | 2 | colour adjust (brightness/contrast/hue/saturation) enable | `T2/S11`,`S` | C |
 | 3 | YUV→RGB CSC enable | `T2/S11` | C |
-| 5 | dual-pixel (2 pixels per clock; RD sets for 4K input) | `S` | L |
+| 5 | dual-pixel input bus (2 pixels per clock). RD copies the IT6805 output-bus decision (`hdmi-chips.md`) | `S`,`T3/S21` | C |
 | 10:8 | RGB→YUV table index (RD writes 0 with BT.709 coefficients) | `S`,`T2` | U (whether HW uses it) |
 | 14:12 | YUV→RGB table index (RD writes 0) | same | U |
-| 19 | input colour mode 3 (likely YUV 4:2:0, HDMI 2.0 4K60) | `S` | U |
+| 19 | input sampling 4:2:0. RD sets it for 4:2:0 input (with bit0 = 0) | `S`,`T3/S21` | L |
 
 ## CSC coefficient banks
 RGB→YUV: 0x10c0–0x10d8. YUV→RGB: 0x10e0–0x10f8. 7 words each. (`T1/S02`,`D`; C)
@@ -54,6 +54,7 @@ Format (derived from traced values against ITU-R BT.709):
 - Offset: unsigned magnitude of the offset in 8-bit code values × 16 (e.g. 16 → 0x100, 128 → 0x800).
 - Signs: word 0 bits [11:0], bit i = 1 → entry i is negative.
 - Packing: word 0 = sign mask; word k (k = 1..6) = entry[2k−2] | entry[2k−1] << 16.
+- CSC enables for YUV input → YUV output: RD's choice depends on an uninitialised value; every traced run had both CSCs on (YUV→RGB→YUV, BT.709 both ways) and produced correct images. The both-off YUV path is untested: use both-on. (`S`,`T2`,`T3`; C for both-on)
 - Output-side meaning of offset: YUV→RGB offsets are the constant term after folding the input offsets (e.g. G = 1.164·Y − 0.213·Cb − 0.533·Cr + 76.88).
 
 Worked example (`D`; matches traced values within ±1 LSB):
@@ -95,17 +96,18 @@ Live downscale 1920×1080 → 1280×720 (`T3/S33`; C, image clean): V: HEIGHT_IN
 |---|---|---|---|---|
 | none | 0xffffffff | 0x0000000e | 0x2 | free-running 60 Hz, black (RD draws image) |
 | 1080p59.94 | 0x0019745b (59.94 Hz) | 0x0000000e | 0x0 | correct images, all formats |
-| 2160p59.94 YUV 4:2:0, BT.2020 | 0x0019745b | 0x0008002e (bit19 4:2:0, bit5 dual-pixel) | 0x1 | **all frames black** (Y=16, C=128; RGB 0) at native and downscaled sizes |
+| 2160p59.94 YUV 4:2:0 (AVI: VIC 97, BT.709, limited; no HDR packet) | 0x0019745b | 0x0008002e (bit19 4:2:0, bit5 dual-pixel) | 0x1 (dual, SDR) | **all frames black** (Y=16, C=128; RGB 0) at native and downscaled sizes |
 
-- PIX_MODE[1] is set only with no input: likely selects internal free-running timing. (`T1`,`T2`,`T3`; L)
-- 2160p60 4:2:0 capture is not working with RD's configuration. Cause unknown (pipeline config, IT6805 output mode, or HDR/BT.2020 handling). Open: `open-questions.md` #14. Target 1080p first.
+- 2160p60 4:2:0 capture is not working with RD's configuration. Ruled out: HDCP (no encryption at any chip), AV mute, signal lock (IT6805 locked with coherent timing), colour depth (8-bit, unscrambled). Black is exact YUV black (an all-zero bus would give green in RGB formats). Leading candidate: the FPGA 4:2:0 dual-pixel SDR input path as RD configures it (clip 3840 wide while the bus carries 1920 TMDS slots per line). Second: genuinely black upstream picture. Open: `open-questions.md` #14. Target 1080p first. (`S`,`T3`; L)
 - RD sets the frame-rate limiter from a wrong pixel-clock-based estimate (52 fps for 59.94 Hz input); frames still arrive. Use IN_FRAME_PERIOD for the true rate. (`T3/S20`,`S32`; C)
 
 ## Frame-rate limiter
-RATE_CTRL (0x1080)[31:16] = output frame rate in fps; RD clamps 5..60 and writes 5 with no input. (`T1/S02`,`S`; L)
+RATE_CTRL (0x1080)[31:16] = output frame rate in fps; RD clamps 5..60 and writes 5 with no input (`T1/S02`,`S`; L). It did not limit delivery in any trace: 52 programmed → ~59.94 frames/s delivered; 5 programmed (no input) → 60/s (`T3`; C). Effect unverified.
+RATE_CTRL[1] = input is YUV; [2] = output is RGB; [3] not written by RD (preserve) (`S`,`T2`; L).
+Frame rate source: IN_FRAME_PERIOD (0x1010), not the IT6805 clock estimate (RD's estimate reads ~13 % low because it assumes a 20.5 MHz reference) (`S`,`T3`; C).
 
 ## Pixel mode
-PIX_MODE (0x1088): [0] dual-pixel (mirror COLOR_CTRL[5]); [1] set only with no input (likely internal timing). (`S`,`T1`,`T3`; L)
+PIX_MODE (0x1088) = dual | (DDR << 1), copied from the IT6805 output-bus decision: single-pixel SDR for ≤1080p60-class input, dual-pixel SDR for 4:2:0 input, dual-pixel DDR for other large/fast modes (`hdmi-chips.md`). Observed: 0 (1080p), 1 (2160p 4:2:0), 2 (no input: RD writes a flag not derived from an input) (`S`,`T1`,`T3`; L).
 
 ## Driver notes
 - V4L2: advertise only the six verified formats. Implement DV timings from input measurement + IT6805 status; emit `V4L2_EVENT_SOURCE_CHANGE` on change.
