@@ -33,6 +33,7 @@ Confidence: **C** confirmed (observed directly, or two independent evidence type
 | `i2c.md` | three I2C masters, device inventory |
 | `hdmi-chips.md` | HDMI front-end overview: topology, sub-devices, GPIO lines, bring-up order, lock timing, FPGA hand-off, EDID policy, cross-chip rules |
 | `hdmi-it6805.md` | IT6805 HDMI receiver: registers, init, EDID RAM, power modes, polling, state machine, output bus, audio, 1080p60 recipe |
+| `hdmi-splitter.md` | HDMI splitter (ITE 0x6663): sub-devices, init, scheduling, RX (source HPD, EDID RAM, EQ), TX ports (power, AFE, output enable, DDC master), EDID copy path, observed event sequences, 1080p60 polling driver |
 | `seq/*.tsv` | machine-readable register sequences for the HDMI chips (format in each file's header) |
 | `video-dma.md` | descriptor format, channels, slots, start/stop |
 | `video-pipeline.md` | input measurement, clip, colour, pixel formats, scalers, frame-rate limiter |

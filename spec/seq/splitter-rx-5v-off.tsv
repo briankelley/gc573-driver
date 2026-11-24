@@ -1,0 +1,278 @@
+# title: source 5V lost (cable unplugged): RX power-down, all TX ports down
+# evidence: T3/S30 t=22094.8-22132.3; T3/S31 t=29770.6-29810.8; S
+# chapter: hdmi-splitter.md sections 6.3, 9.3
+# RX 0x05 = 05 (5V + clock change) and 0x10 = 02 (SCDT change) arrive together, so RD runs
+# 5V-off, clock-lost and SCDT-off in one pass. T3/S31 also had RX 0x05 = 0d, 0x09 = 20 and 0x12 = 80, and a
+# timer-1 expiry (58/0:05 = 52): the 'cond: 0x12 bit7' and 'cond: 58/0:05 bit6' rows.
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	R	58	0	05	-	12	summary: RX + TX port 1 events
+1	R	70	0	05	-	05	RX status/level snapshot
+2	R	70	0	06	-	-	
+3	R	70	0	07	-	-	
+4	R	70	0	08	-	-	
+5	R	70	0	09	-	-	
+6	R	70	0	10	-	02	
+7	R	70	0	11	-	-	
+8	R	70	0	12	-	-	
+9	R	70	0	13	-	a0	
+10	R	70	0	14	-	-	
+11	R	70	0	15	-	-	
+12	R	70	0	19	-	-	
+13	R	70	0	1a	-	-	
+14	R	70	0	1b	-	-	
+15	R	70	0	1d	-	-	
+16	W	70	0	05	-	{read}	W1C acknowledge
+17	W	70	0	06	-	{read}	
+18	W	70	0	07	-	{read}	
+19	W	70	0	08	-	{read}	
+20	W	70	0	09	-	{read}	
+21	W	70	0	10	-	{read}	
+22	W	70	0	11	-	{read}	
+23	M	70	0	53	e0	00	RX power-down: event enables off
+24	M	70	0	54	ff	00	RD: RMW mask ff
+25	M	70	0	55	07	00	
+26	M	70	0	57	0f	00	
+27	M	70	0	c5	10	10	bit4 pulse
+28	M	70	0	c5	10	00	
+29	M	58	0	0a	04	04	RX-side reset pulse
+30	D	-	-	-	-	1	RD busy-wait
+31	M	58	0	0a	04	00	
+32	M	70	*	0f	03	03	source HPD low
+33	R	70	3	ab	-	-	next three writes only if it reads ca
+34	W	70	3	ab	-	4a	cond: ab was ca
+35	W	70	3	ab	-	00	cond: ab was ca
+36	W	70	3	ac	-	00	cond: ab was ca
+37	M	70	*	0f	03	00	
+38	W	70	0	26	-	ff	
+39	W	70	0	55	-	00	RX 0x07 event enables off
+40	M	70	*	0f	03	03	EQ back to defaults
+41	W	70	3	27	-	9f	
+42	W	70	3	28	-	9f	
+43	W	70	3	29	-	9f	
+44	W	70	3	20	-	1b	
+45	W	70	3	21	-	03	
+46	M	70	*	0f	03	00	
+47	M	58	0	08	01	00	TX port 0 power-down: enable off
+48	M	68	-	18	dc	00	keep HPD/RxSense event enables
+49	M	68	-	19	07	00	
+50	W	68	-	1a	-	00	RD: RMW mask ff
+51	W	68	-	1b	-	00	RD: RMW mask ff
+52	W	68	-	1c	-	00	RD: RMW mask ff
+53	M	68	-	84	60	60	AFE power-down
+54	M	68	-	86	08	00	
+55	M	68	-	88	03	03	TMDS output off
+56	M	68	-	01	26	26	
+57	M	58	0	0d	03	00	source = original
+58	R	6a	-	03	-	-	port 1 HPD (bit0)
+59	R	6c	-	03	-	-	port 2 HPD (bit0)
+60	M	58	0	1a	02	00	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+61	W	58	0	19	-	0f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+62	W	58	0	1d	-	af	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+63	W	58	0	19	-	3f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+64	W	58	0	07	-	ff	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+65	M	58	0	1a	02	02	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+66	W	68	-	01	-	06	video-clock reset
+67	M	68	-	94	01	01	
+68	M	68	-	94	01	00	
+69	W	68	-	01	-	04	
+70	W	68	-	01	-	00	
+71	M	68	-	01	20	20	bit5 pulse
+72	M	68	-	01	20	00	
+73	W	58	0	0c	-	10	TX port 0 reset pulse
+74	W	58	0	0c	-	00	
+75	M	68	-	18	80	00	
+76	W	68	-	19	-	00	
+77	W	68	-	1a	-	00	
+78	W	68	-	1b	-	00	
+79	W	68	-	1c	-	00	
+80	M	68	-	35	10	10	bit4 pulse
+81	M	68	-	35	10	00	
+82	M	58	0	08	02	00	TX port 1 power-down: enable off
+83	M	6a	-	18	dc	00	keep HPD/RxSense event enables
+84	M	6a	-	19	07	00	
+85	W	6a	-	1a	-	00	RD: RMW mask ff
+86	W	6a	-	1b	-	00	RD: RMW mask ff
+87	W	6a	-	1c	-	00	RD: RMW mask ff
+88	M	6a	-	84	60	60	AFE power-down
+89	M	6a	-	86	08	00	
+90	M	6a	-	88	03	03	TMDS output off
+91	M	6a	-	01	26	26	
+92	M	58	0	0d	0c	00	source = original
+93	R	6a	-	03	-	-	port 1 HPD (bit0)
+94	R	6c	-	03	-	-	port 2 HPD (bit0)
+95	M	58	0	1a	02	00	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+96	W	58	0	19	-	0f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+97	W	58	0	1d	-	af	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+98	W	58	0	19	-	3f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+99	W	58	0	07	-	ff	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+100	M	58	0	1a	02	02	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+101	W	6a	-	01	-	06	video-clock reset
+102	M	6a	-	94	01	01	
+103	M	6a	-	94	01	00	
+104	W	6a	-	01	-	04	
+105	W	6a	-	01	-	00	
+106	M	6a	-	01	20	20	bit5 pulse
+107	M	6a	-	01	20	00	
+108	W	58	0	0c	-	20	TX port 1 reset pulse
+109	W	58	0	0c	-	00	
+110	M	6a	-	18	80	00	
+111	W	6a	-	19	-	00	
+112	W	6a	-	1a	-	00	
+113	W	6a	-	1b	-	00	
+114	W	6a	-	1c	-	00	
+115	M	6a	-	35	10	10	bit4 pulse
+116	M	6a	-	35	10	00	
+117	M	58	0	08	04	00	TX port 2 power-down: enable off
+118	M	6c	-	18	dc	00	keep HPD/RxSense event enables
+119	M	6c	-	19	07	00	
+120	W	6c	-	1a	-	00	RD: RMW mask ff
+121	W	6c	-	1b	-	00	RD: RMW mask ff
+122	W	6c	-	1c	-	00	RD: RMW mask ff
+123	M	6c	-	84	60	60	AFE power-down
+124	M	6c	-	86	08	00	
+125	M	6c	-	88	03	03	TMDS output off
+126	M	6c	-	01	26	26	
+127	M	58	0	0d	30	00	source = original
+128	R	6a	-	03	-	-	port 1 HPD (bit0)
+129	R	6c	-	03	-	-	port 2 HPD (bit0)
+130	M	58	0	1a	02	00	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+131	W	58	0	19	-	0f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+132	W	58	0	1d	-	af	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+133	W	58	0	19	-	3f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+134	W	58	0	07	-	ff	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+135	M	58	0	1a	02	02	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+136	W	6c	-	01	-	06	video-clock reset
+137	M	6c	-	94	01	01	
+138	M	6c	-	94	01	00	
+139	W	6c	-	01	-	04	
+140	W	6c	-	01	-	00	
+141	M	6c	-	01	20	20	bit5 pulse
+142	M	6c	-	01	20	00	
+143	W	58	0	0c	-	40	TX port 2 reset pulse
+144	W	58	0	0c	-	00	
+145	M	6c	-	18	80	00	
+146	W	6c	-	19	-	00	
+147	W	6c	-	1a	-	00	
+148	W	6c	-	1b	-	00	
+149	W	6c	-	1c	-	00	
+150	M	6c	-	35	10	10	bit4 pulse
+151	M	6c	-	35	10	00	
+152	M	58	0	08	08	00	TX port 3 power-down: enable off
+153	M	6e	-	18	dc	00	keep HPD/RxSense event enables
+154	M	6e	-	19	07	00	
+155	W	6e	-	1a	-	00	RD: RMW mask ff
+156	W	6e	-	1b	-	00	RD: RMW mask ff
+157	W	6e	-	1c	-	00	RD: RMW mask ff
+158	M	6e	-	84	60	60	AFE power-down
+159	M	6e	-	86	08	00	
+160	M	6e	-	88	03	03	TMDS output off
+161	M	6e	-	01	26	26	
+162	M	58	0	0d	c0	00	source = original
+163	R	6a	-	03	-	-	port 1 HPD (bit0)
+164	R	6c	-	03	-	-	port 2 HPD (bit0)
+165	M	58	0	1a	02	00	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+166	W	58	0	19	-	0f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+167	W	58	0	1d	-	af	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+168	W	58	0	19	-	3f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+169	W	58	0	07	-	ff	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+170	M	58	0	1a	02	02	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+171	W	6e	-	01	-	06	video-clock reset
+172	M	6e	-	94	01	01	
+173	M	6e	-	94	01	00	
+174	W	6e	-	01	-	04	
+175	W	6e	-	01	-	00	
+176	M	6e	-	01	20	20	bit5 pulse
+177	M	6e	-	01	20	00	
+178	W	58	0	0c	-	80	TX port 3 reset pulse
+179	W	58	0	0c	-	00	
+180	M	6e	-	18	80	00	
+181	W	6e	-	19	-	00	
+182	W	6e	-	1a	-	00	
+183	W	6e	-	1b	-	00	
+184	W	6e	-	1c	-	00	
+185	M	6e	-	35	10	10	bit4 pulse
+186	M	6e	-	35	10	00	
+187	W	70	0	05	-	04	W1C bit2
+188	M	70	0	53	e0	00	
+189	M	70	0	54	ff	00	RD: RMW mask ff
+190	M	70	0	55	07	00	
+191	W	70	0	05	-	e8	W1C bits 7,6,5,3
+192	W	70	0	06	-	fe	W1C bits 7:1
+193	R	70	0	13	-	-	bit3: 1 = clock stable, 0 = clock lost
+194	M	70	0	54	01	00	
+195	M	70	0	23	10	10	bit4 pulse
+196	D	-	-	-	-	1	RD busy-wait
+197	M	70	0	23	10	00	
+198	M	68	-	88	03	03	TX port 0 TMDS output off
+199	M	6a	-	88	03	03	TX port 1 TMDS output off
+200	M	6c	-	88	03	03	TX port 2 TMDS output off
+201	M	6e	-	88	03	03	TX port 3 TMDS output off
+202	M	70	*	0f	03	03	
+203	M	70	3	e5	1c	00	
+204	M	70	*	0f	03	00	
+205	M	70	0	23	02	02	bit1 pulse
+206	M	70	0	23	02	00	
+207	R	70	0	19	-	-	bit7 = 0: SCDT off
+208	M	70	0	40	03	02	
+209	W	58	0	0d	-	00	all TX ports: source = original
+210	M	58	0	31	03	00	
+211	M	6a	-	18	80	00	TX port 1 reset
+212	W	6a	-	19	-	00	RD: RMW mask ff
+213	W	6a	-	1a	-	00	RD: RMW mask ff
+214	W	6a	-	1b	-	00	RD: RMW mask ff
+215	W	6a	-	1c	-	00	RD: RMW mask ff
+216	M	6a	-	88	03	03	TMDS output off
+217	M	6a	-	01	03	03	port soft reset (bit0 self-clears, register defaults return)
+218	M	6a	-	01	03	00	
+219	R	6a	-	03	-	-	HPD reads 0 now; returns about 130 ms later
+220	M	6c	-	18	80	00	TX port 2 reset
+221	W	6c	-	19	-	00	RD: RMW mask ff
+222	W	6c	-	1a	-	00	RD: RMW mask ff
+223	W	6c	-	1b	-	00	RD: RMW mask ff
+224	W	6c	-	1c	-	00	RD: RMW mask ff
+225	M	6c	-	88	03	03	TMDS output off
+226	M	6c	-	01	03	03	port soft reset (bit0 self-clears, register defaults return)
+227	M	6c	-	01	03	00	
+228	R	6c	-	03	-	-	HPD reads 0 now; returns about 130 ms later
+229	R	70	0	1a	-	-	cond: 0x12 bit7; 0x12 bit7 detail
+230	R	70	0	1b	-	-	cond: 0x12 bit7
+231	W	70	0	1a	-	ff	cond: 0x12 bit7; clear
+232	W	70	0	1b	-	07	cond: 0x12 bit7; clear
+233	M	58	0	0c	08	08	cond: 0x12 bit7; bit3 pulse
+234	M	58	0	0c	08	00	cond: 0x12 bit7
+235	W	70	0	12	-	{read}	W1C acknowledge of 0x12, last
+236	R	58	0	06	-	-	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); main-block status, W1C (HDCP-related bits, chapter 5.2)
+237	R	58	0	07	-	-	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); bit4 timer 0 expired, bit5 timer 1 expired
+238	W	58	0	06	-	{read}	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); W1C acknowledge
+239	W	58	0	07	-	{read}	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv)
+240	M	58	*	0f	01	01	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv)
+241	R	58	1	21	-	-	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); HDCP status, W1C (traced 00)
+242	R	58	1	22	-	-	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv)
+243	R	58	1	23	-	-	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv)
+244	W	58	1	21	-	{read}	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv)
+245	W	58	1	22	-	{read}	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv)
+246	W	58	1	23	-	{read}	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv)
+247	M	58	*	0f	01	00	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv)
+248	M	58	0	1a	02	00	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); 0x07 bit5 (timer 1 expired); timer 1 stop
+249	W	58	0	19	-	0f	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); 0x07 bit5 (timer 1 expired)
+250	W	58	0	1d	-	00	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); 0x07 bit5 (timer 1 expired); count 0
+251	R	70	0	14	-	-	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); 0x07 bit5 (timer 1 expired); lock bits 5:3
+252	R	70	0	13	-	-	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); 0x07 bit5 and 0x70 reg 0x14 bits 5:3 = 0; if bit4 = 1 RD retries: toggle 70/3:e5 bits 3:2, set e5 bit4, re-arm timer 1 with 81 (untraced)
+253	R	70	0	14	-	-	cond: 58/0:05 bit6: main-block pass in the same cycle (table splitter-main-event.tsv); 0x07 bit5
+254	R	6a	-	10	-	-	TX port 1 event pass: events were cleared by the soft reset (traced 00)
+255	R	6a	-	11	-	-	
+256	R	6a	-	12	-	-	
+257	R	6a	-	13	-	-	
+258	R	6a	-	14	-	-	
+259	W	6a	-	10	-	{read}	
+260	W	6a	-	11	-	{read}	
+261	W	6a	-	12	-	{read}	
+262	W	6a	-	13	-	{read}	
+263	W	6a	-	14	-	{read}	

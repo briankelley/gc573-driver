@@ -1,0 +1,34 @@
+# title: apply the HDMI 1.x EQ search result
+# evidence: T3/S30 t=32006.9-32020.2; T3/S20 t=3804.8-3818.1; T3/S31 t=37525.9-37539.1; S
+# chapter: hdmi-splitter.md section 6.6
+# invalid channel: use the first valid channel's code; no valid channel: 9f on all, retry the search (max 3)
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	R	70	0	14	-	-	EQ step: poll cycle after 0x07 bit6 (search done) was seen
+1	R	70	0	13	-	-	
+2	M	70	*	0f	03	03	read search results
+3	R	70	3	d5	-	-	channel 0 result, bits 6:0 (traced 7e)
+4	R	70	3	d6	-	-	channel 1 (traced 7e)
+5	R	70	3	d7	-	-	channel 2 (traced 3f)
+6	R	70	3	d0	-	-	2 bits per channel, 3 = result valid (traced 3f)
+7	R	70	3	d0	-	-	RD reads it once per channel
+8	R	70	3	d0	-	-	
+9	M	70	3	22	44	40	
+10	M	70	*	0f	03	00	
+11	M	70	0	07	30	30	W1C bits 5:4
+12	M	70	*	0f	03	03	
+13	M	70	3	22	38	00	search enables off
+14	W	70	3	27	-	{eq0}	eq0 = result0 | 0x80 (traced fe)
+15	W	70	3	28	-	{eq1}	(traced fe)
+16	W	70	3	29	-	{eq2}	(traced bf)
+17	W	70	3	e9	-	80	
+18	D	-	-	-	-	10	RD busy-wait
+19	M	70	*	0f	03	00	
+20	M	70	0	53	20	20	
+21	W	70	0	05	-	20	W1C bit5 (RD: RMW)

@@ -1,0 +1,438 @@
+# title: HDMI splitter (0x58) initialisation, power-on to idle (no input needed)
+# evidence: T1/S01 t=187.7-286.7 (all 641 transfers, order and values); T3/S20 t=188.1-281 (625 transfers) identical
+#           except the conditional rows; S for masks
+# chapter: hdmi-splitter.md section 3.2 (phases A-L); rclk algorithm 3.3; calibration wait 3.4; end state 3.5
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value = traced, informative);
+#      D delay in ms (value); X step described in the chapter (note names it); P poll (reg & mask) == value
+# dev: 8-bit I2C address. bank: register bank for banked devices (0x58: 0-1, 0x70: 0-3), '-' unbanked,
+#      '*' = the device's bank register 0x0f itself. Rows list every bank select explicitly.
+# value: hex, or {expr} computed from variables defined in the chapter (base = OTP calibration-record word address,
+#        rclk = reference clock in kHz, rclk10 = rclk * 10);
+#        '/' is integer division, '%' remainder
+# note: 'cond:' = row is conditional; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	W	58	*	0f	-	00	A: select bank 0
+1	R	58	0	00	-	5449	A: ID, LEN 2 read: 0x54 0x49
+2	R	58	0	02	-	6366	A: ID, LEN 2 read: 0x63 0x66
+3	R	58	0	00	-	5449	A: RD repeats the ID read
+4	R	58	0	02	-	6366	A: RD repeats the ID read
+5	R	58	0	03	-	66	A
+6	R	58	0	15	-	01	A: bit0 = 1 -> revision A1
+7	W	58	0	0a	-	01	B: soft reset pulse
+8	W	58	0	0a	-	00	B
+9	W	58	0	ff	-	c3	B: unlock key 1
+10	W	58	0	ff	-	a5	B: unlock key 2
+11	W	58	0	5f	-	04	B
+12	W	58	0	58	-	12	B
+13	W	58	0	58	-	02	B
+14	W	58	0	5f	-	00	B
+15	W	58	0	ff	-	ff	B: lock
+16	W	58	0	10	-	6e	B
+17	W	58	0	f0	-	71	C: RX core at 0x70
+18	M	58	0	0e	07	00	C
+19	M	58	0	08	0f	0f	C: TX port enables 0-3
+20	W	58	0	f0	-	71	C: RD writes it twice
+21	W	58	0	f1	-	97	C: TX common at 0x96
+22	W	58	0	ff	-	c3	D: unlock
+23	W	58	0	ff	-	a5	D
+24	W	58	*	0f	-	00	D: bank 0
+25	W	58	0	5f	-	04	D: OTP access setup
+26	W	58	0	5f	-	05	D
+27	W	58	0	58	-	12	D
+28	W	58	0	58	-	02	D
+29	W	58	0	57	-	01	D
+30	W	58	0	50	-	00	D: OTP word 0x000, address [11:8]
+31	W	58	0	51	-	00	D: address [7:0]
+32	W	58	0	54	-	04	D: OTP read command
+33	R	58	0	61	-	01	D: data [7:0] (per unit; traced value shown)
+34	R	58	0	62	-	01	D: data [15:8] (per unit; traced value shown)
+35	W	58	0	50	-	00	D: OTP word 0x001, address [11:8]
+36	W	58	0	51	-	01	D: address [7:0]
+37	W	58	0	54	-	04	D: OTP read command
+38	R	58	0	61	-	01	D: data [7:0] (per unit; traced value shown)
+39	R	58	0	62	-	01	D: data [15:8] (per unit; traced value shown)
+40	W	58	0	50	-	{base >> 8}	D: OTP word 'base' (0x0b0, or 0x4b0 if words 0/1 = ffff/0000; chapter 3.3), address [11:8]
+41	W	58	0	51	-	{base & 0xff}	D: address [7:0]
+42	W	58	0	54	-	04	D: OTP read command
+43	R	58	0	61	-	34	D: data [7:0] (per unit; traced value shown)
+44	R	58	0	62	-	44	D: data [15:8] (per unit; traced value shown)
+45	W	58	0	50	-	{(base + 1) >> 8}	D: OTP word base + 1, address [11:8]
+46	W	58	0	51	-	{(base + 1) & 0xff}	D: address [7:0]
+47	W	58	0	54	-	04	D: OTP read command
+48	R	58	0	61	-	20	D: data [7:0] (per unit; traced value shown)
+49	R	58	0	62	-	c0	D: data [15:8] (per unit; traced value shown)
+50	W	58	0	5f	-	00	D: close OTP access
+51	W	58	*	0f	-	00	D
+52	W	58	0	ff	-	ff	D: lock
+53	X	-	-	-	-	-	rclk-compute: derive rclk [kHz] from the OTP words or measure it, chapter 3.3
+54	W	96	-	11	-	{rclk10 & 0xff}	D: rclk10 = rclk x 10 (T1: 04)
+55	W	96	-	12	-	{(rclk10 >> 8) & 0xff}	D: (T1: 3a)
+56	M	96	-	13	03	{(rclk10 >> 16) & 0x03}	D: (T1: 3)
+57	M	58	0	1e	3f	{rclk / 1000}	D: integer MHz (T1: 15)
+58	W	58	0	1f	-	{((rclk % 1000) * 32) / 125}	D: fraction in 1/256 MHz (T1: 25)
+59	M	96	-	50	04	00	E
+60	W	96	-	2c	-	69	E: TX port 0 at 0x68
+61	W	96	-	2d	-	6b	E: TX port 1 at 0x6a
+62	W	96	-	2e	-	6d	E: TX port 2 at 0x6c
+63	W	96	-	2f	-	6f	E: TX port 3 at 0x6e
+64	W	70	0	22	-	08	F: RX reset (bank 0 is the power-on bank)
+65	W	70	0	23	-	01	F
+66	W	70	0	22	-	17	F
+67	W	70	0	24	-	f8	F
+68	D	-	-	-	-	10	F: RD busy-wait
+69	W	70	0	23	-	a0	F
+70	W	70	0	22	-	00	F
+71	W	70	0	24	-	00	F
+72	M	70	*	0f	03	00	G: RX offset calibration
+73	M	70	0	29	01	01	G
+74	M	70	0	2a	41	41	G
+75	M	70	*	0f	03	03	G
+76	M	70	3	3a	80	00	G
+77	M	70	3	3b	c0	00	G
+78	M	70	3	a0	80	80	G
+79	M	70	3	a1	80	80	G
+80	M	70	3	a2	80	80	G
+81	M	70	3	a7	10	10	G
+82	M	70	3	48	80	80	G
+83	M	70	*	0f	03	00	G
+84	M	70	0	2a	40	00	G
+85	M	70	0	24	04	04	G
+86	W	70	0	25	-	00	G
+87	W	70	0	26	-	00	G
+88	W	70	0	27	-	00	G
+89	W	70	0	28	-	00	G
+90	M	70	0	3c	10	00	G
+91	M	70	*	0f	03	03	G
+92	M	70	3	3a	80	80	G: start calibration
+93	M	70	*	0f	03	00	G
+94	X	70	0	08	-	-	caof-wait: poll until bits 5:4 != 0, retry rule in chapter 3.4 (T1: 10 at first read)
+95	M	70	*	0f	03	03	G
+96	R	70	3	5a	-	ff	G: result, discarded
+97	R	70	3	59	-	8f	G: result, discarded
+98	R	70	3	59	-	8f	G: result, discarded
+99	M	70	3	3a	80	00	G: stop
+100	M	70	3	a0	80	00	G
+101	M	70	3	a1	80	00	G
+102	M	70	3	a2	80	00	G
+103	M	70	*	0f	03	00	G
+104	W	70	0	08	-	30	G: W1C calibration-done bits 5:4 (RD: RMW)
+105	M	70	0	29	01	00	G
+106	M	70	0	24	04	00	G
+107	M	70	0	3c	10	10	G
+108	M	70	0	ce	20	00	G
+109	W	70	0	56	-	ff	H: RX init
+110	W	70	0	57	-	ff	H
+111	M	70	*	0f	03	03	H
+112	M	70	3	a8	08	08	H
+113	M	70	3	a7	40	40	H
+114	M	70	3	26	20	00	H
+115	W	70	3	27	-	9f	H: EQ channel 0 default (RD: RMW mask ff)
+116	W	70	3	28	-	9f	H: EQ channel 1 default
+117	W	70	3	29	-	9f	H: EQ channel 2 default
+118	M	70	*	0f	03	00	H
+119	M	70	0	28	59	59	H: not the EDID RAM enable
+120	M	70	0	2a	01	01	H
+121	M	70	0	43	02	00	H
+122	M	70	0	44	3f	19	H
+123	M	70	0	3c	01	00	H
+124	W	70	0	45	-	df	H
+125	M	70	0	46	3f	15	H
+126	W	70	0	47	-	88	H (RD: RMW mask ff)
+127	W	70	0	49	-	e1	H: maps an RX sub-block at 0xe0 (address shared with the IT6805), chapter 2.4
+128	W	70	0	23	-	a0	H
+129	W	70	0	53	-	0f	H: RX event enables, chapter 6.2
+130	W	70	0	e3	-	00	H: RX HDCP 2.x disabled
+131	M	70	0	ce	80	00	H
+132	M	70	0	3c	20	00	H
+133	M	70	*	0f	03	03	H
+134	M	70	3	e3	01	01	H
+135	M	70	3	e3	06	02	H
+136	W	70	3	f0	-	a0	H
+137	M	70	*	0f	03	00	H
+138	M	70	0	28	88	88	H
+139	M	70	0	3b	20	20	H
+140	W	70	0	26	-	ff	H
+141	W	70	*	0f	-	03	H: bank 3 (direct write)
+142	W	70	3	ab	-	4a	H: source HPD pin register, low state
+143	W	70	3	ac	-	40	H
+144	W	70	*	0f	-	00	H: bank 0 (direct write)
+145	M	70	0	53	e0	00	I: RX power-down
+146	M	70	0	54	ff	00	I (RD: RMW mask ff)
+147	M	70	0	55	07	00	I
+148	M	70	0	57	0f	00	I
+149	M	70	0	c5	10	10	I: bit4 pulse
+150	M	70	0	c5	10	00	I
+151	M	58	0	0a	04	04	I: RX-side reset pulse
+152	D	-	-	-	-	1	I: RD busy-wait
+153	M	58	0	0a	04	00	I
+154	M	70	*	0f	03	03	I: source HPD low, chapter 6.4
+155	R	70	3	ab	-	4a	I: if it reads ca: W ab=4a, W ab=00, W ac=00 (not the case at init)
+156	M	70	*	0f	03	00	I
+157	W	70	0	26	-	ff	I
+158	W	70	0	55	-	00	I
+159	M	70	*	0f	03	03	I: EQ defaults
+160	W	70	3	27	-	9f	I
+161	W	70	3	28	-	9f	I
+162	W	70	3	29	-	9f	I
+163	W	70	3	20	-	1b	I
+164	W	70	3	21	-	03	I
+165	M	70	*	0f	03	00	I
+166	M	70	0	c5	01	01	I: RD sets it while no EDID was loaded (reads 03 already)
+167	W	96	-	20	-	02	J: TX common reset pulse
+168	W	96	-	20	-	00	J
+169	M	58	0	08	01	00	port 0 enable off
+170	M	68	-	18	dc	00	
+171	M	68	-	19	07	00	
+172	W	68	-	1a	-	00	RD: RMW mask ff
+173	W	68	-	1b	-	00	RD: RMW mask ff
+174	W	68	-	1c	-	00	RD: RMW mask ff
+175	M	68	-	84	60	60	AFE power-down
+176	M	68	-	86	08	00	
+177	M	68	-	88	03	03	TMDS output off
+178	M	68	-	01	26	26	
+179	M	58	0	0d	03	00	port 0 source = original
+180	R	6a	-	03	-	-	port 1 HPD level (bit0)
+181	R	6c	-	03	-	-	port 2 HPD level (bit0)
+182	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+183	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+184	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+185	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+186	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+187	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+188	W	68	-	01	-	06	video-clock reset start
+189	M	68	-	94	01	01	
+190	M	68	-	94	01	00	
+191	W	68	-	01	-	04	
+192	W	68	-	01	-	00	video-clock reset end
+193	M	68	-	01	20	20	bit5 pulse
+194	M	68	-	01	20	00	
+195	W	58	0	0c	-	10	port 0 reset pulse (bit 4)
+196	W	58	0	0c	-	00	
+197	M	68	-	18	80	00	
+198	W	68	-	19	-	00	
+199	W	68	-	1a	-	00	
+200	W	68	-	1b	-	00	
+201	W	68	-	1c	-	00	
+202	M	68	-	35	10	10	bit4 pulse
+203	M	68	-	35	10	00	
+204	M	58	0	08	08	00	port 3 enable off
+205	M	6e	-	18	dc	00	
+206	M	6e	-	19	07	00	
+207	W	6e	-	1a	-	00	RD: RMW mask ff
+208	W	6e	-	1b	-	00	RD: RMW mask ff
+209	W	6e	-	1c	-	00	RD: RMW mask ff
+210	M	6e	-	84	60	60	AFE power-down
+211	M	6e	-	86	08	00	
+212	M	6e	-	88	03	03	TMDS output off
+213	M	6e	-	01	26	26	
+214	M	58	0	0d	c0	00	port 3 source = original
+215	R	6a	-	03	-	-	port 1 HPD level (bit0)
+216	R	6c	-	03	-	-	port 2 HPD level (bit0)
+217	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+218	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+219	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+220	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+221	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+222	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+223	W	6e	-	01	-	06	video-clock reset start
+224	M	6e	-	94	01	01	
+225	M	6e	-	94	01	00	
+226	W	6e	-	01	-	04	
+227	W	6e	-	01	-	00	video-clock reset end
+228	M	6e	-	01	20	20	bit5 pulse
+229	M	6e	-	01	20	00	
+230	W	58	0	0c	-	80	port 3 reset pulse (bit 7)
+231	W	58	0	0c	-	00	
+232	M	6e	-	18	80	00	
+233	W	6e	-	19	-	00	
+234	W	6e	-	1a	-	00	
+235	W	6e	-	1b	-	00	
+236	W	6e	-	1c	-	00	
+237	M	6e	-	35	10	10	bit4 pulse
+238	M	6e	-	35	10	00	
+239	M	6a	-	c1	01	01	K: port 1
+240	M	6a	-	01	01	01	K: port soft reset (bit0 reads back 0)
+241	M	6a	-	01	01	00	K
+242	M	6a	-	08	1c	00	
+243	M	6a	-	02	02	02	
+244	M	6a	-	41	01	00	TX HDCP 1.x engine off
+245	M	6a	-	c0	01	01	HDMI mode
+246	M	6a	-	34	c0	80	
+247	M	6a	-	35	03	00	
+248	M	6a	-	3a	fc	90	
+249	W	6a	-	93	-	40	RD: RMW mask ff
+250	M	6a	-	94	3e	26	
+251	M	6a	-	c0	10	10	
+252	M	6a	-	c1	04	00	
+253	M	6a	-	c3	0f	01	
+254	M	6a	-	18	03	03	HPD + RxSense event enables
+255	W	6a	-	19	-	07	
+256	W	6a	-	1a	-	03	
+257	W	6a	-	1b	-	ff	
+258	W	6a	-	1c	-	03	
+259	W	6a	-	88	-	54	
+260	W	6a	-	8a	-	00	
+261	W	6a	-	8b	-	07	
+262	W	6a	-	01	-	06	video-clock reset start
+263	M	6a	-	94	01	01	
+264	M	6a	-	94	01	00	
+265	W	6a	-	01	-	04	
+266	W	6a	-	01	-	00	video-clock reset end
+267	M	6a	-	01	20	20	bit5 pulse
+268	M	6a	-	01	20	00	
+269	W	58	0	0c	-	20	port 1 reset pulse (bit 5)
+270	W	58	0	0c	-	00	
+271	M	6a	-	18	80	00	
+272	W	6a	-	19	-	00	
+273	W	6a	-	1a	-	00	
+274	W	6a	-	1b	-	00	
+275	W	6a	-	1c	-	00	
+276	M	6a	-	35	10	10	bit4 pulse
+277	M	6a	-	35	10	00	
+278	M	58	0	08	02	00	port 1 enable off
+279	M	6a	-	18	dc	00	
+280	M	6a	-	19	07	00	
+281	W	6a	-	1a	-	00	RD: RMW mask ff
+282	W	6a	-	1b	-	00	RD: RMW mask ff
+283	W	6a	-	1c	-	00	RD: RMW mask ff
+284	M	6a	-	84	60	60	AFE power-down
+285	M	6a	-	86	08	00	
+286	M	6a	-	88	03	03	TMDS output off
+287	M	6a	-	01	26	26	
+288	M	58	0	0d	0c	00	port 1 source = original
+289	R	6a	-	03	-	-	port 1 HPD level (bit0)
+290	R	6c	-	03	-	-	port 2 HPD level (bit0)
+291	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+292	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+293	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+294	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+295	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+296	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+297	W	6a	-	01	-	06	video-clock reset start
+298	M	6a	-	94	01	01	
+299	M	6a	-	94	01	00	
+300	W	6a	-	01	-	04	
+301	W	6a	-	01	-	00	video-clock reset end
+302	M	6a	-	01	20	20	bit5 pulse
+303	M	6a	-	01	20	00	
+304	W	58	0	0c	-	20	port 1 reset pulse (bit 5)
+305	W	58	0	0c	-	00	
+306	M	6a	-	18	80	00	
+307	W	6a	-	19	-	00	
+308	W	6a	-	1a	-	00	
+309	W	6a	-	1b	-	00	
+310	W	6a	-	1c	-	00	
+311	M	6a	-	35	10	10	bit4 pulse
+312	M	6a	-	35	10	00	
+313	M	6c	-	c1	01	01	K: port 2
+314	M	6c	-	01	01	01	K: port soft reset (bit0 reads back 0)
+315	M	6c	-	01	01	00	K
+316	M	6c	-	08	1c	00	
+317	M	6c	-	02	02	02	
+318	M	6c	-	41	01	00	TX HDCP 1.x engine off
+319	M	6c	-	c0	01	01	HDMI mode
+320	M	6c	-	34	c0	80	
+321	M	6c	-	35	03	00	
+322	M	6c	-	3a	fc	90	
+323	W	6c	-	93	-	40	RD: RMW mask ff
+324	M	6c	-	94	3e	26	
+325	M	6c	-	c0	10	10	
+326	M	6c	-	c1	04	00	
+327	M	6c	-	c3	0f	01	
+328	M	6c	-	18	03	03	HPD + RxSense event enables
+329	W	6c	-	19	-	07	
+330	W	6c	-	1a	-	03	
+331	W	6c	-	1b	-	ff	
+332	W	6c	-	1c	-	03	
+333	W	6c	-	88	-	54	
+334	W	6c	-	8a	-	00	
+335	W	6c	-	8b	-	07	
+336	W	6c	-	01	-	06	video-clock reset start
+337	M	6c	-	94	01	01	
+338	M	6c	-	94	01	00	
+339	W	6c	-	01	-	04	
+340	W	6c	-	01	-	00	video-clock reset end
+341	M	6c	-	01	20	20	bit5 pulse
+342	M	6c	-	01	20	00	
+343	W	58	0	0c	-	40	port 2 reset pulse (bit 6)
+344	W	58	0	0c	-	00	
+345	M	6c	-	18	80	00	
+346	W	6c	-	19	-	00	
+347	W	6c	-	1a	-	00	
+348	W	6c	-	1b	-	00	
+349	W	6c	-	1c	-	00	
+350	M	6c	-	35	10	10	bit4 pulse
+351	M	6c	-	35	10	00	
+352	M	58	0	08	04	00	port 2 enable off
+353	M	6c	-	18	dc	00	
+354	M	6c	-	19	07	00	
+355	W	6c	-	1a	-	00	RD: RMW mask ff
+356	W	6c	-	1b	-	00	RD: RMW mask ff
+357	W	6c	-	1c	-	00	RD: RMW mask ff
+358	M	6c	-	84	60	60	AFE power-down
+359	M	6c	-	86	08	00	
+360	M	6c	-	88	03	03	TMDS output off
+361	M	6c	-	01	26	26	
+362	M	58	0	0d	30	00	port 2 source = original
+363	R	6a	-	03	-	-	port 1 HPD level (bit0)
+364	R	6c	-	03	-	-	port 2 HPD level (bit0)
+365	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+366	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+367	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+368	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+369	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+370	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+371	W	6c	-	01	-	06	video-clock reset start
+372	M	6c	-	94	01	01	
+373	M	6c	-	94	01	00	
+374	W	6c	-	01	-	04	
+375	W	6c	-	01	-	00	video-clock reset end
+376	M	6c	-	01	20	20	bit5 pulse
+377	M	6c	-	01	20	00	
+378	W	58	0	0c	-	40	port 2 reset pulse (bit 6)
+379	W	58	0	0c	-	00	
+380	M	6c	-	18	80	00	
+381	W	6c	-	19	-	00	
+382	W	6c	-	1a	-	00	
+383	W	6c	-	1b	-	00	
+384	W	6c	-	1c	-	00	
+385	M	6c	-	35	10	10	bit4 pulse
+386	M	6c	-	35	10	00	
+387	M	96	-	15	08	08	L
+388	W	68	-	03	-	03	L: port 0 only
+389	W	68	-	84	-	60	L: park port 0
+390	W	68	-	86	-	00	L
+391	W	68	-	88	-	0b	L
+392	W	6e	-	84	-	60	L: park port 3
+393	W	6e	-	86	-	00	L
+394	W	6e	-	88	-	0b	L
+395	M	58	0	08	0f	0f	L
+396	W	58	0	0d	-	00	L: all ports source = original (RD: RMW mask ff)
+397	M	58	0	6b	3c	00	L
+398	M	58	0	6c	38	20	L
+399	M	58	0	18	10	10	L
+400	M	58	*	0f	01	01	L
+401	M	58	1	10	49	01	L: bit6 = 0 (RX HDCP 2.x off), chapter 6.9
+402	M	58	1	1d	80	80	L
+403	M	58	1	20	78	78	L
+404	M	58	*	0f	01	00	L
+405	M	58	0	19	3f	0f	L: timer gate off, chapter 5.3
+406	W	58	0	2b	-	ff	L
+407	W	58	0	2d	-	0f	L
+408	W	58	0	2e	-	ff	L
+409	W	58	0	30	-	0f	L
+410	M	58	0	6d	30	00	L
+411	D	-	-	-	-	10	L: RD busy-wait
+412	M	68	-	41	01	00	L: port 0 HDCP off
+413	M	68	-	c1	01	01	L: AV mute on
+414	M	68	-	88	01	01	L
+415	M	6a	-	41	01	00	L: port 1 HDCP off
+416	M	6a	-	c1	01	01	L: AV mute on
+417	M	6a	-	88	01	01	L
+418	M	6c	-	41	01	00	L: port 2 HDCP off
+419	M	6c	-	c1	01	01	L: AV mute on
+420	M	6c	-	88	01	01	L
+421	M	6e	-	41	01	00	L: port 3 HDCP off
+422	M	6e	-	c1	01	01	L: AV mute on
+423	M	6e	-	88	01	01	L

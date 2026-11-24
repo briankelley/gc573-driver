@@ -1,0 +1,56 @@
+# title: source 5V appears at the HDMI input (RX 0x05 bit0, 0x13 bit0 = 1)
+# evidence: T3/S30 t=31272.5-31283.8 (replug); T3/S20 t=391.8 and T3/S31 t=33540.5 same steps; S
+# chapter: hdmi-splitter.md sections 6.3, 9.2
+# RD raises HPD here only if a downstream EDID was already parsed (S20 load: no; S30/S31: yes).
+# Our driver: raise HPD here if the EDID RAM is loaded.
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	R	58	0	05	-	10	summary: bit4 = RX event
+1	R	70	0	05	-	01	RX status/level snapshot
+2	R	70	0	06	-	-	
+3	R	70	0	07	-	-	
+4	R	70	0	08	-	-	
+5	R	70	0	09	-	-	
+6	R	70	0	10	-	-	
+7	R	70	0	11	-	-	
+8	R	70	0	12	-	-	
+9	R	70	0	13	-	a1	
+10	R	70	0	14	-	-	
+11	R	70	0	15	-	-	
+12	R	70	0	19	-	-	
+13	R	70	0	1a	-	-	
+14	R	70	0	1b	-	-	
+15	R	70	0	1d	-	-	
+16	W	70	0	05	-	{read}	W1C acknowledge
+17	W	70	0	06	-	{read}	
+18	W	70	0	07	-	{read}	
+19	W	70	0	08	-	{read}	
+20	W	70	0	09	-	{read}	
+21	W	70	0	10	-	{read}	
+22	W	70	0	11	-	{read}	
+23	M	58	0	0c	04	04	5V-on: 0x0c bit2 set
+24	M	58	0	10	40	00	0x10 bit6 pulse low
+25	M	58	0	10	40	40	
+26	M	58	0	0c	04	00	
+27	M	70	*	0f	03	00	
+28	R	70	0	13	-	-	bus check: bit6 = 0 (HDMI) and bit0 = 1
+29	M	70	*	0f	03	03	
+30	M	70	3	3a	06	02	
+31	M	70	*	0f	03	00	
+32	M	70	0	29	01	00	
+33	M	70	0	26	0c	00	
+34	M	58	0	69	2f	00	
+35	R	70	0	13	-	-	cond: only if an EDID is loaded (RD: if a downstream EDID was parsed); gate: continue only if bit0 (5V) = 1
+36	M	70	*	0f	03	03	cond: only if an EDID is loaded (RD: if a downstream EDID was parsed); source HPD high
+37	R	70	3	ab	-	-	cond: only if an EDID is loaded (RD: if a downstream EDID was parsed); next write only if it does not read ca
+38	W	70	3	ab	-	ca	cond: ab was not ca; bit7 = HPD level
+39	M	70	*	0f	03	00	cond: only if an EDID is loaded (RD: if a downstream EDID was parsed); 
+40	W	70	0	26	-	00	cond: only if an EDID is loaded (RD: if a downstream EDID was parsed); 
+41	W	70	0	55	-	ff	cond: only if an EDID is loaded (RD: if a downstream EDID was parsed); RX 0x07 event enables on
+42	W	70	0	12	-	{read}	W1C acknowledge of 0x12, last

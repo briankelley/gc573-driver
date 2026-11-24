@@ -1,0 +1,26 @@
+# title: TX port DDC master: read one 32-byte EDID chunk
+# evidence: T3/S20 t=455.0-462.1 (first chunk; 16 chunks in t=455-581); T1/S01i t=511-819 (no source: no-ACK, 12 attempts); S
+# chapter: hdmi-splitter.md section 7.7
+# a 128-byte block = 4 chunks; RD retries a failed block up to 4 times.
+# columns: n op dev bank reg mask value note
+# ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
+#      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
+# dev: 8-bit I2C address. bank: 0x58 bank 0-1, 0x70 bank 0-3, '-' unbanked device, '*' the bank register 0x0f itself
+# value: hex; {read} = write back the value read from this register earlier in the table (W1C acknowledge);
+#        {expr} = computed, variables defined in the chapter; '/' is integer division
+# note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
+n	op	dev	bank	reg	mask	value	note
+0	M	6a	-	28	01	01	EDID read: DDC master select
+1	M	6a	-	19	04	04	
+2	M	6a	-	1d	08	08	
+3	W	6a	-	2e	-	09	FIFO clear
+4	W	6a	-	29	-	a0	EDID slave
+5	W	6a	-	2a	-	{(blk * 128 + 32 * k) & 0xff}	offset; blk = block, k = chunk 0..3
+6	W	6a	-	2b	-	20	32 bytes
+7	W	6a	-	2c	-	00	
+8	W	6a	-	2d	-	{blk >> 1}	E-DDC segment
+9	R	6a	-	03	-	-	abort (fail) if bit0 (HPD) = 0
+10	W	6a	-	2e	-	03	command: EDID read
+11	P	6a	-	2f	80	80	done; every 1 ms, max 20 polls (traced 41 x3 then 85); errors: bits 5:3
+12	R	6a	-	30	-	-	32-byte burst read of the FIFO (LEN 32)
+13	M	6a	-	28	01	00	

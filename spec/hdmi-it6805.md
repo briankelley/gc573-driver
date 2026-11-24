@@ -123,7 +123,7 @@ Decide on single bits, not on whole values: intermediate values differ between e
 | Reg | Bit | Meaning | Observed | Ev | Conf |
 |---|---|---|---|---|---|
 | 0x13 | 0 | port-0 5 V present | 1 whenever the cable is powered | `T3`,`S` | C |
-| | 1 | HDMI (1) / DVI (0) | 0 for ≈70 ms after the clock arrives | `T3`,`S` | C |
+| | 1 | HDMI (1) / DVI (0) | After a splitter TX reset it reads 0 until the splitter unmutes TX port 1, then 1 within 2.3 ms (`T3/S30`,`S31`). With no TX reset (`T3/S20`) it read 1 66 ms before the unmute. Cause unknown (`hdmi-splitter.md` §7.5) | `T3`,`S` | C |
 | | 3 | input clock present (RD's usage; RD bases its decisions on this bit) | set with signal | `S`,`T3` | L |
 | | 4 | input clock stable (RD's usage; RD only logs it). Bits 3 and 4 were set together in every trace, so the two names are not separable; code against the bit numbers | set with signal | `S`,`T3` | L |
 | | 6 | MHL link mode | 0 | `S`,`T` | L |
@@ -389,7 +389,7 @@ Mechanism (`T1/S01`,`T3/S20`; C · `S` for the physical-address search; L):
 | Item | Fact | Ev | Conf |
 |---|---|---|---|
 | Line | FPGA GPIO 0x040 bit 2 drives the HPD input of splitter TX port 1, i.e. the IT6805 side. No IT6805 register is involved: RD's HPD requests only raise an event that the board code maps to this bit | `S`,`T3/S20`,`S30`,`S31` | C |
-| Polarity | 1 = asserted (high). TX port 1 HPD rose 104–110 ms after bit 2 went high. The fall latency is unmeasured (open question 23). Evidence: `hdmi-chips.md`, `hdmi-splitter.md` | `T3` | C (rise); U (fall) |
+| Polarity | 1 = asserted (high). TX port 1 latched its HPD event 84–104 ms after bit 2 went high (`hdmi-splitter.md` §2.2). The fall latency is unmeasured (open question 23). Evidence: `hdmi-chips.md`, `hdmi-splitter.md` | `T3` | C (rise); U (fall) |
 | Access | read-modify-write of 0x040; preserve the other bits | `T`,`S` | C |
 | Load pulse | after the IT6805 init RD writes bit 2 = 1, waits 10 ms, writes 0, waits 100 ms, writes 1 (measured 17.8–19.2 ms and 108.1–108.2 ms; `T1/S01` 240.6/259.3/367.5 ms, `T2/S10` 232.2/251.4/359.5 ms, `T3/S20` 181.8/199.6/307.7 ms). End state 1, even with no input | `T1/S01`,`T2/S10`,`T3/S20` | C |
 | 5 V loss | bit 2 = 0, written twice 9.4 ms apart (`T3/S30` 22055.1/22064.5, `S31` 29731.0/29740.4), before the no-5 V entry | `T3/S30`,`S31` | C |
