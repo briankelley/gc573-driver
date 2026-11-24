@@ -8,7 +8,7 @@
 ifneq ($(KERNELRELEASE),)
 
 obj-m := gc573.o
-gc573-y := src/gc573_core.o
+gc573-y := src/gc573_core.o src/gc573_i2c.o
 
 else
 

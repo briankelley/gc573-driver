@@ -11,7 +11,10 @@
 
 #include <linux/atomic.h>
 #include <linux/bits.h>
+#include <linux/completion.h>
+#include <linux/i2c.h>
 #include <linux/io.h>
+#include <linux/mutex.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
 
@@ -62,6 +65,22 @@ struct pci_dev;
 #define GC573_I2C1_PRESCALE		0x180		/* bus 1 engine prescale */
 #define GC573_I2C1_PRESCALE_VAL		0x138
 
+/* I2C bus 1 transaction engine, spec/i2c.md */
+#define GC573_I2C1_ADDR			0x184		/* 8-bit address, bit 0 = read */
+#define GC573_I2C1_ZERO_188		0x188		/* role unknown, 0 each transfer */
+#define GC573_I2C1_ZERO_18C		0x18c		/* role unknown, 0 each transfer */
+#define GC573_I2C1_SUBADDR		0x190		/* device register address */
+#define GC573_I2C1_LEN			0x194		/* byte count */
+#define GC573_I2C1_TXFIFO		0x198		/* write pushes one byte */
+#define GC573_I2C1_RXFIFO		0x19c		/* read pops one byte, bits 7:0 */
+#define GC573_I2C1_CMD			0x1a0
+#define GC573_I2C1_CMD_CLEAR		0x10		/* clear/flush */
+#define GC573_I2C1_CMD_WRITE		0x04		/* start write */
+#define GC573_I2C1_CMD_READ		0x08		/* start read */
+#define GC573_I2C1_STATUS		0x1a4		/* 8-bit read */
+#define GC573_I2C1_STATUS_WR_OK		BIT(0)
+#define GC573_I2C1_STATUS_RD_OK		BIT(2)
+
 /* Video input processing block, spec/regmap.md */
 #define GC573_DDR_STATUS		0x107c
 #define GC573_DDR_READY			BIT(0)
@@ -83,7 +102,16 @@ struct gc573 {
 
 	/* serialises read-modify-write of GPIO (0x040) */
 	spinlock_t gpio_lock;
+
+	/* serialises the I2C masters: one transfer on the card at a time */
+	struct mutex i2c_lock;
+	struct i2c_adapter i2c1;	/* bus 1 engine: HDMI chips */
+	struct completion i2c1_done;	/* bus 1 transfer ended (INT bit 11) */
+	u8 i2c1_status;			/* GC573_I2C1_STATUS latched at INT bit 11 */
 };
+
+int gc573_i2c_init(struct gc573 *gc);
+void gc573_i2c1_irq(struct gc573 *gc);
 
 static inline u32 gc573_rd(struct gc573 *gc, u32 off)
 {

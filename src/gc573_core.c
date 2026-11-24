@@ -272,10 +272,12 @@ static irqreturn_t gc573_irq_thread(int irq, void *data)
 		dev_dbg_ratelimited(&gc->pdev->dev, "interrupt %#x (bits 8/9)\n",
 				    pending);
 
-	/* nothing starts video, audio or I2C transfers yet */
+	if (pending & GC573_INT_I2C1)
+		gc573_i2c1_irq(gc);
+
+	/* nothing starts video or audio yet */
 	unexpected = pending & (GC573_INT_VID_TERM | GC573_INT_VID_DONE |
-				GC573_INT_AUD_STOP | GC573_INT_AUD_DONE |
-				GC573_INT_I2C1);
+				GC573_INT_AUD_STOP | GC573_INT_AUD_DONE);
 	if (unexpected)
 		dev_warn_ratelimited(&gc->pdev->dev, "unexpected interrupt %#x\n",
 				     unexpected);
@@ -294,6 +296,8 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return -ENOMEM;
 	gc->pdev = pdev;
 	spin_lock_init(&gc->gpio_lock);
+	mutex_init(&gc->i2c_lock);
+	init_completion(&gc->i2c1_done);
 	pci_set_drvdata(pdev, gc);
 
 	/* 1: PCI enable, bus master, BAR0, MSI (spec/pci.md) */
@@ -336,7 +340,12 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	if (ret)
 		return ret;
 
-	return gc573_hw_init(gc);
+	ret = gc573_hw_init(gc);
+	if (ret)
+		return ret;
+
+	/* I2C adapters: devres removes them before the quiesce above runs */
+	return gc573_i2c_init(gc);
 }
 
 static const struct pci_device_id gc573_pci_ids[] = {
