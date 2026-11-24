@@ -17,7 +17,9 @@ sudo apt-get update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
   qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients virtinst virt-manager \
   ovmf cloud-image-utils driverctl v4l-utils openjdk-25-jdk unzip curl git \
-  build-essential dkms linux-headers-"$(uname -r)" linux-modules-extra-"$(uname -r)"
+  build-essential dkms linux-headers-"$(uname -r)" linux-modules-extra-"$(uname -r)" \
+  libguestfs-tools xorriso edid-decode gh \
+  flex bison libssl-dev libelf-dev bc dwarves dpkg-dev debhelper fakeroot zstd cpio rsync
 
 say "OBS (obsproject PPA)"
 if ! ls /etc/apt/sources.list.d/ | grep -q obsproject; then

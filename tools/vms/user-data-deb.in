@@ -1,0 +1,28 @@
+#cloud-config
+# Regression VM, Debian family (Ubuntu). @NAME@ and @SSH_PUBKEY@ substituted by create.sh.
+hostname: @NAME@
+users:
+  - name: dev
+    groups: [sudo, video, audio]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - @SSH_PUBKEY@
+package_update: true
+package_upgrade: true
+packages:
+  - linux-generic            # GA kernel + modules-extra (videodev, videobuf2, snd)
+  - linux-headers-generic
+  - build-essential
+  - dkms
+  - git
+  - rsync
+  - pciutils
+  - v4l-utils
+  - edid-decode
+  - alsa-utils
+runcmd:
+  - touch /etc/cloud/cloud-init.disabled
+power_state:
+  mode: poweroff
+  condition: true

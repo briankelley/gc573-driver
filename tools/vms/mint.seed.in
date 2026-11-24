@@ -1,0 +1,26 @@
+# Linux Mint unattended install (Ubiquity). @NAME@ @PW@ substituted by mint.sh.
+# Provisioning (ssh key, sudo, packages) is applied offline by mint.sh with virt-customize:
+# Ubiquity's success_command did not run in automatic mode (Mint 22.3).
+d-i debian-installer/locale string en_US.UTF-8
+d-i keyboard-configuration/layoutcode string us
+d-i keyboard-configuration/xkb-keymap select us
+d-i time/zone string UTC
+d-i clock-setup/utc boolean true
+d-i netcfg/get_hostname string @NAME@
+d-i passwd/user-fullname string dev
+d-i passwd/username string dev
+d-i passwd/user-password password @PW@
+d-i passwd/user-password-again password @PW@
+d-i user-setup/allow-password-weak boolean true
+d-i user-setup/encrypt-home boolean false
+d-i passwd/auto-login boolean true
+d-i partman-auto/disk string /dev/vda
+d-i partman-auto/method string regular
+d-i partman-auto/choose_recipe select atomic
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+d-i partman-efi/non_efi_system boolean true
+ubiquity ubiquity/use_nonfree boolean false
+ubiquity ubiquity/poweroff boolean true

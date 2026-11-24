@@ -40,7 +40,11 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - `tools/devvm/create.sh` — builds `gc573-dev` VM: Ubuntu 24.04 cloud img, kernel 6.8 GA + headers. dkms, sparse, v4l-utils (v4l2-ctl, v4l2-compliance), edid-decode, alsa-utils, trace-cmd, ffmpeg, python3-numpy, OBS (PPA latest), Xfce autologin. Same user/key as ref VM.
 - `tools/devvm/debug-kernel.sh` — builds Ubuntu 6.8 source + kmemleak, lockdep, DEBUG_ATOMIC_SLEEP, KASAN, DMA_API_DEBUG on host; installs `6.8.12-gc573dbg` in `gc573-dev` as extra entry (default boot stays generic). Boot once: `sudo grub-reboot "$(cat /etc/gc573-dbg-entry)" && sudo reboot`. Leak/lock/DMA gates run on this kernel.
 - checkpatch: `/lib/modules/$(uname -r)/build/scripts/checkpatch.pl --strict --no-tree -f <file>` (in `gc573-dev`).
-- Regression VM matrix: Ubuntu, Mint, RHEL-family; one VM per distro version, named `gc573-<distro><ver>`, built by scripts in `tools/`. Retain all: never delete or rebuild over an existing regression VM; add new versions alongside. Current: `gc573-ref` (Ubuntu 20.04, vendor drv only), `gc573-dev` (Ubuntu 24.04).
+- Regression VM matrix: Ubuntu, Mint, RHEL-family; one VM per distro version, named `gc573-<distro><ver>`, built by scripts in `tools/`. Retain all: never delete or rebuild over an existing regression VM; add new versions alongside.
+  - `tools/vms/create.sh <profile> [IP]` (cloud images; profiles in `tools/vms/profiles/`), `tools/vms/mint.sh <ver> [edition] [IP]` (ISO unattended install + virt-customize). Disks standalone (no shared backing). No persistent card.
+  - `tools/vms/card.sh <vm>` moves the card between running VMs (live PCI unplug/plug; detach fails if the guest driver does not release it). `--where` shows the holder.
+  - Current (VM: distro, kernel, IP): `gc573-ref` Ubuntu 20.04, 5.4, .39 (vendor drv only) · `gc573-dev` Ubuntu 24.04, 6.8.0 (+ debug 6.8.12), .40 · `gc573-alma9` AlmaLinux 9.9, 5.14, .41 · `gc573-alma10` AlmaLinux 10.3, 6.12, .42 · `gc573-fedora45` Fedora 45, 7.3, .43 · `gc573-ubuntu2604` Ubuntu 26.04, 7.0, .44 · `gc573-mint223` Mint 22.3, 6.14 HWE, .45. Host: Mint 22, 6.8.0. ssh aliases = VM names.
+  - Gaps: EL10 has no v4l2-compliance package (build v4l-utils from source there). EL9 kernel lacks videobuf2-dma-sg/-dma-contig (see design constraints).
 - One VM owns the card at a time. `virsh shutdown` the other before `virsh start` (desktop guests may ignore ACPI shutdown: `ssh <vm> sudo poweroff`).
 - Ghidra 12.x requires JDK 25. Headless: `ghidra-headless`.
 - Tracing: patch vendor source layer (`pci_model_mmio_*`, i2c wrappers, isr, dma alloc) in VM; `trace_printk`/ftrace ring. Cross-check: mmiotrace.
@@ -51,7 +55,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - MSI if cap present else INTx. Threaded IRQ.
 - No sleeping under spinlock. FPGA i2c master → `i2c_adapter`, sleepable. HDMI rx event handling in threaded irq / workqueue. (vendor drv: scheduling-while-atomic.)
 - IT6805 / IT6664 → v4l2 subdevs preferred.
-- vb2 (dma-sg or dma-contig per desc fmt). DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
+- vb2 allocator: `videobuf2-vmalloc` + driver-built `sg_table` (`vmalloc_to_page` → `dma_map_sgtable`) → descriptor lists. Only allocator present on every matrix kernel (EL9 5.14 ships neither dma-sg nor dma-contig). MMAP (+ USERPTR optional); no DMABUF export. DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
 - Formats: NV12, YUYV min. RGB24 only if verified in OBS.
 - Style: kernel coding style, `scripts/checkpatch.pl --strict` clean. SPDX GPL-2.0 header every file.
 - Kernel range: every regression-matrix VM kernel (today 5.14 EL9 → 7.0 Ubuntu 26.04). Kernel-version differences only in `src/compat.h` (`LINUX_VERSION_CODE` / `RHEL_RELEASE_CODE`); no #ifdef elsewhere.
