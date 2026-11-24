@@ -1,4 +1,4 @@
-# gc573-driver
+# AVerMedia Live Gamer 4K (GC573) Linux driver
 
 A from-scratch Linux driver for the **AVerMedia Live Gamer 4K (GC573)** PCIe HDMI capture card (PCI `1461:0054`, subsystem `1461:5730`).
 
