@@ -420,6 +420,7 @@ void gc573_video_release(struct gc573 *gc);
 void gc573_audio_early_init(struct gc573 *gc);
 int gc573_audio_init(struct gc573 *gc);
 void gc573_audio_quiesce(struct gc573 *gc);
+bool gc573_audio_running(struct gc573 *gc);
 void gc573_audio_reset_done(struct gc573 *gc);
 void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns);
 void gc573_audio_debugfs(struct gc573 *gc);

@@ -36,9 +36,9 @@
 #             offset (flash frame vs burst onset) with its drift
 #   audioloss one audio capture across 5 video stream start/stops, an input
 #             loss while video streams, relock, video again, an idle loss
-#             and relock: no overrun, never stalled, no gap (the driver
-#             fills the video stops' and the losses' gaps), bursts with the
-#             right channels after the last relock
+#             and relock: no overrun, never stalled, no DMA restart at the
+#             video stops, no gap (the losses' pauses are filled), bursts
+#             with the right channels after the last relock
 #   unload    unload while streaming video and audio
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
@@ -635,16 +635,18 @@ step_audioloss() {
 	check audioloss-capture "$rc" "($out)"
 	d1=$(aud_dbg)
 	echo "$d1" | sed 's/^/  /'
-	check audioloss-restarts "$([ "$(( $(aud_stat "$d1" restarts) - $(aud_stat "$d0" restarts) ))" -ge 7 ] &&
+	# the video stops leave the audio DMA's reset domain alone (open
+	# question 13): no restart
+	check audioloss-restarts "$([ "$(( $(aud_stat "$d1" restarts) - $(aud_stat "$d0" restarts) ))" = 0 ] &&
 		[ "$(aud_stat "$d1" stop_missing)" = "$(aud_stat "$d0" stop_missing)" ]; echo $?)" \
-		"($(( $(aud_stat "$d1" restarts) - $(aud_stat "$d0" restarts) )) DMA restarts for 7 video stops, $(( $(aud_stat "$d1" pauses) - $(aud_stat "$d0" pauses) )) pauses (input loss), $(( $(aud_stat "$d1" filled) - $(aud_stat "$d0" filled) )) frames filled)"
-	# never stalled: no read more than 250 ms after the one before (a domain
-	# reset, 3 x 30 ms and more, holds the periods up once per video stop)
+		"($(( $(aud_stat "$d1" restarts) - $(aud_stat "$d0" restarts) )) DMA restarts across 7 video stops, $(( $(aud_stat "$d1" pauses) - $(aud_stat "$d0" pauses) )) pauses (input loss), $(( $(aud_stat "$d1" filled) - $(aud_stat "$d0" filled) )) frames filled)"
+	# never stalled: no read more than 250 ms after the one before (a pause
+	# at an input loss holds one period up by 10 ms)
 	out=$(vm "awk '/^A /{ split(\$4, t, \"=\"); if (p && t[2] - p > m) m = t[2] - p; p = t[2] } END { printf \"%.1f\", m / 1e6 }' $W/aloss.txt")
 	check audioloss-stall "$(awk -v m="$out" 'BEGIN { exit !(m < 250) }'; echo $?)" "(longest time between reads $out ms)"
 	out=$(vm "python3 $W/live-av.py $W/aloss.txt $W/aloss.raw --tail 20")
-	# the video stops' gaps and the input losses' pauses are filled: the
-	# stream keeps time through all of them
+	# the input losses' pauses are filled and the video stops leave audio
+	# alone: the stream keeps time through all of them
 	av_results audioloss "$(grep -E '^RESULT (tail|channels|xruns|rate|gaps) ' <<< "$out")"
 	grep -E '^RESULT bursts ' <<< "$out" | sed 's/^RESULT/  info:/'
 	av_off

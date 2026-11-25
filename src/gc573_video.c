@@ -97,7 +97,7 @@ MODULE_PARM_DESC(exp_rate_bits,
 static int exp_stop_domains = -1;
 module_param(exp_stop_domains, int, 0644);
 MODULE_PARM_DESC(exp_stop_domains,
-		 "Experiment, spec/open-questions.md #13; read at stream stop. Domains to reset: mask of 0x001, 0x100, 0x200 (0: none; -1: all three, the spec's sequence)");
+		 "Experiment, spec/open-questions.md #13; read at stream stop. Domains to reset: mask of 0x001, 0x100, 0x200 (0: none; -1: the driver's choice, all three with 0x100 left out while audio runs)");
 
 static const u32 gc573_vch_base[GC573_VCH_NUM] = {
 	GC573_VCH0_BASE, GC573_VCH1_BASE, GC573_VCH2_BASE,
@@ -718,7 +718,11 @@ static void gc573_vid_return_all(struct gc573 *gc, enum vb2_buffer_state st)
 
 /*
  * spec/init.md "Stream stop (video)" steps 1-3: output off, wait for INT
- * bit 0, reset the domains. vid.lock held. Safe to call when not running.
+ * bit 0, reset the domains. Domain 8 holds the audio DMA and nothing the
+ * video path reads back (open question 13, driver M5: domain 0 resets the
+ * video DMA, COLOR_CTRL, CLIP and the CSC banks, the same as all three):
+ * while an audio stream runs it is left out, and audio carries on through
+ * the stop. vid.lock held. Safe to call when not running.
  */
 void gc573_video_hw_stop(struct gc573 *gc)
 {
@@ -742,11 +746,13 @@ void gc573_video_hw_stop(struct gc573 *gc)
 			dev_warn(dev, "video stop: timeout waiting for INT bit 0\n");
 		}
 	}
-	if (domains < 0)
-		gc573_reset_domains(gc);
-	else
-		gc573_reset_domain_mask(gc, domains);
-	/* the reset stops the audio DMA as well */
+	if (domains < 0) {
+		domains = GC573_RESET_DOMAINS;
+		if (gc573_audio_running(gc))
+			domains &= ~GC573_RESET_DOMAIN_8;
+	}
+	gc573_reset_domain_mask(gc, domains);
+	/* a reset of domain 8 stops the audio DMA: start it again */
 	gc573_audio_reset_done(gc);
 	dev_dbg(dev, "video stopped in %u ms\n",
 		jiffies_to_msecs(jiffies - t0));
