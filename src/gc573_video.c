@@ -32,8 +32,10 @@
 #include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/error-injection.h>
+#include <linux/fs.h>
 #include <linux/gcd.h>
 #include <linux/jiffies.h>
+#include <linux/kernel.h>
 #include <linux/ktime.h>
 #include <linux/math64.h>
 #include <linux/moduleparam.h>
@@ -86,6 +88,16 @@ static int exp_rate_bits = -1;
 module_param(exp_rate_bits, int, 0644);
 MODULE_PARM_DESC(exp_rate_bits,
 		 "Experiment, spec/open-questions.md #33; read at stream start. RATE_CTRL bits 0 and 3 := this value's bits 0 and 3 (-1: keep them)");
+
+/*
+ * Experiment, spec/open-questions.md #13 (reset domain contents; which one
+ * stops the audio DMA): the domains a video stop resets, and a debugfs
+ * trigger (exp_reset) that resets domains while video is idle.
+ */
+static int exp_stop_domains = -1;
+module_param(exp_stop_domains, int, 0644);
+MODULE_PARM_DESC(exp_stop_domains,
+		 "Experiment, spec/open-questions.md #13; read at stream stop. Domains to reset: mask of 0x001, 0x100, 0x200 (0: none; -1: all three, the spec's sequence)");
 
 static const u32 gc573_vch_base[GC573_VCH_NUM] = {
 	GC573_VCH0_BASE, GC573_VCH1_BASE, GC573_VCH2_BASE,
@@ -713,6 +725,7 @@ void gc573_video_hw_stop(struct gc573 *gc)
 	struct gc573_video *v = &gc->vid;
 	struct device *dev = &gc->pdev->dev;
 	unsigned long t0 = jiffies;
+	int domains = READ_ONCE(exp_stop_domains);
 	u32 vip;
 
 	spin_lock(&v->slock);
@@ -729,7 +742,10 @@ void gc573_video_hw_stop(struct gc573 *gc)
 			dev_warn(dev, "video stop: timeout waiting for INT bit 0\n");
 		}
 	}
-	gc573_reset_domains(gc);
+	if (domains < 0)
+		gc573_reset_domains(gc);
+	else
+		gc573_reset_domain_mask(gc, domains);
 	/* the reset stops the audio DMA as well */
 	gc573_audio_reset_done(gc);
 	dev_dbg(dev, "video stopped in %u ms\n",
@@ -1465,10 +1481,57 @@ static int gc573_vid_debugfs_show(struct seq_file *m, void *unused)
 }
 DEFINE_SHOW_ATTRIBUTE(gc573_vid_debugfs);
 
+/*
+ * Experiment, open question 13: write a mask of 0x001, 0x100 and 0x200 to
+ * reset those domains (spec/init.md step 2 per domain) while video is
+ * idle; audio may run. DMA_RUN before and after goes to the kernel log;
+ * then a running audio stream is started again if the reset stopped it,
+ * as after a video stop.
+ */
+static ssize_t gc573_exp_reset_write(struct file *file, const char __user *ubuf,
+				     size_t len, loff_t *ppos)
+{
+	struct gc573 *gc = file->private_data;
+	struct gc573_video *v = &gc->vid;
+	u32 mask, run0, run1, rst;
+	int ret;
+
+	ret = kstrtou32_from_user(ubuf, len, 0, &mask);
+	if (ret)
+		return ret;
+	if (!mask || (mask & ~GC573_RESET_DOMAINS))
+		return -EINVAL;
+	mutex_lock(&v->lock);
+	if (v->dead || vb2_is_streaming(&v->queue)) {
+		ret = -EBUSY;
+		goto out;
+	}
+	run0 = gc573_rd(gc, GC573_DMA_RUN);
+	ret = gc573_reset_domain_mask(gc, mask);
+	run1 = gc573_rd(gc, GC573_DMA_RUN);
+	rst = gc573_rd(gc, GC573_RESET);
+	dev_info(&gc->pdev->dev,
+		 "exp_reset %#x: %d, RESET=%#010x, DMA_RUN %#010x -> %#010x\n",
+		 mask, ret, rst, run0, run1);
+	gc573_audio_reset_done(gc);
+out:
+	mutex_unlock(&v->lock);
+	return ret ? ret : len;
+}
+
+static const struct file_operations gc573_exp_reset_fops = {
+	.owner = THIS_MODULE,
+	.open = simple_open,
+	.write = gc573_exp_reset_write,
+	.llseek = noop_llseek,
+};
+
 void gc573_video_debugfs(struct gc573 *gc)
 {
 	debugfs_create_file("video", 0444, gc->debugfs, gc,
 			    &gc573_vid_debugfs_fops);
+	debugfs_create_file("exp_reset", 0200, gc->debugfs, gc,
+			    &gc573_exp_reset_fops);
 }
 
 /* ---- input changes ---- */

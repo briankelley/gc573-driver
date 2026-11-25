@@ -83,10 +83,11 @@ void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val)
 
 /*
  * spec/init.md step 2, also the last step of a video stop and of the
- * quiesce: reset each domain in turn. A domain's bit reads back 1 once
- * its reset is done.
+ * quiesce: reset each domain in @mask in turn, in the spec's order (the
+ * spec's sequence resets all three: gc573_reset_domains()). A domain's
+ * bit reads back 1 once its reset is done.
  */
-int gc573_reset_domains(struct gc573 *gc)
+int gc573_reset_domain_mask(struct gc573 *gc, u32 mask)
 {
 	static const u32 domains[] = {
 		GC573_RESET_DOMAIN_0, GC573_RESET_DOMAIN_8, GC573_RESET_DOMAIN_9,
@@ -97,6 +98,8 @@ int gc573_reset_domains(struct gc573 *gc)
 	u32 v = 0;
 
 	for (i = 0; i < ARRAY_SIZE(domains); i++) {
+		if (!(mask & domains[i]))
+			continue;
 		gc573_wr(gc, GC573_RESET, domains[i]);
 		for (tries = 1; tries <= GC573_RESET_TRIES; tries++) {
 			fsleep(GC573_RESET_POLL_US);
@@ -116,6 +119,11 @@ int gc573_reset_domains(struct gc573 *gc)
 		msleep(GC573_RESET_SETTLE_MS);
 	}
 	return ret;
+}
+
+int gc573_reset_domains(struct gc573 *gc)
+{
+	return gc573_reset_domain_mask(gc, GC573_RESET_DOMAINS);
 }
 
 /* spec/init.md step 3 */

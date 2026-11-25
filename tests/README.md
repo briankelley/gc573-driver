@@ -70,7 +70,18 @@ pattern and which registers change with it. The driver's `exp_rate_fps` and
 `exp_rate_bits` parameters set RATE_CTRL for such a stream. Result:
 `logs/20261125-041700_6.8.0-151-generic_exp-delivery.log`.
 
-Helpers: `gc573-aud.c` (ALSA capture tool, alsa-lib: per-read frame count and timestamp, raw samples, BAR0 snapshot, a V4L2 capture beside it for A/V timing, stop/start), `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep (`-T all`, or a list saved with `-t`), stop/start, underrun, wait and returned-buffer modes; live input: lock wait `-L`, frame save `-o`, input-change test `-X` with restart `-r`, per-frame log `-F`; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`, `live-compare.py` (saved frame vs `tools/testsrc/pattern.py`), `live-av.py` (a `gc573-aud` capture of `tools/testsrc/avsync.sh`: bursts, channel order and rate by frequency, frames against the clock, gaps, video cadence, A/V offset and drift). Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.
+Experiment `exp-reset.sh [-s MASK]` (in the VM as root, open question 13):
+what each reset domain (RESET bits 0, 8, 9) resets and which one stops the
+audio DMA. The driver's `exp_stop_domains` parameter sets the domains a
+video stop resets (0: none, so a stream's configuration stays in the
+registers), and its debugfs `exp_reset` file resets the domains written to
+it (a mask) while video is idle. Per domain: the documented registers
+before and after (`gc573-regs.c`), DMA_RUN and the audio periods with an
+audio capture running; `-s MASK`: one audio capture across 3 video stops
+resetting MASK. `exp-reset.py` summarises. Result:
+`logs/20261125-075103_6.8.0-151-generic_exp-reset.log`.
+
+Helpers: `gc573-aud.c` (ALSA capture tool, alsa-lib: per-read frame count and timestamp, raw samples, BAR0 snapshot, a V4L2 capture beside it for A/V timing, stop/start), `gc573-regs.c` (BAR0 registers through `resource0`, mapped read-only; documented offsets only), `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep (`-T all`, or a list saved with `-t`), stop/start, underrun, wait and returned-buffer modes; live input: lock wait `-L`, frame save `-o`, input-change test `-X` with restart `-r`, per-frame log `-F`; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`, `live-compare.py` (saved frame vs `tools/testsrc/pattern.py`), `live-av.py` (a `gc573-aud` capture of `tools/testsrc/avsync.sh`: bursts, channel order and rate by frequency, frames against the clock, gaps, video cadence, A/V offset and drift). Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.
 
 ## Live input (`live.sh`, host)
 `tests/live.sh [STEP...]` runs on the host: it drives the loopback output

@@ -54,6 +54,8 @@ struct snd_pcm_substream;
 #define GC573_RESET_DOMAIN_0		BIT(0)
 #define GC573_RESET_DOMAIN_8		BIT(8)
 #define GC573_RESET_DOMAIN_9		BIT(9)
+#define GC573_RESET_DOMAINS		(GC573_RESET_DOMAIN_0 | GC573_RESET_DOMAIN_8 | \
+					 GC573_RESET_DOMAIN_9)
 
 /* Interrupt bits, spec/interrupts.md */
 #define GC573_INT_VID_TERM		BIT(0)		/* video stream terminated */
@@ -385,6 +387,7 @@ struct gc573 {
 	struct gc573_audio aud;
 };
 
+int gc573_reset_domain_mask(struct gc573 *gc, u32 mask);
 int gc573_reset_domains(struct gc573 *gc);
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val);
 void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val);
