@@ -721,7 +721,13 @@ RD keeps the converter bypassed and the output format equal to the input format 
 
 Output format different from the input:
 - 0:6b[3:2] (output format) is written separately from 0:6b[5:4] (input format, from the AVI at every output enable). Same coding: 0 RGB, 1 YCbCr 4:2:2, 2 YCbCr 4:4:4, 3 YCbCr 4:2:0. (`S`; L)
-- Converter select in the library: output RGB with YCbCr input (4:2:2, 4:4:4 or 4:2:0) → 0:6c[1:0] = 3 and 22 coefficient bytes burst-written to 1:70–1:85 (one table per colorimetry and range); RGB input with YCbCr output → 0:6c[1:0] = 2; same family on both sides → 0:6c[1:0] = 0 and 1:85 = 0x00. The coefficient format is not documented yet (no trace writes it). (`S`; U)
+- Converter select in the library: output RGB with YCbCr input (4:2:2, 4:4:4 or 4:2:0) → 0:6c[1:0] = 3 and 22 bytes burst-written to 1:70–1:85 (one set per colorimetry and range); RGB input with YCbCr output → 0:6c[1:0] = 2; same family on both sides → 0:6c[1:0] = 0 and 1:85 = 0x00. (`S`; U)
+- Converter registers, derived from the library's eleven coefficient sets checked against BT.601 and BT.709 (`S`,`D`; L, never traced):
+  - Channel order on both sides: 0 = G / Y, 1 = R / Cr, 2 = B / Cb. Not the FPGA CSC's order (`video-pipeline.md`).
+  - 1:73–1:84: nine coefficients, row-major (rows = output channels 0, 1, 2; columns = input channels 0, 1, 2), each 16-bit little-endian, 14-bit two's complement, 1.0 = 0x800 (range −4 to < 4).
+  - Checks: RGB→YCbCr BT.709, full-range RGB in: Y row 0.6142 G, 0.1826 R, 0.0620 B (= Kg, Kr, Kb × 219/255); YCbCr→RGB BT.709 limited in, full out: Y column 255/219, R row Cr 1.7927, B row Cb 2.1124, G row Cr −0.5329, Cb −0.2132. All library sets agree with the standards to rounding.
+  - 1:70, 1:71, 1:72: offsets. Library values: RGB→YCbCr with limited RGB in 0x00, 0x80, 0x10; with full RGB in 0x10, 0x80, 0x10 (1:70 = Y offset 16 for full-range input, 1:71 = chroma offset 128); YCbCr→RGB limited→limited 0x00, 0x00, 0x00; limited YCbCr → full RGB 0x04, 0x00, 0xa7 (encoding not understood; use as given for that conversion). RGB→RGB range sets put the offset (+16 or −19) in 1:70, 1:71 and 1:85.
+  - 1:85: 0x00 except in the RGB→RGB range sets (see above); RD writes 0x00 at every output enable.
 - Whether the chip upsamples 4:2:0 when 0:6b[5:4] = 3 and [3:2] = 2 (4:4:4) or 0 (RGB) is not known. The library's own bus decision (§10.1 rule a) looks only at the input format, so a 4:2:0 input always gets dual pixel SDR. A 2160p60 4:4:4 output carries 594 Mpixel/s and needs dual pixel DDR at a 148.5 MHz bus clock: rule d's register values (`seq/it6805-lock-dual-ddr.tsv`) at twice the clock traced for 2160p29.97. Whether the IT6805 output and the FPGA input run at that rate is UNVERIFIED; RD's EDID advertises 600 MHz TMDS, i.e. 2160p60 4:4:4 input.
 
 Down-scaler (2:1 in both directions). RD's library has the routine but never calls it. (`S`; U)
