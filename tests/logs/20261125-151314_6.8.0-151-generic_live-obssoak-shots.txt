@@ -1,0 +1,17 @@
+SHOT 208.6 bad err=2 counter=None size=1920x1080
+SHOT 363.9 bad err=255 counter=None size=1920x1080
+SHOT 724.0 bad err=255 counter=None size=1920x1080
+SHOT 905.2 bad err=255 counter=None size=1920x1080
+SHOT 1398.6 bad err=3 counter=None size=1280x720
+SHOT 1498.6 bad err=2 counter=None size=1280x720
+SHOT 1994.2 bad err=255 counter=None size=1920x1080
+SHOT 2712.3 bad err=255 counter=None size=1920x1080
+SHOT 2883.6 bad err=255 counter=None size=1920x1080
+SHOT 3243.7 bad err=255 counter=None size=1920x1080
+SHOT 3425.1 bad err=255 counter=None size=1920x1080
+SHOT 3794.5 bad err=255 counter=None size=1280x720
+SHOT 4332.7 bad err=255 counter=None size=1280x720
+SHOT 4864.7 bad err=255 counter=None size=1920x1080
+SHOT 5232.1 bad err=253 counter=None size=1920x1080
+SHOT 6665.5 bad err=2 counter=None size=1280x720
+SHOT 7033.7 bad err=253 counter=None size=1920x1080

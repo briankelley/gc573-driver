@@ -37,8 +37,9 @@ With --segments (seconds from the first video frame): per segment a line
 segments line: each segment paired again, with at least every other
 second's flash paired from there (OBS without buffering drops a one-frame
 flash at times), and a mean offset within ITU-R BT.1359's detectability
-limits, audio at most 45 ms early and 125 ms late; flashes and drift are
-then not judged over the whole file (the source restarts at each change).
+limits, audio at most 45 ms early and 125 ms late; flashes, offset and
+drift are then not judged over the whole file (the source restarts at each
+change, with an offset of its own).
 """
 import argparse
 import json
@@ -198,10 +199,15 @@ def main():
     t, off = (np.array(x) for x in zip(*pairs))
     m, sd = off.mean() * 1e3, off.std() * 1e3
     own = m - a.ref if a.ref is not None else m
-    result('offset', abs(own) <= 45 and sd <= 10,
-           f'burst onset - flash frame: mean {m:+.2f} ms, std {sd:.2f}, min {off.min() * 1e3:+.2f}, '
-           f'max {off.max() * 1e3:+.2f} over {len(off)} flashes (positive: audio late)'
-           + (f'; the source\'s own {a.ref:+.2f} ms taken out: OBS {own:+.2f} ms' if a.ref is not None else ''))
+    text = (f'burst onset - flash frame: mean {m:+.2f} ms, std {sd:.2f}, min {off.min() * 1e3:+.2f}, '
+            f'max {off.max() * 1e3:+.2f} over {len(off)} flashes (positive: audio late)'
+            + (f'; the source\'s own {a.ref:+.2f} ms taken out: OBS {own:+.2f} ms' if a.ref is not None else ''))
+    if a.segments:
+        # one source session per segment, each with an offset of its own:
+        # the segments are judged one by one above
+        print(f'RESULT offset SKIP ({text}; over all segments)')
+    else:
+        result('offset', abs(own) <= 45 and sd <= 10, text)
     mins = (t - t[0]) / 60
     slope = np.polyfit(mins, off * 1e3, 1)[0] if len(t) > 2 else 0
     total = slope * mins[-1]
