@@ -1,0 +1,58 @@
+# The driver's A/V offset across stream restarts (manual run, 2026-11-25 14:54 UTC; now tests/live.sh step avchange)
+# gc573-dev, 6.8.0-151-generic, gc573 srcversion 292FD1A2D4D0C4210A150E8. One gc573-aud -V capture (110 s) of avsync.sh
+# (plain, 1080p60), host changes at +20 s ColorSpace=2 ColorRange=1, +40 s 0/1, +60 s 0/0 (avsync.sh not restarted),
+# +80 s output off for 8 s (avsync.sh then failed to restart: no ELD yet, so no pairs after +80 s).
+# Analysis: tests/live-av.py --segments 20,40,60,80. Video gaps from the V lines (ts_ns steps over 25 ms).
+
+## live-av.py
+RESULT duration   PASS (110.0 s, 5279998 frames, minimum 0 s)
+RESULT xruns      PASS (0 overruns)
+RESULT rate       PASS (47998.973 Hz against CLOCK_MONOTONIC, -21.4 ppm)
+RESULT gaps       FAIL (per-second medians move <= 4.59 ms from one second to the next; within 4.59 ms of one line over the run; single reads within 2.69 ms of it; 10920 reads)
+RESULT bursts     FAIL (80 in 110.0 s)
+RESULT channels   PASS (left 999.8 Hz, right 2000.2 Hz over 80 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT video      FAIL (6484 frames, 0 sequence gaps, interval 16.666 ms, 6 off by more than half a period, 8 by more than 10 %)
+  raw offsets: mean +30.38 ms, min +29.44, max +31.83, std 0.20; frames from the most common (count): +0: 78
+SEGMENT 0 0.0 20.0 pairs=19 raw=+30.38 min=+30.28 max=+30.44 frames=+2:19
+SEGMENT 1 20.0 40.0 pairs=19 raw=+30.45 min=+30.30 max=+31.83 frames=+2:19
+SEGMENT 2 40.0 60.0 pairs=20 raw=+30.32 min=+29.44 max=+30.44 frames=+2:20
+SEGMENT 3 60.0 80.0 pairs=20 raw=+30.38 min=+30.29 max=+30.42 frames=+2:20
+SEGMENT 4 80.0 110.0 pairs=0
+RESULT avsync     FAIL (78 flashes over 1.3 min: offset +30.379 ms (std 0.201, min +29.437, max +31.832), drift -0.0088 ms/min = -0.011 ms over the run, residual <= 1.453 ms)
+PARAMS video 1920x1080 YUYV 60.0000 Hz
+PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600
+RESULT audio frames=5279998 secs=109.992 rate=47998.973 xruns=0 restarts=0
+input_restarts 89 input_stops 12
+
+## video gaps (no frame delivered)
+gap 409.5 ms after 19.757 s (seq=1187)   ColorSpace=2 ColorRange=1
+gap 409.5 ms after 39.856 s (seq=2370)   ColorSpace=0 ColorRange=1
+gap 216.7 ms after 59.765 s (seq=3541)   ColorSpace=0 ColorRange=0
+gap 914.6 ms after 79.798 s (seq=4731)   output off
+
+## reading
+The offset held at +30.4 ms (std 0.2) through 3 colour changes, each a free-running and a live restart
+(input_restarts +6): the driver's video and audio timestamps stay consistent. The FAILs are the gaps
+themselves (video intervals, the audio read-time steps of 4.6 ms) and the run's end without a source.
+
+## event log (UTC)
+2026-11-25T14:54:28.822Z guard start: run pid 199436, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*, windows and audio each polled every 50 ms
+2026-11-25T14:54:28.826Z guard audio links: none
+2026-11-25T14:54:28.828Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T14:54:28.828Z guard windows: none
+2026-11-25T14:54:29.474Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:54:29.992Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:54:30.059Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:54:30.071Z avsync player start 1920x1080@60 amplitude 0.5 (pid 199567)
+2026-11-25T14:54:34.078Z drv-av stream start: gc573-aud -V, 110 s
+2026-11-25T14:54:54.103Z drv-av colour ColorSpace=2 ColorRange=1
+2026-11-25T14:55:14.147Z drv-av colour ColorSpace=0 ColorRange=1
+2026-11-25T14:55:28.831Z guard ok: windows 1195 polls, longest interval 79 ms; audio 1198 polls, longest interval 51 ms
+2026-11-25T14:55:34.120Z drv-av colour ColorSpace=0 ColorRange=0
+2026-11-25T14:55:54.123Z avsync player stop (pid 199567)
+2026-11-25T14:55:54.176Z guard audio links: none
+2026-11-25T14:55:54.232Z guard windows: none
+2026-11-25T14:55:54.237Z drv-av output off DVI-D-0
+2026-11-25T14:55:54.439Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T14:56:24.544Z drv-av stream stop
+2026-11-25T14:56:25.840Z guard end: run pid 199436 gone; windows 2323 polls, longest interval 192 ms; audio 2329 polls, longest interval 51 ms; no breach

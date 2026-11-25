@@ -6,13 +6,20 @@ Run in the VM, as the desktop user, with OBS running (tests/live.sh starts it).
   obs-check.py setup VIDEODEV PCM
       1920x1080 at 60 fps canvas and output; no Desktop Audio or Mic/Aux; a
       V4L2 source "GC573 video" (VIDEODEV, YUYV) and an ALSA source "GC573
-      audio" (PCM, 48 kHz) in the current scene; simple-mode recording to
-      ~/obs-rec, MKV, x264 (ultrafast, 6 Mb/s) and AAC 160 kb/s. Prints the
-      formats, resolutions and frame rates OBS offers. OBS's recording
-      muxer (obs-ffmpeg-mux) is a child process that inherits OBS's file
-      descriptors, the V4L2 device's too (OBS opens it without O_CLOEXEC):
-      while it records, the device stays open after OBS closes it, so OBS
-      cannot set the device up again (S_FMT: EBUSY)
+      audio" (PCM, 48 kHz) in the current scene. Stable names: VIDEODEV
+      /dev/v4l/by-path/pci-<device>-video-index0, PCM hw:CARD=GC573,DEV=0
+      (OBS takes the path as it is; it lists only /dev/videoN, and its
+      reconnect after a driver reload matches udev's /dev/videoN name, so
+      with the stable name the source is set up again by a settings
+      change instead: reopen). Simple-mode recording to
+      ~/obs-rec, in the format obs-run.sh started OBS with (Hybrid MP4 by
+      default), x264 (ultrafast, 6 Mb/s) and AAC 160 kb/s. Prints the
+      formats, resolutions and frame rates OBS offers. With MKV and OBS's
+      other ffmpeg formats, the recording muxer (obs-ffmpeg-mux) is a
+      child process that inherits OBS's file descriptors, the V4L2
+      device's too (OBS opens it without O_CLOEXEC): while it records, the
+      device stays open after OBS closes it, so OBS cannot set the device
+      up again (S_FMT: EBUSY). Hybrid MP4 is written in OBS's process
   obs-check.py formats PATTERN_PNG
       every pixel format OBS offers for the device in turn: a screenshot of
       the source (GetSourceScreenshot, 1920x1080 PNG) against the pattern
@@ -76,7 +83,6 @@ def setup(obs, vdev, pcm):
     obs.call('SetVideoSettings', baseWidth=1920, baseHeight=1080,
              outputWidth=1920, outputHeight=1080, fpsNumerator=60, fpsDenominator=1)
     for cat, key, val in (('Output', 'Mode', 'Simple'),
-                          ('SimpleOutput', 'RecFormat2', 'mkv'),
                           ('SimpleOutput', 'RecQuality', 'Stream'),
                           ('SimpleOutput', 'StreamEncoder', 'x264'),
                           ('SimpleOutput', 'RecEncoder', 'x264'),
@@ -93,16 +99,25 @@ def setup(obs, vdev, pcm):
     if VSRC not in names:
         obs.call('CreateInput', sceneName=sc, inputName=VSRC, inputKind='v4l2_input',
                  inputSettings={}, sceneItemEnabled=True)
+    # OBS lists /dev/videoN nodes only, but takes any path: the stable
+    # /dev/v4l/by-path/ name is what a configuration should hold (the
+    # number can change with other video devices on the system)
     devs = items(obs, VSRC, 'device_id')
-    dev = next((d['itemValue'] for d in devs if os.path.realpath(d['itemValue']) ==
-                os.path.realpath(vdev)), None)
-    if dev is None:
+    if not any(os.path.realpath(d['itemValue']) == os.path.realpath(vdev) for d in devs):
         sys.exit(f'OBS does not list {vdev}: {devs}')
+    dev = vdev
     # YUYV: native (an "(Emulated)" format is libv4l2 converting on the
-    # CPU). Buffering on is OBS's default; a scene collection keeps what an
-    # earlier run set
+    # CPU). Buffering: GC573_OBS_BUFFERING, 1 (OBS's default) or 0; set each
+    # time, since a scene collection keeps what an earlier run set. With
+    # buffering, OBS plays the frames by their timestamps against a clock
+    # that stands still while no frame is queued: every gap in the frames
+    # shorter than 2 s (a driver restart at a source change: 0.2-0.9 s)
+    # adds its length to the video's delay for good (libobs obs-source.c,
+    # get_closest_frame() and ready_async_frame()). Without it OBS shows
+    # each frame as it comes
+    buf = os.environ.get('GC573_OBS_BUFFERING', '1') != '0'
     obs.call('SetInputSettings', inputName=VSRC,
-             inputSettings={'device_id': dev, 'pixelformat': YUYV, 'buffering': True})
+             inputSettings={'device_id': dev, 'pixelformat': YUYV, 'buffering': buf})
     if ASRC not in names:
         obs.call('CreateInput', sceneName=sc, inputName=ASRC, inputKind='alsa_input_capture',
                  inputSettings={}, sceneItemEnabled=True)

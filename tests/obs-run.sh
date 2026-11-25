@@ -5,8 +5,17 @@
 #   start  write a minimal configuration on first use (no first-run wizard,
 #          profile and scene collection "gc573", obs-websocket on port 4455
 #          without a password), clear OBS's run markers (after a kill OBS
-#          would otherwise wait in its "unclean shutdown" dialog), start OBS
-#          on the desktop (DISPLAY=:0) and wait for the websocket
+#          would otherwise wait in its "unclean shutdown" dialog), set the
+#          recording format, start OBS on the desktop (DISPLAY=:0) and wait
+#          for the websocket
+#   GC573_OBS_RECFORMAT: Simple output's recording format (RecFormat2),
+#          default hybrid_mp4 (OBS 32's default). OBS picks the recording
+#          output when it loads the profile: hybrid_mp4 and hybrid_mov are
+#          OBS's own muxer, in OBS's process; mkv and the other ffmpeg
+#          formats run the obs-ffmpeg-mux helper, which inherits OBS's file
+#          descriptors, the V4L2 device's too (OBS opens it without
+#          O_CLOEXEC). Changing RecFormat2 while OBS runs (obs-websocket
+#          SetProfileParameter) changes only the file name's extension.
 #   stop   SIGTERM, then SIGKILL after 20 s; clears the run markers
 # OBS's log: ~/.config/obs-studio/logs/ (newest file).
 # Usage: obs-run.sh start|stop
@@ -25,11 +34,21 @@ start)
 	printf '%s\n' '{"alerts_enabled": false, "auth_required": false, "first_load": false, "server_enabled": true, "server_password": "", "server_port": 4455}' \
 		> "$c/plugin_config/obs-websocket/config.json"
 	rm -f "$c"/.sentinel/run_*
+	fmt=${GC573_OBS_RECFORMAT:-hybrid_mp4}
+	for f in "$c"/basic/profiles/*/basic.ini; do
+		[ -f "$f" ] || continue
+		awk -v v="$fmt" '
+			/^\[/ { if (sec && !done) { print "RecFormat2=" v; done = 1 } sec = ($0 == "[SimpleOutput]") }
+			sec && /^RecFormat2=/ { if (!done) print "RecFormat2=" v; done = 1; next }
+			{ print }
+			END { if (!done) { if (!sec) print "[SimpleOutput]"; print "RecFormat2=" v } }' "$f" > "$f.new" &&
+			mv "$f.new" "$f"
+	done
 	DISPLAY=:0 setsid obs --minimize-to-tray --disable-shutdown-check \
 		--disable-missing-files-check --profile gc573 --collection gc573 \
 		> /tmp/obs-stdout.txt 2>&1 < /dev/null &
 	for _ in $(seq 120); do
-		ss -ltn | grep -q ':4455 ' && { sleep 2; echo "OBS started"; exit 0; }
+		ss -ltn | grep -q ':4455 ' && { sleep 2; echo "OBS started (recording format $fmt)"; exit 0; }
 		sleep 0.5
 	done
 	echo "OBS did not open its websocket in 60 s"; tail -5 /tmp/obs-stdout.txt; exit 1

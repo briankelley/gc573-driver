@@ -59,6 +59,20 @@
 #             keeps PipeWire off the card is lifted for the step and put
 #             back; GC573_PW_SECS (120) recorded as in obsav (not in the
 #             default steps)
+#   obsws     OBS through obs-websocket from the host (tests/obs-events.py):
+#             GetSourceScreenshot against the pattern and its time,
+#             InputVolumeMeters against the bursts, a 60 s recording's
+#             image and A/V offset (avsync.sh --pattern)
+#   obsevents OBS's V4L2 source through each source change, unattended:
+#             sleep and wake, 60 <-> 59.94, 1080p <-> 720p (reopened through
+#             the websocket), colour format, EDID; time to the first good
+#             frame (GC573_OBSEV_REPS, 2, rounds). Then 1080p <-> 720p
+#             while OBS records, in Hybrid MP4 and (report only) in MKV
+#   avchange  the driver's A/V offset across 3 colour-format changes (each a
+#             stream restart) under one avsync.sh session: within 1 ms
+#   obssoak   the event soak with OBS: GC573_OBSSOAK_SECS (7200) recorded, a
+#             screenshot every 2 s, a change every GC573_OBSSOAK_EVERY (180)
+#             s; memory, CPU, the recording (not in the default steps)
 #   soak      GC573_SOAK_SECS (7200) of audio and video (1080p60 YUYV)
 #             together with avsync.sh, as avsync, and every minute the
 #             kernel's memory (MemAvailable, Slab, SUnreclaim) and the CPU
@@ -68,6 +82,10 @@
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
 # Prints RESULT lines and a SUMMARY; log: tests/logs/<UTC>_<kernel>_live.log.
+# Event log: tests/logs/<UTC>_<kernel>_live-events.log, every action that
+# changes the card's input or its streams (UTC, ms), and the lines of
+# tools/testsrc/guard.py, which watches the run: a test window outside the
+# output, or test audio on any sink but the NVIDIA HDMI one, stops it.
 # Leaves the module loaded and the pattern off.
 set -uo pipefail
 
@@ -80,6 +98,10 @@ RELOADS=${GC573_RELOADS:-50}
 RELOCKS=${GC573_RELOCKS:-25}
 AV_SECS=${GC573_AV_SECS:-600}
 OBS_SECS=${GC573_OBS_SECS:-600}
+OBSEV_REPS=${GC573_OBSEV_REPS:-2}
+OBS_BUFFERING=${GC573_OBS_BUFFERING:-1}
+OBSSOAK_SECS=${GC573_OBSSOAK_SECS:-7200}
+OBSSOAK_EVERY=${GC573_OBSSOAK_EVERY:-180}
 SOAK_SECS=${GC573_SOAK_SECS:-7200}
 PW_SECS=${GC573_PW_SECS:-120}
 # tools/devvm: keeps PipeWire (ACP_IGNORE) and PulseAudio off the card
@@ -107,9 +129,39 @@ check() {	# name, condition result (0 = pass), detail
 	if [ "$2" = 0 ]; then result "$1" PASS "$3"; else result "$1" FAIL "$3"; fi
 }
 
+# The input-changing actions go to the run's event log (UTC, ms; matched
+# against the card's front LED): every VM command that starts a capture,
+# loads or unloads the driver, sets the EDID or starts or stops OBS; host
+# side, src_off, the colour changes and the test sources themselves
+# (show.sh and avsync.sh log their own mode sets and players)
+ev() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) live $*" >> "$GC573_EVENT_LOG"; }
 vm() {
+	local what="" rc
+	case "$*" in
+	*gc573-cap\ *|*gc573-aud\ *) what="stream" ;;
+	*rmmod\ gc573*) what="driver unload" ;;
+	*insmod\ *|*modprobe\ gc573*) what="driver load" ;;
+	*drivers/gc573/unbind*) what="driver unbind" ;;
+	*drivers/gc573/bind*) what="driver bind" ;;
+	*--set-edid*) what="edid set" ;;
+	*obs-run.sh\ start*) what="obs start" ;;
+	*obs-run.sh\ stop*) what="obs stop" ;;
+	esac
+	case $what in
+	stream) ev "stream start: $(head -c 120 <<< "$*" | tr '\n\t' '  ')" ;;
+	driver*|edid*)
+		# a probe or an EDID change pulses HPD, the host's output can drop
+		# its mode: no test player then (the guard would stop the run)
+		"$ROOT/tools/testsrc/avsync.sh" --off
+		"$ROOT/tools/testsrc/show.sh" --off
+		ev "$what" ;;
+	?*) ev "$what" ;;
+	esac
 	ssh -n -o BatchMode=yes -o ControlMaster=auto -o ControlPath="$SSHCTL" \
 		-o ControlPersist=120 "$VM" "$@"
+	rc=$?
+	[ "$what" != stream ] || ev "stream stop (exit $rc)"
+	return $rc
 }
 vdev="" dbgdir=""
 find_vdev() {
@@ -145,6 +197,7 @@ src_on() { "$ROOT/tools/testsrc/show.sh" "$OUT" "$1" "$2" >/dev/null; }
 src_off() {
 	"$ROOT/tools/testsrc/avsync.sh" --off
 	"$ROOT/tools/testsrc/show.sh" --off
+	ev "output off $OUT"
 	xrandr --output "$OUT" --off
 }
 
@@ -158,7 +211,7 @@ av_on() {
 	wait_connected 15 || return 1
 	src_on 1920x1080 60 || return 1
 	for i in $(seq 30); do
-		"$ROOT/tools/testsrc/avsync.sh" "$OUT" 1920x1080 60 >/dev/null 2>&1 &&
+		"$ROOT/tools/testsrc/avsync.sh" "$@" "$OUT" 1920x1080 60 >/dev/null 2>&1 &&
 			break
 		sleep 0.5
 	done
@@ -241,7 +294,7 @@ setup() {
 	scp -q -o ControlPath="$SSHCTL" "$ROOT/tools/testsrc/pattern.py" \
 		"$ROOT/tests/live-compare.py" "$ROOT/tests/live-av.py" \
 		"$ROOT/tests/obsws.py" "$ROOT/tests/obs-check.py" \
-		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$VM:$W/"
+		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" "$VM:$W/"
 }
 
 # The frame interval G_PARM must report for the timings in a gc573-cap
@@ -639,6 +692,7 @@ step_colour() {
 	for cs_cr in "0 1 rgb-limited" "2 1 ycbcr444" "1 1 ycbcr422"; do
 		set -- $cs_cr
 		cs=$1 cr=$2 name=$3
+		ev "colour ColorSpace=$cs ColorRange=$cr"
 		nvidia-settings --no-write-config -a "[DPY:$OUT]/ColorSpace=$cs" \
 			-a "[DPY:$OUT]/ColorRange=$cr" >/dev/null 2>&1
 		sleep 2
@@ -648,6 +702,7 @@ step_colour() {
 		live_capture "colour-$name" 60 1920x1080 60
 		result "colour-$name-note" SKIP "(report only, not gating)"
 	done
+	ev "colour ColorSpace=0 ColorRange=0"
 	nvidia-settings --no-write-config -a "[DPY:$OUT]/ColorSpace=0" \
 		-a "[DPY:$OUT]/ColorRange=0" >/dev/null 2>&1
 	sleep 3
@@ -746,12 +801,15 @@ step_audioloss() {
 # ---- M5: OBS in the VM (tests/obs-run.sh, obs-check.py, obs-av.py) ----
 
 # obs-check.py as the desktop user: OBS runs in the VM's Xfce session
-obsc() { vm "cd $W && python3 obs-check.py $*"; }
+obsc() { vm "cd $W && GC573_OBS_BUFFERING=$OBS_BUFFERING python3 obs-check.py $*"; }
 
 # OBS running, with the card's V4L2 and ALSA sources in its scene
+# OBS's sources by stable names: the video device by its PCI path, the
+# ALSA PCM by the card's id
+# obs_up [FORMAT]: the recording format (tests/obs-run.sh), default hybrid_mp4
 obs_up() {
-	vm "bash $W/obs-run.sh start" | sed 's/^/  /' &&
-		obsc "setup $vdev $pcm" | sed 's/^/  /'
+	vm "GC573_OBS_RECFORMAT=${1:-hybrid_mp4} bash $W/obs-run.sh start" | sed 's/^/  /' &&
+		obsc "setup /dev/v4l/by-path/pci-${dbgdir#*/gc573-}-video-index0 $pcm" | sed 's/^/  /'
 }
 
 # OBS holds the device while it runs: each OBS step stops it at the end
@@ -801,7 +859,7 @@ step_obsav() {
 	check obsav-obs-log "$(! grep -qE 'select timed out|failed to dequeue|failed to log status' <<< "$lg"; echo $?)" \
 		"($(grep -cE 'select timed out' <<< "$lg") select timeouts, $(grep -cE 'failed to dequeue' <<< "$lg") dequeue failures)"
 	if [ -n "$f" ]; then
-		out=$(vm "python3 $W/obs-av.py '$f' --min-secs $((OBS_SECS * 9 / 10))")
+		out=$(vm "python3 $W/obs-av.py '$f' --min-secs $((OBS_SECS * 9 / 10)) ${ref:+--ref $ref}")
 		av_results obsav "$out"
 		vm "rm -f '$f'"
 		obsm=$(sed -n 's/^RESULT offset .*: mean \([-+0-9.]*\) ms.*/\1/p' <<< "$out")
@@ -1027,6 +1085,165 @@ step_soak() {
 	av_off
 }
 
+# M5: the driver's A/V timing across source changes that restart the
+# stream, under one avsync.sh session (the source is not restarted): the
+# GPU's colour format three times (each a free-running restart and a live
+# one, 0.2-0.4 s without frames). One gc573-aud -V capture; per segment
+# between the changes the offset (live-av.py --segments, corrected by whole
+# frames as in avsync) must stay within 1 ms of the first segment's. OBS
+# with buffering on adds every such gap to its video delay (README); the
+# driver's timestamps must not
+step_avchange() {
+	local out p t0 k st n dmax offs
+	av_on || { result avchange-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
+	sleep 3
+	vm "sudo $W/gc573-aud -D $pcm -t 80 -v -V $vdev -o $W/avc.raw > $W/avc.txt 2>&1" &
+	p=$!
+	t0=$(date +%s)
+	for k in "20 2 1" "40 0 1" "60 0 0"; do
+		set -- $k
+		while [ $(($(date +%s) - t0)) -lt "$1" ]; do sleep 0.1; done
+		ev "colour ColorSpace=$2 ColorRange=$3"
+		nvidia-settings --no-write-config -a "[DPY:$OUT]/ColorSpace=$2" -a "[DPY:$OUT]/ColorRange=$3" > /dev/null 2>&1
+	done
+	wait $p
+	check avchange-capture $? "($(vm "grep -E '^(PARAMS|RESULT)' $W/avc.txt" | tr '\n' ' '))"
+	out=$(vm "python3 $W/live-av.py $W/avc.txt $W/avc.raw --segments 20,40,60")
+	vm "rm -f $W/avc.raw"
+	grep -E '^SEGMENT|raw offsets|^RESULT (video|gaps)' <<< "$out" | sed 's/^/  /'
+	out=$(awk '/^SEGMENT/ { for (i = 1; i <= NF; i++) if ($i ~ /^corr=/) { c = substr($i, 6) + 0; n++
+			if (n == 1) c0 = c; d = c - c0; if (d < 0) d = -d; if (d > dmax) dmax = d; s = s sprintf(" %+.3f", c) } }
+		END { printf "%s %d %.3f%s", (n == 4 && dmax <= 1) ? "PASS" : "FAIL", n, dmax, s }' <<< "$out")
+	read -r st n dmax offs <<< "$out"
+	result avchange-offset "$st" "($n segments around 3 colour changes, each a free-running and a live restart: offsets $offs ms, at most $dmax ms from the first; limit 1)"
+	vm "sudo cat $dbgdir/video" | grep -o -E 'input_restarts [0-9]+ input_stops [0-9]+' | sed 's/^/  /'
+	av_off
+}
+
+# M5, OBS as the consumer, driven through obs-websocket from the host
+# (tests/obs-events.py; the same clock as the source changes): the V4L2
+# source and the ALSA source by stable names (obs_up); GetSourceScreenshot of
+# the V4L2 source against the pattern, with its request time; the ALSA
+# source's InputVolumeMeters events against avsync.sh's bursts; a 60 s
+# recording: its image (pattern, counter steps) and its A/V offset (the
+# source's own offset needs avsync.sh's full-frame flash: step obsav)
+step_obsws() {
+	local out f
+	av_on --pattern || { result obsws-source FAIL "(avsync.sh --pattern or the IT6805 audio state ON)"; av_off; return; }
+	sleep 3
+	obs_up || { result obsws-start FAIL "(OBS with obs-websocket)"; obs_down; av_off; return; }
+	sleep 3
+	av_results obsws "$(python3 "$ROOT/tests/obs-events.py" shots 10 2>&1)"
+	av_results obsws "$(python3 "$ROOT/tests/obs-events.py" meters 20 2>&1)"
+	out=$(obsc "record 60")
+	f=$(sed -n 's/^RECORDING //p' <<< "$out")
+	check obsws-record "$([ -n "$f" ]; echo $?)" "($(grep '^STATS' <<< "$out"))"
+	if [ -n "$f" ]; then
+		av_results obsws "$(vm "cd $W && python3 obs-events.py recheck '$f' --every 5" 2>&1)"
+		out=$(vm "python3 $W/obs-av.py '$f' --box 0.70,0.88,0.92,0.92 --min-secs 55" 2>&1)
+		av_results obsws-rec "$out"
+		vm "rm -f '$f'"
+	fi
+	obs_down
+	av_off
+}
+
+# M5: OBS's V4L2 source through every source change, unattended: a sleep and
+# wake, 60 <-> 59.94 Hz, 1080p <-> 720p (OBS cannot follow a new frame size by
+# itself; the step then reopens the source through the websocket), the GPU's
+# colour format, and EDID re-sets (tests/obs-events.py events). TTFGF per
+# change; OBS's own log lines for its capture.
+step_obsevents() {
+	local out m lg f
+	obs_up || { result obsevents-start FAIL "(OBS with obs-websocket)"; obs_down; return; }
+	m=$(obs_log_mark)
+	out=$(python3 "$ROOT/tests/obs-events.py" events --reps "$OBSEV_REPS" 2>&1)
+	av_results obsevents "$out"
+	lg=$(obs_log_since "$m")
+	echo "  obs: $(grep -c 'select timed out' <<< "$lg") select timeouts, $(grep -c 'failed to dequeue' <<< "$lg") dequeue failures, $(grep -c 'Start capture' <<< "$lg") device opens"
+	# The frame-size changes again while OBS records. Hybrid MP4 (OBS was
+	# started with it) is OBS's own muxer: the reopen works during the
+	# recording, which must play the pattern before and after. MKV runs the
+	# obs-ffmpeg-mux helper, which holds OBS's descriptor of the device: the
+	# reopen cannot work until the recording stops (report only)
+	out=$(python3 "$ROOT/tests/obs-events.py" events --reps 1 --only res-720p,res-1080p --record 2>&1)
+	grep '^RECFORMAT' <<< "$out" | sed 's/^/  /'
+	av_results obsevents-hybrid "$(grep -v '^RECFORMAT' <<< "$out")"
+	f=$(sed -n 's/^RECORDING //p' <<< "$out")
+	if [ -n "$f" ]; then
+		av_results obsevents-hybrid "$(vm "cd $W && python3 obs-events.py recheck '$f' --every 2 --across" 2>&1)"
+		vm "rm -f '$f'"
+	fi
+	obs_log_since "$m" | grep -E 'Unable to set format|failed to|busy' | sed 's/^/  obs log: /' | head -8
+	obs_down
+	obs_up mkv > /dev/null || { result obsevents-mkv-start FAIL "(OBS with obs-websocket)"; obs_down; return; }
+	m=$(obs_log_mark)
+	out=$(python3 "$ROOT/tests/obs-events.py" events --reps 1 --only res-720p,res-1080p --record 2>&1)
+	grep -E '^RECFORMAT|^ *EVENT|^RESULT' <<< "$out" |
+		sed 's/^RESULT/  INFO mkv (report only):/; s/^ *EVENT/  mkv: EVENT/; s/^RECFORMAT/  RECFORMAT/'
+	f=$(sed -n 's/^RECORDING //p' <<< "$out")
+	[ -z "$f" ] || vm "rm -f '$f'"
+	obs_log_since "$m" | grep -E 'Unable to set format|failed to|busy' | sed 's/^/  mkv: obs log: /' | head -8
+	obs_down
+}
+
+# M5: the event soak with OBS as the consumer: GC573_OBSSOAK_SECS (7200) of
+# OBS recording, a screenshot every 2 s from the host, and every
+# GC573_OBSSOAK_EVERY s (180) the next source change from a rotation
+# (tests/obs-events.py soak). Then the recording (pattern, counter steps, A/V
+# offset between the changes), memory and slab (page cache dropped before
+# each sample, as in step soak), CPU, and OBS's log. The guard watches it all.
+step_obssoak() {
+	local out f m lg sm marks
+	obs_up || { result obssoak-start FAIL "(OBS with obs-websocket)"; obs_down; return; }
+	m=$(obs_log_mark)
+	vm "rm -f $W/obssoak-mem.txt"
+	vm "sudo nohup bash -c 'while :; do
+		irq=\$(ps -eo pid,comm | awk '\''\$2 ~ /^irq\\/[0-9]+-gc573/ { print \$1; exit }'\'')
+		obs=\$(pgrep -x obs | head -1)
+		sync; echo 3 > /proc/sys/vm/drop_caches
+		printf \"%s %s %s %s %s %s %s\\n\" \$(date +%s) \
+			\$(awk '\''/^(MemAvailable|Slab|SUnreclaim):/ { printf \"%s \", \$2 }'\'' /proc/meminfo) \
+			\$(awk '\''{ print \$14 + \$15 }'\'' /proc/\${obs:-0}/stat 2>/dev/null || echo -) \
+			\$(awk '\''{ print \$14 + \$15 }'\'' /proc/\${irq:-0}/stat 2>/dev/null || echo -) \
+			\$(awk '\''/^cpu / { print \$2 + \$3 + \$4 + \$6 + \$7 + \$8, \$5 }'\'' /proc/stat | tr \" \" :)
+		sleep 60
+	done' > $W/obssoak-mem.txt 2>&1 < /dev/null & echo \$! > $W/obssoak-sampler.pid"
+	echo "  obssoak: $OBSSOAK_SECS s from $(date -u '+%H:%M:%S UTC'), a change every $OBSSOAK_EVERY s"
+	out=$(python3 "$ROOT/tests/obs-events.py" soak "$OBSSOAK_SECS" --every "$OBSSOAK_EVERY" 2>&1)
+	vm "sudo kill \$(cat $W/obssoak-sampler.pid)"
+	av_results obssoak "$(grep -v '^SHOT ' <<< "$out")"
+	echo "  screenshots that were not good: $(grep -c '^SHOT ' <<< "$out") (SHOT lines in the event log's run)"
+	grep '^SHOT ' <<< "$out" > "${log%.log}-obssoak-shots.txt"
+	f=$(sed -n 's/^RECORDING //p' <<< "$out")
+	marks=$(sed -n 's/^MARK //p' <<< "$out" | paste -sd,)
+	if [ -n "$f" ]; then
+		av_results obssoak "$(vm "cd $W && python3 obs-events.py recheck '$f' --every 30 --across" 2>&1)"
+		av_results obssoak-rec "$(vm "python3 $W/obs-av.py '$f' --box 0.70,0.88,0.92,0.92 ${marks:+--segments $marks}" 2>&1)"
+		vm "rm -f '$f'"
+	fi
+	sm=$(vm "cat $W/obssoak-mem.txt")
+	echo "$sm" | awk 'NR == 1 || NR % 10 == 0 { print "  mem: " $0 }'
+	out=$(awk -v hz="$(vm getconf CLK_TCK)" '
+		NF >= 7 { n++; t[n] = $1; avail[n] = $2; slab[n] = $3; sunr[n] = $4; obs[n] = $5; irq[n] = $6
+			split($7, c, ":"); busy[n] = c[1]; idle[n] = c[2] }
+		END {
+			if (n < 7) { print "RESULT memory SKIP (" n " samples: fewer than 7)"; exit }
+			s = 6
+			ds = slab[n] - slab[s]; du = sunr[n] - sunr[s]
+			printf "RESULT memory %s (from minute 5 to the end: MemAvailable %+d kB, Slab %+d kB, SUnreclaim %+d kB; limits Slab 4096, SUnreclaim 2048)\n",
+				(ds <= 4096 && du <= 2048) ? "PASS" : "FAIL", avail[n] - avail[s], ds, du
+			wall = t[n] - t[1]
+			printf "RESULT cpu PASS (report only: OBS %.1f %% of one CPU, the IRQ thread %.2f %%, the VM %.1f %% of its CPUs, over %d s)\n",
+				(obs[n] - obs[1]) / hz / wall * 100, (irq[n] - irq[1]) / hz / wall * 100,
+				(busy[n] - busy[1]) / ((busy[n] - busy[1]) + (idle[n] - idle[1])) * 100, wall
+		}' <<< "$sm")
+	av_results obssoak "$out"
+	lg=$(obs_log_since "$m")
+	echo "  obs: $(grep -c 'select timed out' <<< "$lg") select timeouts, $(grep -c 'failed to dequeue' <<< "$lg") dequeue failures, $(grep -c 'Start capture' <<< "$lg") device opens"
+	obs_down
+}
+
 # Unload while streaming live video and audio. rmmod is refused while the
 # devices are open (module in use) and the streams keep running; unbinding
 # the PCI device stops them (the applications see an error and exit)
@@ -1136,12 +1353,17 @@ kml() {
 # ---- main ----
 
 all="bringup lock relock capture modes change loss colour audio avsync audioloss"
-all+=" obs obsav obschange unload reload compliance"
+all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
 [ $# -gt 0 ] || set -- $all
 krel=$(vm uname -r) || exit 2
 stamp=$(date -u +%Y%m%d-%H%M%S)
 log=$ROOT/tests/logs/${stamp}_${krel}_live.log
 mkdir -p "$ROOT/tests/logs"
+# the run's event log, and the guard (tools/testsrc/guard.py): a test window
+# outside the output, or test audio on any sink but the NVIDIA HDMI one,
+# stops the run
+export GC573_EVENT_LOG=${log%.log}-events.log GC573_GUARDED=1
+python3 "$ROOT/tools/testsrc/guard.py" --pid $$ --log "$GC573_EVENT_LOG" --output "$OUT" &
 trap 'vm "[ ! -e $PW_RULE.off ] || { rm -f ~/$PW_WP; sudo mv $PW_RULE.off $PW_RULE; sudo udevadm control --reload;
 		sudo udevadm trigger -s sound -c change; systemctl --user restart wireplumber; }"
 	"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off

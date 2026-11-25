@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0
 """Analyse a gc573-aud capture of tools/testsrc/avsync.sh (M4 gate).
 
-live-av.py LOG RAW [--min-secs S] [--bursts] [--tail S]
+live-av.py LOG RAW [--min-secs S] [--bursts] [--tail S] [--segments T1,T2,..]
 
 LOG: gc573-aud -v output (A lines; V lines with -V); RAW: its -o samples
 (S16_LE, 2 channels, 48 kHz). Prints RESULT lines (PASS/FAIL):
@@ -34,6 +34,11 @@ LOG: gc573-aud -v output (A lines; V lines with -V); RAW: its -o samples
              of the most common offset; both are reported. PASS if the
              corrected offsets stay within 1 ms of a line through them and
              that line moves less than one audio period (10 ms) over the run
+--segments (seconds from the first read): per segment a line
+  SEGMENT K START END pairs=N raw=MS min=MS max=MS frames=CLUSTERS corr=MS
+with the raw offsets of the flashes in it and their mean moved by whole
+frames as for avsync (corr), for captures across source changes (does the
+offset stay where it was?)
 """
 import re
 import sys
@@ -75,6 +80,11 @@ def main():
     if '--bursts' in args:
         args.remove('--bursts')
         want_bursts = True
+    segments = []
+    if '--segments' in args:
+        i = args.index('--segments')
+        segments = [float(v) for v in args[i + 1].split(',') if v]
+        del args[i:i + 2]
     log, raw = args
     a_hw, a_ts, v_seq, v_ts, v_y = [], [], [], [], []
     xruns = 0
@@ -213,6 +223,18 @@ def main():
     print(f"  raw offsets: mean {offs.mean():+.2f} ms, min {offs.min():+.2f}, max "
           f"{offs.max():+.2f}, std {offs.std():.2f}; frames from the most common "
           f"(count): {clusters}")
+    if segments:
+        edges = [0.0] + segments + [float(at[-1])]
+        for k in range(len(edges) - 1):
+            m = (when >= edges[k]) & (when < edges[k + 1])
+            if not np.any(m):
+                print(f"SEGMENT {k} {edges[k]:.1f} {edges[k + 1]:.1f} pairs=0")
+                continue
+            o = offs[m]
+            sv, sc = np.unique(np.round(o / tfm).astype(int), return_counts=True)
+            print(f"SEGMENT {k} {edges[k]:.1f} {edges[k + 1]:.1f} pairs={len(o)} raw={o.mean():+.2f} "
+                  f"min={o.min():+.2f} max={o.max():+.2f} frames=" +
+                  ','.join(f'{v - ref:+d}:{c}' for v, c in zip(sv, sc)) + f" corr={corr[m].mean():+.3f}")
     ok &= result('avsync', res <= 1 and abs(drift) < 10,
                  f"{len(offs)} flashes over {span_min:.1f} min: offset {corr.mean():+.3f} ms "
                  f"(std {corr.std():.3f}, min {corr.min():+.3f}, max {corr.max():+.3f}), "
