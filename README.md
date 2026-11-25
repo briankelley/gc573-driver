@@ -14,6 +14,10 @@ Targets: 1080p60 capture first, then 4K60/HDR. Packaged with DKMS.
 
 AVerMedia's code and binaries are used only as documentation, studied in an isolated VM to produce a hardware spec. The driver is written from that spec. No AVerMedia code or binaries are in this repository.
 
+## Hardware tooling
+
+An HDCP stripper / splitter was used in the Roku HDMI chain to facilitate accurate frame capture. The one I used was ASIN:B0CLL5GQXT (link: https://www.amazon.com/CORSAHD-60Hz-HDMI-Splitter-1x2/dp/B0CLL5GQXT)
+
 ## Authorship
 
 This driver is written by Claude, not by a human. The human has directed the work and tests the results on real hardware and has articulated parts of this readme to make it clear who is doing the heavy lifting here. As the repo owner, I'm *not even a little bit* shy about telling the reader that I not only didn't write a line of code for this driver, but didn't review any of it because I can't read kernel C. My specific need for this driver is limited, but the code in this repo is as *complete and thorough as I can direct it* with models from the late 2026 claude-opus-5-5@max / claude-fable-5-2@max / gpt-6-astra@max era. This driver package and repo are open to future improvements as model capabilities improve over time.
