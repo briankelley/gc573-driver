@@ -17,7 +17,7 @@ png=$1 w=$2 h=$3 fps=$4 n=$5
 B=$((h / 27)) p=$((h / 27 * 3 / 2)) x0=$((w / 16)) m=$((h / 27 / 4))
 y0=$((h * 4 / 5 + (h - h * 4 / 5 - B) / 2))
 fx=$((w * 11 / 16)) fw=$((w * 15 / 16 - w * 11 / 16))
-g="movie=$png,loop=loop=-1:size=1:start=0,setpts=N/($fps)/TB,format=rgb24"
+g="movie=$png,loop=loop=-1:size=1:start=0,settb=AVTB,setpts=N/($fps)/TB,format=rgb24"
 g+=",drawbox=x=$((x0 - m)):y=$((y0 - m)):w=$((15 * p + B + 2 * m)):h=$((B + 2 * m)):color=black:t=fill"
 for k in $(seq 0 15); do
 	g+=",drawbox=x=$((x0 + k * p)):y=$y0:w=$B:h=$B:color=white:t=fill:enable='mod(floor(n/$((1 << k)))\\,2)'"

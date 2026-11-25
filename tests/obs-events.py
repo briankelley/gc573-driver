@@ -44,7 +44,9 @@ the screenshot after it must be good too.
       --across: the recording spans source changes; the first and last
       samples must be the pattern, the others are listed
   obs-events.py selftest
-      the classifier on frames rendered offline from counter-graph.sh
+      the classifier on frames rendered offline from counter-graph.sh, and
+      their timestamps: frame n at n/FPS within 1 us (the player shows each
+      frame at its time; a coarse time base bunches them)
 Every run of events or soak writes an event log (UTC, ms; --events-log or
 GC573_EVENT_LOG) and runs tools/testsrc/guard.py on itself, unless
 GC573_GUARDED says a caller's guard (live.sh) already watches it.
@@ -784,7 +786,9 @@ def cmd_recheck(path, every, across=False):
 
 
 def cmd_selftest():
-    """The classifier on frames from counter-graph.sh, rendered by ffmpeg"""
+    """The classifier on frames from counter-graph.sh, rendered by ffmpeg,
+    and the frames' timestamps"""
+    import fractions
     import tempfile
     ok = True
     for w, h, fps in ((1920, 1080, '60'), (1280, 720, '60000/1001')):
@@ -804,8 +808,19 @@ def cmd_selftest():
                     bad += 1
                     print(f'{w}x{h} frame {i}: {kind} err {err} counter {counter} flash {flash}')
             ok &= bad == 0
+            # the times ffplay shows the frames at: n / fps
+            r = subprocess.run(['ffprobe', '-v', 'error', '-f', 'lavfi', '-i', g, '-read_intervals', '%+#130',
+                                '-show_entries', 'frame=pts_time', '-of', 'csv=p=0'],
+                               capture_output=True, text=True, check=True)
+            t = [float(x) for x in r.stdout.split()]
+            f = fractions.Fraction(fps)
+            late = [(i, x) for i, x in enumerate(t) if abs(x - i / f) > 1e-6]
+            if len(t) < 130 or late:
+                ok = False
+                print(f'{w}x{h} at {fps}: {len(t)} frames, {len(late)} not at n/{fps} s: '
+                      + ', '.join(f'{i}: {x:.6f}' for i, x in late[:6]))
     print(f"RESULT selftest {'PASS' if ok else 'FAIL'} (70 frames at 1920x1080 and 1280x720: pattern exact, "
-          "counter = frame index, flash on frames 0 and 60)")
+          "counter = frame index, flash on frames 0 and 60; 130 frames each at n/fps within 1 us)")
     return ok
 
 
