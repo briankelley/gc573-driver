@@ -48,7 +48,7 @@
  * basic audio, YCbCr 4:4:4 and 4:2:2, one native DTD; VICs 16, 31, 34,
  * 33, 32, 4, 19, 2, 3, 17, 18, 1; LPCM 2 ch 48 kHz 16/20/24 bit; speakers
  * FL/FR; HDMI VSDB 1.0.0.0, 165 MHz, no deep colour; VCDB QY = QS = 1.
- * edid-decode --check passes without warnings (tests/cases/06-hdmi-edid.sh).
+ * edid-decode --check passes without warnings (tests/cases/07-hdmi-edid.sh).
  * The native mode is signalled by the DTD count rather than the VIC 16
  * native flag, and the sRGB, underscan and VCDB scan bits are set: each
  * of these is an edid-decode warning otherwise.
