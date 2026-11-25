@@ -77,7 +77,7 @@ query() { vm "v4l2-ctl -d $vdev --query-dv-timings" 2>&1; }
 locked() { vm "v4l2-ctl -d $vdev --query-dv-timings >/dev/null 2>&1"; }
 hdmi_dbg() { vm "sudo cat $dbgdir/hdmi"; }
 
-connected() { xrandr --current | grep -q "^$OUT connected"; }
+connected() { grep -q "^$OUT connected" <<< "$(xrandr --current)"; }
 wait_connected() {	# seconds
 	local i
 	for i in $(seq $(($1 * 10))); do
@@ -146,7 +146,7 @@ live_capture() {
 	for f in YUYV UYVY NV12 YV12 BGR3 XR24; do
 		line=$(echo "$out" | grep "^RESULT capture fmt=$f ")
 		if [ -z "$line" ]; then
-			echo "$out" | grep -q "^SKIP capture fmt=$f" &&
+			grep -q "^SKIP capture fmt=$f" <<< "$out" &&
 				result "$tag-$f" SKIP "(not offered at ${w}x$h)" ||
 				{ result "$tag-$f" FAIL "(no capture)"; rc=1; }
 			continue
@@ -154,24 +154,31 @@ live_capture() {
 		cmp=$(vm "python3 $W/live-compare.py $W/p-${w}x$h.png $W/$tag.$f $f $w $h $enc" 2>&1)
 		local crc=$?
 		echo "$cmp" | sed 's/^/    /'
-		# every frame equal to the compared one; cadence vs measured rate
-		echo "$line" | awk -v fps="$fps" -v n="$n" '{
+		# every frame equal to the compared one (bit 0); cadence within
+		# 0.1 % of the measured frame period (bit 1)
+		local fr arc
+		fr=$(awk -v fps="$fps" -v n="$n" '{
 			for (i = 3; i <= NF; i++) { split($i, kv, "="); v[kv[1]] = kv[2] }
 			want = 1000 / fps; dev = (v["ivl_ms_mean"] - want) / want
-			printf "    frames %s gaps %s err %s distinct %s mean %.4f ms (expected %.4f, %+.4f %%) min %s max %s\n",
+			printf "frames %s gaps %s err %s distinct %s; mean %.4f ms, expected %.4f, %+.4f %%, min %s max %s\n",
 				v["frames"], v["seq_gaps"], v["err_flags"], v["distinct_frames"],
 				v["ivl_ms_mean"], want, dev * 100, v["min"], v["max"]
 			exit !(v["frames"] == n && v["seq_gaps"] == 0 && v["err_flags"] == 0 &&
-			       v["distinct_frames"] == 1 && dev < 0.001 && dev > -0.001)
-		}'
-		local arc=$?
-		check "$tag-$f" "$([ $crc = 0 ] && [ $arc = 0 ]; echo $?)" \
-			"($(echo "$cmp" | sed -n 's/^RESULT compare //p' | sed 's/ out_of_limit=0//'))"
+			       v["distinct_frames"] == 1) + 2 * !(dev < 0.001 && dev > -0.001)
+		}' <<< "$line")
+		arc=$?
+		echo "    $fr"
+		check "$tag-$f" "$([ $crc = 0 ] && [ $((arc & 1)) = 0 ]; echo $?)" \
+			"($(sed -n 's/^RESULT compare //p' <<< "$cmp" | sed 's/ out_of_limit=0//'); ${fr%%;*})"
+		check "$tag-$f-cadence" "$((arc >> 1))" "(${fr#*; })"
 		[ $crc = 0 ] && [ $arc = 0 ] || rc=1
 	done
-	echo "$out" | grep -q 'stats: .* skipped 1 ' &&
-		result "$tag-first-frame" PASS "(dropped: skipped 1)" ||
-		{ result "$tag-first-frame" FAIL "(skipped != 1)"; rc=1; }
+	# the driver drops the first frame of every stream (video-dma.md)
+	local ncap nskip
+	ncap=$(grep -c '^RESULT capture ' <<< "$out")
+	nskip=$(grep -c 'stats: .* skipped 1 ' <<< "$out")
+	check "$tag-first-frame" "$([ "$ncap" -gt 0 ] && [ "$nskip" = "$ncap" ]; echo $?)" \
+		"(skipped 1 in $nskip of $ncap streams)"
 	return $rc
 }
 
@@ -219,11 +226,11 @@ event_during() {
 
 # QUERY_DV_TIMINGS output ($1) is CTA-861 VIC 16, 1920x1080p at 148.5 MHz
 cta1080p60() {
-	echo "$1" | grep -q 'Active width: 1920' &&
-		echo "$1" | grep -q 'Active height: 1080' &&
-		echo "$1" | grep -q 'Frame format: progressive' &&
-		echo "$1" | grep -q 'Pixelclock: 148500000 Hz' &&
-		echo "$1" | grep -q 'CTA-861 VIC: 16'
+	grep -q 'Active width: 1920' <<< "$1" &&
+		grep -q 'Active height: 1080' <<< "$1" &&
+		grep -q 'Frame format: progressive' <<< "$1" &&
+		grep -q 'Pixelclock: 148500000 Hz' <<< "$1" &&
+		grep -q 'CTA-861 VIC: 16' <<< "$1"
 }
 
 step_lock() {
@@ -238,7 +245,7 @@ step_lock() {
 	t=$(( ($(date +%s%N) - t0) / 1000000 ))
 	q=$(query)
 	echo "$q" | sed 's/^/  /'
-	check lock-1080p60 "$(cta1080p60 "$q" && ! echo "$q" | grep -q 'framerate is reduced' &&
+	check lock-1080p60 "$(cta1080p60 "$q" && ! grep -q 'framerate is reduced' <<< "$q" &&
 		[ "$t" -le 3000 ]; echo $?)" "($t ms from output on)"
 	t0=$(date +%s%N)
 	src_on 1920x1080 59.94
@@ -247,10 +254,10 @@ step_lock() {
 	t=$(( ($(date +%s%N) - t0) / 1000000 ))
 	q=$(query)
 	echo "$q" | sed 's/^/  /'
-	check lock-1080p59.94 "$(cta1080p60 "$q" && echo "$q" | grep -q 'framerate is reduced by 1/1.001' &&
+	check lock-1080p59.94 "$(cta1080p60 "$q" && grep -q 'framerate is reduced by 1/1.001' <<< "$q" &&
 		[ "$t" -le 3000 ]; echo $?)" "($t ms from the mode switch)"
 	q=$(vm "v4l2-ctl -d $vdev --get-ctrl=power_present" 2>&1)
-	check lock-power-present "$(echo "$q" | grep -q 'power_present: 1'; echo $?)" "($q)"
+	check lock-power-present "$(grep -q 'power_present: 1' <<< "$q"; echo $?)" "($q)"
 	event_during lock-event-mode-change src_on 1920x1080 60
 	time_to_lock 10 >/dev/null
 	event_during lock-event-loss src_off
@@ -389,14 +396,14 @@ step_loss() {
 	event_during loss-idle-event src_off
 	q=$(query)
 	echo "  query while off: $q" | head -3
-	check loss-idle-query "$(echo "$q" | grep -qiE 'link|lock'; echo $?)" "($(echo "$q" | head -1))"
+	check loss-idle-query "$(grep -qiE 'link|lock' <<< "$q"; echo $?)" "($(echo "$q" | head -1))"
 	q=$(vm "v4l2-ctl -d $vdev --list-inputs" 2>&1 | grep -i status)
 	echo "  input:$q"
 	# what the hardware delivers while unlocked: free-running frames
 	out=$(cap "-f YUYV -b 4 -n 30 -o $W/unlocked" 2>&1)
 	echo "$out" | grep -E '^(RESULT|FAIL)' | sed 's/^/  /'
 	vm "od -An -tx1 -N 32 $W/unlocked.YUYV" | sed 's/^/  unlocked frame: /'
-	check loss-unlocked-stream "$(echo "$out" | grep -q '^RESULT capture'; echo $?)" \
+	check loss-unlocked-stream "$(grep -q '^RESULT capture' <<< "$out"; echo $?)" \
 		"($(echo "$out" | grep -o 'ch0_top_word=[^ ]*'))"
 	event_during loss-idle-return src_on 1920x1080 60
 	t=$(time_to_lock 10)
@@ -492,8 +499,22 @@ step_compliance() {
 	vm "v4l2-ctl -d $vdev --query-dv-timings >/dev/null && v4l2-ctl -d $vdev --set-dv-bt-timings query >/dev/null"
 	out=$(vm "v4l2-compliance -d $vdev -s 2>&1")
 	echo "$out" | grep -E 'fail|warn|Total for' | sed 's/^/  /'
-	check compliance "$(echo "$out" | grep -q 'Failed: 0, Warnings: 0'; echo $?)" \
+	check compliance "$(grep -q 'Failed: 0, Warnings: 0' <<< "$out"; echo $?)" \
 		"($(echo "$out" | grep 'Total for'))"
+}
+
+# Kernel log since the start: a warning, oops, KASAN/UBSAN, lockdep,
+# atomic-sleep or DMA-API report or a driver error fails, as in run.sh
+# (tests/lib.sh KMSG_BAD, KMSG_DRV_BAD)
+kmsg_check() {
+	local log bad
+	# shellcheck source=tests/lib.sh
+	. "$ROOT/tests/lib.sh"
+	log=$(vm "sudo dmesg | awk -v m='gc573-live: $kmark' 'f; index(\$0, m) { f = 1 }'")
+	bad=$( { echo "$log" | grep -E "$KMSG_BAD"; echo "$log" | grep -E "$KMSG_DRV_BAD"; } | head -10)
+	echo "  kernel log: $(echo "$log" | grep -c gc573) driver lines"
+	[ -z "$bad" ] || echo "$bad" | sed 's/^/  | /'
+	check kernel-log "$([ -z "$bad" ]; echo $?)" "($krel)"
 }
 
 # ---- main ----
@@ -513,6 +534,8 @@ trap '"$ROOT/tools/testsrc/show.sh" --off; ssh -O exit -o ControlPath="$SSHCTL" 
 	echo "source:  host $(hostname) $OUT, $(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader 2>/dev/null)"
 	echo "steps:   $*"
 	setup || { echo "setup failed"; exit 2; }
+	kmark=$(date +%s%N)
+	vm "echo 'gc573-live: $kmark' | sudo tee /dev/kmsg >/dev/null"
 	load || { echo "cannot load the module"; exit 2; }
 	echo "module:  $(vm "modinfo -F srcversion $VMDIR/gc573.ko"), $vdev"
 	for s in "$@"; do
@@ -520,6 +543,9 @@ trap '"$ROOT/tools/testsrc/show.sh" --off; ssh -O exit -o ControlPath="$SSHCTL" 
 		echo "## $s"
 		"step_$s"
 	done
+	echo
+	echo "## kernel log"
+	kmsg_check
 	echo
 	echo "## summary"
 	printf '%s\n' "${results[@]}"
