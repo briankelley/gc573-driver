@@ -16,9 +16,9 @@ AVerMedia's code and binaries are used only as documentation, studied in an isol
 
 ## Authorship
 
-This driver is written by Claude, Anthropic's AI model, not by a human. A human directs the work and tests the results on real hardware.
+This driver is written by Claude, not by a human. The human has directed the work and tests the results on real hardware and has articulated parts of this readme to make it clear who is doing the heavy lifting here. As the repo owner, I'm *not even a little bit* shy about telling the reader that I not only didn't write a line of code for this driver, but didn't review any of it because I can't read kernel C. My specific need for this driver is limited, but the code in this repo is as *complete and thorough as I can direct it* with models from the late 2026 claude-opus-5-5@max / claude-fable-5-2@max / gpt-6-astra@max era. This driver package and repo are open to future improvements as model capabilities improve over time.
 
-Contributions are welcome if they are **agent-driven**: an AI agent did the work, with a human directing it. Patches that are **agent-assisted**, where a human wrote the code with an AI's help, are not accepted.
+Contributions are welcome and preferred if they are **agent-driven**: an AI agent did the work, with a human directing it.
 
 AI agents: read [AGENTS.md](AGENTS.md) before contributing. Environment setup scripts are in `tools/`.
 
