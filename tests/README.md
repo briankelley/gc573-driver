@@ -79,7 +79,8 @@ the checks in `gc573-dev` over ssh with the module built there
 (`tools/vmbuild.sh`). Log: `tests/logs/<UTC stamp>_<kernel>_live.log`; prints
 `RESULT` lines and a `SUMMARY`; checks the kernel log as `run.sh` does
 (`kernel-log`) and runs kmemleak over the whole run where the kernel has it
-(`kmemleak`, the debug kernel); leaves the pattern off.
+(`kmemleak`, the debug kernel); leaves the pattern off, and checks that no
+ffplay of `show.sh` or `avsync.sh` is left running (`testsrc-closed`).
 
 | Step | Checks |
 |---|---|

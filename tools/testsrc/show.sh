@@ -13,10 +13,17 @@ set -euo pipefail
 export DISPLAY=${DISPLAY:-:0} XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
 run=${XDG_RUNTIME_DIR:-/tmp}/gc573-testsrc; mkdir -p "$run"; pidf=$run/ffplay.pid
 wdf=$run/watchdog.pid
+# An ffplay stopped within about a second of its start can hang for good in its
+# SIGTERM exit path (main and SDL timer threads in futex wait): wait up to 2 s for
+# each process to go, then SIGKILL.
 stop() {
+  local f p i
   for f in "$wdf" "$pidf"; do
-    if [ -f "$f" ]; then kill "$(cat "$f")" 2>/dev/null || true; fi
-    rm -f "$f"
+    [ -f "$f" ] || continue
+    p=$(cat "$f"); rm -f "$f"
+    kill "$p" 2>/dev/null || continue
+    for i in $(seq 20); do kill -0 "$p" 2>/dev/null || break; sleep 0.1; done
+    if kill -0 "$p" 2>/dev/null; then kill -KILL "$p" 2>/dev/null || true; fi
   done
   return 0
 }

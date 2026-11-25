@@ -132,6 +132,21 @@ av_on() {
 }
 av_off() { "$ROOT/tools/testsrc/avsync.sh" --off; }
 
+# After the steps: both test sources closed, and none of their ffplay
+# processes left running (an ffplay stopped while it starts up can hang in
+# its exit path, and --off would not know)
+testsrc_check() {
+	local i left
+	"$ROOT/tools/testsrc/avsync.sh" --off
+	"$ROOT/tools/testsrc/show.sh" --off
+	for i in $(seq 30); do
+		left=$(pgrep -a -x ffplay | awk '/-window_title gc573-/ { printf "%s ", $1 }')
+		[ -z "$left" ] && break
+		sleep 0.1
+	done
+	check testsrc-closed "$([ -z "$left" ]; echo $?)" "(ffplay of show.sh or avsync.sh still running: ${left:-none})"
+}
+
 # One counter from the driver's debugfs "audio" text $1, e.g. aud_stat "$d" late
 aud_stat() { grep -o "\b$2 [0-9]*" <<< "$1" | head -1 | cut -d' ' -f2; }
 
@@ -770,6 +785,9 @@ trap '"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off
 		echo "## $s"
 		"step_$s"
 	done
+	echo
+	echo "## test source"
+	testsrc_check
 	echo
 	echo "## kernel log"
 	kmsg_check
