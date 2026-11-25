@@ -8,11 +8,12 @@
  * probe runs the full sequence every time and never assumes reset values.
  *
  * Teardown is entirely devres-managed. Release order is the reverse of
- * probe: debugfs, video device (stops a running stream), I2C adapters,
- * quiesce (video stopped, interrupts off, reset domains), free IRQ, free
- * vectors, unmap BAR0, disable the device, and last the v4l2_device
- * reference. struct gc573 is freed when the last reference goes, which
- * can be after remove while a file handle is still open.
+ * probe: debugfs, HDMI polling (stopped; source HPD low), video device
+ * (stops a running stream), the HDMI workqueue, I2C adapters, quiesce
+ * (video stopped, interrupts off, reset domains), free IRQ, free vectors,
+ * unmap BAR0, disable the device, and last the v4l2_device reference.
+ * struct gc573 is freed when the last reference goes, which can be after
+ * remove while a file handle is still open.
  */
 
 #include <linux/debugfs.h>
@@ -52,7 +53,7 @@
  */
 #define GC573_CHIP_RESET_SETTLE_MS	50
 
-static void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val)
+void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val)
 {
 	u32 v;
 
@@ -315,7 +316,10 @@ static irqreturn_t gc573_irq_thread(int irq, void *data)
 
 static void gc573_release(struct v4l2_device *v4l2_dev)
 {
-	kfree(container_of(v4l2_dev, struct gc573, v4l2_dev));
+	struct gc573 *gc = container_of(v4l2_dev, struct gc573, v4l2_dev);
+
+	gc573_video_release(gc);
+	kfree(gc);
 }
 
 static void gc573_v4l2_put(void *data)
@@ -342,6 +346,7 @@ static int gc573_debugfs_init(struct gc573 *gc)
 		 pci_name(gc->pdev));
 	gc->debugfs = debugfs_create_dir(name, NULL);
 	gc573_video_debugfs(gc);
+	gc573_hdmi_debugfs(gc);
 	return devm_add_action_or_reset(&gc->pdev->dev, gc573_debugfs_remove,
 					gc);
 }
@@ -423,11 +428,19 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	if (ret)
 		return ret;
 
-	gc573_i2c_check_ids(gc);
+	/* HDMI chips: IDs, init, default EDID (spec/hdmi-chips.md) */
+	ret = gc573_hdmi_init(gc);
+	if (ret)
+		return dev_err_probe(dev, ret, "HDMI front-end bring-up failed\n");
 
 	ret = gc573_video_init(gc);
 	if (ret)
 		return dev_err_probe(dev, ret, "cannot register video device\n");
+
+	/* polling stops before the video device goes (devres order) */
+	ret = gc573_hdmi_start(gc);
+	if (ret)
+		return ret;
 
 	return gc573_debugfs_init(gc);
 }
@@ -435,7 +448,10 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 /* Reboot, kexec: no DMA or interrupts may outlive this kernel */
 static void gc573_shutdown(struct pci_dev *pdev)
 {
-	gc573_quiesce(pci_get_drvdata(pdev));
+	struct gc573 *gc = pci_get_drvdata(pdev);
+
+	gc573_hdmi_shutdown(gc);
+	gc573_quiesce(gc);
 	pci_clear_master(pdev);
 }
 

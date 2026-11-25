@@ -24,6 +24,7 @@ cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 
 gc573_load || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
+gc573_input_off "$dev"
 bad=
 for m in 1 2 4 5; do
 	echo "$m" > "$param"

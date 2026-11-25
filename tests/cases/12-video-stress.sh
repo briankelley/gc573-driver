@@ -19,6 +19,7 @@ cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 
 gc573_load || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
+gc573_input_off "$dev"
 bus1=
 for a in /sys/bus/pci/devices/"$GC573_BDF"/i2c-*; do
 	[ "$(cat "$a/name")" = "gc573 $GC573_BDF bus 1" ] && bus1=/dev/${a##*/}

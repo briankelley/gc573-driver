@@ -1,0 +1,628 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 01:50:03 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     08c984954bec-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   capture modes
+module:  FA2E144F3A6962C88DA2CB2, /dev/video0
+
+## capture
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0068 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.352 max=28.596 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=2
+  RESULT capture fmt=UYVY 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.515 max=16.805 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.540 max=16.783 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.424 max=17.015 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.543 max=16.773 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.527 max=16.773 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT cap-1080p60-timings        PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 2 mean 16.6860 ms (expected 16.6648, +0.1273 %) min 16.352 max 28.596
+RESULT cap-1080p60-YUYV           FAIL (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 16.6648, +0.0073 %) min 16.515 max 16.805
+RESULT cap-1080p60-UYVY           PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 16.6648, +0.0073 %) min 16.540 max 16.783
+RESULT cap-1080p60-NV12           PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 16.6648, +0.0073 %) min 16.424 max 17.015
+RESULT cap-1080p60-YV12           PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 16.6648, +0.0073 %) min 16.543 max 16.773
+RESULT cap-1080p60-BGR3           PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 16.6648, +0.0073 %) min 16.527 max 16.773
+RESULT cap-1080p60-XR24           PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT cap-1080p60-first-frame    PASS (dropped: skipped 1)
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9462 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.529 max=16.842 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.244 max=17.080 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=15.973 max=17.419 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.279 max=17.213 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.485 max=16.939 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.536 max=16.824 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT cap-1080p59.94-timings     PASS (1920x1080 at 59.9462 Hz, expected 1920x1080 at 59.94)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6816, +0.0082 %) min 16.529 max 16.842
+RESULT cap-1080p59.94-YUYV        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6816, +0.0082 %) min 16.244 max 17.080
+RESULT cap-1080p59.94-UYVY        PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6816, +0.0082 %) min 15.973 max 17.419
+RESULT cap-1080p59.94-NV12        PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6816, +0.0082 %) min 16.279 max 17.213
+RESULT cap-1080p59.94-YV12        PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6816, +0.0082 %) min 16.485 max 16.939
+RESULT cap-1080p59.94-BGR3        PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6816, +0.0082 %) min 16.536 max 16.824
+RESULT cap-1080p59.94-XR24        PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT cap-1080p59.94-first-frame PASS (dropped: skipped 1)
+
+## modes
+== 1920x1080 @ 50.00
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0057 h=528/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.599 max=16.736 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.543 max=16.761 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.578 max=16.761 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.560 max=16.757 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.587 max=16.762 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.563 max=16.747 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT mode-1920x1080@50.00-timings PASS (1920x1080 at 50.0057 Hz, expected 1920x1080 at 50.00)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.599 max 16.736
+RESULT mode-1920x1080@50.00-YUYV  FAIL (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.543 max 16.761
+RESULT mode-1920x1080@50.00-UYVY  FAIL (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.578 max 16.761
+RESULT mode-1920x1080@50.00-NV12  FAIL (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.560 max 16.757
+RESULT mode-1920x1080@50.00-YV12  FAIL (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 19.9977, -16.6605 %) min 16.587 max 16.762
+RESULT mode-1920x1080@50.00-BGR3  FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 19.9977, -16.6605 %) min 16.563 max 16.747
+RESULT mode-1920x1080@50.00-XR24  FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-1920x1080@50.00-first-frame PASS (dropped: skipped 1)
+== 1920x1080 @ 29.97
+  LOCK after_ms=0 1920x1080p pixelclock=74250000 flags=0x296 vic=34 fps=29.9751 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.549 max=16.779 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.577 max=16.793 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.520 max=16.807 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.578 max=16.780 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.529 max=16.783 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.542 max=16.786 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT mode-1920x1080@29.97-timings PASS (1920x1080 at 29.9751 Hz, expected 1920x1080 at 29.97)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 33.3610, -50.0435 %) min 16.549 max 16.779
+RESULT mode-1920x1080@29.97-YUYV  FAIL (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 33.3610, -50.0435 %) min 16.577 max 16.793
+RESULT mode-1920x1080@29.97-UYVY  FAIL (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 33.3610, -50.0405 %) min 16.520 max 16.807
+RESULT mode-1920x1080@29.97-NV12  FAIL (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 33.3610, -50.0405 %) min 16.578 max 16.780
+RESULT mode-1920x1080@29.97-YV12  FAIL (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 33.3610, -50.0405 %) min 16.529 max 16.783
+RESULT mode-1920x1080@29.97-BGR3  FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 33.3610, -50.0405 %) min 16.542 max 16.786
+RESULT mode-1920x1080@29.97-XR24  FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-1920x1080@29.97-first-frame PASS (dropped: skipped 1)
+== 1920x1080 @ 25.00
+  LOCK after_ms=0 1920x1080p pixelclock=74250000 flags=0x90 vic=33 fps=25.0028 h=528/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.548 max=16.790 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.559 max=16.818 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.526 max=16.812 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.546 max=16.799 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.542 max=16.783 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.547 max=16.790 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT mode-1920x1080@25.00-timings PASS (1920x1080 at 25.0028 Hz, expected 1920x1080 at 25.00)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 39.9955, -58.3303 %) min 16.548 max 16.790
+RESULT mode-1920x1080@25.00-YUYV  FAIL (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 39.9955, -58.3278 %) min 16.559 max 16.818
+RESULT mode-1920x1080@25.00-UYVY  FAIL (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 39.9955, -58.3303 %) min 16.526 max 16.812
+RESULT mode-1920x1080@25.00-NV12  FAIL (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 39.9955, -58.3278 %) min 16.546 max 16.799
+RESULT mode-1920x1080@25.00-YV12  FAIL (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 39.9955, -58.3278 %) min 16.542 max 16.783
+RESULT mode-1920x1080@25.00-BGR3  FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 39.9955, -58.3278 %) min 16.547 max 16.790
+RESULT mode-1920x1080@25.00-XR24  FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-1920x1080@25.00-first-frame PASS (dropped: skipped 1)
+== 1920x1080 @ 23.98
+  LOCK after_ms=0 1920x1080p pixelclock=74250000 flags=0x296 vic=32 fps=23.9801 h=638/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.489 max=16.816 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.496 max=16.815 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.545 max=16.819 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.557 max=16.805 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.521 max=16.784 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.553 max=16.819 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT mode-1920x1080@23.98-timings PASS (1920x1080 at 23.9801 Hz, expected 1920x1080 at 23.98)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 41.7012, -60.0348 %) min 16.489 max 16.816
+RESULT mode-1920x1080@23.98-YUYV  FAIL (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 41.7012, -60.0324 %) min 16.496 max 16.815
+RESULT mode-1920x1080@23.98-UYVY  FAIL (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 41.7012, -60.0348 %) min 16.545 max 16.819
+RESULT mode-1920x1080@23.98-NV12  FAIL (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 41.7012, -60.0324 %) min 16.557 max 16.805
+RESULT mode-1920x1080@23.98-YV12  FAIL (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 41.7012, -60.0348 %) min 16.521 max 16.784
+RESULT mode-1920x1080@23.98-BGR3  FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 41.7012, -60.0324 %) min 16.553 max 16.819
+RESULT mode-1920x1080@23.98-XR24  FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-1920x1080@23.98-first-frame PASS (dropped: skipped 1)
+== 1280x720 @ 59.94
+  LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9502 h=110/40/220 v=5/5/20 pol=0x3
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.792 min=15.221 max=31.706 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=2
+  RESULT capture fmt=UYVY 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.592 max=16.783 ch0_bytes=1843200 ch0_top_word=eb80eb80(6.3%) distinct_frames=1
+  RESULT capture fmt=NV12 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.579 max=16.793 ch0_bytes=921600 ch0_top_word=10101010(6.2%) ch1_bytes=460800 ch1_top_word=80808080(54.8%) distinct_frames=1
+  RESULT capture fmt=YV12 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.571 max=16.788 ch0_bytes=921600 ch0_top_word=10101010(6.2%) ch1_bytes=230400 ch1_top_word=80808080(57.1%) ch2_bytes=230400 ch2_top_word=80808080(57.2%) distinct_frames=1
+  RESULT capture fmt=BGR3 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.591 max=16.770 ch0_bytes=2764800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.620 max=16.792 ch0_bytes=3686400 ch0_top_word=00ffffff(16.4%) distinct_frames=1
+RESULT mode-1280x720@59.94-timings PASS (1280x720 at 59.9502 Hz, expected 1280x720 at 59.94)
+    INFO compare YUYV Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=355096 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=355096 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 355096 of 460800 (flat windows)
+    RESULT compare fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 2 mean 16.7920 ms (expected 16.6805, +0.6684 %) min 15.221 max 31.706
+RESULT mode-1280x720@59.94-YUYV   FAIL (fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=355096 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=355096 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 355096 of 460800 (flat windows)
+    RESULT compare fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6820 ms (expected 16.6805, +0.0089 %) min 16.592 max 16.783
+RESULT mode-1280x720@59.94-UYVY   PASS (fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=175988 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=175988 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 175988 of 230400 (flat windows)
+    RESULT compare fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6820 ms (expected 16.6805, +0.0089 %) min 16.579 max 16.793
+RESULT mode-1280x720@59.94-NV12   PASS (fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=175988 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=175988 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 175988 of 230400 (flat windows)
+    RESULT compare fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6820 ms (expected 16.6805, +0.0089 %) min 16.571 max 16.788
+RESULT mode-1280x720@59.94-YV12   PASS (fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604832,1:316768
+    INFO compare BGR3 G n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604768,1:316832
+    INFO compare BGR3 B n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604736,1:316864
+    RESULT compare fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6820 ms (expected 16.6805, +0.0089 %) min 16.591 max 16.770
+RESULT mode-1280x720@59.94-BGR3   PASS (fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604832,1:316768
+    INFO compare XR24 G n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604768,1:316832
+    INFO compare XR24 B n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604736,1:316864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6820 ms (expected 16.6805, +0.0089 %) min 16.620 max 16.792
+RESULT mode-1280x720@59.94-XR24   PASS (fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-1280x720@59.94-first-frame PASS (dropped: skipped 1)
+== 1280x720 @ 50.00
+  LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x90 vic=19 fps=50.0057 h=440/40/220 v=5/5/20 pol=0x3
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.546 max=16.782 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=1
+  RESULT capture fmt=UYVY 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.566 max=16.763 ch0_bytes=1843200 ch0_top_word=eb80eb80(6.3%) distinct_frames=1
+  RESULT capture fmt=NV12 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.602 max=16.758 ch0_bytes=921600 ch0_top_word=10101010(6.2%) ch1_bytes=460800 ch1_top_word=80808080(54.8%) distinct_frames=1
+  RESULT capture fmt=YV12 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.511 max=16.805 ch0_bytes=921600 ch0_top_word=10101010(6.2%) ch1_bytes=230400 ch1_top_word=80808080(57.1%) ch2_bytes=230400 ch2_top_word=80808080(57.2%) distinct_frames=1
+  RESULT capture fmt=BGR3 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.581 max=16.770 ch0_bytes=2764800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.530 max=16.784 ch0_bytes=3686400 ch0_top_word=00ffffff(16.4%) distinct_frames=1
+RESULT mode-1280x720@50.00-timings PASS (1280x720 at 50.0057 Hz, expected 1280x720 at 50.00)
+    INFO compare YUYV Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=355096 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=355096 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 355096 of 460800 (flat windows)
+    RESULT compare fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.546 max 16.782
+RESULT mode-1280x720@50.00-YUYV   FAIL (fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=355096 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=355096 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 355096 of 460800 (flat windows)
+    RESULT compare fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 19.9977, -16.6605 %) min 16.566 max 16.763
+RESULT mode-1280x720@50.00-UYVY   FAIL (fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=175988 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=175988 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 175988 of 230400 (flat windows)
+    RESULT compare fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 19.9977, -16.6605 %) min 16.602 max 16.758
+RESULT mode-1280x720@50.00-NV12   FAIL (fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=175988 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=175988 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 175988 of 230400 (flat windows)
+    RESULT compare fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.511 max 16.805
+RESULT mode-1280x720@50.00-YV12   FAIL (fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604832,1:316768
+    INFO compare BGR3 G n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604768,1:316832
+    INFO compare BGR3 B n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604736,1:316864
+    RESULT compare fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.581 max 16.770
+RESULT mode-1280x720@50.00-BGR3   FAIL (fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604832,1:316768
+    INFO compare XR24 G n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604768,1:316832
+    INFO compare XR24 B n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604736,1:316864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.530 max 16.784
+RESULT mode-1280x720@50.00-XR24   FAIL (fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-1280x720@50.00-first-frame PASS (dropped: skipped 1)
+== 720x576 @ 50.00
+  LOCK after_ms=0 720x576p pixelclock=27000000 flags=0xd0 vic=17 fps=50.0057 h=12/64/68 v=5/5/39 pol=0
+  RESULT capture fmt=YUYV 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.592 max=16.735 ch0_bytes=829440 ch0_top_word=80eb80eb(6.3%) distinct_frames=1
+  RESULT capture fmt=UYVY 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.574 max=16.757 ch0_bytes=829440 ch0_top_word=eb80eb80(6.3%) distinct_frames=1
+  RESULT capture fmt=NV12 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.601 max=16.787 ch0_bytes=414720 ch0_top_word=ebebebeb(6.4%) ch1_bytes=207360 ch1_top_word=80808080(54.5%) distinct_frames=1
+  SKIP capture fmt=YV12: not offered at 720x576
+  RESULT capture fmt=BGR3 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.586 max=16.773 ch0_bytes=1244160 ch0_top_word=ffffffff(6.1%) distinct_frames=1
+  RESULT capture fmt=XR24 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.576 max=16.767 ch0_bytes=1658880 ch0_top_word=00ffffff(16.3%) distinct_frames=1
+RESULT mode-720x576@50.00-timings PASS (720x576 at 50.0057 Hz, expected 720x576 at 50.00)
+    INFO compare YUYV Y n=414720 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YUYV Cb n=156448 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=156448 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 156448 of 207360 (flat windows)
+    RESULT compare fmt=YUYV 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 19.9977, -16.6605 %) min 16.592 max 16.735
+RESULT mode-720x576@50.00-YUYV    FAIL (fmt=YUYV 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=414720 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare UYVY Cb n=156448 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=156448 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 156448 of 207360 (flat windows)
+    RESULT compare fmt=UYVY 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.574 max 16.757
+RESULT mode-720x576@50.00-UYVY    FAIL (fmt=UYVY 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=414720 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare NV12 Cb n=77698 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=77698 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 77698 of 103680 (flat windows)
+    RESULT compare fmt=NV12 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6660 ms (expected 19.9977, -16.6605 %) min 16.601 max 16.787
+RESULT mode-720x576@50.00-NV12    FAIL (fmt=NV12 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT mode-720x576@50.00-YV12    SKIP (not offered at 720x576)
+    INFO compare BGR3 R n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272259,1:142461
+    INFO compare BGR3 G n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272195,1:142525
+    INFO compare BGR3 B n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272163,1:142557
+    RESULT compare fmt=BGR3 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.586 max 16.773
+RESULT mode-720x576@50.00-BGR3    FAIL (fmt=BGR3 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272259,1:142461
+    INFO compare XR24 G n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272195,1:142525
+    INFO compare XR24 B n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272163,1:142557
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6670 ms (expected 19.9977, -16.6555 %) min 16.576 max 16.767
+RESULT mode-720x576@50.00-XR24    FAIL (fmt=XR24 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-720x576@50.00-first-frame PASS (dropped: skipped 1)
+== 720x480 @ 59.94
+  LOCK after_ms=0 720x480p pixelclock=27000000 flags=0xd0 vic=2 fps=59.9469 h=16/62/60 v=9/6/30 pol=0
+  RESULT capture fmt=YUYV 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.811 min=16.619 max=32.084 ch0_bytes=691200 ch0_top_word=80eb80eb(6.2%) distinct_frames=2
+  RESULT capture fmt=UYVY 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.592 max=16.775 ch0_bytes=691200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.589 max=16.787 ch0_bytes=345600 ch0_top_word=ebebebeb(6.5%) ch1_bytes=172800 ch1_top_word=80808080(54.9%) distinct_frames=1
+  SKIP capture fmt=YV12: not offered at 720x480
+  RESULT capture fmt=BGR3 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.620 max=16.758 ch0_bytes=1036800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.598 max=16.733 ch0_bytes=1382400 ch0_top_word=00ffffff(16.3%) distinct_frames=1
+RESULT mode-720x480@59.94-timings PASS (720x480 at 59.9469 Hz, expected 720x480 at 59.94)
+    INFO compare YUYV Y n=345600 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YUYV Cb n=130304 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=130304 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 130304 of 172800 (flat windows)
+    RESULT compare fmt=YUYV 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 2 mean 16.8110 ms (expected 16.6814, +0.7767 %) min 16.619 max 32.084
+RESULT mode-720x480@59.94-YUYV    FAIL (fmt=YUYV 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=345600 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare UYVY Cb n=130304 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=130304 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 130304 of 172800 (flat windows)
+    RESULT compare fmt=UYVY 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6814, +0.0094 %) min 16.592 max 16.775
+RESULT mode-720x480@59.94-UYVY    PASS (fmt=UYVY 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=345600 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare NV12 Cb n=64284 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=64284 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 64284 of 86400 (flat windows)
+    RESULT compare fmt=NV12 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6814, +0.0094 %) min 16.589 max 16.787
+RESULT mode-720x480@59.94-NV12    PASS (fmt=NV12 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT mode-720x480@59.94-YV12    SKIP (not offered at 720x480)
+    INFO compare BGR3 R n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226832,1:118768
+    INFO compare BGR3 G n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226768,1:118832
+    INFO compare BGR3 B n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226736,1:118864
+    RESULT compare fmt=BGR3 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6814, +0.0094 %) min 16.620 max 16.758
+RESULT mode-720x480@59.94-BGR3    PASS (fmt=BGR3 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226832,1:118768
+    INFO compare XR24 G n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226768,1:118832
+    INFO compare XR24 B n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226736,1:118864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6814, +0.0094 %) min 16.598 max 16.733
+RESULT mode-720x480@59.94-XR24    PASS (fmt=XR24 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-720x480@59.94-first-frame PASS (dropped: skipped 1)
+== 640x480 @ 59.94
+  LOCK after_ms=0 640x480p pixelclock=25175000 flags=0x80 vic=1 fps=59.9472 h=16/96/48 v=10/2/33 pol=0
+  RESULT capture fmt=YUYV 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.601 max=16.771 ch0_bytes=614400 ch0_top_word=80108010(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.565 max=16.781 ch0_bytes=614400 ch0_top_word=10801080(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.556 max=16.782 ch0_bytes=307200 ch0_top_word=ebebebeb(6.2%) ch1_bytes=153600 ch1_top_word=80808080(55.1%) distinct_frames=1
+  RESULT capture fmt=YV12 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.572 max=16.801 ch0_bytes=307200 ch0_top_word=ebebebeb(6.2%) ch1_bytes=76800 ch1_top_word=80808080(57.5%) ch2_bytes=76800 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.567 max=16.810 ch0_bytes=921600 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.539 max=16.804 ch0_bytes=1228800 ch0_top_word=00ffffff(16.1%) distinct_frames=1
+RESULT mode-640x480@59.94-timings PASS (640x480 at 59.9472 Hz, expected 640x480 at 59.94)
+    INFO compare YUYV Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YUYV Cb n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 114392 of 153600 (flat windows)
+    RESULT compare fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6813, +0.0099 %) min 16.601 max 16.771
+RESULT mode-640x480@59.94-YUYV    PASS (fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare UYVY Cb n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 114392 of 153600 (flat windows)
+    RESULT compare fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6820 ms (expected 16.6813, +0.0039 %) min 16.565 max 16.781
+RESULT mode-640x480@59.94-UYVY    PASS (fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare NV12 Cb n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 56436 of 76800 (flat windows)
+    RESULT compare fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6813, +0.0099 %) min 16.556 max 16.782
+RESULT mode-640x480@59.94-NV12    PASS (fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YV12 Cb n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 56436 of 76800 (flat windows)
+    RESULT compare fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6813, +0.0099 %) min 16.572 max 16.801
+RESULT mode-640x480@59.94-YV12    PASS (fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201632,1:105568
+    INFO compare BGR3 G n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201568,1:105632
+    INFO compare BGR3 B n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201536,1:105664
+    RESULT compare fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6813, +0.0099 %) min 16.567 max 16.810
+RESULT mode-640x480@59.94-BGR3    PASS (fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201632,1:105568
+    INFO compare XR24 G n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201568,1:105632
+    INFO compare XR24 B n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201536,1:105664
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6830 ms (expected 16.6813, +0.0099 %) min 16.539 max 16.804
+RESULT mode-640x480@59.94-XR24    PASS (fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-640x480@59.94-first-frame PASS (dropped: skipped 1)
+== 640x480 @ 59.93
+  LOCK after_ms=0 640x480p pixelclock=25175000 flags=0x80 vic=1 fps=59.9354 h=16/96/48 v=10/2/33 pol=0
+  RESULT capture fmt=YUYV 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.614 max=16.776 ch0_bytes=614400 ch0_top_word=80108010(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.584 max=16.783 ch0_bytes=614400 ch0_top_word=10801080(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.563 max=16.789 ch0_bytes=307200 ch0_top_word=ebebebeb(6.2%) ch1_bytes=153600 ch1_top_word=80808080(55.1%) distinct_frames=1
+  RESULT capture fmt=YV12 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.567 max=16.742 ch0_bytes=307200 ch0_top_word=ebebebeb(6.2%) ch1_bytes=76800 ch1_top_word=80808080(57.5%) ch2_bytes=76800 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.571 max=16.777 ch0_bytes=921600 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.574 max=16.761 ch0_bytes=1228800 ch0_top_word=00ffffff(16.1%) distinct_frames=1
+RESULT mode-640x480@59.93-timings PASS (640x480 at 59.9354 Hz, expected 640x480 at 59.93)
+    INFO compare YUYV Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YUYV Cb n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 114392 of 153600 (flat windows)
+    RESULT compare fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6860 ms (expected 16.6846, +0.0082 %) min 16.614 max 16.776
+RESULT mode-640x480@59.93-YUYV    PASS (fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare UYVY Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare UYVY Cb n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 114392 of 153600 (flat windows)
+    RESULT compare fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6860 ms (expected 16.6846, +0.0082 %) min 16.584 max 16.783
+RESULT mode-640x480@59.93-UYVY    PASS (fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare NV12 Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare NV12 Cb n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 56436 of 76800 (flat windows)
+    RESULT compare fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6860 ms (expected 16.6846, +0.0082 %) min 16.563 max 16.789
+RESULT mode-640x480@59.93-NV12    PASS (fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare YV12 Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YV12 Cb n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 56436 of 76800 (flat windows)
+    RESULT compare fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6860 ms (expected 16.6846, +0.0082 %) min 16.567 max 16.742
+RESULT mode-640x480@59.93-YV12    PASS (fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00)
+    INFO compare BGR3 R n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201632,1:105568
+    INFO compare BGR3 G n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201568,1:105632
+    INFO compare BGR3 B n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201536,1:105664
+    RESULT compare fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6860 ms (expected 16.6846, +0.0082 %) min 16.571 max 16.777
+RESULT mode-640x480@59.93-BGR3    PASS (fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+    INFO compare XR24 R n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201632,1:105568
+    INFO compare XR24 G n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201568,1:105632
+    INFO compare XR24 B n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201536,1:105664
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1 mean 16.6860 ms (expected 16.6846, +0.0082 %) min 16.574 max 16.761
+RESULT mode-640x480@59.93-XR24    PASS (fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT mode-640x480@59.93-first-frame PASS (dropped: skipped 1)
+
+## summary
+RESULT cap-1080p60-timings        PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+RESULT cap-1080p60-YUYV           FAIL (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT cap-1080p60-UYVY           PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT cap-1080p60-NV12           PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT cap-1080p60-YV12           PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT cap-1080p60-BGR3           PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT cap-1080p60-XR24           PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT cap-1080p60-first-frame    PASS (dropped: skipped 1)
+RESULT cap-1080p59.94-timings     PASS (1920x1080 at 59.9462 Hz, expected 1920x1080 at 59.94)
+RESULT cap-1080p59.94-YUYV        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT cap-1080p59.94-UYVY        PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT cap-1080p59.94-NV12        PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT cap-1080p59.94-YV12        PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00)
+RESULT cap-1080p59.94-BGR3        PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT cap-1080p59.94-XR24        PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00)
+RESULT cap-1080p59.94-first-frame PASS (dropped: skipped 1)
+SUMMARY pass=15 fail=1 skip=0

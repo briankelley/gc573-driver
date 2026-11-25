@@ -109,6 +109,35 @@ gc573_debugfs() { echo "/sys/kernel/debug/$GC573_MOD-$GC573_BDF/video"; }
 # input, 1010 (frame period) reads 0xffffffff.
 gc573_input_regs() { grep '^input:' "$(gc573_debugfs)"; }
 
+# Take the HDMI input away for a case that needs none: clear the EDID
+# (VIDIOC_S_EDID, 0 blocks: both HPDs go low and the source stops), then
+# wait until QUERY_DV_TIMINGS has failed for 1 s in a row. Unloads and
+# fails if the input stays locked for 10 s.
+gc573_input_off() {
+	local i n=0
+	v4l2-ctl -d "$1" --clear-edid=0 >/dev/null 2>&1 ||
+		{ gc573_unload; fail "S_EDID with 0 blocks failed"; }
+	for i in $(seq 100); do
+		if v4l2-ctl -d "$1" --query-dv-timings >/dev/null 2>&1; then
+			n=0
+		else
+			n=$((n + 1))
+			[ "$n" -ge 10 ] && return 0
+		fi
+		sleep 0.1
+	done
+	gc573_unload
+	fail "HDMI input still locked 10 s after the EDID was cleared"
+}
+
+# The HDMI front-end's debugfs state (chips, poll statistics, input).
+gc573_hdmi_debugfs() { echo "/sys/kernel/debug/$GC573_MOD-$GC573_BDF/hdmi"; }
+
+# One counter from the "hdmi:" line of that file, e.g. gc573_hdmi_stat xfers
+gc573_hdmi_stat() {
+	sed -n "s/^hdmi:.* $1 \([0-9]*\).*/\1/p" "$(gc573_hdmi_debugfs)"
+}
+
 # Build the capture test tool into directory $1; print the binary's path.
 gc573_cap_build() {
 	gcc -O2 -Wall -Wextra -o "$1/gc573-cap" "$GC573_TESTS/gc573-cap.c" >&2 &&

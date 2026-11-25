@@ -1,0 +1,131 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 01:39:40 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     08c984954bec-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   relock
+module:  60E2F7444FD93C71241B043, /dev/video0
+
+## relock
+  switch 2 to 60: no lock within 10 s
+    hdmi: polling 1 failed 0 polls 13088 poll_errors 0 poll_ms_max 526 xfers 483180 xfer_errors 0 retries 0 resyncs 0 runs 2392 lock_polls 0 gpio 0x0001f974
+    it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    it6805: state WAIT_SYNC power NORMAL audio OFF armed 0 sync 0 debounce 0 wait 0 released 0 polls 13088 entries 57 losses 57 releases 57
+    it6805: 13 01 14 01 19 30 4f 84 avi_store af 00
+    it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 147911 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 13088
+    splitter: rx 5v 1 clk 0 lock 1 scdt 0 13 bd 14 3b 19 30 last events 12 00 00 00 00 30 00 81 link_errors 0
+    splitter: eq IDLE stored 1 codes be be be result 3e 3e 3e 3f attempts 0 biterr 8000 8000 8000
+    splitter: tx1 PARTIAL 03 9b clk 138361 kHz afe 04 00 03 80 03 repowers 0 output_enable 57 failed 0 pll_recoveries 2 scdc_aborts 0
+    splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    input: power 1 signal 1 locked 0 period 0x0 fpga 0x2 0x0 0x0 colour 0 vic 0 full_range 0 enc 0 dvi 0 dual 0 ddr 0
+  switch 3 to 59.94: no lock within 10 s
+    hdmi: polling 1 failed 0 polls 13237 poll_errors 0 poll_ms_max 526 xfers 489032 xfer_errors 0 retries 0 resyncs 0 runs 2435 lock_polls 20 gpio 0x0001f974
+    it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    it6805: state STABLE power NORMAL audio WAIT_READY armed 0 sync 1 debounce 0 wait 0 released 1 polls 13237 entries 58 losses 57 releases 58
+    it6805: 13 bf 14 39 19 be 4f 84 avi_store af 00
+    it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 147546 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 13237
+    splitter: rx 5v 1 clk 1 lock 1 scdt 1 13 bf 14 3b 19 b0 last events 00 00 00 00 20 02 00 00 link_errors 0
+    splitter: eq DONE stored 1 codes be be be result 3e 3e 3e 3f attempts 0 biterr 8000 8000 8000
+    splitter: tx1 RUNNING 03 9f clk 138361 kHz afe 04 00 03 80 03 repowers 0 output_enable 58 failed 0 pll_recoveries 2 scdc_aborts 0
+    splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    input: power 1 signal 1 locked 1 period 0x197443 fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+    timings: 1920x1080p pixelclock 25157054 flags 0x0 vic 0 h 88/44/148 v 4/5/36 pol 0x3
+  switch 5 to 59.94: no lock within 10 s
+    hdmi: polling 1 failed 0 polls 13401 poll_errors 0 poll_ms_max 526 xfers 496503 xfer_errors 0 retries 0 resyncs 0 runs 2503 lock_polls 20 gpio 0x0001f974
+    it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    it6805: state STABLE power NORMAL audio WAIT_READY armed 0 sync 1 debounce 0 wait 0 released 1 polls 13401 entries 60 losses 59 releases 60
+    it6805: 13 bf 14 39 19 be 4f 84 avi_store af 00
+    it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 146107 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 13401
+    splitter: rx 5v 1 clk 1 lock 1 scdt 1 13 bf 14 3b 19 b0 last events 00 00 00 00 00 02 00 00 link_errors 0
+    splitter: eq DONE stored 1 codes be be be result 3e 3e 3e 3f attempts 0 biterr 8000 8000 8000
+    splitter: tx1 RUNNING 03 9f clk 138361 kHz afe 04 00 03 80 03 repowers 0 output_enable 60 failed 0 pll_recoveries 2 scdc_aborts 0
+    splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    input: power 1 signal 1 locked 1 period 0x197443 fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+    timings: 1920x1080p pixelclock 25038334 flags 0x0 vic 0 h 88/44/148 v 4/5/36 pol 0x3
+  switch 12 to 60: no lock within 10 s
+    hdmi: polling 1 failed 0 polls 13632 poll_errors 0 poll_ms_max 526 xfers 510871 xfer_errors 0 retries 0 resyncs 0 runs 2672 lock_polls 20 gpio 0x0001f974
+    it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    it6805: state STABLE power NORMAL audio WAIT_READY armed 0 sync 1 debounce 0 wait 0 released 1 polls 13632 entries 67 losses 66 releases 67
+    it6805: 13 bf 14 39 19 be 4f 84 avi_store af 00
+    it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 147911 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 13632
+    splitter: rx 5v 1 clk 1 lock 1 scdt 1 13 bf 14 3b 19 b0 last events 00 00 00 00 00 22 00 80 link_errors 0
+    splitter: eq DONE stored 1 codes be be be result 3e 3e 3e 3f attempts 0 biterr 8000 8000 8000
+    splitter: tx1 RUNNING 03 9f clk 138361 kHz afe 04 00 03 80 03 repowers 0 output_enable 67 failed 0 pll_recoveries 2 scdc_aborts 0
+    splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    input: power 1 signal 1 locked 1 period 0x196daf fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+    timings: 1920x1080p pixelclock 25597402 flags 0x0 vic 0 h 88/44/148 v 4/5/36 pol 0x3
+  switch 26 to 60: no lock within 10 s
+    hdmi: polling 1 failed 0 polls 13965 poll_errors 0 poll_ms_max 526 xfers 536291 xfer_errors 0 retries 0 resyncs 0 runs 3013 lock_polls 20 gpio 0x0001f974
+    it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    it6805: state STABLE power NORMAL audio WAIT_READY armed 0 sync 1 debounce 0 wait 0 released 1 polls 13965 entries 81 losses 80 releases 81
+    it6805: 13 bf 14 39 19 be 4f 84 avi_store af 00
+    it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 147546 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 13965
+    splitter: rx 5v 1 clk 1 lock 1 scdt 1 13 bf 14 3b 19 b0 last events 00 00 00 00 00 02 00 00 link_errors 0
+    splitter: eq DONE stored 1 codes be be be result 3e 3e 3e 3f attempts 0 biterr 8000 8000 8000
+    splitter: tx1 RUNNING 03 9f clk 138361 kHz afe 04 00 03 80 03 repowers 0 output_enable 81 failed 0 pll_recoveries 2 scdc_aborts 0
+    splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    input: power 1 signal 1 locked 1 period 0x196dae fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+    timings: 1920x1080p pixelclock 25217649 flags 0x0 vic 0 h 88/44/148 v 4/5/36 pol 0x3
+  switch 48 to 60: no lock within 10 s
+    hdmi: polling 1 failed 0 polls 14434 poll_errors 0 poll_ms_max 526 xfers 573486 xfer_errors 0 retries 0 resyncs 0 runs 3514 lock_polls 20 gpio 0x0001f974
+    it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    it6805: state STABLE power NORMAL audio WAIT_READY armed 0 sync 1 debounce 0 wait 0 released 1 polls 14434 entries 103 losses 102 releases 103
+    it6805: 13 bf 14 39 19 be 4f 84 avi_store af 00
+    it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 146107 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 14434
+    splitter: rx 5v 1 clk 1 lock 1 scdt 1 13 bf 14 3b 19 b0 last events 00 00 00 00 00 22 00 80 link_errors 0
+    splitter: eq DONE stored 1 codes be be be result 3e 3e 3e 3f attempts 0 biterr 8000 8000 8000
+    splitter: tx1 RUNNING 03 9f clk 138361 kHz afe 04 00 03 80 03 repowers 0 output_enable 103 failed 0 pll_recoveries 2 scdc_aborts 0
+    splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    input: power 1 signal 1 locked 1 period 0x196daf fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+    timings: 1920x1080p pixelclock 25199653 flags 0x0 vic 0 h 88/44/148 v 4/5/36 pol 0x3
+  switch 54 to 60: no lock within 10 s
+    hdmi: polling 1 failed 0 polls 14655 poll_errors 0 poll_ms_max 526 xfers 586770 xfer_errors 0 retries 0 resyncs 0 runs 3669 lock_polls 20 gpio 0x0001f974
+    it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    it6805: state STABLE power NORMAL audio WAIT_READY armed 0 sync 1 debounce 0 wait 0 released 1 polls 14655 entries 109 losses 108 releases 109
+    it6805: 13 bf 14 39 19 be 4f 84 avi_store af 00
+    it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 146823 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 14655
+    splitter: rx 5v 1 clk 1 lock 1 scdt 1 13 bf 14 3b 19 b0 last events 00 00 00 00 00 02 00 00 link_errors 0
+    splitter: eq DONE stored 1 codes be be be result 3e 3e 3e 3f attempts 0 biterr 8000 8000 8000
+    splitter: tx1 RUNNING 03 9f clk 138361 kHz afe 04 00 03 80 03 repowers 0 output_enable 109 failed 0 pll_recoveries 2 scdc_aborts 0
+    splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    input: power 1 signal 1 locked 1 period 0x196daf fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+    timings: 1920x1080p pixelclock 25467000 flags 0x0 vic 0 h 88/44/148 v 4/5/36 pol 0x3
+  switch 60 to 60: no lock within 10 s
+    hdmi: polling 1 failed 0 polls 14875 poll_errors 0 poll_ms_max 526 xfers 600055 xfer_errors 0 retries 0 resyncs 0 runs 3822 lock_polls 20 gpio 0x0001f974
+    it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    it6805: state STABLE power NORMAL audio WAIT_READY armed 0 sync 1 debounce 0 wait 0 released 1 polls 14875 entries 115 losses 114 releases 115
+    it6805: 13 bf 14 39 19 be 4f 84 avi_store af 00
+    it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 147911 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 14875
+    splitter: rx 5v 1 clk 1 lock 1 scdt 1 13 bf 14 3b 19 b0 last events 10 00 00 00 00 32 00 81 link_errors 0
+    splitter: eq DONE stored 1 codes be be be result 3e 3e 3e 3f attempts 0 biterr 8000 8000 8000
+    splitter: tx1 RUNNING 03 9f clk 138361 kHz afe 04 00 03 80 03 repowers 0 output_enable 115 failed 0 pll_recoveries 2 scdc_aborts 0
+    splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    input: power 1 signal 1 locked 1 period 0x196dae fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+    timings: 1920x1080p pixelclock 25121334 flags 0x0 vic 0 h 88/44/148 v 4/5/36 pol 0x3
+  switch 73 to 59.94: no lock within 10 s
+    hdmi: polling 1 failed 0 polls 15201 poll_errors 0 poll_ms_max 526 xfers 623863 xfer_errors 0 retries 0 resyncs 0 runs 4133 lock_polls 20 gpio 0x0001f974
+    it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    it6805: state STABLE power NORMAL audio WAIT_READY armed 0 sync 1 debounce 0 wait 0 released 1 polls 15201 entries 128 losses 127 releases 128
+    it6805: 13 bf 14 39 19 be 4f 84 avi_store af 00
+    it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 147911 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 15201
+    splitter: rx 5v 1 clk 1 lock 1 scdt 1 13 bf 14 3b 19 b0 last events 00 00 00 00 00 02 00 00 link_errors 0
+    splitter: eq DONE stored 1 codes be be be result 3e 3e 3e 3f attempts 0 biterr 8000 8000 8000
+    splitter: tx1 RUNNING 03 9f clk 138361 kHz afe 04 00 03 80 03 repowers 0 output_enable 128 failed 0 pll_recoveries 2 scdc_aborts 0
+    splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    input: power 1 signal 1 locked 1 period 0x197443 fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+    timings: 1920x1080p pixelclock 25672450 flags 0x0 vic 0 h 88/44/148 v 4/5/36 pol 0x3
+  ms from the switch to the new rate: 1675 1381 1440 1604 1642 1737 1617 1664 1375 1745 1601 1615 1626 1658 1554 1616 1630 1671 1673 1622 1662 1518 1631 1631 1647 1656 1617 1639 1604 1637 1604 1599 1572 1610 1595 1679 1633 1699 1674 1582 1579 1572 1378 1624 1564 1659 1630 1488 1648 1619 1626 1647 1462 1720 1626 1593 1628 1621 1590 1618 1613 1600 1642 1638 1466 1686 1616 1596 1595 1591 1681
+RESULT relock                     FAIL (71 of 80 switches locked within 3 s, slowest 1745 ms; )
+
+## summary
+RESULT relock                     FAIL (71 of 80 switches locked within 3 s, slowest 1745 ms; )
+SUMMARY pass=0 fail=1 skip=0

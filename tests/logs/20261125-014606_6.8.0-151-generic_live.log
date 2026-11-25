@@ -1,0 +1,15 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 01:46:06 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     08c984954bec-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   relock
+module:  FA2E144F3A6962C88DA2CB2, /dev/video0
+
+## relock
+  ms from the switch to the new rate: 1668 1646 1687 1688 1682 1712 1636 1716 1690 1700 1676 1684 1676 1719 1716 1619 1676 1703 1768 1740 1686 1710 1646 1615 1760 1648 1715 1706 1703 1668 1610 1663 1678 1674 1721 1876 1623 1710 1742 1709 1750 1715 1710 1695 1673 1665 1690 1717 1722 1739 1745 1654 1731 1724 1626 1659 1728 1696 1707 1675 1705 1684 1724 1769 1743 1801 1668 1732 1648 1719 1709 1661 1583 1688 1709 1711 1644 1739 1700 1714
+RESULT relock                     PASS (80 of 80 switches locked within 3 s, slowest 1876 ms; fpga_rejects 172 level_changes 8 )
+
+## summary
+RESULT relock                     PASS (80 of 80 switches locked within 3 s, slowest 1876 ms; fpga_rejects 172 level_changes 8 )
+SUMMARY pass=1 fail=0 skip=0

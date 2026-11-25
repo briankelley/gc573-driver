@@ -1,0 +1,49 @@
+# GC573 regression suite
+date:    2026-11-25 03:16:35 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #4 SMP PREEMPT_DYNAMIC Tue Nov 24 16:09:22 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion DE13971A51A8D18601062F4
+rev:     1b0ec3e571df-dirty
+input:   PC loopback DVI-D-0 on (desktop, 1080p60)
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+
+## 04-i2c-reads
+  bus 1: /dev/i2c-2
+  reader 1: 200 rounds, 2000 transfers, 0 mismatches
+  reader 2: 200 rounds, 2000 transfers, 0 mismatches
+  4000 reader transfers in 659 ms, 4916 interrupts: 916 for the driver, which made 916 to 916 transfers (edge bursts 0, 0; retries 0)
+  plain read: ENOTSUP
+  plain read: 28 interrupts, driver transfers 28 (difference 0)
+  plain read refused before the hardware (no interrupt)
+  -- kernel log (9 lines)
+  | [  491.934013] gc573 0000:07:00.0: using MSI, irq 60
+  | [  492.036071] gc573 0000:07:00.0: FPGA version 20200811
+  | [  492.173017] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  492.174295] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  492.286999] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  492.287741] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  492.381642] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  492.525587] gc573 0000:07:00.0: video device video0
+  | [  492.557613] gc573 0000:07:00.0: HDMI: signal, not locked
+RESULT 04-i2c-reads         PASS (2s)
+
+## kmemleak (whole suite)
+  no new unreferenced objects
+RESULT kmemleak             PASS 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   PC loopback DVI-D-0 on (desktop, 1080p60)
+RESULT 04-i2c-reads         PASS (2s)
+RESULT kmemleak             PASS 
+RESULT debug-checkers       PASS 
+SUMMARY pass=3 fail=0 skip=0
