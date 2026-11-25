@@ -757,11 +757,21 @@ step_obs() {
 
 # GC573_OBS_SECS (600) of OBS recording avsync.sh (V4L2 source with OBS's
 # defaults, ALSA source): A/V offset and drift measured in the file, OBS's
-# frame counters, and no capture trouble in OBS's log
+# frame counters, and no capture trouble in OBS's log. Before it, in the
+# same avsync.sh session, 60 s with the driver's timestamps (live-av.py)
+# give the source's own offset; the difference is OBS's
 step_obsav() {
-	local out f m lg
+	local out f m lg ref obsm
 	av_on || { result obsav-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
 	sleep 3
+	# The source's own offset in this avsync.sh session, from the driver's
+	# timestamps as in step avsync, for 60 s: it can differ by whole frames
+	# from one session to the next. OBS's own part is the difference
+	vm "sudo $W/gc573-aud -D $pcm -t 60 -v -V $vdev -o $W/av.raw > $W/av.txt 2>&1"
+	out=$(vm "python3 $W/live-av.py $W/av.txt $W/av.raw --min-secs 54")
+	vm "rm -f $W/av.raw"
+	av_results obsav-driver "$(grep -E '^RESULT (duration|avsync)|raw offsets' <<< "$out")"
+	ref=$(sed -n 's/^  raw offsets: mean \([-+0-9.]*\) ms.*/\1/p' <<< "$out")
 	obs_up || { result obsav-start FAIL "(OBS with obs-websocket)"; obs_down; av_off; return; }
 	m=$(obs_log_mark)
 	out=$(obsc "record $OBS_SECS")
@@ -775,6 +785,9 @@ step_obsav() {
 		out=$(vm "python3 $W/obs-av.py '$f' --min-secs $((OBS_SECS * 9 / 10))")
 		av_results obsav "$out"
 		vm "rm -f '$f'"
+		obsm=$(sed -n 's/^RESULT offset .*: mean \([-+0-9.]*\) ms.*/\1/p' <<< "$out")
+		[ -n "$ref" ] && [ -n "$obsm" ] && awk -v o="$obsm" -v d="$ref" 'BEGIN {
+			printf "  OBS - driver in this session: %+.2f ms (OBS %+.2f, driver %+.2f: burst onset - flash frame)\n", o - d, o, d }'
 	fi
 	obs_down
 	av_off
