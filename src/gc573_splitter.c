@@ -716,7 +716,18 @@ static int gc573_sp_avi(struct gc573_hdmi *h)
 	return ret;
 }
 
-/* 6.2 RX event pass: read 05-1d, write back 05-11, act, write back 12 */
+/*
+ * 6.2 RX event pass: read 05-1d, write back 05-11, act, write back 12.
+ * Each decision uses a level read after its event bit was written back, as
+ * RD's tables do (the clock head's own 0x13 read, the SCDT rows' 0x19): an
+ * edge between the first read and the write-back merges into the latch
+ * that the write-back clears, so a decision on the first read keeps the
+ * old level with no event left to correct it. A mode change that dropped
+ * and restored the lock inside that window left the RX in lock lost (EQ
+ * 81, no SCDT) until the next change. An edge after the decision read
+ * latches anew. 0x13 is read again for the 5 V and lock decisions (the
+ * clock head reads it last when it runs), 0x19 for SCDT.
+ */
 static int gc573_sp_rx_pass(struct gc573_hdmi *h)
 {
 	static const u8 regs[] = {
@@ -733,6 +744,10 @@ static int gc573_sp_rx_pass(struct gc573_hdmi *h)
 		ret = gc573_chip_rd(h, RX, 0, regs[i], &v[i]);
 	for (i = 0; i < 7 && !ret; i++)
 		ret = gc573_chip_wr(h, RX, 0, regs[i], v[i]);
+	if (!ret)
+		ret = gc573_chip_rd(h, RX, 0, 0x13, &sp->r13);
+	if (!ret)
+		ret = gc573_chip_rd(h, RX, 0, 0x19, &sp->r19);
 	if (ret)
 		return ret;
 	memcpy(sp->ev, v, sizeof(sp->ev));
@@ -740,13 +755,21 @@ static int gc573_sp_rx_pass(struct gc573_hdmi *h)
 	e06 = v[1];
 	e10 = v[5];
 	e12 = v[7];
-	sp->r13 = v[8];
 	sp->r14 = v[9];
-	sp->r19 = v[11];
+	if (((sp->r13 ^ v[8]) & (BIT(0) | BIT(3) | BIT(7))) ||
+	    ((sp->r19 ^ v[11]) & BIT(7)))
+		sp->level_changes++;
+	dev_dbg(&h->gc->pdev->dev,
+		"splitter: RX events %*ph, 13 %02x then %02x, 19 %02x then %02x\n",
+		8, v, v[8], sp->r13, v[11], sp->r19);
 
 	if (e05 & BIT(0))
 		ret = gc573_sp_5v(h, sp->r13 & BIT(0));
 	if (!ret && (e05 & BIT(2))) {
+		ret = gc573_seq_run(h, &gc573_seq_sp_clock_head, 0);
+		if (ret)
+			return ret;
+		sp->r13 = gc573_seq_rd(h, GC573_SEQ_SP_CLOCK_HEAD_R13);
 		sp->clk = sp->r13 & BIT(3);
 		ret = gc573_seq_run(h, sp->clk ? &gc573_seq_sp_clock_stable :
 					    &gc573_seq_sp_clock_lost, 0);
@@ -897,9 +920,10 @@ void gc573_sp_show(struct gc573_hdmi *h, struct seq_file *m)
 	seq_printf(m, "splitter: rev %#04x rclk %u kHz%s otp_base %#05x edid_loaded %d src_hpd %d polls %u\n",
 		   sp->rev, sp->rclk, sp->rclk_measured ? " (measured)" : "",
 		   sp->otp_base, sp->edid_loaded, sp->src_hpd, sp->polls);
-	seq_printf(m, "splitter: rx 5v %d clk %d lock %d scdt %d 13 %02x 14 %02x 19 %02x last events %*ph link_errors %u\n",
+	seq_printf(m, "splitter: rx 5v %d clk %d lock %d scdt %d 13 %02x 14 %02x 19 %02x last events %*ph link_errors %u level_changes %u\n",
 		   sp->v5, sp->clk, sp->lock, sp->scdt, sp->r13, sp->r14,
-		   sp->r19, (int)sizeof(sp->ev), sp->ev, sp->link_errors);
+		   sp->r19, (int)sizeof(sp->ev), sp->ev, sp->link_errors,
+		   sp->level_changes);
 	seq_printf(m, "splitter: eq %s stored %d codes %*ph result %*ph attempts %u biterr %02x%02x %02x%02x %02x%02x\n",
 		   eq[sp->eq], sp->eq_stored, 3, sp->eq_code, 4, sp->eq_result,
 		   sp->eq_attempts, sp->biterr[0][1], sp->biterr[0][0],

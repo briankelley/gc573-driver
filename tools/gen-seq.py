@@ -151,7 +151,19 @@ CAPTURES = [
     ('sp_biterr', 'EA2', 13, ('R', '70', 'ea')),
     ('sp_biterr', 'EB2', 14, ('R', '70', 'eb')),
     ('sp_tx1_output_enable', 'LINK', 86, ('R', '6a', '03')),
+    ('sp_clock_head', 'R13', 30, ('R', '70', '13')),
 ]
+
+# The clock procedure (hdmi-splitter.md 6.3) decides stable or lost on its
+# own read of 0x13, after it has acknowledged 0x05 bit 2 again: the same
+# head in every table that runs it, then one of two tails.
+# (table, first row of the head)
+CLOCK_HEADS = [
+    ('splitter-rx-lock', 24),
+    ('splitter-rx-signal-loss', 24),
+    ('splitter-rx-5v-off', 187),
+]
+CLOCK_HEAD_ROWS = 7
 
 # ---- segments -----------------------------------------------------------------
 # (name, file, first row, last row, (op, dev, reg) of first, of last,
@@ -176,13 +188,14 @@ SEGMENTS = [
     ('sp_tx0_power_down', 'splitter-rx-5v-off', 47, 81, ('M', '58', '08'), ('M', '68', '35'), ()),
     ('sp_tx2_power_down', 'splitter-rx-5v-off', 117, 151, ('M', '58', '08'), ('M', '6c', '35'), ()),
     ('sp_tx3_power_down', 'splitter-rx-5v-off', 152, 186, ('M', '58', '08'), ('M', '6e', '35'), ()),
-    ('sp_clock_lost', 'splitter-rx-5v-off', 187, 206, ('W', '70', '05'), ('M', '70', '23'), ()),
+    ('sp_clock_lost', 'splitter-rx-5v-off', 194, 206, ('M', '70', '54'), ('M', '70', '23'), ()),
     ('sp_scdt_off', 'splitter-rx-5v-off', 207, 228, ('R', '70', '19'), ('R', '6c', '03'), ()),
     ('sp_ack_12_7', 'splitter-rx-5v-off', 229, 234, ('R', '70', '1a'), ('M', '58', '0c'),
      ('RX12_7',)),
     ('sp_lock_lost', 'splitter-rx-signal-loss', 44, 53, ('M', '70', '53'), ('M', '70', '0f'),
      ('LOCK_LOST',)),
-    ('sp_clock_stable', 'splitter-rx-lock', 24, 37, ('W', '70', '05'), ('R', '70', '14'), ()),
+    ('sp_clock_head', 'splitter-rx-lock', 24, 30, ('W', '70', '05'), ('R', '70', '13'), ()),
+    ('sp_clock_stable', 'splitter-rx-lock', 31, 37, ('M', '70', '23'), ('R', '70', '14'), ()),
     ('sp_lock', 'splitter-rx-lock', 45, 58, ('M', '70', '53'), ('M', '70', '0f'), ()),
     ('sp_eq_search', 'splitter-rx-lock', 94, 108, ('W', '70', '07'), ('M', '70', '0f'),
      ('NO_EQ_STORED',)),
@@ -323,6 +336,20 @@ def check_pin(fname, rows, n, pin, which):
             % ((fname, n, which) + pin_of(rows, n) + pin))
 
 
+def check_clock_heads(tables):
+    """The clock head is the same rows in every table that runs it."""
+    base_f, base_n = CLOCK_HEADS[0]
+    base = tables.setdefault(base_f, load(base_f))
+    for f, n0 in CLOCK_HEADS[1:]:
+        rows = tables.setdefault(f, load(f))
+        for i in range(CLOCK_HEAD_ROWS):
+            a = base.get(base_n + i)
+            b = rows.get(n0 + i)
+            if a is None or b is None or a[1:7] != b[1:7]:
+                die('%s row %d differs from the clock head (%s row %d)'
+                    % (f, n0 + i, base_f, base_n + i))
+
+
 def check_lock_variants(tables):
     """Dual-pixel tables: same rows, differing only where mapped."""
     base = tables.setdefault('it6805-lock', load('it6805-lock'))
@@ -368,6 +395,7 @@ def main():
         out_c.append('')
         out_h.append('extern const struct gc573_seq gc573_seq_%s;' % name)
     check_lock_variants(tables)
+    check_clock_heads(tables)
 
     caps = []
     for seg, cname, n, pin in CAPTURES:

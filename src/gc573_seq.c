@@ -1310,15 +1310,8 @@ const struct gc573_seq gc573_seq_sp_tx3_power_down = {
 	.n	= ARRAY_SIZE(gc573_seq_sp_tx3_power_down_ops),
 };
 
-/* spec/seq/splitter-rx-5v-off.tsv rows 187-206 */
+/* spec/seq/splitter-rx-5v-off.tsv rows 194-206 */
 static const struct gc573_seq_op gc573_seq_sp_clock_lost_ops[] = {
-	{ SQ_W, 0x70, 0, 0x05, 0xff, 0x04, 0, 0, 0, 0, 187 },
-	{ SQ_M, 0x70, 0, 0x53, 0xe0, 0x00, 0, 0, 0, 0, 188 },
-	{ SQ_M, 0x70, 0, 0x54, 0xff, 0x00, 0, 0, 0, 0, 189 },
-	{ SQ_M, 0x70, 0, 0x55, 0x07, 0x00, 0, 0, 0, 0, 190 },
-	{ SQ_W, 0x70, 0, 0x05, 0xff, 0xe8, 0, 0, 0, 0, 191 },
-	{ SQ_W, 0x70, 0, 0x06, 0xff, 0xfe, 0, 0, 0, 0, 192 },
-	{ SQ_R, 0x70, 0, 0x13, 0xff, 0x00, 0, 0, 0, 0, 193 },
 	{ SQ_M, 0x70, 0, 0x54, 0x01, 0x00, 0, 0, 0, 0, 194 },
 	{ SQ_M, 0x70, 0, 0x23, 0x10, 0x10, 0, 0, 0, 0, 195 },
 	{ SQ_D, 0x00, NB, 0x00, 0xff, 0x00, 0, 0, 0, 1, 196 },
@@ -1408,8 +1401,8 @@ const struct gc573_seq gc573_seq_sp_lock_lost = {
 	.n	= ARRAY_SIZE(gc573_seq_sp_lock_lost_ops),
 };
 
-/* spec/seq/splitter-rx-lock.tsv rows 24-37 */
-static const struct gc573_seq_op gc573_seq_sp_clock_stable_ops[] = {
+/* spec/seq/splitter-rx-lock.tsv rows 24-30 */
+static const struct gc573_seq_op gc573_seq_sp_clock_head_ops[] = {
 	{ SQ_W, 0x70, 0, 0x05, 0xff, 0x04, 0, 0, 0, 0, 24 },
 	{ SQ_M, 0x70, 0, 0x53, 0xe0, 0x00, 0, 0, 0, 0, 25 },
 	{ SQ_M, 0x70, 0, 0x54, 0xff, 0x00, 0, 0, 0, 0, 26 },
@@ -1417,6 +1410,16 @@ static const struct gc573_seq_op gc573_seq_sp_clock_stable_ops[] = {
 	{ SQ_W, 0x70, 0, 0x05, 0xff, 0xe8, 0, 0, 0, 0, 28 },
 	{ SQ_W, 0x70, 0, 0x06, 0xff, 0xfe, 0, 0, 0, 0, 29 },
 	{ SQ_R, 0x70, 0, 0x13, 0xff, 0x00, 0, 0, 0, 0, 30 },
+};
+
+const struct gc573_seq gc573_seq_sp_clock_head = {
+	.name	= "sp_clock_head",
+	.ops	= gc573_seq_sp_clock_head_ops,
+	.n	= ARRAY_SIZE(gc573_seq_sp_clock_head_ops),
+};
+
+/* spec/seq/splitter-rx-lock.tsv rows 31-37 */
+static const struct gc573_seq_op gc573_seq_sp_clock_stable_ops[] = {
 	{ SQ_M, 0x70, 0, 0x23, 0x02, 0x00, 0, 0, 0, 0, 31 },
 	{ SQ_R, 0x68, NB, 0x03, 0xff, 0x00, 0, 0, 0, 0, 32 },
 	{ SQ_R, 0x6a, NB, 0x03, 0xff, 0x00, 0, 0, 0, 0, 33 },

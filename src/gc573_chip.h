@@ -184,6 +184,7 @@ struct gc573_splitter {
 	u8 rx_timing[16];	/* RX 0x9b-0xaa at the last output enable */
 	u32 link_errors, oe_runs, oe_fail, pll_recoveries, scdc_aborts;
 	u32 polls;
+	u32 level_changes;	/* a level moved between read and write-back */
 };
 
 /* ---- front-end ---- */

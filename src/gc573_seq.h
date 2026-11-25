@@ -100,6 +100,7 @@ enum gc573_seq_var {
 #define GC573_SEQ_SP_BITERR_EA2	13	/* row 13 */
 #define GC573_SEQ_SP_BITERR_EB2	14	/* row 14 */
 #define GC573_SEQ_SP_TX1_OUTPUT_ENABLE_LINK	86	/* row 86 */
+#define GC573_SEQ_SP_CLOCK_HEAD_R13	6	/* row 30 */
 
 /* longest segment */
 #define GC573_SEQ_MAX_OPS	417
@@ -126,6 +127,7 @@ extern const struct gc573_seq gc573_seq_sp_clock_lost;
 extern const struct gc573_seq gc573_seq_sp_scdt_off;
 extern const struct gc573_seq gc573_seq_sp_ack_12_7;
 extern const struct gc573_seq gc573_seq_sp_lock_lost;
+extern const struct gc573_seq gc573_seq_sp_clock_head;
 extern const struct gc573_seq gc573_seq_sp_clock_stable;
 extern const struct gc573_seq gc573_seq_sp_lock;
 extern const struct gc573_seq gc573_seq_sp_eq_search;
