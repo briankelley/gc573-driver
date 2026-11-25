@@ -11,9 +11,14 @@
 #
 # Audio: the NVIDIA HDMI audio card is switched to the profile of the single HDMI
 # port that has a valid ELD (the capture card, once its EDID with an audio block
-# is loaded and HPD is high). The previous card profile and default sink are
-# saved and restored by --off; a start while a session runs keeps what the
-# first start saved. The player's audio never reaches another sink: it plays
+# is loaded and HPD is high), for this session only: through PipeWire with
+# save=false, so WirePlumber keeps the profile it has stored for the card
+# (pactl set-card-profile, used before, made WirePlumber store ours). The
+# previous card profile and default sink are recorded and restored by --off
+# the same way; a start while a session runs keeps what the first start
+# recorded. The profile, the default sink and the sink's mute and volume are
+# set only when they differ (pactl's volume and default-sink changes are
+# stored too). The player's audio never reaches another sink: it plays
 # through PipeWire's own API (SDL_AUDIODRIVER=pipewire) as node gc573-avsync,
 # with that HDMI sink as its target (PIPEWIRE_NODE) and node.dont-reconnect set.
 # When the sink goes away (output off, unplugged, a profile change), WirePlumber
@@ -44,6 +49,27 @@ here=$(cd "$(dirname "$0")" && pwd)
 
 evlog() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) avsync $*" >> "$GC573_EVENT_LOG"; }
 
+# pactl's view of the card $card, and its active profile
+cardinfo() { pactl list cards | awk -v C="Name: $card" '$0 ~ C {f=1; next} f && /^Card #/ {exit} f'; }
+active_profile() { cardinfo | sed -n 's/^\tActive Profile: //p'; }
+# Profile $2 on card $1 for this session only: the Profile param with
+# save=false (WirePlumber stores a profile only when save is set)
+set_profile() {
+  local id idx
+  id=$(pw-cli ls Device 2>/dev/null | awk -v n="\"$1\"" '$1 == "id" { id = $2; sub(",", "", id) }
+    $1 == "device.name" && $3 == n { print id; exit }')
+  [ -n "$id" ] || return 1
+  idx=$(pw-cli enum-params "$id" EnumProfile 2>/dev/null | awk -v n="\"$2\"" '
+    /Profile:index/ { getline; i = $2 } /Profile:name/ { getline; if ($2 == n) { print i; exit } }')
+  [ -n "$idx" ] || return 1
+  pw-cli set-param "$id" Profile "{ index: $idx, save: false }" >/dev/null || return 1
+  evlog "audio profile $2 on $1 (this session only)"
+}
+# the default sink back to $1 if something changed it (pactl stores it)
+default_sink() {
+  [ -z "$1" ] || [ "$(pactl get-default-sink)" = "$1" ] || pactl set-default-sink "$1" 2>/dev/null || true
+}
+
 # Stop the player and its watchdog. An ffplay stopped within about a second of
 # its start can hang in its exit path: wait up to 2 s each, then SIGKILL (as
 # show.sh does).
@@ -63,8 +89,8 @@ off() {
   if [ -f "$statef" ]; then
     local card profile0 sink0
     { read -r card; read -r profile0; read -r sink0; } < "$statef"
-    pactl set-card-profile "$card" "$profile0" 2>/dev/null || true
-    if [ -n "$sink0" ]; then pactl set-default-sink "$sink0" 2>/dev/null || true; fi
+    [ -z "$profile0" ] || [ "$(active_profile)" = "$profile0" ] || set_profile "$card" "$profile0" || true
+    default_sink "$sink0"
     rm -f "$statef"
   fi
   return 0
@@ -101,7 +127,6 @@ xrandr --query | grep -q "^$out connected" || { echo "$out is not connected (HPD
 addr=$(lspci -D -d 10de: | awk '/Audio/{print $1; exit}')
 [ -n "$addr" ] || { echo "no NVIDIA HDMI audio function" >&2; exit 1; }
 card=alsa_card.pci-${addr//:/_}
-cardinfo() { pactl list cards | awk -v C="Name: $card" '$0 ~ C {f=1; next} f && /^Card #/ {exit} f'; }
 ports=$(cardinfo | sed -n 's/^\t\t\(hdmi-output-[0-9]\): .*[^t] available)$/\1/p')
 [ "$(printf '%s\n' "$ports" | grep -c .)" = 1 ] ||
   { echo "need exactly one HDMI audio port with a valid ELD, have: ${ports:-none}" >&2; exit 1; }
@@ -113,18 +138,21 @@ if [ "$i" = 0 ]; then prof=output:hdmi-stereo; else prof=output:hdmi-stereo-extr
 # profile back at once can race, and would record our own profile as the one
 # to restore.
 if [ ! -f "$statef" ]; then
-  printf '%s\n%s\n%s\n' "$card" "$(cardinfo | sed -n 's/^\tActive Profile: //p')" "$(pactl get-default-sink)" > "$statef"
+  printf '%s\n%s\n%s\n' "$card" "$(active_profile)" "$(pactl get-default-sink)" > "$statef"
 fi
-pactl set-card-profile "$card" "$prof"
+[ "$(active_profile)" = "$prof" ] || set_profile "$card" "$prof" ||
+  { off; echo "cannot switch $card to $prof" >&2; exit 1; }
 sink=
 for _ in $(seq 1 20); do
   sink=$(pactl list short sinks | awk -v c="alsa_output.${card#alsa_card.}." 'index($2, c) == 1 {print $2; exit}')
   [ -n "$sink" ] && break; sleep 0.25
 done
 [ -n "$sink" ] || { off; echo "no sink appeared for $prof" >&2; exit 1; }
-# PipeWire may make the new sink the default: put the saved default back
-sink0=$(sed -n 3p "$statef"); [ -z "$sink0" ] || pactl set-default-sink "$sink0"
-pactl set-sink-mute "$sink" 0; pactl set-sink-volume "$sink" 100%
+# PipeWire may make the new sink the default: put the recorded default back
+default_sink "$(sed -n 3p "$statef")"
+[ "$(pactl get-sink-mute "$sink")" = "Mute: no" ] || pactl set-sink-mute "$sink" 0
+pactl get-sink-volume "$sink" | grep -q '^Volume: front-left: 65536 / *100% .* front-right: 65536 / *100% ' ||
+  pactl set-sink-volume "$sink" 100%
 
 primary=$(xrandr --query | awk '/ connected primary/{print $1; exit}')
 [ -n "$primary" ] && [ "$primary" != "$out" ] || { off; echo "no primary output other than $out" >&2; exit 1; }

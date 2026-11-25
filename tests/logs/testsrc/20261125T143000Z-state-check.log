@@ -1,0 +1,17 @@
+# tools/testsrc/state-check.sh, before: avsync.sh of 1154b06 (pactl)
+# 2026-11-25 14:26 UTC, host brian-intel, libpipewire 1.0.5, libwireplumber 0.4.17
+card alsa_card.pci-0000_01_00.1, PipeWire device 44; active profile and save flag at the start: output:hdmi-stereo false
+RESULT state-pactl FAIL (avsync.sh exit 0; storing pactl calls: 2 pactl set-card-profile alsa_card.pci-0000_01_00.1 output:hdmi-stereo;2 pactl set-default-sink alsa_output.usb-Generic_USB2.0_Device_20121120222016-00.analog-stereo;1 pactl set-sink-mute alsa_output.pci-0000_01_00.1.hdmi-stereo 0;1 pactl set-sink-volume alsa_output.pci-0000_01_00.1.hdmi-stereo 100%)
+RESULT state-param PASS (during the session: profile output:hdmi-stereo, save=false)
+RESULT state-files PASS (default-profile and default-nodes unchanged)
+SUMMARY fail=1
+
+# after: the transient profile switch (--transient)
+card alsa_card.pci-0000_01_00.1, PipeWire device 44; active profile and save flag at the start: output:hdmi-stereo false
+RESULT state-pactl PASS (avsync.sh exit 0; storing pactl calls: none)
+RESULT state-param PASS (during the session: profile output:hdmi-stereo, save=false)
+RESULT state-files PASS (default-profile and default-nodes unchanged)
+RESULT state-transient-set PASS (from off: avsync.sh exit 0, during the session output:hdmi-stereo false; pw-cli set-param: Profile { index: 1, save: false };Profile { index: 0, save: false }; storing pactl calls: none)
+RESULT state-transient-off PASS (after --off: off false)
+RESULT state-transient-files PASS (default-profile and default-nodes unchanged; profile put back: output:hdmi-stereo false)
+SUMMARY fail=0
