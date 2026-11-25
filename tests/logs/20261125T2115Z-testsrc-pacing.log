@@ -1,0 +1,94 @@
+# The test source on the host: is every source frame captured once?
+date:    2026-11-25, 21:05-21:45 UTC (captures); this log written during the host soak
+host:    Linux Mint 22, 6.8.0-151-generic, gc573 (DKMS, srcversion 292FD1A2D4D0C4210A150E8) bound on the host
+source:  GT 710 DVI-D-0 (NVIDIA DFP-0) -> GC573 HDMI IN; HDMI-0 (DFP-1, 1920x1200 @ 59.95 Hz) is the primary
+         Cinnamon 6.2.10 / Muffin 6.2.0, NVIDIA 470.256.02; ffplay (FFmpeg 6.1.1, SDL 2.30.0)
+capture: tests/gc573-aud -V -P (one line per captured frame: vb2 sequence and timestamp, the
+         flash box's mean luma, the 16-bit counter of counter-graph.sh), each run under
+         tools/testsrc/guard.py; counter and flash lines by tests/live-av.py's functions
+
+## Report (coordinator, before this work)
+A 60 s direct capture of plain avsync.sh: 47 single flash frames, 4 doubled, 1 torn and
+8 missing, while the driver delivered 3597/3597 frames with no gaps. Suspected: Cinnamon's
+compositor pacing the test window at the primary's 59.95 Hz.
+
+## Root cause: the counter picture's frame times (tools/testsrc/counter-graph.sh)
+The graph loops a PNG through the movie source, whose image2 stream has a 1/25 s time base;
+setpts=N/(FPS)/TB then truncated the frame times to 40 ms steps. ffprobe of the graph:
+  before (git show f37ce45~1:tools/testsrc/counter-graph.sh), 1080p60:
+    0.000000 0.000000 0.000000 0.040000 0.040000 0.080000 0.080000 0.080000 0.120000 0.120000 0.160000 0.160000 0.200000 0.200000 1/25 
+  after (settb=AVTB before setpts), 1080p60 and 59.94:
+    0.000000 0.016666 0.033333 0.050000 0.066666 0.083333 0.100000 0.116666 1/1000000 
+    0.000000 0.016683 0.033366 0.050050 0.066733 0.083416 0.100100 0.116783 1/1000000 
+ffplay shows frames with equal times in bunches: on the card about 5 of every 6 source
+frames, 10 repeated and 10 lost every second, evenly through the run. GL sync to DVI-D-0,
+no vsync and SDL's software renderer leave it unchanged, so neither the GL swap nor the
+compositor is the cause. Muffin 6.2.0 (src/compositor/meta-surface-actor-x11.c,
+meta_surface_actor_x11_should_unredirect) unredirects an override-redirect, monitor-sized,
+opaque top window whatever unredirect-fullscreen-windows says; the test window is all of
+these (depth 24, the topmost viewable window), and Xorg and cinnamon used under 2 % CPU
+while the player ran (the player about 20 % per busy thread), so the compositor most likely
+does not draw it at all (not checked directly).
+
+Plain avsync.sh takes its frames from a color source with r=FPS, whose time base is right;
+its rarer misses come from the player's pacing against the audio clock (below).
+
+## Captures (each: what ran; the display's and the card audio's rates against
+## CLOCK_MONOTONIC; the counter's steps and the flash frames)
+== try: avsync.sh --pattern 1080p60, 30 s, graph before the fix (1/25 s time base)
+   video 60.00204 Hz over 1796 frames, 0 sequence gaps; audio 48001.637 Hz (+34.1 ppm) (CLOCK_MONOTONIC)
+   INFO counter   1796 frames, 0 unreadable; steps from one frame to the next (step: count) 0: 299, 1: 1197, 2: 299; 299 repeated, 299 source frames never captured
+   INFO flashes   every 60 frames, 30 between the first and last frame: 5 captured once, 25 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+== exact-base: show.sh --counter 1080p60, 20 s, before the fix
+   video 60.00106 Hz over 1196 frames, 0 sequence gaps; audio 47999.702 Hz (-6.2 ppm) (CLOCK_MONOTONIC)
+   INFO counter   1196 frames, 0 unreadable; steps from one frame to the next (step: count) 0: 199, 1: 796, 2: 200; 199 repeated, 200 source frames never captured
+   INFO flashes   every 60 frames, 20 between the first and last frame: 20 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+== exact-dfp0: the same with __GL_SYNC_DISPLAY_DEVICE=DFP-0 (GL synced to DVI-D-0)
+   video 60.00112 Hz over 1196 frames, 0 sequence gaps; audio 47999.753 Hz (-5.1 ppm) (CLOCK_MONOTONIC)
+   INFO counter   1196 frames, 0 unreadable; steps from one frame to the next (step: count) 0: 200, 1: 796, 2: 199; 200 repeated, 199 source frames never captured
+   INFO flashes   every 60 frames, 20 between the first and last frame: 0 captured once, 20 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+== exact-novsync: the same with __GL_SYNC_TO_VBLANK=0
+   video 60.00119 Hz over 896 frames, 0 sequence gaps; audio 47999.821 Hz (-3.7 ppm) (CLOCK_MONOTONIC)
+   INFO counter   896 frames, 0 unreadable; steps from one frame to the next (step: count) 0: 150, 1: 596, 2: 149; 150 repeated, 149 source frames never captured
+   INFO flashes   every 60 frames, 15 between the first and last frame: 15 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+== exact-software: the same with SDL_RENDER_DRIVER=software
+   video 60.00123 Hz over 896 frames, 0 sequence gaps; audio 47999.837 Hz (-3.4 ppm) (CLOCK_MONOTONIC)
+   INFO counter   896 frames, 0 unreadable; steps from one frame to the next (step: count) 0: 152, 1: 592, 2: 149, 3: 1, 4: 1; 152 repeated, 154 source frames never captured
+   INFO flashes   every 60 frames, 15 between the first and last frame: 15 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+== exact-fixed: show.sh --counter 1080p60, 30 s, graph with settb=AVTB
+   video 60.00137 Hz over 1797 frames, 0 sequence gaps; audio 47999.934 Hz (-1.4 ppm) (CLOCK_MONOTONIC)
+   INFO counter   1797 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 1796; 0 repeated, 0 source frames never captured
+   INFO flashes   every 60 frames, 30 between the first and last frame: 30 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+== exact-avp60: avsync.sh --pattern 1080p60, 60 s, fixed
+   video 60.00140 Hz over 3597 frames, 0 sequence gaps; audio 48001.123 Hz (+23.4 ppm) (CLOCK_MONOTONIC)
+   INFO counter   3597 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 3596; 0 repeated, 0 source frames never captured
+   INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+== exact-avp5994: avsync.sh --pattern 1080p59.94, 60 s, fixed
+   video 59.94083 Hz over 3593 frames, 0 sequence gaps; audio 48001.145 Hz (+23.8 ppm) (CLOCK_MONOTONIC)
+   INFO counter   3593 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 3592; 0 repeated, 0 source frames never captured
+   INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+== exact-avp60long: avsync.sh --pattern 1080p60, 300 s, fixed
+   video 60.00159 Hz over 17997 frames, 0 sequence gaps; audio 48001.277 Hz (+26.6 ppm) (CLOCK_MONOTONIC)
+   INFO counter   17997 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 17996; 0 repeated, 0 source frames never captured
+   INFO flashes   every 60 frames, 300 between the first and last frame: 300 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+== exact-plain60: plain avsync.sh 1080p60, 60 s (color source, its own correct time base)
+   video 60.00148 Hz over 3597 frames, 0 sequence gaps; audio 48001.183 Hz (+24.6 ppm) (CLOCK_MONOTONIC)
+   INFO flashes   58 flashes every 60 frames, by length (frames: count) 1: 57, 2: 1; 0 frames partly white; 2 missing
+
+## Clocks
+DVI-D-0's 1080p60 and the GPU's HDMI audio run at the same rate (+23 to +34 ppm against
+CLOCK_MONOTONIC, within 1-3 ppm of each other in every run with audio), so avsync.sh, which
+ffplay paces by the audio clock, holds its phase to the display: 300 s at 1080p60 without a
+repeat or a lost frame. Elsewhere one clock gains on the other, and ffplay drops or repeats a
+frame to keep audio and video together: show.sh --counter (system clock) about every 12 min,
+avsync.sh at 1080p59.94 (display +13 ppm, audio +24) about every 25 min, and at 720p59.94
+(the offset drifts 3.3 ms/min in tests/live.sh exact) about every 5 min. A session whose
+phase starts near a vblank boundary can lose or repeat a frame or two while the audio clock
+jitters across it: the plain 60 s run above, two flashes missing and a one-frame step at
+31 s, then steady.
+
+## Verification
+tests/live.sh exact (af90921), local mode, 60 s each: show.sh --counter 1080p60,
+avsync.sh --pattern 1080p60, 1080p59.94 and 720p59.94: every captured frame stepped the
+counter by one, every flash captured once, no sequence gap (run before the soak; the
+committed run log follows it).
