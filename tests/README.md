@@ -65,18 +65,19 @@ Helpers: `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep, s
 (`DVI-D-0`, never the primary) with `tools/testsrc/show.sh` and xrandr, and runs
 the checks in `gc573-dev` over ssh with the module built there
 (`tools/vmbuild.sh`). Log: `tests/logs/<UTC stamp>_<kernel>_live.log`; prints
-`RESULT` lines and a `SUMMARY`; leaves the pattern off.
+`RESULT` lines and a `SUMMARY`; checks the kernel log as `run.sh` does
+(`kernel-log`); leaves the pattern off.
 
 | Step | Checks |
 |---|---|
 | `bringup` | load; the host sees the output connected; its EDID (`xrandr --verbose`) equals `VIDIOC_G_EDID` byte for byte; `edid-decode --check` PASS |
 | `lock` | 1080p60 and 1080p59.94 (1000/1001 flag): `QUERY_DV_TIMINGS` = CTA VIC 16 within 3 s of the switch; `power_present` = 1; `SOURCE_CHANGE` on lock, loss and mode change |
 | `relock` | `GC573_RELOCKS` (25) x 2 switches 1080p60 <-> 1080p59.94 through `show.sh`: each locks to the new rate within 3 s |
-| `capture` | 1080p60 and 1080p59.94, 6 formats x `GC573_LIVE_FRAMES` (600): last frame vs `pattern.py` (RGB 0..+1; YUV within 2 code values, chroma at flat sites), every frame identical (full-frame signature), no sequence gaps, mean interval within 0.1 % of the measured frame period, first frame dropped |
+| `capture` | after the source has settled (90 identical, evenly spaced frames), 1080p60 and 1080p59.94, 6 formats x `GC573_LIVE_FRAMES` (600): last frame vs `pattern.py` (RGB 0..+1; YUV within 2 code values, chroma at flat sites), every frame identical (full-frame signature), no sequence gaps (`TAG-FMT`); mean interval within 0.1 % of the measured frame period (`TAG-FMT-cadence`); the first frame of every stream dropped |
 | `modes` | every other mode the output offers: timings and the same capture checks (`GC573_MODE_FRAMES`, 120) |
 | `change` | input change while streaming: `SOURCE_CHANGE`, `DQBUF` error, no DMA outside the queued buffers, restart at the new timings |
 | `loss` | output off and on, idle and while streaming |
-| `colour` | RGB limited, YCbCr 4:4:4, YCbCr 4:2:2 (report only) |
+| `colour` | RGB limited, YCbCr 4:4:4, YCbCr 4:2:2 (nvidia-settings): the published colour format and range follow the splitter RX's AVI copy; captures reported, not gating |
 | `unload` | `rmmod` while streaming |
 | `reload` | `GC573_RELOADS` (50) unload/load cycles with the source on: host output back and input locked each time |
 | `compliance` | `v4l2-compliance -s` with the live input |
