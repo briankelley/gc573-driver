@@ -109,6 +109,29 @@ gc573_debugfs() { echo "/sys/kernel/debug/$GC573_MOD-$GC573_BDF/video"; }
 # input, 1010 (frame period) reads 0xffffffff.
 gc573_input_regs() { grep '^input:' "$(gc573_debugfs)"; }
 
+# Cases written for the free-running FPGA (no input, M2) cannot capture
+# while an input is locked at other timings: skip them then (the source has
+# to be off, e.g. xrandr --output DVI-D-0 --off on the PC loopback host).
+# Waits up to 4 s for a lock to settle first. $1: video node.
+gc573_skip_if_locked() {
+	local i
+	for i in $(seq 40); do
+		if v4l2-ctl -d "$1" --query-dv-timings >/dev/null 2>&1; then
+			gc573_unload
+			skip "HDMI input locked: this case needs no input (source off)"
+		fi
+		sleep 0.1
+	done
+}
+
+# The HDMI front-end's debugfs state (chips, poll statistics, input).
+gc573_hdmi_debugfs() { echo "/sys/kernel/debug/$GC573_MOD-$GC573_BDF/hdmi"; }
+
+# One counter from the "hdmi:" line of that file, e.g. gc573_hdmi_stat xfers
+gc573_hdmi_stat() {
+	sed -n "s/^hdmi:.* $1 \([0-9]*\).*/\1/p" "$(gc573_hdmi_debugfs)"
+}
+
 # Build the capture test tool into directory $1; print the binary's path.
 gc573_cap_build() {
 	gcc -O2 -Wall -Wextra -o "$1/gc573-cap" "$GC573_TESTS/gc573-cap.c" >&2 &&

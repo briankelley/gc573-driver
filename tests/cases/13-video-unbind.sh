@@ -16,6 +16,7 @@ cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 
 gc573_load || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
+gc573_skip_if_locked "$dev"
 "$cap" -d "$dev" -f NV12 -b 4 -n 100000 -p > "$tmp/out" 2>&1 &
 pid=$!
 sleep 1

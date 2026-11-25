@@ -24,7 +24,7 @@ echo "$adapters" | sed 's/^/  /'
 	fail "expected 3 gc573 I2C adapters"
 [ "$param" = N ] || fail "i2c_bus02 is '$param', expected N"
 echo "bus 0/2 transfers: off (i2c_bus02=$param)"
-echo "interrupts during probe: $irqs (6 bus-1 transfers expected)"
+echo "interrupts until unload: $irqs (chip init and HDMI polling)"
 
 ok=0
 for want in "0x90 (IT6805): id 54 49 05 68" "0x58 (splitter): id 54 49 63 66"; do

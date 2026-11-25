@@ -24,6 +24,7 @@ cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 
 gc573_load || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
+gc573_skip_if_locked "$dev"
 echo "device: $dev"
 echo "FPGA input registers before streaming:"
 gc573_input_regs | sed 's/^/  /'
@@ -39,7 +40,7 @@ gc573_unload || fail "rmmod failed"
 echo "== default timings"
 sed 's/^/  /' "$tmp/gate"
 echo "== every enumerated DV timing"
-grep -E '^(TIMINGS|RESULT|FAIL)' "$tmp/sweep" |
+grep -E '^(TIMINGS|RESULT|FAIL|SKIP)' "$tmp/sweep" |
 	sed -E 's/ ch[0-9]_bytes=[0-9]+//g; s/^/  /'
 [ "$rc1" = 0 ] || fail "default timings: gc573-cap exit $rc1"
 [ "$rc2" = 0 ] || fail "timings sweep: gc573-cap exit $rc2"
@@ -48,8 +49,12 @@ n=$(grep -c '^RESULT capture ' "$tmp/gate")
 [ "$n" = 6 ] || fail "$n formats captured at the default timings, expected 6"
 nt=$(grep -c '^TIMINGS ' "$tmp/sweep")
 n=$(grep -c '^RESULT capture ' "$tmp/sweep")
-[ "$nt" -gt 0 ] && [ "$n" = $((nt * 6)) ] ||
-	fail "sweep: $n captures for $nt timings, expected $((nt * 6))"
+# M3: no YV12 at width 720 (open question 30), so ENUM_FMT leaves it out
+ns=$(grep -c '^SKIP capture fmt=YV12: not offered at 720x' "$tmp/sweep")
+[ "$(grep -c '^SKIP capture ' "$tmp/sweep")" = "$ns" ] ||
+	fail "sweep: a format other than YV12 at 720 skipped"
+[ "$nt" -gt 0 ] && [ "$n" = $((nt * 6 - ns)) ] ||
+	fail "sweep: $n captures for $nt timings, expected $((nt * 6 - ns))"
 cat "$tmp/gate" "$tmp/sweep" | awk '/^RESULT capture / {
 	for (i = 3; i <= NF; i++) { split($i, kv, "="); v[kv[1]] = kv[2] }
 	if (v["ivl_ms_mean"] < 16.6 || v["ivl_ms_mean"] > 16.75 ||
@@ -57,7 +62,7 @@ cat "$tmp/gate" "$tmp/sweep" | awk '/^RESULT capture / {
 		print "cadence out of range: " $3 " " $4; bad = 1
 	}
 } END { exit bad }' || fail "frame cadence"
-echo "pattern: every plane of every frame overwritten, 6 formats x $nt timings"
+echo "pattern: every plane of every frame overwritten, 6 formats x $nt timings ($ns skipped: YV12 at 720)"
 cat "$tmp/gate" "$tmp/sweep" | awk '/^RESULT capture / {
 	for (i = 3; i <= NF; i++) { split($i, kv, "="); v[kv[1]] = kv[2] }
 	if (!n++ || v["min"] < lo) lo = v["min"]
