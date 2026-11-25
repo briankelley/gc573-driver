@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0
 """Minimal obs-websocket (protocol v5) client on the Python standard library,
-for the OBS checks (tests/obs-check.py). The server must run without
-authentication (OBS: Tools, WebSocket Server Settings).
+for the OBS checks (tests/obs-check.py). With authentication on (OBS:
+Tools, WebSocket Server Settings), the password comes from OBS_PASSWORD or,
+for an OBS on this machine, from OBS's own settings.
 
 As a module:  obs = OBS(); obs.call('GetVersion')
               OBS(events=1 << 16): subscribe to events (here
@@ -13,6 +14,7 @@ Host: OBS_HOST in the environment, or 127.0.0.1.
 """
 import base64
 import collections
+import hashlib
 import json
 import os
 import select
@@ -46,11 +48,33 @@ class OBS:
         hello = self.recv()
         if hello.get('op') != 0:
             raise OSError(f'expected Hello, got {hello}')
-        if hello['d'].get('authentication'):
-            raise OSError('OBS asks for a password: turn authentication off')
-        self.send({'op': 1, 'd': {'rpcVersion': 1, 'eventSubscriptions': events}})
+        ident = {'rpcVersion': 1, 'eventSubscriptions': events}
+        auth = hello['d'].get('authentication')
+        if auth:
+            ident['authentication'] = self._auth(auth, host)
+        self.send({'op': 1, 'd': ident})
         if self.recv().get('op') != 2:
             raise OSError('not identified')
+
+    @staticmethod
+    def _auth(auth, host):
+        """obs-websocket v5 authentication string. The password comes from
+        OBS_PASSWORD, or for an OBS on this machine from its own settings
+        (OBS_CONFIG, default ~/.config/obs-studio)."""
+        pw = os.environ.get('OBS_PASSWORD')
+        if pw is None and host in ('127.0.0.1', 'localhost', '::1'):
+            cfg = os.environ.get('OBS_CONFIG',
+                                 os.path.expanduser('~/.config/obs-studio'))
+            try:
+                with open(os.path.join(cfg, 'plugin_config', 'obs-websocket',
+                                       'config.json')) as f:
+                    pw = json.load(f).get('server_password')
+            except (OSError, ValueError):
+                pw = None
+        if not pw:
+            raise OSError('OBS asks for a password: set OBS_PASSWORD')
+        h = lambda s: base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
+        return h(h(pw + auth['salt']) + auth['challenge'])
 
     def _read(self, n):
         while len(self.buf) < n:
