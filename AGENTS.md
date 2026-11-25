@@ -6,7 +6,8 @@ Audience: AI agents. Humans → README.md.
 - Target: AVerMedia GC573 (Live Gamer 4K). PCI 1461:0054, subsys 1461:5730. BAR0 32b MMIO 512K. PCIe Gen2 x4.
 - Deliverable: single GPL-2.0 kernel module. V4L2 capture + ALSA PCM capture. DKMS.
 - Priority: 1080p60 > 4K30 > 4K60 > HDR.
-- Done = v4l2-compliance clean + OBS live A/V sync + 2h soak + reboot + DKMS rebuild on kernel bump.
+- Done = v4l2-compliance clean + OBS live A/V sync + 2h soak + reboot + DKMS rebuild on kernel bump. The user's own use (an agent driving a Roku through OBS and obs-websocket) needs this first (M5, M6).
+- Fully adapted = the whole card supported (M7–M9): every hardware function a Linux capture driver should expose works, or is documented as unsupported with the reason. The user wants this; "Done" is a waypoint, not the end.
 
 ## Contribution policy
 - Agent-driven only. Agent writes code, runs tests, writes commit msg. Human directs/verifies.
@@ -71,7 +72,10 @@ Each gate passes in `gc573-dev` before the next starts.
 - M3 HDMI bring-up: splitter + IT6805 per `spec/hdmi-chips.md`, default EDID in both RAMs (`spec/hdmi-chips.md` §Default EDID), poll loop, DV timings, `V4L2_EVENT_SOURCE_CHANGE`. Gate: live 1080p60 and 1080p59.94 capture from the PC loopback, all formats, image verified against `tools/testsrc/pattern.py`. Done (merge 8319fcd); open: delivery below 59.94 Hz (`spec/open-questions.md` #33).
 - M4 audio: ALSA PCM capture. Gate: capture with live source (`tools/testsrc/avsync.sh` on the PC loopback): channel order and rate verified, 10 min without xruns or gaps, A/V offset and drift measured from the video and audio timestamps. The OBS A/V check is in M5. Done (merge 90c9d13).
 - M5 delivery: DKMS packaging and an install/uninstall script for the user; OBS (video formats, A/V sync measured from a recording, source changes) and a 2 h soak in `gc573-dev`; then host validation by the spec session with the user (v4l2-compliance, OBS, 2 h soak, unload/reload, reboot, DKMS rebuild after a kernel update). The EDID ioctls, hotplug and mode-change tests landed in M3.
-- M6 the Roku through the HDCP filter (the user moves the input cable), controls, scaling, 4K (open question 14). Gate: "Done" (see Project).
+- M6 Roku: the Roku through the HDCP filter (the user moves the input cable). OBS capture driven through obs-websocket, unattended recovery from Roku sleep/wake, reboot and mode changes; behaviour without the filter (open question 25). Gate: "Done" (see Project).
+- M7 picture controls and scaling: brightness, contrast, saturation and hue on the colour-adjust block; hardware scaling to sizes other than the input's (`spec/video-pipeline.md` scalers). Gate: v4l2-compliance with controls; scaled captures verified against the pattern.
+- M8 4K: 2160p30 (dual-pixel DDR, works under RD), then 2160p60 4:2:0 (open question 14, including the IT6805 conversion and down-scaler paths), and an EDID option that offers 4K. Gate: 2160p30 from the PC loopback and 2160p60 from the Roku captured and verified.
+- M9 complete: HDMI passthrough output; HDR and 10-bit (InfoFrame colorimetry and transfer reported, 10-bit output formats if the FPGA has them); interlaced and deep-colour input; audio beyond LPCM 2.0 48 kHz; suspend/resume; several cards; front LEDs (open question 11); remaining open questions closed or documented. Gate: "fully adapted" (see Project).
 - Later: 2160p30, 2160p60 4:2:0 (open: black under RD), HDR.
 
 ## Tests
