@@ -1,0 +1,59 @@
+# Slab growth in gc573-dev on the debug kernel 6.8.12-gc573dbg (KASAN, kmemleak,
+# lockdep), right after the 30-min soak (20261125-095113_6.8.12-gc573dbg_live.log)
+# Method: avsync.sh on the host; /proc/slabinfo and /proc/meminfo snapshots:
+#   s0, 240 s idle, s1, 240 s of gc573-aud -V capture as the soak runs it (-v, -o
+#   file), s2, 30 s after the stop, s3.
+# Per phase, the caches that grew most: active objects x object size, and slabs
+# x pages per slab.
+# Result:
+# - Idle: Slab +2.1 MB and SUnreclaim +2.1 MB in 4 min (names_cache, task_struct,
+#   filp: the ssh commands' processes, freed objects held in KASAN's quarantine).
+# - Streaming: Slab -2.4 MB and SUnreclaim -3.3 MB. The growth is kmemleak_object,
+#   buffer_head and jbd2 (the capture file). No cache of the driver grows.
+# The soak's SUnreclaim growth (+17 MB in 25 min, 0.6 MB/min) matches the idle
+# rate (0.5 MB/min): it is the debug kernel's, not the stream's.
+
+s0 10:23:36 MemAvailable: 5655660 kB Slab: 566748 kB SUnreclaim: 481484 kB 
+s1 10:27:37 MemAvailable: 5653008 kB Slab: 568840 kB SUnreclaim: 483600 kB 
+capture: RESULT audio frames=11520480 secs=239.993 rate=48001.428 xruns=0 restarts=0
+s2 10:31:40 MemAvailable: 5652816 kB Slab: 566488 kB SUnreclaim: 480252 kB 
+s3 10:32:11 MemAvailable: 5647488 kB Slab: 570936 kB SUnreclaim: 485488 kB 
+== idle 240 s
+names_cache                  active  +13136.8 kB  slabs  +14336.0 kB
+kmalloc-cg-4k                active   +2208.0 kB  slabs   +2752.0 kB
+task_struct                  active    +735.0 kB  slabs    +896.0 kB
+kmalloc-rnd-07-4k            active    +496.0 kB  slabs    +736.0 kB
+filp                         active    +483.8 kB  slabs    +912.0 kB
+kmalloc-rnd-15-64            active    +315.8 kB  slabs    +256.0 kB
+kmalloc-cg-512               active    +273.0 kB  slabs    +416.0 kB
+maple_node                   active    +271.5 kB  slabs    +280.0 kB
+mm_struct                    active    +270.8 kB  slabs    +352.0 kB
+kmalloc-rnd-04-1k            active    +172.0 kB  slabs    +192.0 kB
+skbuff_head_cache            active    +125.9 kB  slabs    +192.0 kB
+kmalloc-rnd-15-1k            active     +98.0 kB  slabs     +64.0 kB
+== streaming 240 s
+kmemleak_object              active   +6450.2 kB  slabs    -872.0 kB
+buffer_head                  active   +2699.9 kB  slabs      +0.0 kB
+jbd2_journal_handle          active    +972.5 kB  slabs    +968.0 kB
+kmalloc-rnd-07-4k            active    +272.0 kB  slabs     +32.0 kB
+kmalloc-4k                   active    +200.0 kB  slabs      +0.0 kB
+kmalloc-rnd-05-4k            active    +192.0 kB  slabs    +192.0 kB
+kmalloc-cg-2k                active    +180.0 kB  slabs      +0.0 kB
+sgpool-128                   active    +178.5 kB  slabs    +128.0 kB
+maple_node                   active    +177.0 kB  slabs    +232.0 kB
+kmalloc-cg-512               active    +159.0 kB  slabs     +16.0 kB
+radix_tree_node              active    +149.2 kB  slabs      +0.0 kB
+filp                         active    +128.1 kB  slabs    -368.0 kB
+== 30 s after the stop
+kmalloc-cg-4k                active   +1064.0 kB  slabs    +480.0 kB
+names_cache                  active   +1032.8 kB  slabs   +1024.0 kB
+kmalloc-rnd-07-4k            active    +176.0 kB  slabs    +256.0 kB
+filp                         active    +155.6 kB  slabs    +128.0 kB
+task_struct                  active    +144.4 kB  slabs     -32.0 kB
+biovec-max                   active     +93.5 kB  slabs    +352.0 kB
+kmalloc-cg-1k                active     +46.0 kB  slabs     +32.0 kB
+mm_struct                    active     +38.0 kB  slabs     -32.0 kB
+kmalloc-rnd-04-2k            active     +32.0 kB  slabs      +0.0 kB
+kmalloc-cg-2k                active     +32.0 kB  slabs    +128.0 kB
+UNIX-STREAM                  active     +31.0 kB  slabs     +32.0 kB
+seq_file                     active     +23.7 kB  slabs      +8.0 kB

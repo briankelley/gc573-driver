@@ -858,7 +858,7 @@ step_obschange() {
 # detached in the VM (an ssh session need not last the run); a sampler
 # logs memory and CPU time every minute.
 step_soak() {
-	local out d0 d1 n bad="" i t0 sm
+	local out d0 d1 n bad="" i t0 sm rc
 	av_on || { result soak-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
 	sleep 3
 	d0=$(aud_dbg)
@@ -896,26 +896,35 @@ step_soak() {
 	out=$(vm "python3 $W/live-av.py $W/soak.txt $W/soak.raw --min-secs $((SOAK_SECS * 99 / 100))")
 	av_results soak "$out"
 	# memory and CPU over the run: the first sample after 5 min against the
-	# last (allocations settle); kB
+	# last one taken while gc573-aud ran (allocations settle; what the stop
+	# frees must not hide growth during the stream); kB
 	sm=$(vm "cat $W/soak-mem.txt")
 	echo "$sm" | awk 'NR == 1 || NR % 10 == 0 { print "  mem: " $0 }'
 	out=$(awk -v hz="$(vm getconf CLK_TCK)" '
 		NF >= 7 { n++; t[n] = $1; avail[n] = $2; slab[n] = $3; sunr[n] = $4; aud[n] = $5; irq[n] = $6
-			split($7, c, ":"); busy[n] = c[1]; idle[n] = c[2] }
+			split($7, c, ":"); busy[n] = c[1]; idle[n] = c[2]; if ($5 != "-") l = n }
 		END {
-			a = (n > 6) ? 6 : 1
-			ds = slab[n] - slab[a]; du = sunr[n] - sunr[a]; dm = avail[a] - avail[n]
-			wall = t[n] - t[1]
-			printf "%d samples over %.0f min; from minute 5: Slab %+d kB, SUnreclaim %+d kB, MemAvailable %+d kB", n, wall / 60, ds, du, -dm
-			if (wall > 0 && aud[n] != "-" && aud[1] != "-")
-				printf "; CPU: gc573-aud %.2f %% of one CPU", (aud[n] - aud[1]) / hz / wall * 100
-			if (wall > 0 && irq[n] != "-" && irq[1] != "-")
-				printf ", IRQ thread %.2f %%", (irq[n] - irq[1]) / hz / wall * 100
-			if (busy[n] + idle[n] > busy[1] + idle[1])
-				printf ", VM total %.1f %% of %d CPUs", (busy[n] - busy[1]) * 100 / (busy[n] - busy[1] + idle[n] - idle[1]), cpus
-			exit !(n >= 3 && du < 2048 && ds < 4096)
+			a = (l > 6) ? 6 : 1
+			ds = slab[l] - slab[a]; du = sunr[l] - sunr[a]; dm = avail[a] - avail[l]
+			wall = t[l] - t[1]
+			printf "%d samples over %.0f min while capturing; from minute 5: Slab %+d kB, SUnreclaim %+d kB, MemAvailable %+d kB", l, wall / 60, ds, du, -dm
+			if (wall > 0 && aud[1] != "-")
+				printf "; CPU: gc573-aud %.2f %% of one CPU", (aud[l] - aud[1]) / hz / wall * 100
+			if (wall > 0 && irq[l] != "-" && irq[1] != "-")
+				printf ", IRQ thread %.2f %%", (irq[l] - irq[1]) / hz / wall * 100
+			if (busy[l] + idle[l] > busy[1] + idle[1])
+				printf ", VM total %.1f %% of %d CPUs", (busy[l] - busy[1]) * 100 / (busy[l] - busy[1] + idle[l] - idle[1]), cpus
+			exit !(l >= 3 && du < 2048 && ds < 4096)
 		}' cpus="$(vm nproc)" <<< "$sm")
-	check soak-memory $? "($out)"
+	rc=$?
+	# On a KASAN kernel (the debug kernel) slab grows with any activity,
+	# idle too: KASAN's quarantine keeps freed objects (up to 1/32 of RAM).
+	# There kmemleak is the leak check, and the figures are only reported
+	if vm "grep -qx 'CONFIG_KASAN=y' /boot/config-\$(uname -r)"; then
+		result soak-memory SKIP "(KASAN kernel, figures only: $out)"
+	else
+		check soak-memory $rc "($out)"
+	fi
 	vm "rm -f $W/soak.raw"
 	av_off
 }
