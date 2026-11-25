@@ -72,6 +72,21 @@ module_param(exp_slot_mode, int, 0644);
 MODULE_PARM_DESC(exp_slot_mode,
 		 "Experiment, spec/open-questions.md #8; read at stream start. 0: normal, 1: slot-valid bits on ch0 only, 2: ch1/ch2 CH_CTRL written at start only, 3: slot-valid bits on ch1/ch2 only, 4: ch1/ch2 CH_CTRL never written, 5: ch1/ch2 CH_CTRL = 0 at start, never set");
 
+/*
+ * Experiment, spec/open-questions.md #33 (delivery below 59.94 Hz): RATE_CTRL
+ * as the plan there lists it. RATE_CTRL keeps its value across resets and
+ * the driver keeps bit 3, so bits 0 and 3 are set or cleared explicitly.
+ */
+static unsigned int exp_rate_fps;
+module_param(exp_rate_fps, uint, 0644);
+MODULE_PARM_DESC(exp_rate_fps,
+		 "Experiment, spec/open-questions.md #33; read at stream start. RATE_CTRL[31:16] = 1..60 (0: the driver's value)");
+
+static int exp_rate_bits = -1;
+module_param(exp_rate_bits, int, 0644);
+MODULE_PARM_DESC(exp_rate_bits,
+		 "Experiment, spec/open-questions.md #33; read at stream start. RATE_CTRL bits 0 and 3 := this value's bits 0 and 3 (-1: keep them)");
+
 static const u32 gc573_vch_base[GC573_VCH_NUM] = {
 	GC573_VCH0_BASE, GC573_VCH1_BASE, GC573_VCH2_BASE,
 };
@@ -558,12 +573,17 @@ static void gc573_vid_setup(struct gc573 *gc)
 	fsleep(GC573_SCALER_RESET_US);
 
 	/* rate limit and colour-path flags; bit 3 and above 31:16 kept */
+	if (exp_rate_fps >= 1 && exp_rate_fps <= 60)
+		fps = exp_rate_fps;
 	rate = gc573_rd(gc, GC573_RATE_CTRL);
 	rate &= ~(GC573_RATE_CTRL_FPS | GC573_RATE_CTRL_IN_YUV |
 		  GC573_RATE_CTRL_OUT_RGB);
 	rate |= FIELD_PREP(GC573_RATE_CTRL_FPS, fps) |
 		(yuv_in ? GC573_RATE_CTRL_IN_YUV : 0) |
 		(f->rgb ? GC573_RATE_CTRL_OUT_RGB : 0);
+	if (exp_rate_bits >= 0)
+		rate = (rate & ~GC573_RATE_CTRL_EXP) |
+		       (exp_rate_bits & GC573_RATE_CTRL_EXP);
 	gc573_wr(gc, GC573_RATE_CTRL, rate);
 
 	/* R2Y: from Y2R's full-range RGB, or from the RGB input as it is */

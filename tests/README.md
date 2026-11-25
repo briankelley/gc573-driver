@@ -61,6 +61,14 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `15-video-returned-buffers` | M2 fix | `gc573-cap -R`: `GC573_RB_QBUFS` (default 6000) QBUFs at random points of the frame (NV12, 3 buffers, each dequeued buffer pattern-filled and held 0-20 ms): no DMA into a dequeued buffer, no completion for an unarmed slot |
 | `16-probe-fail-hpd` | M3 review | a probe that fails after the HDMI chips came up (bpftrace overrides `gc573_video_init()` with -ENOMEM) leaves GPIO bit 2, the IT6805-side HPD, low (read through `resource0`); before that: bit 2 high while bound, low after a normal unbind. SKIP without bpftrace or function error injection |
 
+Experiment `exp-delivery.sh RATE [N] [TAG]` (host side like `live.sh`,
+open question 33): a moving source (ffplay `testsrc2`) on the output at RATE,
+then a capture with a hash of every frame and a BAR0 snapshot per completion
+(`gc573-cap -F -M`); `exp-delivery.py` prints the completion rate, the repeat
+pattern and which registers change with it. The driver's `exp_rate_fps` and
+`exp_rate_bits` parameters set RATE_CTRL for such a stream. Result:
+`logs/20261125-041700_6.8.0-151-generic_exp-delivery.log`.
+
 Helpers: `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep (`-T all`, or a list saved with `-t`), stop/start, underrun, wait and returned-buffer modes; live input: lock wait `-L`, frame save `-o`, input-change test `-X` with restart `-r`, per-frame log `-F`; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`, `live-compare.py` (saved frame vs `tools/testsrc/pattern.py`). Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.
 
 ## Live input (`live.sh`, host)

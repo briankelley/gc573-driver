@@ -179,6 +179,7 @@ struct sg_table;
 #define GC573_RATE_CTRL_CSC		GENMASK(2, 1)
 #define GC573_RATE_CTRL_IN_YUV		BIT(1)		/* input is YUV */
 #define GC573_RATE_CTRL_OUT_RGB		BIT(2)		/* output is RGB */
+#define GC573_RATE_CTRL_EXP		(BIT(0) | BIT(3))	/* unknown; OQ 33 */
 #define GC573_RATE_FPS_NO_INPUT		5		/* RD's value with no input */
 #define GC573_PIX_MODE			0x1088
 #define GC573_PIX_MODE_DUAL		BIT(0)		/* dual-pixel input bus */

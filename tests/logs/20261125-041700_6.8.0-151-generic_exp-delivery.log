@@ -1,0 +1,205 @@
+# GC573 experiment: delivery below 59.94 Hz (spec/open-questions.md #33)
+date:    2026-11-25 04:17-04:27 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     21b88dfff751 + the experiment hooks (exp_rate_fps, exp_rate_bits, gc573-cap -M)
+source:  host DVI-D-0 (GT 710, NVIDIA 470), ffplay testsrc2 at the mode's rate, full screen; YUYV capture
+method:  tests/exp-delivery.sh RATE N TAG: per frame a hash of every word (FRAME) and, after DQBUF and
+         before hashing, BAR0 0x300 (runs 1-12) or 0x300-0x3fc (run 13) and 0x1000-0x10fc (REGS)
+note:    a run of identical frames longer than the pattern (3 at 50 Hz, 4 at 29.97, 5 at 25/23.98)
+         is the source showing one frame for two refreshes (ffplay; 7 % of frames at 60 Hz too)
+
+## run 1: 60
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0000 tpf=1/60 h=88/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=-1
+frames 600 over 9.983 s: 60.001 completions/s, 559 distinct images (55.994/s)
+run lengths: {1: 523, 2: 31, 3: 5}
+first 40 runs: [1, 1, 2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.93 (changed: new 558 rep 41; same: new 0 rep 0); top 00041022 x150, 00041023 x150, 00041024 x150, 00041021 x150
+  1010: 2 values, agreement 0.68 (changed: new 396 rep 32; same: new 162 rep 9); top 00196dad x303, 00196dac x297
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x558
+  repeat: 8204 x41
+first snapshot: RATE_CTRL(1080) 003c0000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 2: 50
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0000 tpf=1/50 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=-1
+frames 600 over 9.983 s: 60.000 completions/s, 486 distinct images (48.681/s)
+run lengths: {1: 378, 2: 102, 3: 6}
+first 40 runs: [1, 1, 1, 1, 1, 2, 1, 3, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.81 (changed: new 485 rep 114; same: new 0 rep 0); top 00041022 x150, 00041023 x150, 00041024 x150, 00041021 x150
+  1010: 2 values, agreement 0.31 (changed: new 102 rep 32; same: new 383 rep 82); top 001e839c x516, 001e839b x84
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x485
+  repeat: 8204 x114
+first snapshot: RATE_CTRL(1080) 00320000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 3: 29.97
+LOCK after_ms=0 1920x1080p pixelclock=74250000 flags=0x296 vic=34 fps=29.9700 tpf=1001/30000 h=88/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=-1
+frames 600 over 9.983 s: 60.000 completions/s, 286 distinct images (28.648/s)
+run lengths: {2: 272, 4: 14}
+first 40 runs: [2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.48 (changed: new 285 rep 314; same: new 0 rep 0); top 00041022 x150, 00041023 x150, 00041024 x150, 00041021 x150
+  1010: 3 values, agreement 0.55 (changed: new 94 rep 78; same: new 191 rep 236); top 0032e7a4 x366, 0032e7a3 x220, 0032e7a5 x14
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x285
+  repeat: 8204 x314
+first snapshot: RATE_CTRL(1080) 001e0000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 4: 25
+LOCK after_ms=0 1920x1080p pixelclock=74250000 flags=0x90 vic=33 fps=25.0000 tpf=1/25 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=-1
+frames 600 over 9.983 s: 59.999 completions/s, 233 distinct images (23.339/s)
+run lengths: {1: 1, 2: 131, 3: 83, 4: 2, 5: 16}
+first 40 runs: [2, 2, 3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 5, 3, 2, 2, 3, 2, 5, 2, 3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 3, 2, 3, 2, 2, 5, 3]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.39 (changed: new 232 rep 367; same: new 0 rep 0); top 00041022 x150, 00041023 x150, 00041024 x150, 00041021 x150
+  1010: 3 values, agreement 0.72 (changed: new 93 rep 30; same: new 139 rep 337); top 003d0738 x420, 003d0737 x122, 003d0739 x58
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x232
+  repeat: 8204 x367
+first snapshot: RATE_CTRL(1080) 00190000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 5: 23.98
+LOCK after_ms=0 1920x1080p pixelclock=74250000 flags=0x296 vic=32 fps=23.9760 tpf=1001/24000 h=638/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=-1
+frames 600 over 9.983 s: 60.000 completions/s, 224 distinct images (22.437/s)
+run lengths: {2: 104, 3: 104, 5: 16}
+first 40 runs: [2, 3, 2, 5, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 5]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.37 (changed: new 223 rep 376; same: new 0 rep 0); top 00041022 x150, 00041023 x150, 00041024 x150, 00041021 x150
+  1010: 3 values, agreement 0.70 (changed: new 85 rep 41; same: new 138 rep 335); top 003fa18d x407, 003fa18e x102, 003fa18c x91
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x223
+  repeat: 8204 x376
+first snapshot: RATE_CTRL(1080) 00180000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 6: 50-f25-b-1
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0000 tpf=1/50 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=25 bits=-1
+frames 300 over 4.983 s: 60.000 completions/s, 243 distinct images (48.762/s)
+run lengths: {1: 186, 2: 57}
+first 40 runs: [1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.81 (changed: new 242 rep 57; same: new 0 rep 0); top 00041022 x75, 00041023 x75, 00041024 x75, 00041021 x75
+  1010: 2 values, agreement 0.22 (changed: new 9 rep 1; same: new 233 rep 56); top 001e839c x294, 001e839b x6
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x242
+  repeat: 8204 x57
+first snapshot: RATE_CTRL(1080) 00190000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 7: 50-f50-b-1
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0000 tpf=1/50 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=50 bits=-1
+frames 300 over 4.983 s: 60.000 completions/s, 242 distinct images (48.562/s)
+run lengths: {1: 187, 2: 52, 3: 3}
+first 40 runs: [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.81 (changed: new 241 rep 58; same: new 0 rep 0); top 00041022 x75, 00039023 x75, 00041024 x75, 00041021 x75
+  1010: 2 values, agreement 0.20 (changed: new 2 rep 0; same: new 239 rep 58); top 001e839c x299, 001e839b x1
+CH_STATUS[31:3] by image kind:
+  new   : 7204 x73, 8204 x168
+  repeat: 7204 x2, 8204 x56
+first snapshot: RATE_CTRL(1080) 00320000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 8: 50-f30-b-1
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0000 tpf=1/50 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=30 bits=-1
+frames 300 over 4.983 s: 60.002 completions/s, 240 distinct images (48.162/s)
+run lengths: {1: 183, 2: 54, 3: 3}
+first 40 runs: [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.80 (changed: new 239 rep 60; same: new 0 rep 0); top 00041022 x75, 00041023 x75, 00041024 x75, 00041021 x75
+  1010: 2 values, agreement 0.20 (changed: new 1 rep 1; same: new 238 rep 59); top 001e839c x298, 001e839b x2
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x239
+  repeat: 8204 x60
+first snapshot: RATE_CTRL(1080) 001e0000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 9: 50-f0-b1
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0000 tpf=1/50 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=1
+frames 300 over 4.983 s: 59.999 completions/s, 246 distinct images (49.364/s)
+run lengths: {1: 194, 2: 50, 3: 2}
+first 40 runs: [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 2, 2, 1, 1, 2, 1]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.82 (changed: new 245 rep 54; same: new 0 rep 0); top 00041022 x75, 00041023 x75, 00041024 x75, 00041021 x75
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x245
+  repeat: 8204 x54
+first snapshot: RATE_CTRL(1080) 00320001 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 10: 50-f0-b8
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0000 tpf=1/50 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=8
+frames 300 over 4.983 s: 60.001 completions/s, 238 distinct images (47.760/s)
+run lengths: {1: 185, 2: 44, 3: 9}
+first 40 runs: [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 3, 1, 2, 3, 1, 1]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.79 (changed: new 237 rep 62; same: new 0 rep 0); top 00041022 x75, 00041023 x75, 00041024 x75, 00041021 x75
+  1010: 2 values, agreement 0.22 (changed: new 5 rep 1; same: new 232 rep 61); top 001e839c x296, 001e839d x4
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x237
+  repeat: 8204 x62
+first snapshot: RATE_CTRL(1080) 00320000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 11: 50-f0-b9
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0000 tpf=1/50 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=9
+frames 300 over 4.983 s: 60.000 completions/s, 243 distinct images (48.762/s)
+run lengths: {1: 189, 2: 51, 3: 3}
+first 40 runs: [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3, 1, 1, 1, 2, 1, 1, 1, 1, 2]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.81 (changed: new 242 rep 57; same: new 0 rep 0); top 00041022 x75, 00041023 x75, 00041024 x75, 00041021 x75
+  1010: 2 values, agreement 0.21 (changed: new 9 rep 3; same: new 233 rep 54); top 001e839c x293, 001e839d x7
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x242
+  repeat: 8204 x57
+first snapshot: RATE_CTRL(1080) 00320001 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 12: 50-restore
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0000 tpf=1/50 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=0
+frames 120 over 1.983 s: 60.004 completions/s, 96 distinct images (48.406/s)
+run lengths: {1: 75, 2: 18, 3: 3}
+first 40 runs: [1, 1, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.80 (changed: new 95 rep 24; same: new 0 rep 0); top 00041022 x30, 00041023 x30, 00041024 x30, 00041021 x30
+  1010: 2 values, agreement 0.25 (changed: new 11 rep 5; same: new 84 rep 19); top 001e839c x110, 001e839d x10
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x95
+  repeat: 8204 x24
+first snapshot: RATE_CTRL(1080) 00320000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## run 13: 50-wide
+LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0000 tpf=1/50 h=528/44/148 v=4/5/36 pol=0x3
+PARAMS fps=0 bits=-1
+frames 600 over 9.983 s: 60.000 completions/s, 486 distinct images (48.681/s)
+run lengths: {1: 381, 2: 96, 3: 9}
+first 40 runs: [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1]
+registers that change between completions, and how the change agrees with "new image" (sig differs):
+  0300: 4 values, agreement 0.81 (changed: new 485 rep 114; same: new 0 rep 0); top 00041022 x150, 00041023 x150, 00041024 x150, 00041021 x150
+  0304: 4 values, agreement 0.81 (changed: new 485 rep 114; same: new 0 rep 0); top 0000001b x150, 00000017 x150, 0000000f x150, 0000001d x150
+  033c: 4 values, agreement 0.81 (changed: new 485 rep 114; same: new 0 rep 0); top 6f805000 x150, 6f807000 x150, 6f801000 x150, 6f803000 x150
+CH_STATUS[31:3] by image kind:
+  new   : 8204 x485
+  repeat: 8204 x114
+first snapshot: RATE_CTRL(1080) 00320000 COLOR_CTRL(1040) 00000006 VIP_CTRL(1000) 00000001 PIX_MODE(1088) 00000000
+
+## summary
+- 60 Hz input: 60.001 completions/s, every input frame once (runs of 1; longer runs: source).
+- 50 Hz: 60.000/s, runs 1,1,1,1,2: every fifth input frame twice. 29.97 Hz: every frame twice.
+  25 Hz: runs 2,2,3,2,3 (2.4 per frame). 23.98 Hz: runs 2,3 (3:2 pulldown).
+- No repeat marker: CH_STATUS[31:3] reads 0x8204 at every completion, new image or repeat; in
+  0x300-0x3fc only CH_STATUS, CH_CTRL (0x304) and 0x33c change, all with the 4-slot rotation;
+  in 0x1000-0x10fc only IN_FRAME_PERIOD (0x1010), by 1-2 ticks of jitter.
+- RATE_CTRL at a 50 Hz input: [31:16] = 25, 30 or 50, bit 0 set, bit 3 set, bits 0 and 3 set:
+  60.000 completions/s and 48-49 new images/s in every case. Bit 3 does not stick (written
+  0x00320008, read 0x00320000); bit 0 does (0x00320001). Restored: bits 0 and 3 cleared (run 12).
+- So delivery cannot follow the input rate with the registers tried, and nothing tells a
+  repeated completion from a new one: the driver reports the delivered 60 Hz (1/60) for these
+  inputs and keeps the detected DV timings.

@@ -42,6 +42,11 @@
  *            the new timings and capture -n frames (restart)
  *   -F       capture mode: print one line per frame (sequence, timestamp,
  *            signature over every word), for frame-repeat analysis
+ *   -M FILE  with -F: after each DQBUF, before hashing, read the ch0 DMA
+ *            block (0x300-0x3fc, CH_STATUS first) and the VIP block
+ *            (0x1000-0x10fc) from BAR0 through FILE (the device's sysfs
+ *            resource0, mapped read-only) and print them (REGS line;
+ *            spec/open-questions.md #33)
  *   -D FILE  the driver's debugfs "video" file, printed at key points
  *
  * Output: "RESULT ..." lines with key=value pairs; "FAIL ..." lines for
@@ -474,6 +479,36 @@ static void run_init(struct run *r)
 }
 
 static int frame_log;
+static volatile uint32_t *bar;	/* -M */
+
+static void bar_open(const char *path)
+{
+	int fd = open(path, O_RDWR | O_SYNC);
+	void *m;
+
+	if (fd < 0)
+		die(path);
+	m = mmap(NULL, 0x2000, PROT_READ, MAP_SHARED, fd, 0);
+	if (m == MAP_FAILED)
+		die("mmap BAR0");
+	bar = m;
+}
+
+/* REGS seq=N <0x300> ... <0x3fc> <0x1000> ... <0x10fc> */
+static void bar_log(unsigned int seq)
+{
+	uint32_t v[128];
+	unsigned int i;
+
+	for (i = 0; i < 64; i++)
+		v[i] = bar[0x300 / 4 + i];
+	for (i = 0; i < 64; i++)
+		v[64 + i] = bar[0x1000 / 4 + i];
+	printf("REGS seq=%u", seq);
+	for (i = 0; i < 128; i++)
+		printf(" %08x", v[i]);
+	printf("\n");
+}
 
 static void check_frame(struct run *r, const struct v4l2_buffer *b,
 			int pattern)
@@ -483,6 +518,8 @@ static void check_frame(struct run *r, const struct v4l2_buffer *b,
 	uint64_t sig = 0;
 	int bad = 0;
 
+	if (bar && frame_log)
+		bar_log(b->sequence);
 	if (b->flags & V4L2_BUF_FLAG_ERROR)
 		r->errflag++;
 	if (r->frames) {
@@ -1029,7 +1066,7 @@ int main(int argc, char **argv)
 	uint32_t list[NFMTS];
 	int opt, pattern = 0, under = 0, restart = 0;
 
-	while ((opt = getopt(argc, argv, "d:f:b:n:pT:t:L:o:c:uw:R:X:rFD:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:f:b:n:pT:t:L:o:c:uw:R:X:rFD:M:")) != -1) {
 		switch (opt) {
 		case 'd': dev = optarg; break;
 		case 'f': fl = optarg; break;
@@ -1048,6 +1085,7 @@ int main(int argc, char **argv)
 		case 'r': restart = 1; break;
 		case 'F': frame_log = 1; break;
 		case 'D': dbgfile = optarg; break;
+		case 'M': bar_open(optarg); break;
 		default:
 			fprintf(stderr, "usage: see the comment in %s\n",
 				__FILE__);
