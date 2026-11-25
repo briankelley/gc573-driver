@@ -136,8 +136,17 @@ wait_connected() {	# seconds
 	done
 	return 1
 }
+# show.sh and avsync.sh close every test player before they set a mode. The
+# output goes off only after the players are closed too: the window manager
+# moves the windows it manages from an output that loses its mode to the
+# primary one (the players' windows are override-redirect and their watchdog
+# closes them within 0.2 s, but they go first all the same)
 src_on() { "$ROOT/tools/testsrc/show.sh" "$OUT" "$1" "$2" >/dev/null; }
-src_off() { xrandr --output "$OUT" --off; }
+src_off() {
+	"$ROOT/tools/testsrc/avsync.sh" --off
+	"$ROOT/tools/testsrc/show.sh" --off
+	xrandr --output "$OUT" --off
+}
 
 # avsync.sh at 1080p60, then the IT6805 audio state ON and the FPGA
 # measuring 48 kHz (AUDIO_SAMPLE_PERIOD reads all ones for another 120-140

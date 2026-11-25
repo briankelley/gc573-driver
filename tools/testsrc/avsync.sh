@@ -14,8 +14,16 @@
 # is loaded and HPD is high). The previous card profile and default sink are
 # saved and restored by --off; a start while a session runs keeps what the
 # first start saved. Audio goes only to that port, never to the default sink.
-# A watchdog runs --off when OUTPUT disconnects (driver unload, card reset or move).
-# Usage: tools/testsrc/avsync.sh [OUTPUT [MODE [RATE]]] | --off
+# The test window never shows on the main screen (as show.sh): every test
+# player is closed before the mode is set; the window is override-redirect, so
+# the window manager never moves it (window-check.sh verifies it, or the player
+# is closed); and a watchdog (watchdog.sh) runs --off within 0.2 s once OUTPUT
+# no longer shows the player's geometry (output off, unplugged, another mode).
+#
+# --pattern: the picture is pattern.py's exact-value pattern with a frame
+# counter, and the flash a box in its bottom band (counter-graph.sh), for
+# checks that need both a known image and liveness (tests/obs-events.py).
+# Usage: tools/testsrc/avsync.sh [--pattern] [OUTPUT [MODE [RATE]]] | --off
 #   RATE: 60, 59.94, 50, 30, 29.97, 25, 24 or 23.976 (default 60)
 set -euo pipefail
 export DISPLAY=${DISPLAY:-:0} XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
@@ -49,6 +57,8 @@ off() {
   return 0
 }
 if [ "${1:-}" = --off ]; then off; exit 0; fi
+pattern=0
+if [ "${1:-}" = --pattern ]; then pattern=1; shift; fi
 
 out=${1:-DVI-D-0} mode=${2:-1920x1080} rate=${3:-60}
 w=${mode%x*} h=${mode#*x}
@@ -72,14 +82,14 @@ ports=$(cardinfo | sed -n 's/^\t\t\(hdmi-output-[0-9]\): .*[^t] available)$/\1/p
 i=${ports#hdmi-output-}
 if [ "$i" = 0 ]; then prof=output:hdmi-stereo; else prof=output:hdmi-stereo-extra$i; fi
 
+# no test window while the mode changes
 "$here/show.sh" --off
-if [ -f "$statef" ]; then
-  # A session is running (a restart) or was cut off: keep the profile and
-  # default sink it saved before its first start. Restoring here and reading
-  # the profile back at once can race, and would record our own profile as
-  # the one to restore.
-  stop_procs
-else
+stop_procs
+# A session that is running (a restart) or was cut off keeps the profile and
+# default sink it saved before its first start. Restoring here and reading the
+# profile back at once can race, and would record our own profile as the one
+# to restore.
+if [ ! -f "$statef" ]; then
   printf '%s\n%s\n%s\n' "$card" "$(cardinfo | sed -n 's/^\tActive Profile: //p')" "$(pactl get-default-sink)" > "$statef"
 fi
 pactl set-card-profile "$card" "$prof"
@@ -94,21 +104,33 @@ sink0=$(sed -n 3p "$statef"); [ -z "$sink0" ] || pactl set-default-sink "$sink0"
 pactl set-sink-mute "$sink" 0; pactl set-sink-volume "$sink" 100%
 
 primary=$(xrandr --query | awk '/ connected primary/{print $1; exit}')
+[ -n "$primary" ] && [ "$primary" != "$out" ] || { off; echo "no primary output other than $out" >&2; exit 1; }
 xrandr --output "$out" --mode "$mode" --rate "$rate" --right-of "$primary"
 command -v nvidia-settings >/dev/null && nvidia-settings --no-write-config -a "[DPY:$out]/Dithering=2" >/dev/null 2>&1 || true
-x=$(xrandr --query | sed -n "s/^$out connected [^0-9]*[0-9]*x[0-9]*+\([0-9]*\)+.*/\1/p")
+x=$(xrandr --query | sed -n "s/^$out connected \(primary \)\?${w}x$h+\([0-9]*\)+0 .*/\2/p")
+[ -n "$x" ] || { off; echo "$out does not show ${w}x$h after the mode set" >&2; exit 1; }
 
 # flash: frame index multiple of n; burst: the same instant, one frame long
 period="($n/($fps))" frame="(1/($fps))"
-graph="color=c=black:s=${w}x$h:r=$fps,format=rgb24,drawbox=x=0:y=0:w=iw:h=ih:color=white:t=fill:enable='eq(mod(n\\,$n)\\,0)'[out0];"
+if [ "$pattern" = 1 ]; then
+  png=$run/pattern-${w}x$h.png
+  [ -f "$png" ] || "$here/pattern.py" "$png" "$w" "$h" >/dev/null
+  graph="$("$here/counter-graph.sh" "$png" "$w" "$h" "$fps" "$n")[out0];"
+else
+  graph="color=c=black:s=${w}x$h:r=$fps,format=rgb24,drawbox=x=0:y=0:w=iw:h=ih:color=white:t=fill:enable='eq(mod(n\\,$n)\\,0)'[out0];"
+fi
 # aevalsrc gates per sample (a filter's enable= only switches per 1024-sample frame)
 gate="lt(mod(t\\,$period)\\,$frame)"
 graph+="aevalsrc=exprs='0.5*sin(2*PI*1000*t)*$gate|0.5*sin(2*PI*2000*t)*$gate':channel_layout=stereo:sample_rate=48000,aformat=sample_fmts=s16[out1]"
-PULSE_SINK=$sink SDL_AUDIODRIVER=pulseaudio setsid ffplay -loglevel error -noborder -left "$x" -top 0 -x "$w" -y "$h" \
-  -window_title gc573-avsync -f lavfi -i "$graph" >/dev/null 2>&1 < /dev/null &
+PULSE_SINK=$sink SDL_AUDIODRIVER=pulseaudio SDL_X11_FORCE_OVERRIDE_REDIRECT=1 setsid ffplay -loglevel error \
+  -noborder -left "$x" -top 0 -x "$w" -y "$h" -window_title gc573-avsync -f lavfi -i "$graph" >/dev/null 2>&1 < /dev/null &
 echo $! > "$pidf"
-setsid bash -c 'while kill -0 "$1" 2>/dev/null; do
-  xrandr --current | grep -q "^$2 connected" || { "$3" --off; exit 0; }; sleep 1; done' _ "$(cat "$pidf")" "$out" "$here/avsync.sh" \
+setsid "$here/watchdog.sh" "$(cat "$pidf")" "$out" "$w" "$h" "$x" "$here/avsync.sh" --off \
   >/dev/null 2>&1 < /dev/null &
 echo $! > "$wdf"
-echo "avsync on $out ($mode@$rate at +$x+0): flash every $n frames, burst L 1 kHz / R 2 kHz on $sink; pid $(cat "$pidf")"
+if ! chk=$("$here/window-check.sh" gc573-avsync "$w" "$h" "$x"); then
+  off
+  echo "test window not as required, closed: $chk" >&2
+  exit 1
+fi
+echo "avsync on $out ($mode@$rate at +$x+0)$([ "$pattern" = 0 ] || echo ", pattern with counter"): flash every $n frames, burst L 1 kHz / R 2 kHz on $sink; pid $(cat "$pidf"); $chk"
