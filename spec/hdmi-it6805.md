@@ -690,7 +690,7 @@ Rows of `seq/it6805-lock.tsv` marked MODE. Order: 0:64 bit 2 = 0 and bit 1 pulse
 5. Depth: 0:6b[1:0] = 1 if 0:98[7:4] = 5, 2 if 6, else 0.
 
 Results: 0:6b = 0x68 at 1080p 4:4:4 8 bit, 0x7c at 2160p 4:2:0 8 bit (`T3`, `T4`), 0x40 at RGB 8 bit (1080p60, 2160p29.97; `T4`); 0:6c = 0x00 in all. (`T3`,`T4`; C)
-- The IT6805 has a colour converter (0:6c select, 1:70–1:85 coefficients) and an internal down-scaler (bank 5 0x21–0x41, 0:33 bit 3, 5:20 bit 6 = 0). RD never uses either. Both are possible alternatives for the 2160p path (open question 14); UNVERIFIED. (`S`; U)
+- The IT6805 has a colour converter (0:6c select, 1:70–1:85 coefficients) and an internal down-scaler (bank 5 0x21–0x41, 0:33 bit 3, 5:20 bit 6 = 0). RD never uses either. Both are possible alternatives for the 2160p path (open question 14); programming in §10.6, UNVERIFIED. (`S`; U)
 - Deep colour (10/12 bit) output, and what the FPGA does with it: UNVERIFIED (open question 24). Do not advertise deep colour in the EDID (`hdmi-chips.md`).
 
 ### 10.4 Matching FPGA configuration
@@ -715,6 +715,29 @@ FPGA registers: `video-pipeline.md`. The FPGA must mirror the IT6805 bus. (`S`,`
 - RD picks the single-pixel value by 1:c0[7:6] (01 → 0x18; 10 would give 0x03) and has variants (0x78, 0x38) for 0:98[7:4] = 1 or 2, codes that do not occur (0:98 reads 0 right after the reset). Use 0x18. (`S`,`T3`; L)
 - The bit groups of 1:c5/1:c6 are unknown. Dual-pixel DDR used the same final values (1:c5 = 0x7f, 1:c6 = 0x00) and captured correctly (`T4/S44`), so 0x7f does not leave the dual-pixel DDR bus undriven. Whether dual SDR needs lanes that 0x7f leaves off remains a candidate in open question 14. (`S`,`T4`; U)
 - Audio outputs are separate: 1:c7 (§11).
+
+### 10.6 Blocks RD leaves unused: format conversion and the down-scaler (UNVERIFIED)
+RD keeps the converter bypassed and the output format equal to the input format (§10.3). RD's library is built with its option "convert 4:2:0 to RGB while the converter is bypassed" turned off; the library's notes say the choice depends on whether the chip after the IT6805 accepts 4:2:0. Nothing in this section was traced. (`S`; U)
+
+Output format different from the input:
+- 0:6b[3:2] (output format) is written separately from 0:6b[5:4] (input format, from the AVI at every output enable). Same coding: 0 RGB, 1 YCbCr 4:2:2, 2 YCbCr 4:4:4, 3 YCbCr 4:2:0. (`S`; L)
+- Converter select in the library: output RGB with YCbCr input (4:2:2, 4:4:4 or 4:2:0) → 0:6c[1:0] = 3 and 22 coefficient bytes burst-written to 1:70–1:85 (one table per colorimetry and range); RGB input with YCbCr output → 0:6c[1:0] = 2; same family on both sides → 0:6c[1:0] = 0 and 1:85 = 0x00. The coefficient format is not documented yet (no trace writes it). (`S`; U)
+- Whether the chip upsamples 4:2:0 when 0:6b[5:4] = 3 and [3:2] = 2 (4:4:4) or 0 (RGB) is not known. The library's own bus decision (§10.1 rule a) looks only at the input format, so a 4:2:0 input always gets dual pixel SDR. A 2160p60 4:4:4 output carries 594 Mpixel/s and needs dual pixel DDR at a 148.5 MHz bus clock: rule d's register values (`seq/it6805-lock-dual-ddr.tsv`) at twice the clock traced for 2160p29.97. Whether the IT6805 output and the FPGA input run at that rate is UNVERIFIED; RD's EDID advertises 600 MHz TMDS, i.e. 2160p60 4:4:4 input.
+
+Down-scaler (2:1 in both directions). RD's library has the routine but never calls it. (`S`; U)
+1. 0:33 bit 3 = 1.
+2. Bank 5. 16-bit values, low byte first; the high byte of each target-timing field uses bits 5:0.
+   - 0x21/0x22 = H, the source active width in pixels (for 4:2:0 input: twice the measured HActive, which counts TMDS clocks).
+   - 0x23/0x24 = source active height.
+   - 0x25/0x26 = H − 2.
+   - 0x27/0x28 and 0x29/0x2a = H/2 − 1.
+   - 0x2b = 0xff, 0x2c = 0x00, 0x2d = 0x0f, 0x2e = 0xff, 0x2f = 0x00, 0x30 = 0x0f.
+   - 0x31 = 0x18 + 2·a + b, where a and b are the input's sync polarity flags. Which flag is which, and whether 1 means positive, is not known; for a CTA 2160p source (both syncs positive) try 0x1b first.
+   - Target timing, half the source timing in output pixels: 0x32/0x33 H front porch, 0x34/0x35 H sync, 0x36/0x37 H back porch, 0x38/0x39 H active, 0x3a/0x3b V front porch, 0x3c/0x3d V sync, 0x3e/0x3f V back porch, 0x40/0x41 V active.
+3. 5:20 bit 6 = 0 (down-scaler in the path; RD sets it to 1 at every bus setting, §2.6 table).
+4. 0:33 bit 3 = 0.
+
+Worked example, 2160p60 4:2:0 source (measured HActive 1920 TMDS clocks): 0x21/0x22 = 3840, 0x23/0x24 = 2160, 0x25/0x26 = 3838, 0x27–0x2a = 1919; target H 88/44/148/1920, V 4/5/36/1080, which is CTA 1080p60 (2200 × 1125 at 148.5 MHz). The output format and bus mode to use with the down-scaler are not in RD's library path; single pixel SDR with output 4:4:4 (§10.1 rule b, 0:6b[3:2] = 2) is the natural first try. If it works, a 4K source can be captured at 1080p with the FPGA in its traced 1080p configuration.
 
 ## 11. Audio
 ### 11.1 State machine (RD)
