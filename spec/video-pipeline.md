@@ -104,10 +104,24 @@ Live downscale 1920×1080 → 1280×720 (`T3/S33`; C, image clean): V: HEIGHT_IN
 - A PC source without HDCP reproduces the 2160p60 4:2:0 black frames (`T4/S41`), so the Roku and the HDCP stripper are not the cause. 2160p30 RGB in dual-pixel DDR mode captures correctly (`T4/S44`), so dual-pixel input works in general. The FPGA input detector reads the same line structure for both modes (IN_WIDTH 960 bus clocks, IN_HEIGHT 2160; `E`, read from userspace at the `T4/S45` MARKs, not in the trace). Remaining candidates: the 4:2:0 processing path (COLOR_CTRL[19]) or its pairing with dual-pixel SDR (PIX_MODE 1) as RD sets them, or the IT6805's 4:2:0 output arrangement. (`T4`; C for the observations)
 - Full-range RGB input (PC source) to BGR24 with both CSCs off: equal to the source except +1 on one pixel in four, in a fixed diagonal pattern of period 4, identical in every frame; 255 stays 255. Which stage adds it (GPU output, splitter, IT6805 or FPGA) is unknown (open question 29). Tests: allow +1. The source GPU's own temporal dithering must be off: it adds ±1 noise that changes per frame. (`T4/S42`,`S43`; C for the observation)
 - 2160p60 4:2:0 capture is not working with RD's configuration. Ruled out: HDCP (no encryption at any chip), AV mute, signal lock (IT6805 locked with coherent timing), colour depth (8-bit, unscrambled). Black is exact YUV black (an all-zero bus would give green in RGB formats). Leading candidate: the FPGA 4:2:0 dual-pixel SDR input path as RD configures it (clip 3840 wide while the bus carries 1920 TMDS slots per line). Second: genuinely black upstream picture. Open: `open-questions.md` #14. Target 1080p first. (`S`,`T3`; L)
-- RD sets the frame-rate limiter from a wrong pixel-clock-based estimate (52 fps for 59.94 Hz input); frames still arrive. Use IN_FRAME_PERIOD for the true rate. (`T3/S20`,`S32`; C)
+- RD sets the frame-rate limiter from a wrong pixel-clock-based estimate (52 fps for 59.94 Hz input, `T3`; 26 at 2160p29.97, `T4/S44`); frames still arrive. Use IN_FRAME_PERIOD for the true rate. (`T3/S20`,`S32`; C)
 
 ## Frame-rate limiter
-RATE_CTRL (0x1080)[31:16] = output frame rate in fps; RD clamps 5..60 and writes 5 with no input (`T1/S02`,`S`; L). It did not limit delivery in any trace: 52 programmed → ~59.94 frames/s delivered; 5 programmed (no input) → 60/s (`T3`; C). Effect unverified.
+RATE_CTRL (0x1080)[31:16] = output frame rate in fps; RD clamps 5..60 and writes 5 with no input, otherwise the rate set with S_PARM or its own input-rate estimate; it programs no input rate (`T1/S02`,`S`; L). It has limited delivery in no trace and no experiment: 52 programmed → ~59.94 frames/s delivered (`T3`); 26 at a 29.97 Hz input → a completion every 16.6–16.8 ms (`T4/S44`); 5 programmed with no input → 60/s (`T3`); our driver's values 5..60 changed nothing (`E`, M3). (C for the observations; the field's function is unknown)
+
+## Delivery rate
+- 59.94 and 60 Hz inputs: one completion per input frame, at the input rate (mean cadence within 0.01 % of the input period; `E`, driver M3; C).
+- Inputs below 59.94 Hz: a completion every 16.667 ms (60.00 Hz) whatever the input rate, in every format and mode tried: 1080p50/29.97/25/23.98, 720p50, 576p50 (`E`, driver M3; C). RD shows the same: at 2160p29.97 (IN_FRAME_PERIOD 0x0032e886, 29.973 Hz) its 6 completions came 16.61–16.77 ms apart (`T4/S44`; C). The extra completions presumably repeat a held input frame (card frame store, `video-dma.md`); which ones repeat, and whether a register marks them, is open question 33. RD returns every completion to the application, repeats included (`S`).
+- So for these inputs the delivered rate is 60 Hz, not the input rate that IN_FRAME_PERIOD and the DV timings give. A driver that reports the input rate (G_PARM) delivers more frames than it reports.
+
+## Colour paths verified with our driver (`E`, driver M3, PC loopback, 1080p60; error = max |captured − expected| per channel against the source pattern)
+| Input (AVI) | YUV outputs | RGB outputs |
+|---|---|---|
+| RGB full range | RGB→YUV CSC on the input: Y 0.92, Cb 1.00, Cr 1.00 | both CSCs off: within +1 (open question 29) |
+| RGB limited range | RGB→YUV CSC with limited-range input coefficients: Y 1.60, Cb 1.00, Cr 1.00 | both CSCs off: the limited range passes through, up to 21 codes from full-range values (open question 34) |
+| YCbCr 4:4:4 limited | YUV→RGB CSC (to full-range RGB), then RGB→YUV: Y 1.44, Cb 2.00, Cr 1.19 | YUV→RGB CSC: up to 3, 2, 4 (R, G, B) (open question 35) |
+
+Coefficients computed from the BT.709 weights as the bank format above defines them. YCbCr 4:2:2 input is untested (the PC source does not send it).
 RATE_CTRL[1] = input is YUV; [2] = output is RGB; [3] not written by RD (preserve) (`S`,`T2`; L).
 Frame rate source: IN_FRAME_PERIOD (0x1010), not the IT6805 clock estimate (RD's estimate reads ~13 % low because it assumes a 20.5 MHz reference) (`S`,`T3`; C).
 

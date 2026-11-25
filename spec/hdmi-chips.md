@@ -70,6 +70,8 @@ Ordering a driver must keep: the IT6805's 0xe0 access before the splitter maps 0
 
 RX clock to IT6805 stable takes ≈0.9–1.0 s. The source's own delay from 5 V to sending TMDS ranged from 0.4 s to 3.6 s. (`T3`; C) A driver should use timeouts of several seconds, not fixed delays.
 
+With our driver and the PC loopback (`E`, driver M3; C): 1080p60 locked (lock published) 1451 ms after the GPU output came on and 1080p59.94 1646 ms after a mode switch; 50 of 50 mode switches relocked within 3 s (slowest 1794 ms); after a driver reload with the source on, the lock came within 1051 ms of the output returning (1248 ms on the debug kernel).
+
 Cross-chip rules:
 - The IT6805 receives Clear-AVMUTE only after the splitter unmutes TX port 1 (TX port 1 reg 0xc1 bit 0 cleared; `hdmi-splitter.md`). The IT6805 event appeared at its first poll after that write in all 4 `T3` locks and at its second poll (58–71 ms after) in all 7 `T4` locks, never before. A driver must complete the splitter TX output enable, or the IT6805 output stays muted. (`T3/S20`,`S30`,`S31`,`T4`; C)
 - Decide on individual status bits (for example 5 V = bit 0 of the 0x13 status registers), not on whole-register values: intermediate values differ between unplug events (IT6805 0x13: bf→20→00 in `S30`, bf→00 in `S31`; splitter RX 0x13: 0xa0 in `S30`, 0x80 in `S31`). (`T3`; C)
@@ -112,7 +114,7 @@ RD derives the FPGA configuration from the IT6805 state when streaming starts (`
 | HDMI VSDB | physical address 1.0.0.0, no deep colour, max TMDS 165 MHz | no HF-VSDB, so sources stay at HDMI 1.4 rates: no SCDC, scrambling or 4:2:0 |
 | Video capability data block | QS = 1 (RGB quantisation selectable) | lets RGB sources signal full or limited range in the AVI InfoFrame |
 
-Validate the image with `edid-decode` (no errors or warnings) in the test suite. Planned additions once verified with our driver: 2160p30 (VIC 95, 94, 93; dual-pixel DDR captures correctly under RD, `T4/S44`); 2160p60 4:2:0 only after open question 14. With this image the PC loopback source defaults to 1080p60.
+Validate the image with `edid-decode` (no errors or warnings) in the test suite. A warning-free image also needs: the native mode signalled by the native-DTD count in CTA byte 3 (0xf1: underscan, basic audio, YCbCr 4:4:4 and 4:2:2, one native DTD) rather than the VIC 16 native flag; the sRGB bit in the feature byte; and the VCDB byte 0xca (QY = 1, QS = 1, IT always underscanned, CE always underscanned) (`E`, driver M3; C). The chips serve their own checksums, computed from the loaded bytes (`hdmi-it6805.md` §4, `hdmi-splitter.md` §6.5). Planned additions once verified with our driver: 2160p30 (VIC 95, 94, 93; dual-pixel DDR captures correctly under RD, `T4/S44`); 2160p60 4:2:0 only after open question 14. With this image the PC loopback source defaults to 1080p60.
 
 ## HDCP
 - No HDCP programming is needed for an unencrypted source. In every trace the HDCP paths stayed idle: splitter RX encryption status 0, IT6805 encryption event never set, splitter TX HDCP never started. (`S`,`T3`; C)
@@ -126,7 +128,9 @@ Validate the image with `edid-decode` (no errors or warnings) in the test suite.
 A host GPU output (GT 710, DVI-D, through a DVI-to-HDMI cable) feeds HDMI IN. Facts about this source, for tests (`T4`; C):
 - With RD's EDID the GPU picked 2160p60 YCbCr 4:2:0 in HDMI mode (AVI InfoFrame present) by default: 297 MHz TMDS through a DVI connector.
 - 1080p60 and 2160p29.97 arrived as RGB 4:4:4 8-bit in HDMI mode with an AVI InfoFrame (RGB, full range, IT content); both chips read 0x13 = 0xbf. During each mode change the IT6805 reports DVI (0x13 = 0xbd) from video detection until the splitter unmutes TX port 1, and HDMI 1–3 ms after the unmute. The splitter RX reports HDMI again at its first read after SCDT on, 0.55–0.87 s before the unmute (`hdmi-splitter.md` §9.8). RD logs the IT6805's transient.
-- No audio: the GPU sent no audio packets (the host's HDMI audio output is off). Enabling it may make the loopback an audio source too (UNVERIFIED).
+- No audio in `T4`: the GPU sent no audio packets (the host's HDMI audio output was off). With our default EDID the GPU's ELD is valid (LPCM 2 ch 48 kHz) and its HDMI audio output plays to the card: while `tools/testsrc/avsync.sh` played, the IT6805 audio state reached ON (`E`, driver M3; capture not yet verified).
+- Colour formats the GPU sends on request (NVIDIA `ColorSpace`/`ColorRange`; `E`, driver M3): RGB full or limited range (the switch keeps sync, `hdmi-it6805.md` §7.8) and YCbCr 4:4:4 limited range. A YCbCr 4:2:2 request still produces 4:4:4 (AVI PB1 0x40), so this source cannot test 4:2:2 input.
+- Modes it offers with our default EDID: 1080p60/59.94/50/29.97/25/23.98, 720p60/59.94/50, 576p50, 480p59.94, 640×480p59.94 and p59.93. All lock and capture with our driver (`E`, M3).
 - Mode changes at the source with 5 V held: sync is lost and regained (TMDS back after 0.8–1.1 s) with no HPD or power-mode change; stable again 1.4–1.7 s after the loss (`hdmi-it6805.md`).
 - Frame rate 60.006 Hz at 1080p60 and 2160p60 (IN_FRAME_PERIOD 0x00196daf), 29.973 Hz at 2160p29.97.
 - The GPU dithers its output by default; turn that off for exact tests (`tools/testsrc/show.sh` does).
