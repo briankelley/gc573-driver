@@ -757,7 +757,7 @@ Worked example, 2160p60 4:2:0 source (measured HActive 1920 TMDS clocks): 0x21/0
 
 - Ready = sync (0:19 bit 7) and 0:b1 bit 7 = 1 and 0:10 bit 7 = 0. (`S`,`T3`; C)
 - Entries: stable entry → REQUEST; sync off or DVI → OFF; HDMI/DVI change while STABLE → REQUEST; 0:10 bit 7 while STABLE → audio logic reset + enable. (`S`; L)
-- Audio logic reset: 0:22 bit 1 pulse; RD then reads 0:8a and writes it back 4 times. Never traced. (`S`; L)
+- Audio logic reset: 0:22 bit 1 pulse; RD then reads 0:8a and writes it back 4 times. Never traced. (`S`; L) Our driver skips it and the 0:10 bit 7 audio enable: 0:10 bit 7 rose by 1–2 at every source audio start or stop on the PC loopback, and audio came back each time without them (`E`, driver M4; C).
 - Timing: WAIT_READY to ON took 3 polls; audio on 127–137 ms after the AV-mute release (`T3/S20` 4923.0 → 5056.0, `S30` 33138.6 → 33275.7, `S31` 28085.1 → 28221.5 and 38748.1 → 38875.3). (`T3/S20`,`S30`,`S31`; C)
 - Streaming and FPGA audio DMA start/stop cause no IT6805 access. (`T3/S21`–`S27`,`S32`–`S34`; C)
 - Source without audio (`T4`: 0:b1 = 0x00 in every read, FPGA 0x10a0 = 0xffffffff): RD stayed in WAIT_READY. The ready check (0:b9, 0:19, 0:10, 0:b1) ran every 3rd poll and failed on 0:b1 bit 7; 1:c7 stayed 0x7f and 0:86 was never written. (`T4`; C)

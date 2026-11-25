@@ -6,7 +6,7 @@ The card has no working Linux driver. Community ports of AVerMedia's old CL511HN
 
 ## Status
 
-**Driver milestones M0–M3 done: PCI bring-up, FPGA init, interrupts, I2C buses, video DMA and the HDMI input. Live capture up to 1080p60 works: 1080p60 and 1080p59.94 verified against a test pattern in all six formats, and 720p, 576p and 480p modes lock and capture; gate logs in `tests/logs/`. Next: M4, audio. Hardware spec in progress (`spec/`).** Not ready for general use: no audio yet, no 4K, inputs below 59.94 Hz arrive at 60 frames/s with repeated frames, and HDCP sources are untested.
+**Driver milestones M0–M4 done: PCI bring-up, FPGA init, interrupts, I2C buses, video DMA, the HDMI input and audio. Live capture up to 1080p60 works: 1080p60 and 1080p59.94 verified against a test pattern in all six formats, 720p, 576p and 480p modes lock and capture, and HDMI audio (LPCM stereo 48 kHz) comes through ALSA in sync with the video; gate logs in `tests/logs/`. Next: M5, DKMS packaging, OBS and soak tests. Hardware spec in progress (`spec/`).** Not ready for general use yet: no install script, no 4K, inputs below 59.94 Hz arrive at 60 frames/s with repeated frames, and HDCP sources are untested.
 
 Targets: 1080p60 capture first, then 4K60/HDR. Packaged with DKMS.
 

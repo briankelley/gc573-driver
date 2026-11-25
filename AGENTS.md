@@ -69,9 +69,9 @@ Each gate passes in `gc573-dev` before the next starts.
 - M1 I2C: bus-1 engine adapter; bus 0/2 OpenCores adapters. Gate: chip IDs (0x90 → `54 49 05 68`; 0x58 → `54 49 63 66`).
 - M2 video DMA, no input: vb2 with driver mem ops (see design constraints), 3 channels, 6 formats, free-running frames. Gate: pre-filled buffers overwritten; `v4l2-compliance -s` 0 fail.
 - M3 HDMI bring-up: splitter + IT6805 per `spec/hdmi-chips.md`, default EDID in both RAMs (`spec/hdmi-chips.md` §Default EDID), poll loop, DV timings, `V4L2_EVENT_SOURCE_CHANGE`. Gate: live 1080p60 and 1080p59.94 capture from the PC loopback, all formats, image verified against `tools/testsrc/pattern.py`. Done (merge 8319fcd); open: delivery below 59.94 Hz (`spec/open-questions.md` #33).
-- M4 audio: ALSA PCM capture. Gate: capture with live source (`tools/testsrc/avsync.sh` on the PC loopback): channel order and rate verified, 10 min without xruns or gaps, A/V offset and drift measured from the video and audio timestamps. The OBS A/V check is in M6 (the driver runs on the host only then).
-- M5 EDID (`VIDIOC_G/S_EDID`), hotplug + mode-change stress, controls, scaling. Gate: test suite v1.
-- M6 DKMS, host validation, OBS (video and A/V sync), 2 h soak. Gate: "Done" (see Project).
+- M4 audio: ALSA PCM capture. Gate: capture with live source (`tools/testsrc/avsync.sh` on the PC loopback): channel order and rate verified, 10 min without xruns or gaps, A/V offset and drift measured from the video and audio timestamps. The OBS A/V check is in M5. Done (merge 90c9d13).
+- M5 delivery: DKMS packaging and an install/uninstall script for the user; OBS (video formats, A/V sync measured from a recording, source changes) and a 2 h soak in `gc573-dev`; then host validation by the spec session with the user (v4l2-compliance, OBS, 2 h soak, unload/reload, reboot, DKMS rebuild after a kernel update). The EDID ioctls, hotplug and mode-change tests landed in M3.
+- M6 the Roku through the HDCP filter (the user moves the input cable), controls, scaling, 4K (open question 14). Gate: "Done" (see Project).
 - Later: 2160p30, 2160p60 4:2:0 (open: black under RD), HDR.
 
 ## Tests

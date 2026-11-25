@@ -38,8 +38,16 @@ In all three windows video DMA was not running (DMA_RUN read 0 before start). Au
 DMA_RUN = 0 → INT bit 4, 38 µs after the write in `T2/S13`; RD reads INT_STATUS (0x10) and acks it. RD writes the whole register (0), with video idle. (`T1/S01i`,`T2/S13`,`S`; C)
 
 ## Unknown
-- HW writes real audio data with a live source: 3 s capture of a silent menu screen gave low-level non-zero samples (peak ±32 as S16). (`T3/S27`,`S34`; C)
-- PCM layout inside a period (assumed S16_LE interleaved stereo, L/R order) — needs a known test tone. (U)
+- HW writes real audio data with a live source: 3 s capture of a silent menu screen gave low-level non-zero samples (peak ±32 as S16). (`T3/S27`,`S34`; C) Known tones confirmed the layout (below).
+- Multichannel and other rates: untested (the default EDID offers LPCM 2 ch 48 kHz only).
+- Rare one-sample channel shift: in 1 of about 53 driver sessions the left channel carried the right channel's previous sample (left = R[n−1]) for the whole session, across stream restarts; never again. Cause unknown (open question 37). (`E`, driver M4)
+
+## Observed with our driver (`E`, driver M4, PC loopback with `tools/testsrc/avsync.sh`)
+- PCM layout: S16_LE, interleaved, left then right. A 1 kHz left / 2 kHz right burst read back as left 999.8 Hz and right 2000.2 Hz, the other tone at −84 dB or below, in 600 of 600 bursts per 10-minute run. (C)
+- Pacing: with a source, periods follow the source's audio clock (A/V offset constant within 0.03 ms over 10 minutes). Without input they run about +5 ppm against the system clock, and the FPGA writes zeros. (C)
+- Video stop: its domain reset (`init.md` "Stream stop") also stops the audio DMA: DMA_RUN bit 1 reads 0 afterwards, and there is no INT bit 4. Starting the audio DMA again as at a stream start works; about 90 ms of samples are lost. Which domain carries audio is open (open question 13). (C)
+- Pauses: at times one period completes about 10 ms late with AUDIO_DONE still in turn, and the next one is on time again. The period grid otherwise runs free, so a pause means one period of samples never came. They happen at every input loss and in about 1 of 5 ten-minute runs with a source, always about 10.02 ms. Cause unknown (open question 38). (C)
+- 0x10a0 lags the audio: after an input loss it still reads 0x823 for 0.83 s while the samples are already zero; after a source starts it turns valid 1.38–1.49 s (12–14 periods) after the IT6805 audio state reaches ON. (C)
 - Meaning of 0x200, 0x218, slot map 0x2b4–0x2c0, why two period registers. (U)
 - Multichannel (> 2 ch) and high-rate behaviour. (U)
 - Whether buffer addresses may change while running (would allow DMA straight into the ALSA ring). (U)
