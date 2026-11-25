@@ -246,6 +246,8 @@ struct gc573_hdmi {
 	spinlock_t slock;
 	struct gc573_input in;
 	unsigned int lock_polls;	/* polls since the entry, for 0x1010 */
+	u32 period_raw;			/* 0x1010 at the last poll */
+	u32 fpga_rejects;		/* polls the FPGA measurement held a lock */
 
 	/* statistics */
 	u32 polls, poll_errors, xfers, xfer_errors, retries, resyncs, runs;

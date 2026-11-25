@@ -32,8 +32,9 @@
 #define GC573_HPD_PULSE_HIGH_MS		10
 #define GC573_HPD_PULSE_LOW_MS		100
 /*
- * Driver limit: polls after the AV-mute release to wait for a valid FPGA
- * frame period (0x1010) before the lock is published without it.
+ * Driver limit: polls after the AV-mute release to wait for a consistent
+ * FPGA measurement (gc573_hdmi_fpga_ok()) before the lock is published
+ * without it.
  */
 #define GC573_HDMI_PERIOD_WAIT		20
 /* frame periods (0x1010) taken as valid: 5-121 Hz */
@@ -214,6 +215,44 @@ static bool gc573_period_valid(u32 period)
 	return period >= GC573_PERIOD_MIN && period <= GC573_PERIOD_MAX;
 }
 
+/* TMDS clocks per pixel: 2 for 4:2:0, where the IT6805 counts half lines */
+static u32 gc573_hdmi_mul(const struct gc573_it_mode *m)
+{
+	return (m->avi[1] >> 5 & 3) == 3 ? 2 : 1;
+}
+
+/*
+ * The FPGA input measurement (regmap.md 0x1004-0x1010) agrees with the
+ * IT6805's: timing stable (0x1004[1:0] = 3); bus clocks per active line
+ * (0x1008) = the IT6805's active width halved for a dual-pixel and again
+ * for a DDR bus; active lines (0x100c[15:0]) = its active height
+ * (progressive); the frame period (0x1010) in range, within 0.02 % of the
+ * value one poll earlier and within 5 % of the period the IT6805's coarse
+ * clock gives for the measured frame (hdmi-it6805.md 8.3: the counters are
+ * good for coarse decisions). Right after a mode change 0x1010 can hold a
+ * period that spans the change: 0x961e1e (10.2 Hz) between 1080p60 and
+ * 1080p59.94, and the timings matched to it (a 25 MHz custom mode) stayed
+ * for the whole lock.
+ */
+static bool gc573_hdmi_fpga_ok(struct gc573_hdmi *h, u32 period, u32 prev,
+			       const u32 *fpga)
+{
+	const struct gc573_it_mode *m = &h->it.mode;
+	u32 mul = gc573_hdmi_mul(m);
+	u64 frame = (u64)m->htotal * mul * m->vtotal;
+	u64 it_hz = (u64)m->pclk_khz * 1000 * mul, hz;
+
+	if ((fpga[0] & 3) != 3 ||
+	    (fpga[1] & 0xffff) != m->hactive >> (m->dual + m->ddr) ||
+	    (!m->interlaced && (fpga[2] & 0xffff) != m->vactive))
+		return false;
+	if (!gc573_period_valid(period) || !frame ||
+	    abs_diff(period, prev) > period / 5000)
+		return false;
+	hz = div_u64(frame * GC573_IN_FRAME_PERIOD_HZ, period);
+	return abs_diff(hz, it_hz) <= div_u64(it_hz, 20);
+}
+
 /*
  * Detected timings: the IT6805 measurement (hdmi-it6805.md 8.1) with the
  * pixel clock from the FPGA frame period (8.3), matched to a CTA-861 or
@@ -235,7 +274,7 @@ static void gc573_hdmi_timings(struct gc573_hdmi *h, u32 period,
 	};
 	const struct gc573_it_mode *m = &h->it.mode;
 	struct v4l2_bt_timings *bt = &t->bt;
-	u32 mul = (m->avi[1] >> 5 & 3) == 3 ? 2 : 1;	/* 4:2:0: TMDS clocks */
+	u32 mul = gc573_hdmi_mul(m);
 	u64 frame = (u64)m->htotal * mul * m->vtotal, meas, red;
 	struct v4l2_dv_timings p;
 
@@ -325,39 +364,55 @@ static void gc573_hdmi_log_lock(struct gc573_hdmi *h,
 
 /*
  * Publish the input state; h->lock held. Locked: IT6805 stable with the
- * AV mute released (hdmi-it6805.md 7.7, 7.10), and the FPGA measuring a
- * frame period, or GC573_HDMI_PERIOD_WAIT polls without one. Returns true
- * when the video device has to look: lock, loss, mode or power change.
+ * AV mute released (hdmi-it6805.md 7.7, 7.10), and the FPGA measurement
+ * consistent with it (gc573_hdmi_fpga_ok()), or GC573_HDMI_PERIOD_WAIT
+ * polls without that (timings from the IT6805 clock alone). A lock holds
+ * while the IT6805 stays stable; its timings change only when a consistent
+ * frame period moves by more than 0.05 %, half the 1000/1001 step.
+ * Returns true when the video device has to look: lock, loss, mode or
+ * power change.
  */
 static bool gc573_hdmi_publish(struct gc573_hdmi *h)
 {
 	struct gc573 *gc = h->gc;
+	const struct gc573_input *old = &h->in;
 	struct gc573_input in = { };
 	bool changed;
-	u32 period;
+	u32 period, prev = h->period_raw;
 
 	in.power = h->sp.r13 & BIT(0);
 	in.signal = in.power && (h->sp.r13 & BIT(3));
 	period = gc573_rd(gc, GC573_IN_FRAME_PERIOD);
-	in.period = gc573_period_valid(period) ? period : 0;
+	h->period_raw = period;
 	in.fpga[0] = gc573_rd(gc, GC573_IN_STATUS);
 	in.fpga[1] = gc573_rd(gc, GC573_IN_WIDTH);
 	in.fpga[2] = gc573_rd(gc, GC573_IN_HEIGHT);
 
 	if (h->it.state == GC573_IT_STABLE && h->it.released) {
+		if (gc573_hdmi_fpga_ok(h, period, prev, in.fpga))
+			in.period = period;
+		else if (!old->locked)
+			h->fpga_rejects++;
 		if (h->lock_polls < GC573_HDMI_PERIOD_WAIT)
 			h->lock_polls++;
-		in.locked = in.period ||
+		in.locked = old->locked || in.period ||
 			    h->lock_polls >= GC573_HDMI_PERIOD_WAIT;
 	} else {
 		h->lock_polls = 0;
 	}
 	if (in.locked) {
-		/* the rate is part of the timings: measure it once per lock */
-		if (h->in.locked && h->in.period)
-			in.timings = h->in.timings;
-		else
+		/* the rate is part of the timings: keep them while it holds */
+		if (old->locked && old->period &&
+		    old->timings.bt.width ==
+		    h->it.mode.hactive * gc573_hdmi_mul(&h->it.mode) &&
+		    old->timings.bt.height == h->it.mode.vactive &&
+		    (!in.period ||
+		     abs_diff(in.period, old->period) <= old->period / 2000)) {
+			in.timings = old->timings;
+			in.period = old->period;
+		} else {
 			gc573_hdmi_timings(h, in.period, &in.timings);
+		}
 		gc573_hdmi_colour(h, &in);
 		in.dual = h->it.mode.dual;
 		in.ddr = h->it.mode.ddr;
@@ -537,11 +592,11 @@ static int gc573_hdmi_debugfs_show(struct seq_file *m, void *unused)
 	struct gc573_input in;
 
 	mutex_lock(&h->lock);
-	seq_printf(m, "hdmi: polling %d failed %d polls %u poll_errors %u poll_ms_max %u xfers %u xfer_errors %u retries %u resyncs %u runs %u lock_polls %u gpio %#010x\n",
+	seq_printf(m, "hdmi: polling %d failed %d polls %u poll_errors %u poll_ms_max %u xfers %u xfer_errors %u retries %u resyncs %u runs %u lock_polls %u period_raw %#x fpga_rejects %u gpio %#010x\n",
 		   h->polling, h->failed, h->polls, h->poll_errors,
 		   h->poll_ms_max, h->xfers, h->xfer_errors, h->retries,
-		   h->resyncs, h->runs, h->lock_polls,
-		   gc573_rd(gc, GC573_GPIO));
+		   h->resyncs, h->runs, h->lock_polls, h->period_raw,
+		   h->fpga_rejects, gc573_rd(gc, GC573_GPIO));
 	gc573_it6805_show(h, m);
 	gc573_sp_show(h, m);
 	mutex_unlock(&h->lock);
