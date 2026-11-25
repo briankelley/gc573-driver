@@ -6,7 +6,7 @@ The card has no working Linux driver. Community ports of AVerMedia's old CL511HN
 
 ## Status
 
-**Driver milestones M0–M1 done: PCI bring-up, FPGA init, interrupts, I2C buses; gate logs in `tests/logs/`. Next: M2, video DMA. Hardware spec in progress (`spec/`).** Not usable for capture yet.
+**Driver milestones M0–M2 done: PCI bring-up, FPGA init, interrupts, I2C buses, video DMA with a V4L2 capture device (six formats; no HDMI input yet); gate logs in `tests/logs/`. Next: M3, HDMI input. Hardware spec in progress (`spec/`).** Not usable for capture yet: frames are black until M3 brings up the HDMI receiver.
 
 Targets: 1080p60 capture first, then 4K60/HDR. Packaged with DKMS.
 
