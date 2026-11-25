@@ -26,7 +26,7 @@ w=${mode%x*} h=${mode#*x}
 xrandr --query | grep -q "^$out connected" || { echo "$out is not connected (HPD low?)" >&2; exit 1; }
 primary=$(xrandr --query | awk '/ connected primary/{print $1; exit}')
 xrandr --output "$out" --mode "$mode" --rate "$rate" --right-of "$primary"
-command -v nvidia-settings >/dev/null && nvidia-settings -a "[DPY:$out]/Dithering=2" >/dev/null 2>&1 || true
+command -v nvidia-settings >/dev/null && nvidia-settings --no-write-config -a "[DPY:$out]/Dithering=2" >/dev/null 2>&1 || true
 x=$(xrandr --query | sed -n "s/^$out connected [^0-9]*[0-9]*x[0-9]*+\([0-9]*\)+.*/\1/p")
 png=$run/pattern-${w}x$h.png
 [ -f "$png" ] || "$(dirname "$0")/pattern.py" "$png" "$w" "$h" >/dev/null
