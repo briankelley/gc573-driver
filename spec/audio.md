@@ -23,9 +23,19 @@ RD period = 10 ms of 16-bit stereo: `bytes = (fs / 100) × 4`, register value = 
 
 ## Running
 INT bit 5 every period (10.00 ms ± 0.1 ms observed). AUDIO_DONE[1:0]: 1 → buffer 0 holds a new period, 2 → buffer 1. Alternates 1, 2, 1, 2. The driver must consume the completed buffer before the hardware returns to it (one period later). (`T2/S13`; C)
+Per period RD reads INT_STATUS (0x010 = 0x20), then AUDIO_DONE, then acks bit 5 by writing 0x20 to 0x010; AUDIO_DONE is only read. (`T2/S13`; C)
+Period timing (interval between AUDIO_DONE reads; C):
+| Input | 0x10a0 | Periods | Interval min / max / mean, ms | Evidence |
+|---|---|---|---|---|
+| none | 0xffffffff (RD falls back to 48 kHz sizing) | 208 | 9.825 / 10.190 / 10.0005 | `T2/S13` |
+| Roku, LPCM 48 kHz | 0x823 | 304 | 9.585 / 10.251 / 9.9997 | `T3/S27` |
+| Roku, LPCM 48 kHz | 0x823 | 304 | 9.766 / 10.207 / 10.0004 | `T3/S34` |
+
+So the DMA completes periods without any input too: the FPGA paces them itself. What a period holds then, and whether a live source's audio clock or the FPGA's clock paces them (both give 48 kHz within the precision of these windows), is unknown. Measure against the video frame rate over minutes to tell (`E` with our driver).
+In all three windows video DMA was not running (DMA_RUN read 0 before start). Audio together with video was never traced.
 
 ## Stop
-DMA_RUN = 0 → INT bit 4. (`T1/S01i`,`S`; C)
+DMA_RUN = 0 → INT bit 4, 38 µs after the write in `T2/S13`; RD reads INT_STATUS (0x10) and acks it. RD writes the whole register (0), with video idle. (`T1/S01i`,`T2/S13`,`S`; C)
 
 ## Unknown
 - HW writes real audio data with a live source: 3 s capture of a silent menu screen gave low-level non-zero samples (peak ±32 as S16). (`T3/S27`,`S34`; C)
@@ -37,3 +47,5 @@ DMA_RUN = 0 → INT bit 4. (`T1/S01i`,`S`; C)
 ## Driver notes
 - ALSA PCM capture, 1 substream. Simplest correct design: two coherent ping-pong buffers of one period each, copy each completed period into the ALSA ring in a threaded handler, `snd_pcm_period_elapsed` per period.
 - Report rates from detection; reconfigure on rate change (period size depends on fs).
+- DMA_RUN (0x008) other bits are unknown and RD only ever wrote it with video idle: change bit 1 by read-modify-write under a lock that the video path also takes for 0x008, if it touches it. (`D`)
+- With no input (0x10a0 = all ones) periods keep coming: capture can run and the driver decides what the application gets (silence or an error). (`T2/S13`; C for the hardware behaviour)
