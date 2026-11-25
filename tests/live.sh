@@ -940,7 +940,11 @@ step_obspw() {
 # M5: GC573_SOAK_SECS of continuous audio and video capture (gate: 2 h on
 # the generic kernel, 30 min on the debug kernel). The capture runs
 # detached in the VM (an ssh session need not last the run); a sampler
-# logs memory and CPU time every minute.
+# logs memory and CPU time every minute. Before each sample it drops the
+# page cache and the reclaimable slab (sync, drop_caches 3): the capture's
+# own files (soak.raw, 1.4 GB in 2 h) otherwise grow buffer_head,
+# radix_tree_node and memcg's slab vectors (kmalloc-512) by 0.4 MB a
+# minute, all of it cache that a drop frees.
 step_soak() {
 	local out d0 d1 n bad="" i t0 sm rc
 	av_on || { result soak-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
@@ -950,6 +954,7 @@ step_soak() {
 	vm "sudo nohup bash -c 'while :; do
 		irq=\$(ps -eo pid,comm | awk '\''\$2 ~ /^irq\\/[0-9]+-gc573/ { print \$1; exit }'\'')
 		aud=\$(pgrep -x gc573-aud | head -1)
+		sync; echo 3 > /proc/sys/vm/drop_caches
 		printf \"%s %s %s %s %s %s %s\\n\" \$(date +%s) \
 			\$(awk '\''/^(MemAvailable|Slab|SUnreclaim):/ { printf \"%s \", \$2 }'\'' /proc/meminfo) \
 			\$(awk '\''{ print \$14 + \$15 }'\'' /proc/\${aud:-0}/stat 2>/dev/null || echo -) \

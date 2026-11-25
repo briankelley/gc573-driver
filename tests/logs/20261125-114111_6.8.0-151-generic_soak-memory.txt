@@ -1,0 +1,58 @@
+# 2-h soak on the generic kernel 6.8.0-151 at 0d224f1, stopped after 32 min
+# (live log 20261125-114111, no results: stopped by hand). Why: the memory
+# figures grew steadily, which would fail soak-memory, and the growth was
+# the capture's own files.
+#
+# Memory samples, one a minute (the sampler as of 0d224f1):
+  min   0  MemAvailable  7180336 kB  Slab  123148 kB  SUnreclaim  79064 kB
+  min   5  MemAvailable  7212688 kB  Slab  125044 kB  SUnreclaim  79164 kB
+  min  10  MemAvailable  7221220 kB  Slab  126836 kB  SUnreclaim  79320 kB
+  min  20  MemAvailable  7215348 kB  Slab  130568 kB  SUnreclaim  79764 kB
+  min  30  MemAvailable  7216896 kB  Slab  134296 kB  SUnreclaim  80180 kB
+  min  31  MemAvailable  7157448 kB  Slab  134972 kB  SUnreclaim  80476 kB
+#
+# Slab caches that grew from 12:01:27 to 12:10:29 (active bytes, slabs):
+  buffer_head                  active   +2685.5 kB  slabs   +2712.0 kB
+  kmalloc-rnd-09-512           active    +352.0 kB  slabs    +352.0 kB
+  radix_tree_node              active    +255.5 kB  slabs    +256.0 kB
+  maple_node                   active     +61.0 kB  slabs      +0.0 kB
+  cred_jar                     active     +33.6 kB  slabs     +12.0 kB
+  kmalloc-rnd-05-512           active     +22.5 kB  slabs      +0.0 kB
+  inode_cache                  active     +15.6 kB  slabs     +16.0 kB
+  PING                         active     +12.0 kB  slabs      +0.0 kB
+#
+# 512-byte kmalloc objects, 60 s of bpftrace on kmem:kmalloc and kmem:kfree
+# during the soak, with this script:
+#   // Outstanding 512-byte kmalloc objects by call site over the run: those
+#   // allocated during it and not freed by its end
+#   tracepoint:kmem:kmalloc /args->bytes_alloc == 512/
+#   {
+#   	@site[args->ptr] = args->call_site;
+#   	@alloc[ksym(args->call_site)] = count();
+#   }
+#   tracepoint:kmem:kfree /@site[args->ptr]/
+#   {
+#   	@freed[ksym(@site[args->ptr])] = count();
+#   	delete(@site[args->ptr]);
+#   }
+#   interval:s:60
+#   {
+#   	exit();
+#   }
+#   END
+#   {
+#   	clear(@site);
+#   }
+# Allocated and not freed within the 60 s:
+#   memcg_alloc_slab_cgroups 85 allocated, 2 freed: memcg's per-slab vectors,
+#     made for each new slab page of an accounted cache (buffer_head etc.)
+#   kvmalloc_node 4, drm_atomic_helper_crtc_duplicate_state 1
+#   (alloc_bprm, __alloc_skb, alloc_fair_sched_group, virtqueue_add_split:
+#   all freed). No call site in gc573.
+#
+# sync; echo 3 > /proc/sys/vm/drop_caches at minute 32:
+#   before: Buffers 40812 kB, Cached 1516904 kB, Slab 135156 kB, SUnreclaim 80316 kB
+#   after:  Buffers  1716 kB, Cached  243604 kB, Slab  98768 kB, SUnreclaim 78356 kB
+# Both are below their minute-0 values (Slab 123148, SUnreclaim 79064): the
+# growth was page cache for soak.raw (192 kB/s) and the slab that comes with
+# it, all freed by the drop.
