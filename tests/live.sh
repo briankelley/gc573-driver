@@ -538,6 +538,26 @@ kmsg_check() {
 	check kernel-log "$([ -z "$bad" ]; echo $?)" "($krel)"
 }
 
+# kmemleak over the run, as run.sh does (tests/lib.sh kml_reset and
+# kml_report: two scans each, automatic scans paused meanwhile); SKIP where
+# the kernel has no kmemleak. $1: reset (at the start) or report.
+KML=/sys/kernel/debug/kmemleak
+kml() {
+	local leaks
+	vm "sudo test -w $KML" || {
+		[ "$1" = reset ] || result kmemleak SKIP "(no kmemleak on $krel)"
+		return 0
+	}
+	if [ "$1" = reset ]; then
+		vm "sudo sh -c 'echo scan=off > $KML; echo scan > $KML; echo scan > $KML; echo clear > $KML'"
+		return
+	fi
+	leaks=$(vm "sudo sh -c 'sleep 6; echo scan > $KML; echo scan > $KML; cat $KML; echo scan=on > $KML'")
+	[ -z "$leaks" ] || sed 's/^/  | /' <<< "$leaks" | head -60
+	check kmemleak "$([ -z "$leaks" ]; echo $?)" \
+		"($(grep -c 'unreferenced object' <<< "$leaks") unreferenced objects)"
+}
+
 # ---- main ----
 
 all="bringup lock relock capture modes change loss colour unload reload compliance"
@@ -557,6 +577,7 @@ trap '"$ROOT/tools/testsrc/show.sh" --off; ssh -O exit -o ControlPath="$SSHCTL" 
 	setup || { echo "setup failed"; exit 2; }
 	kmark=$(date +%s%N)
 	vm "echo 'gc573-live: $kmark' | sudo tee /dev/kmsg >/dev/null"
+	kml reset
 	load || { echo "cannot load the module"; exit 2; }
 	echo "module:  $(vm "modinfo -F srcversion $VMDIR/gc573.ko"), $vdev"
 	for s in "$@"; do
@@ -567,6 +588,7 @@ trap '"$ROOT/tools/testsrc/show.sh" --off; ssh -O exit -o ControlPath="$SSHCTL" 
 	echo
 	echo "## kernel log"
 	kmsg_check
+	kml report
 	echo
 	echo "## summary"
 	printf '%s\n' "${results[@]}"
