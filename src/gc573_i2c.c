@@ -106,6 +106,44 @@ static int gc573_i2c1_write(struct gc573 *gc, u8 addr8, u8 reg,
 }
 
 /*
+ * One register-addressed transfer, with spec/i2c.md's retry: a timeout is
+ * retried once, reprogramming the whole transfer. The caller holds the
+ * bus-1 adapter lock (the i2c core takes it for master_xfer; the HDMI
+ * chip code takes it around its sequences). *retried tells the caller
+ * that a timeout happened, so it can resync the device's bank register.
+ */
+int gc573_i2c1_transfer(struct gc573 *gc, u8 addr8, u8 reg, u8 *buf, u16 len,
+			bool rd, bool *retried)
+{
+	unsigned int tries;
+	int ret = -ETIMEDOUT;
+
+	if (!len || len > (rd ? GC573_I2C1_MAX_READ : GC573_I2C1_MAX_WRITE))
+		return -EINVAL;
+
+	mutex_lock(&gc->i2c_lock);
+	for (tries = 1; tries <= GC573_I2C1_TRIES; tries++) {
+		if (rd)
+			ret = gc573_i2c1_read(gc, addr8, reg, buf, len);
+		else
+			ret = gc573_i2c1_write(gc, addr8, reg, buf, len);
+		if (ret != -ETIMEDOUT)
+			break;
+		if (retried)
+			*retried = true;
+		/* let a late INT bit 11 land before the retry re-arms the wait */
+		synchronize_irq(gc->irq);
+	}
+	mutex_unlock(&gc->i2c_lock);
+
+	if (ret == -ETIMEDOUT)
+		dev_warn_ratelimited(&gc->pdev->dev,
+				     "I2C bus 1: 0x%02x reg 0x%02x %s timeout\n",
+				     addr8, reg, rd ? "read" : "write");
+	return ret;
+}
+
+/*
  * The engine only does register-addressed transfers, so it takes exactly
  * two message shapes: write [reg] then read n bytes from the same device,
  * or a single write of [reg, data...]. The quirks below let the I2C core
@@ -116,9 +154,7 @@ static int gc573_i2c1_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
 {
 	struct gc573 *gc = i2c_get_adapdata(adap);
 	struct i2c_msg *m = &msgs[0];
-	unsigned int tries;
-	bool rd;
-	int i, ret = -ETIMEDOUT;
+	int i, ret;
 
 	for (i = 0; i < num; i++) {
 		if (msgs[i].flags & ~(I2C_M_RD | I2C_M_DMA_SAFE))
@@ -130,32 +166,15 @@ static int gc573_i2c1_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
 	if (num == 2 && !(m->flags & I2C_M_RD) && m->len == 1 &&
 	    (msgs[1].flags & I2C_M_RD) && msgs[1].addr == m->addr &&
 	    msgs[1].len >= 1 && msgs[1].len <= GC573_I2C1_MAX_READ)
-		rd = true;
+		ret = gc573_i2c1_transfer(gc, m->addr << 1, m->buf[0],
+					  msgs[1].buf, msgs[1].len, true, NULL);
 	else if (num == 1 && !(m->flags & I2C_M_RD) &&
 		 m->len >= 2 && m->len <= 1 + GC573_I2C1_MAX_WRITE)
-		rd = false;
+		ret = gc573_i2c1_transfer(gc, m->addr << 1, m->buf[0],
+					  m->buf + 1, m->len - 1, false, NULL);
 	else
 		return -EOPNOTSUPP;
 
-	mutex_lock(&gc->i2c_lock);
-	for (tries = 1; tries <= GC573_I2C1_TRIES; tries++) {
-		if (rd)
-			ret = gc573_i2c1_read(gc, m->addr << 1, m->buf[0],
-					      msgs[1].buf, msgs[1].len);
-		else
-			ret = gc573_i2c1_write(gc, m->addr << 1, m->buf[0],
-					       m->buf + 1, m->len - 1);
-		if (ret != -ETIMEDOUT)
-			break;
-		/* let a late INT bit 11 land before the retry re-arms the wait */
-		synchronize_irq(gc->irq);
-	}
-	mutex_unlock(&gc->i2c_lock);
-
-	if (ret == -ETIMEDOUT)
-		dev_warn_ratelimited(&gc->pdev->dev,
-				     "I2C bus 1: 0x%02x reg 0x%02x %s timeout\n",
-				     m->addr << 1, m->buf[0], rd ? "read" : "write");
 	return ret ? ret : num;
 }
 
@@ -344,65 +363,4 @@ int gc573_i2c_init(struct gc573 *gc)
 		 dev_name(&gc->i2c0.adap.dev), dev_name(&gc->i2c1.dev),
 		 dev_name(&gc->i2c2.adap.dev), i2c_bus02 ? "on" : "off");
 	return 0;
-}
-
-/*
- * HDMI chip IDs, registers 0x00-0x03 on bus 1 (spec/i2c.md "Device
- * inventory"). Read with the transfers RD uses at load (T1/S01): IT6805
- * one byte per transfer, splitter two. Read-only: RD's bank-select write
- * (0x0f = 0) before the splitter reads is left out.
- */
-struct gc573_chip_id {
-	const char *name;
-	u16 addr;		/* 7-bit */
-	u8 step;		/* bytes per read transfer */
-	u8 id[4];
-};
-
-static const struct gc573_chip_id gc573_chip_ids[] = {
-	{ "IT6805", 0x48, 1, { 0x54, 0x49, 0x05, 0x68 } },
-	{ "splitter", 0x2c, 2, { 0x54, 0x49, 0x63, 0x66 } },
-};
-
-static int gc573_i2c_read_id(struct gc573 *gc,
-			     const struct gc573_chip_id *chip, u8 *id)
-{
-	u8 reg;
-	int ret;
-
-	for (reg = 0; reg < sizeof(chip->id); reg += chip->step) {
-		struct i2c_msg msgs[] = {
-			{ .addr = chip->addr, .len = 1, .buf = &reg },
-			{ .addr = chip->addr, .flags = I2C_M_RD,
-			  .len = chip->step, .buf = id + reg },
-		};
-
-		ret = i2c_transfer(&gc->i2c1, msgs, 2);
-		if (ret != 2)
-			return ret < 0 ? ret : -EIO;
-	}
-	return 0;
-}
-
-/* M1 gate: read and log both chip IDs. A mismatch is logged, not fatal. */
-void gc573_i2c_check_ids(struct gc573 *gc)
-{
-	struct device *dev = &gc->pdev->dev;
-	u8 id[sizeof(gc573_chip_ids[0].id)];
-	unsigned int i;
-	int ret;
-
-	/* the chip-reset settle time (spec/init.md step 11) is in hw init */
-	for (i = 0; i < ARRAY_SIZE(gc573_chip_ids); i++) {
-		const struct gc573_chip_id *chip = &gc573_chip_ids[i];
-
-		ret = gc573_i2c_read_id(gc, chip, id);
-		if (ret)
-			dev_err(dev, "I2C bus 1 0x%02x (%s): id read failed: %d\n",
-				chip->addr << 1, chip->name, ret);
-		else
-			dev_info(dev, "I2C bus 1 0x%02x (%s): id %*ph %s\n",
-				 chip->addr << 1, chip->name, (int)sizeof(id), id,
-				 memcmp(id, chip->id, sizeof(id)) ? "MISMATCH" : "OK");
-	}
 }

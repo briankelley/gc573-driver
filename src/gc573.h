@@ -20,9 +20,12 @@
 #include <linux/sizes.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
+#include <media/v4l2-ctrls.h>
 #include <media/v4l2-dev.h>
 #include <media/v4l2-device.h>
 #include <media/videobuf2-v4l2.h>
+
+#include "gc573_chip.h"
 
 struct dentry;
 struct pci_dev;
@@ -57,6 +60,7 @@ struct sg_table;
 
 /* GPIO (0x040) bits, spec/regmap.md "GPIO"; write by read-modify-write */
 #define GC573_GPIO_BIT1			BIT(1)		/* cleared at init, role unknown */
+#define GC573_GPIO_HPD			BIT(2)		/* splitter TX port 1 HPD, 1 = high */
 #define GC573_GPIO_EN4			BIT(4)		/* enable, reads back 1 when on */
 #define GC573_GPIO_RST5_N		BIT(5)		/* active-low reset, chip unknown */
 #define GC573_GPIO_EN6			BIT(6)		/* enable, reads back 1 when on */
@@ -146,14 +150,18 @@ struct sg_table;
 #define GC573_IN_WIDTH			0x1008		/* bus clocks per line */
 #define GC573_IN_HEIGHT			0x100c		/* active lines */
 #define GC573_IN_FRAME_PERIOD		0x1010		/* 100 MHz ticks, ~0 = none */
+#define GC573_IN_FRAME_PERIOD_HZ	100000000U	/* its tick rate */
 #define GC573_CLIP_LEFT			0x1020
 #define GC573_CLIP_WIDTH		0x1024
 #define GC573_CLIP_TOP			0x1028
 #define GC573_CLIP_HEIGHT		0x102c
 #define GC573_COLOR_CTRL		0x1040
+#define GC573_COLOR_CTRL_IN422		BIT(0)		/* input YCbCr 4:2:2 */
 #define GC573_COLOR_CTRL_R2Y		BIT(1)		/* RGB->YUV CSC */
 #define GC573_COLOR_CTRL_ADJUST		BIT(2)		/* brightness etc. */
 #define GC573_COLOR_CTRL_Y2R		BIT(3)		/* YUV->RGB CSC */
+#define GC573_COLOR_CTRL_DUAL		BIT(5)		/* dual-pixel input bus */
+#define GC573_COLOR_CTRL_IN420		BIT(19)		/* input YCbCr 4:2:0 */
 #define GC573_CONTRAST			0x105c
 #define GC573_BRIGHTNESS		0x1060
 #define GC573_HUE			0x1064
@@ -169,10 +177,12 @@ struct sg_table;
 #define GC573_RATE_CTRL			0x1080
 #define GC573_RATE_CTRL_FPS		GENMASK(31, 16)	/* rate limit, fps */
 #define GC573_RATE_CTRL_CSC		GENMASK(2, 1)
-#define GC573_RATE_CTRL_CSC_YUV		0x1		/* [2:1] for YUV output */
-#define GC573_RATE_CTRL_CSC_RGB		0x3		/* [2:1] for RGB output */
+#define GC573_RATE_CTRL_IN_YUV		BIT(1)		/* input is YUV */
+#define GC573_RATE_CTRL_OUT_RGB		BIT(2)		/* output is RGB */
 #define GC573_RATE_FPS_NO_INPUT		5		/* RD's value with no input */
 #define GC573_PIX_MODE			0x1088
+#define GC573_PIX_MODE_DUAL		BIT(0)		/* dual-pixel input bus */
+#define GC573_PIX_MODE_DDR		BIT(1)		/* both clock edges */
 #define GC573_PIX_MODE_NO_INPUT		0x2		/* RD's value with no input */
 #define GC573_CSC_R2Y			0x10c0		/* 7 words */
 #define GC573_CSC_Y2R			0x10e0		/* 7 words */
@@ -245,9 +255,12 @@ struct gc573_video {
 	struct video_device vdev;
 	struct vb2_queue queue;
 	struct mutex lock;		/* ioctls, vb2 queue, hardware start/stop */
+	struct v4l2_ctrl_handler ctrls;
+	struct v4l2_ctrl *power_ctrl;	/* V4L2_CID_DV_RX_POWER_PRESENT */
 	struct v4l2_dv_timings timings;
 	struct v4l2_pix_format pix;
 	const struct gc573_fmt *fmt;
+	struct gc573_input in;		/* input as last seen by the device */
 	bool dead;			/* quiesced: never start again */
 	struct completion term;		/* INT bit 0: stream terminated */
 	u64 irq_ns;			/* time of the last INT bit 1 */
@@ -261,6 +274,8 @@ struct gc573_video {
 	u64 arm_seq;
 	u32 ch_ctrl[GC573_VCH_NUM];	/* CH_CTRL values written (ch1, ch2) */
 	u32 vip_ctrl;			/* VIP_CTRL while streaming, w/o OUT_EN */
+	bool live;			/* streaming from a locked input */
+	u32 input_stops;		/* streams stopped by an input change */
 	u32 sequence;
 	unsigned int skip;		/* completions still to drop */
 	int exp_mode;			/* exp_slot_mode for this stream */
@@ -291,13 +306,24 @@ struct gc573 {
 	struct gc573_ocbus i2c2;	/* byte master, devices unknown */
 
 	struct gc573_video vid;
+	struct gc573_hdmi hdmi;
 };
 
 int gc573_reset_domains(struct gc573 *gc);
+void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val);
 
 int gc573_i2c_init(struct gc573 *gc);
+int gc573_i2c1_transfer(struct gc573 *gc, u8 addr8, u8 reg, u8 *buf, u16 len,
+			bool rd, bool *retried);
 void gc573_i2c1_irq(struct gc573 *gc);
-void gc573_i2c_check_ids(struct gc573 *gc);
+
+int gc573_hdmi_init(struct gc573 *gc);
+int gc573_hdmi_start(struct gc573 *gc);
+void gc573_hdmi_shutdown(struct gc573 *gc);
+void gc573_hdmi_input(struct gc573 *gc, struct gc573_input *in);
+bool gc573_hdmi_edid_offers(struct gc573 *gc, const struct v4l2_dv_timings *t);
+int gc573_hdmi_get_edid(struct gc573 *gc, struct v4l2_edid *e);
+void gc573_hdmi_debugfs(struct gc573 *gc);
 
 extern const struct vb2_mem_ops gc573_vb2_mem_ops;
 
@@ -307,6 +333,8 @@ void gc573_video_hw_stop(struct gc573 *gc);
 void gc573_video_irq_done(struct gc573 *gc);
 void gc573_video_irq_term(struct gc573 *gc);
 void gc573_video_debugfs(struct gc573 *gc);
+void gc573_video_input_changed(struct gc573 *gc);
+void gc573_video_release(struct gc573 *gc);
 
 static inline u32 gc573_rd(struct gc573 *gc, u32 off)
 {

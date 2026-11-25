@@ -1,12 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * GC573 video capture: V4L2 device, vb2 queue and video DMA.
- * spec/video-dma.md, spec/video-pipeline.md, spec/init.md.
+ * spec/video-dma.md, spec/video-pipeline.md, spec/init.md, and the FPGA
+ * hand-off of spec/hdmi-chips.md.
  *
- * M2 scope: the HDMI chips stay in reset, so the FPGA sees no input and
- * free-runs at 60 Hz (spec/video-dma.md "Free-running with no input");
- * the DMA path runs in full. The output size is the active size of the
- * current DV timings: no input detection, scaling or controls yet.
+ * The output size is the active size of the current DV timings (no
+ * scaling). With a locked input whose timings match, a stream starts in
+ * the input's configuration: bus mode, colour path and CSCs from the AVI
+ * InfoFrame. With no locked input the FPGA free-runs at 60 Hz
+ * (spec/video-dma.md "Free-running with no input"), as in M2.
+ *
+ * Input changes (gc573_video_input_changed(), from the HDMI poll worker):
+ * every lock, loss and mode change raises V4L2_EVENT_SOURCE_CHANGE. A
+ * running stream is stopped and its buffers are returned with an error,
+ * and the queue is marked failed (vb2_queue_error()): the application
+ * stops streaming, queries and sets the new timings, and starts again.
+ * When the queue is not busy the device adopts the new input's timings.
+ * STREAMON with a locked input whose timings differ fails with -EPIPE.
  *
  * Buffers: single-planar API, one contiguous buffer per frame. Each plane
  * goes to its own DMA channel through its own descriptor list, and a
@@ -21,8 +31,10 @@
 #include <linux/bitfield.h>
 #include <linux/debugfs.h>
 #include <linux/delay.h>
+#include <linux/gcd.h>
 #include <linux/jiffies.h>
 #include <linux/ktime.h>
+#include <linux/math64.h>
 #include <linux/moduleparam.h>
 #include <linux/pci.h>
 #include <linux/scatterlist.h>
@@ -77,35 +89,27 @@ static const struct gc573_fmt gc573_fmts[] = {
 
 /*
  * spec/video-pipeline.md "CSC coefficient banks": 12 entries, rows of
- * (c0, c1, c2, offset), unsigned magnitudes, plus a sign mask. Values:
- * the BT.709 limited-range worked example there.
+ * (c0, c1, c2, offset), unsigned magnitudes, plus a sign mask. Computed
+ * per input (gc573_csc_r2y(), gc573_csc_y2r()); for BT.709 they equal the
+ * worked examples there.
  */
 struct gc573_csc {
 	u16 neg;			/* bit i set: entry i is negative */
 	u16 e[12];
 };
 
-static const struct gc573_csc gc573_csc_709_r2y = {
-	.neg = 0x350,
-	.e = {
-		0x2750, 0x03f8, 0x0baf, 0x0100,		/* Y:  G, B, R, +16 */
-		0x15ab, 0x1c1c, 0x0671, 0x0800,		/* Cb: G, B, R, +128 */
-		0x1988, 0x0294, 0x1c1c, 0x0800,		/* Cr: G, B, R, +128 */
-	},
+/* Luma weights Kr, Kb x 10000 (ITU-R BT.709, BT.601, BT.2020) */
+static const u16 gc573_kr_kb[][2] = {
+	[GC573_ENC_709] = { 2126, 722 },
+	[GC573_ENC_601] = { 2990, 1140 },
+	[GC573_ENC_2020] = { 2627, 593 },
 };
 
-static const struct gc573_csc gc573_csc_709_y2r = {
-	.neg = 0x886,
-	.e = {
-		0x4a85, 0x0da6, 0x221b, 0x04ce,		/* G: Y, Cb, Cr, offset */
-		0x4a85, 0x8732, 0x0000, 0x1210,		/* B */
-		0x4a85, 0x0000, 0x72bc, 0x0f82,		/* R */
-	},
-};
+#define GC573_K		10000LL
 
 /*
- * DV timings: CEA-861 progressive up to 1080p60 (single-pixel input bus).
- * 4K needs the dual-pixel modes; interlaced input is untraced.
+ * DV timings: progressive up to 1080p60 (single-pixel input bus). 4K
+ * needs the dual-pixel modes; interlaced input is untraced.
  */
 static const struct v4l2_dv_timings_cap gc573_timings_cap = {
 	.type = V4L2_DV_BT_656_1120,
@@ -133,9 +137,22 @@ static const struct gc573_fmt *gc573_lookup_fmt(u32 fourcc)
 	return NULL;
 }
 
-static const struct gc573_fmt *gc573_find_fmt(u32 fourcc)
+/*
+ * TODO(spec): open question 30. At width 720 YV12 never completed a frame
+ * (each chroma plane, 360-byte lines, received 2016 bytes less than its
+ * size); NV12 and the packed formats work. No YV12 at that width.
+ */
+static bool gc573_fmt_ok(const struct gc573_fmt *f, u32 width)
 {
-	return gc573_lookup_fmt(fourcc) ?: &gc573_fmts[0];
+	return !(f->fourcc == V4L2_PIX_FMT_YVU420 && width == 720);
+}
+
+/* The format, or the default if it is unknown or unusable at the width */
+static const struct gc573_fmt *gc573_find_fmt(u32 fourcc, u32 width)
+{
+	const struct gc573_fmt *f = gc573_lookup_fmt(fourcc);
+
+	return f && gc573_fmt_ok(f, width) ? f : &gc573_fmts[0];
 }
 
 /* Bytes of each channel's plane (spec/video-dma.md "Channels and planes") */
@@ -168,15 +185,12 @@ static bool gc573_layout_ok(const struct gc573_fmt *f, u32 w, u32 h)
 }
 
 /*
- * TODO(spec): spec/ has no line-length rule for the pixel packer. Widths
- * seen to complete frames in all six formats with no input: 640, 1280 and
- * 1920 (tests/cases/10-video-capture.sh). At 720 (720x576p50) YV12 never
- * completed a frame: Y was written in full, but each chroma plane (360-byte
- * lines) received 2016 bytes less than its size, so the slot stayed pending
- * and INT bit 1 never came; NV12 and the packed formats worked. Until spec/
- * has the rule, offer only the widths seen to work.
+ * TODO(spec): spec/ has no line-length rule for the pixel packer (open
+ * question 30). Widths seen to complete frames: 640, 1280 and 1920 in all
+ * six formats, 720 in all but YV12 (tests/cases/10-video-capture.sh).
+ * Until spec/ has the rule, offer only these.
  */
-static const u32 gc573_widths[] = { 640, 1280, 1920 };
+static const u32 gc573_widths[] = { 640, 720, 1280, 1920 };
 
 /*
  * v4l2_check_dv_timings_fnc: sizes every format can be captured at.
@@ -196,9 +210,74 @@ static bool gc573_timings_fit(const struct v4l2_dv_timings *t, void *handle)
 	if ((w * h * 2 / 4) % 32)
 		return false;
 	for (i = 0; i < ARRAY_SIZE(gc573_fmts); i++)
-		if (!gc573_layout_ok(&gc573_fmts[i], w, h))
+		if (gc573_fmt_ok(&gc573_fmts[i], w) &&
+		    !gc573_layout_ok(&gc573_fmts[i], w, h))
 			return false;
 	return true;
+}
+
+/* ENUM_DV_TIMINGS: what the device captures and the EDID offers */
+static bool gc573_timings_offered(const struct v4l2_dv_timings *t,
+				  void *handle)
+{
+	return gc573_timings_fit(t, NULL) && gc573_hdmi_edid_offers(handle, t);
+}
+
+/* Is the stream configured for the locked input? */
+static bool gc573_vid_input_matches(const struct gc573_video *v)
+{
+	return v->in.locked &&
+	       v4l2_match_dv_timings(&v->in.timings, &v->timings, 0, false);
+}
+
+/* Y'CbCr encoding of the YUV outputs: the input's, or by size for RGB */
+static enum gc573_enc gc573_vid_out_enc(const struct gc573_video *v)
+{
+	if (!gc573_vid_input_matches(v))
+		return GC573_ENC_709;
+	if (v->in.colour)
+		return v->in.enc;
+	return v->timings.bt.height >= 720 ? GC573_ENC_709 : GC573_ENC_601;
+}
+
+/*
+ * Colorimetry of the captured data. Without a matching input the M2 setup
+ * applies: BT.709, limited-range YUV, full-range RGB. With one: the
+ * input's colour space; YUV outputs are limited range in the encoding of
+ * gc573_vid_out_enc(); RGB outputs are full range, except that RGB input
+ * reaches RGB output unconverted and keeps its range.
+ */
+static void gc573_vid_colorimetry(const struct gc573_video *v,
+				  const struct gc573_fmt *f,
+				  struct v4l2_pix_format *pix)
+{
+	static const u8 encs[] = {
+		[GC573_ENC_709] = V4L2_YCBCR_ENC_709,
+		[GC573_ENC_601] = V4L2_YCBCR_ENC_601,
+		[GC573_ENC_2020] = V4L2_YCBCR_ENC_BT2020,
+	};
+	static const u8 spaces[] = {
+		[GC573_ENC_709] = V4L2_COLORSPACE_REC709,
+		[GC573_ENC_601] = V4L2_COLORSPACE_SMPTE170M,
+		[GC573_ENC_2020] = V4L2_COLORSPACE_BT2020,
+	};
+	bool live = gc573_vid_input_matches(v);
+
+	pix->colorspace = V4L2_COLORSPACE_REC709;
+	pix->xfer_func = V4L2_XFER_FUNC_709;
+	pix->ycbcr_enc = encs[gc573_vid_out_enc(v)];
+	pix->quantization = f->rgb ? V4L2_QUANTIZATION_FULL_RANGE :
+				     V4L2_QUANTIZATION_LIM_RANGE;
+	if (!live)
+		return;
+	if (!v->in.colour) {
+		pix->colorspace = V4L2_COLORSPACE_SRGB;
+		pix->xfer_func = V4L2_XFER_FUNC_SRGB;
+		if (f->rgb && !v->in.full_range)
+			pix->quantization = V4L2_QUANTIZATION_LIM_RANGE;
+	} else {
+		pix->colorspace = spaces[v->in.enc];
+	}
 }
 
 static void gc573_fill_pix(struct gc573 *gc, const struct gc573_fmt *f,
@@ -215,12 +294,7 @@ static void gc573_fill_pix(struct gc573 *gc, const struct gc573_fmt *f,
 	pix->field = V4L2_FIELD_NONE;
 	pix->bytesperline = bt->width * f->bpp;
 	pix->sizeimage = size[0] + size[1] + size[2];
-	/* the CSCs are programmed for BT.709 limited range */
-	pix->colorspace = V4L2_COLORSPACE_REC709;
-	pix->xfer_func = V4L2_XFER_FUNC_709;
-	pix->ycbcr_enc = V4L2_YCBCR_ENC_709;
-	pix->quantization = f->rgb ? V4L2_QUANTIZATION_FULL_RANGE :
-				     V4L2_QUANTIZATION_LIM_RANGE;
+	gc573_vid_colorimetry(&gc->vid, f, pix);
 }
 
 /* ---- descriptor lists ---- */
@@ -330,6 +404,80 @@ static void gc573_dl_free(struct gc573 *gc, struct gc573_vbuf *b)
 
 /* ---- hardware ---- */
 
+/* round(num / den), den > 0 */
+static s64 gc573_div_round(s64 num, s64 den)
+{
+	return num >= 0 ? div64_s64(num + den / 2, den) :
+			  -div64_s64(-num + den / 2, den);
+}
+
+/* Entry i = num / den in units of 'unit' (Q2.14: 16384; offsets: 16) */
+static void gc573_csc_set(struct gc573_csc *m, unsigned int i, s64 num,
+			  s64 den, s64 unit)
+{
+	s64 v = gc573_div_round(num * unit, den);
+
+	if (v < 0) {
+		m->neg |= BIT(i);
+		v = -v;
+	}
+	m->e[i] = min_t(s64, v, U16_MAX);
+}
+
+/*
+ * RGB (full or limited range) to limited-range Y'CbCr: rows Y, Cb, Cr;
+ * columns G, B, R; offsets in 8-bit code values.
+ */
+static void gc573_csc_r2y(struct gc573_csc *m, enum gc573_enc enc, bool full)
+{
+	const s64 kr = gc573_kr_kb[enc][0], kb = gc573_kr_kb[enc][1];
+	const s64 kg = GC573_K - kr - kb, s = full ? 255 : 219;
+	const s64 o = full ? 0 : 16, cb = 2 * (GC573_K - kb) * s;
+	const s64 cr = 2 * (GC573_K - kr) * s;
+
+	memset(m, 0, sizeof(*m));
+	gc573_csc_set(m, 0, 219 * kg, s * GC573_K, 16384);
+	gc573_csc_set(m, 1, 219 * kb, s * GC573_K, 16384);
+	gc573_csc_set(m, 2, 219 * kr, s * GC573_K, 16384);
+	gc573_csc_set(m, 3, 16 * s - 219 * o, s, 16);
+	gc573_csc_set(m, 4, -224 * kg, cb, 16384);
+	gc573_csc_set(m, 5, 224 * (GC573_K - kb), cb, 16384);
+	gc573_csc_set(m, 6, -224 * kr, cb, 16384);
+	gc573_csc_set(m, 7, 128, 1, 16);
+	gc573_csc_set(m, 8, -224 * kg, cr, 16384);
+	gc573_csc_set(m, 9, -224 * kb, cr, 16384);
+	gc573_csc_set(m, 10, 224 * (GC573_K - kr), cr, 16384);
+	gc573_csc_set(m, 11, 128, 1, 16);
+}
+
+/*
+ * Y'CbCr (limited or full range) to full-range RGB: rows G, B, R; columns
+ * Y, Cb, Cr; the offsets fold in the input offsets.
+ */
+static void gc573_csc_y2r(struct gc573_csc *m, enum gc573_enc enc, bool full)
+{
+	const s64 kr = gc573_kr_kb[enc][0], kb = gc573_kr_kb[enc][1];
+	const s64 kg = GC573_K - kr - kb, k = GC573_K;
+	const s64 sy = full ? 255 : 219, sc = full ? 255 : 224;
+	const s64 oy = full ? 0 : 16;
+	const s64 gb = 2 * kb * (k - kb), gr = 2 * kr * (k - kr);
+
+	memset(m, 0, sizeof(*m));
+	gc573_csc_set(m, 0, 255, sy, 16384);
+	gc573_csc_set(m, 1, -255 * gb, kg * k * sc, 16384);
+	gc573_csc_set(m, 2, -255 * gr, kg * k * sc, 16384);
+	gc573_csc_set(m, 3, -255 * oy * kg * k * sc + 128 * 255 * (gb + gr) * sy,
+		      sy * kg * k * sc, 16);
+	gc573_csc_set(m, 4, 255, sy, 16384);
+	gc573_csc_set(m, 5, 255 * 2 * (k - kb), k * sc, 16384);
+	gc573_csc_set(m, 7, -255 * oy * k * sc - 128 * 255 * 2 * (k - kb) * sy,
+		      sy * k * sc, 16);
+	gc573_csc_set(m, 8, 255, sy, 16384);
+	gc573_csc_set(m, 10, 255 * 2 * (k - kr), k * sc, 16384);
+	gc573_csc_set(m, 11, -255 * oy * k * sc - 128 * 255 * 2 * (k - kr) * sy,
+		      sy * k * sc, 16);
+}
+
 static void gc573_csc_write(struct gc573 *gc, u32 base,
 			    const struct gc573_csc *m)
 {
@@ -342,15 +490,51 @@ static void gc573_csc_write(struct gc573 *gc, u32 base,
 }
 
 /*
- * Pipeline for the current format with no input, in RD's order
- * (spec/video-pipeline.md, spec/video-dma.md "Start" step 1). Output stays
- * disabled. Scalers: reset and bypassed (output size = input size).
+ * Pipeline for the current format, in RD's order (spec/video-pipeline.md,
+ * spec/video-dma.md "Start" step 1). Output stays disabled. Scalers:
+ * reset and bypassed (output size = input size).
+ *
+ * No matching input: RD's no-input setup (PIX_MODE 2, input taken as YUV,
+ * rate limit 5). Locked input (spec/hdmi-chips.md "FPGA hand-off",
+ * hdmi-it6805.md 10.4): PIX_MODE and COLOR_CTRL bits 0/5/19 mirror the
+ * IT6805 bus and the AVI colour format. CSCs: YUV input goes through the
+ * YUV->RGB CSC (to full-range RGB), YUV outputs through the RGB->YUV CSC;
+ * RGB input to RGB output passes with both off (traced, T4/S42).
  */
 static void gc573_vid_setup(struct gc573 *gc)
 {
 	struct gc573_video *v = &gc->vid;
 	const struct gc573_fmt *f = v->fmt;
-	u32 rate;
+	const struct gc573_input *in = &v->in;
+	u32 color = GC573_COLOR_CTRL_ADJUST, pix = GC573_PIX_MODE_NO_INPUT;
+	u32 fps = GC573_RATE_FPS_NO_INPUT, rate;
+	enum gc573_enc in_enc = GC573_ENC_709;
+	bool yuv_in = true, full_in = false;
+	struct gc573_csc m;
+
+	if (v->live) {
+		yuv_in = in->colour != 0;
+		full_in = in->full_range;
+		in_enc = in->enc;
+		pix = (in->dual ? GC573_PIX_MODE_DUAL : 0) |
+		      (in->ddr ? GC573_PIX_MODE_DDR : 0);
+		if (in->dual)
+			color |= GC573_COLOR_CTRL_DUAL;
+		if (in->colour == 1)
+			color |= GC573_COLOR_CTRL_IN422;
+		if (in->colour == 3)
+			color |= GC573_COLOR_CTRL_IN420;
+		/* RD clamps the rate limit to 5..60 (video-pipeline.md) */
+		if (in->period)
+			fps = clamp(DIV_ROUND_CLOSEST(GC573_IN_FRAME_PERIOD_HZ,
+						      in->period), 5U, 60U);
+		else
+			fps = 60;
+	}
+	if (yuv_in)
+		color |= GC573_COLOR_CTRL_Y2R;
+	if (!f->rgb)
+		color |= GC573_COLOR_CTRL_R2Y;
 
 	gc573_wr(gc, GC573_COLOR_CTRL, 0);
 	gc573_wr(gc, GC573_BRIGHTNESS, GC573_BRIGHTNESS_DEF);
@@ -372,21 +556,23 @@ static void gc573_vid_setup(struct gc573 *gc)
 	gc573_wr(gc, GC573_SCALER_RESET, GC573_SCALER_RUN);
 	fsleep(GC573_SCALER_RESET_US);
 
-	/* rate limit and CSC select; the other bits are preserved */
+	/* rate limit and colour-path flags; bit 3 and above 31:16 kept */
 	rate = gc573_rd(gc, GC573_RATE_CTRL);
-	rate &= ~(GC573_RATE_CTRL_FPS | GC573_RATE_CTRL_CSC);
-	rate |= FIELD_PREP(GC573_RATE_CTRL_FPS, GC573_RATE_FPS_NO_INPUT) |
-		FIELD_PREP(GC573_RATE_CTRL_CSC, f->rgb ?
-			   GC573_RATE_CTRL_CSC_RGB : GC573_RATE_CTRL_CSC_YUV);
+	rate &= ~(GC573_RATE_CTRL_FPS | GC573_RATE_CTRL_IN_YUV |
+		  GC573_RATE_CTRL_OUT_RGB);
+	rate |= FIELD_PREP(GC573_RATE_CTRL_FPS, fps) |
+		(yuv_in ? GC573_RATE_CTRL_IN_YUV : 0) |
+		(f->rgb ? GC573_RATE_CTRL_OUT_RGB : 0);
 	gc573_wr(gc, GC573_RATE_CTRL, rate);
 
-	/* both CSCs programmed; YUV outputs go YUV->RGB->YUV (both on) */
-	gc573_csc_write(gc, GC573_CSC_R2Y, &gc573_csc_709_r2y);
-	gc573_csc_write(gc, GC573_CSC_Y2R, &gc573_csc_709_y2r);
-	gc573_wr(gc, GC573_COLOR_CTRL, GC573_COLOR_CTRL_ADJUST |
-		 GC573_COLOR_CTRL_Y2R | (f->rgb ? 0 : GC573_COLOR_CTRL_R2Y));
+	/* R2Y: from Y2R's full-range RGB, or from the RGB input as it is */
+	gc573_csc_r2y(&m, gc573_vid_out_enc(v), yuv_in || full_in);
+	gc573_csc_write(gc, GC573_CSC_R2Y, &m);
+	gc573_csc_y2r(&m, in_enc, yuv_in && v->live && full_in);
+	gc573_csc_write(gc, GC573_CSC_Y2R, &m);
+	gc573_wr(gc, GC573_COLOR_CTRL, color);
 
-	gc573_wr(gc, GC573_PIX_MODE, GC573_PIX_MODE_NO_INPUT);
+	gc573_wr(gc, GC573_PIX_MODE, pix);
 }
 
 /* exp_slot_mode: may this stream write channel c's slot-valid bits now? */
@@ -742,6 +928,12 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
 		return -ENODEV;
 	}
+	/* a locked input in other timings: query and set them first */
+	if (v->in.locked && !gc573_vid_input_matches(v)) {
+		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
+		return -EPIPE;
+	}
+	v->live = v->in.locked;
 
 	gc573_vid_setup(gc);
 
@@ -772,9 +964,9 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 	spin_unlock(&v->slock);
 
 	dev_dbg(&gc->pdev->dev,
-		"video start: %p4cc %ux%u, %u slot(s) armed, exp_slot_mode %d, IN 1004 %#x 1008 %#x 100c %#x 1010 %#x\n",
+		"video start: %p4cc %ux%u %s, %u slot(s) armed, exp_slot_mode %d, IN 1004 %#x 1008 %#x 100c %#x 1010 %#x\n",
 		&v->pix.pixelformat, v->pix.width, v->pix.height,
-		gc573_vid_armed(v), v->exp_mode,
+		v->live ? "live" : "no input", gc573_vid_armed(v), v->exp_mode,
 		gc573_rd(gc, GC573_IN_STATUS), gc573_rd(gc, GC573_IN_WIDTH),
 		gc573_rd(gc, GC573_IN_HEIGHT),
 		gc573_rd(gc, GC573_IN_FRAME_PERIOD));
@@ -825,13 +1017,23 @@ static int gc573_querycap(struct file *file, void *priv,
 	return 0;
 }
 
+/* The formats usable at the current width (gc573_fmt_ok()) */
 static int gc573_enum_fmt(struct file *file, void *priv,
 			  struct v4l2_fmtdesc *f)
 {
-	if (f->index >= ARRAY_SIZE(gc573_fmts))
-		return -EINVAL;
-	f->pixelformat = gc573_fmts[f->index].fourcc;
-	return 0;
+	struct gc573 *gc = video_drvdata(file);
+	u32 w = gc->vid.timings.bt.width;
+	unsigned int i, n = 0;
+
+	for (i = 0; i < ARRAY_SIZE(gc573_fmts); i++) {
+		if (!gc573_fmt_ok(&gc573_fmts[i], w))
+			continue;
+		if (n++ == f->index) {
+			f->pixelformat = gc573_fmts[i].fourcc;
+			return 0;
+		}
+	}
+	return -EINVAL;
 }
 
 static int gc573_g_fmt(struct file *file, void *priv, struct v4l2_format *f)
@@ -846,7 +1048,8 @@ static int gc573_try_fmt(struct file *file, void *priv, struct v4l2_format *f)
 {
 	struct gc573 *gc = video_drvdata(file);
 
-	gc573_fill_pix(gc, gc573_find_fmt(f->fmt.pix.pixelformat),
+	gc573_fill_pix(gc, gc573_find_fmt(f->fmt.pix.pixelformat,
+					  gc->vid.timings.bt.width),
 		       &f->fmt.pix);
 	return 0;
 }
@@ -855,7 +1058,8 @@ static int gc573_s_fmt(struct file *file, void *priv, struct v4l2_format *f)
 {
 	struct gc573 *gc = video_drvdata(file);
 	struct gc573_video *v = &gc->vid;
-	const struct gc573_fmt *fmt = gc573_find_fmt(f->fmt.pix.pixelformat);
+	const struct gc573_fmt *fmt = gc573_find_fmt(f->fmt.pix.pixelformat,
+						     v->timings.bt.width);
 
 	if (vb2_is_busy(&v->queue))
 		return -EBUSY;
@@ -869,8 +1073,9 @@ static int gc573_enum_framesizes(struct file *file, void *priv,
 				 struct v4l2_frmsizeenum *fs)
 {
 	struct gc573 *gc = video_drvdata(file);
+	const struct gc573_fmt *f = gc573_lookup_fmt(fs->pixel_format);
 
-	if (fs->index || !gc573_lookup_fmt(fs->pixel_format))
+	if (fs->index || !f || !gc573_fmt_ok(f, gc->vid.timings.bt.width))
 		return -EINVAL;
 	fs->type = V4L2_FRMSIZE_TYPE_DISCRETE;
 	fs->discrete.width = gc->vid.timings.bt.width;
@@ -878,21 +1083,39 @@ static int gc573_enum_framesizes(struct file *file, void *priv,
 	return 0;
 }
 
+/*
+ * Frame interval: with a matching locked input the rate the FPGA measured
+ * (0x1010, spec/hdmi-it6805.md 8.3), else the DV timings' nominal rate.
+ */
+static struct v4l2_fract gc573_vid_interval(struct gc573_video *v)
+{
+	struct v4l2_fract f;
+	unsigned long g;
+
+	if (!gc573_vid_input_matches(v) || !v->in.period)
+		return v4l2_calc_timeperframe(&v->timings);
+	g = gcd(v->in.period, GC573_IN_FRAME_PERIOD_HZ);
+	f.numerator = v->in.period / g;
+	f.denominator = GC573_IN_FRAME_PERIOD_HZ / g;
+	return f;
+}
+
 static int gc573_enum_frameintervals(struct file *file, void *priv,
 				     struct v4l2_frmivalenum *fi)
 {
 	struct gc573 *gc = video_drvdata(file);
 	const struct v4l2_bt_timings *bt = &gc->vid.timings.bt;
+	const struct gc573_fmt *f = gc573_lookup_fmt(fi->pixel_format);
 
-	if (fi->index || !gc573_lookup_fmt(fi->pixel_format) ||
+	if (fi->index || !f || !gc573_fmt_ok(f, bt->width) ||
 	    fi->width != bt->width || fi->height != bt->height)
 		return -EINVAL;
 	fi->type = V4L2_FRMIVAL_TYPE_DISCRETE;
-	fi->discrete = v4l2_calc_timeperframe(&gc->vid.timings);
+	fi->discrete = gc573_vid_interval(&gc->vid);
 	return 0;
 }
 
-/* G_PARM and S_PARM: the frame interval follows the DV timings */
+/* G_PARM and S_PARM: the frame interval follows the input */
 static int gc573_g_parm(struct file *file, void *priv,
 			struct v4l2_streamparm *a)
 {
@@ -902,20 +1125,28 @@ static int gc573_g_parm(struct file *file, void *priv,
 		return -EINVAL;
 	memset(&a->parm.capture, 0, sizeof(a->parm.capture));
 	a->parm.capture.capability = V4L2_CAP_TIMEPERFRAME;
-	a->parm.capture.timeperframe = v4l2_calc_timeperframe(&gc->vid.timings);
+	a->parm.capture.timeperframe = gc573_vid_interval(&gc->vid);
 	return 0;
 }
 
 static int gc573_enum_input(struct file *file, void *priv,
 			    struct v4l2_input *inp)
 {
+	struct gc573 *gc = video_drvdata(file);
+	struct gc573_input in;
+
 	if (inp->index)
 		return -EINVAL;
 	strscpy(inp->name, "HDMI", sizeof(inp->name));
 	inp->type = V4L2_INPUT_TYPE_CAMERA;
 	inp->capabilities = V4L2_IN_CAP_DV_TIMINGS;
-	/* the HDMI receiver is not brought up yet */
-	inp->status = V4L2_IN_ST_NO_SIGNAL;
+	gc573_hdmi_input(gc, &in);
+	if (!in.power)
+		inp->status = V4L2_IN_ST_NO_POWER | V4L2_IN_ST_NO_SIGNAL;
+	else if (!in.signal)
+		inp->status = V4L2_IN_ST_NO_SIGNAL;
+	else if (!in.locked)
+		inp->status = V4L2_IN_ST_NO_SYNC;
 	return 0;
 }
 
@@ -939,11 +1170,15 @@ static int gc573_s_dv_timings(struct file *file, void *priv,
 	if (!v4l2_find_dv_timings_cap(t, &gc573_timings_cap, 0,
 				      gc573_timings_fit, NULL))
 		return -EINVAL;
-	if (v4l2_match_dv_timings(t, &v->timings, 0, false))
+	/* the device tells 1000/1001 rates apart (measured frame period) */
+	if (t->bt.flags & V4L2_DV_FL_CAN_REDUCE_FPS)
+		t->bt.flags |= V4L2_DV_FL_CAN_DETECT_REDUCED_FPS;
+	if (v4l2_match_dv_timings(t, &v->timings, 0, true))
 		return 0;
 	if (vb2_is_busy(&v->queue))
 		return -EBUSY;
 	v->timings = *t;
+	v->fmt = gc573_find_fmt(v->fmt->fourcc, t->bt.width);
 	gc573_fill_pix(gc, v->fmt, &v->pix);
 	return 0;
 }
@@ -957,18 +1192,47 @@ static int gc573_g_dv_timings(struct file *file, void *priv,
 	return 0;
 }
 
-/* no input detection yet: there is never a link */
+/*
+ * The HDMI front-end's detected timings (spec/hdmi-it6805.md 8.1, 8.3):
+ * ENOLINK without signal, ENOLCK while not stable, ERANGE for timings the
+ * device cannot capture.
+ */
 static int gc573_query_dv_timings(struct file *file, void *priv,
 				  struct v4l2_dv_timings *t)
 {
-	return -ENOLINK;
+	struct gc573 *gc = video_drvdata(file);
+	struct gc573_input in;
+
+	gc573_hdmi_input(gc, &in);
+	if (!in.signal)
+		return -ENOLINK;
+	if (!in.locked)
+		return -ENOLCK;
+	if (!v4l2_valid_dv_timings(&in.timings, &gc573_timings_cap,
+				   gc573_timings_fit, NULL))
+		return -ERANGE;
+	*t = in.timings;
+	return 0;
 }
 
+/* The capturable timings the EDID offers */
 static int gc573_enum_dv_timings(struct file *file, void *priv,
 				 struct v4l2_enum_dv_timings *t)
 {
+	struct gc573 *gc = video_drvdata(file);
+
 	return v4l2_enum_dv_timings_cap(t, &gc573_timings_cap,
-					gc573_timings_fit, NULL);
+					gc573_timings_offered, gc);
+}
+
+static int gc573_g_edid(struct file *file, void *priv, struct v4l2_edid *e)
+{
+	struct gc573 *gc = video_drvdata(file);
+
+	memset(e->reserved, 0, sizeof(e->reserved));
+	if (e->pad)
+		return -EINVAL;
+	return gc573_hdmi_get_edid(gc, e);
 }
 
 static int gc573_dv_timings_cap(struct file *file, void *priv,
@@ -993,9 +1257,16 @@ static int gc573_log_status(struct file *file, void *priv)
 		  gc573_rd(gc, GC573_IN_STATUS), gc573_rd(gc, GC573_IN_WIDTH),
 		  gc573_rd(gc, GC573_IN_HEIGHT),
 		  gc573_rd(gc, GC573_IN_FRAME_PERIOD));
-	v4l2_info(&gc->v4l2_dev, "stream: %s, frames %u, skipped %u\n",
-		  vb2_is_streaming(&v->queue) ? "on" : "off", v->st.frames,
-		  v->st.skipped);
+	v4l2_info(&gc->v4l2_dev, "stream: %s%s, frames %u, skipped %u, stopped by input changes %u\n",
+		  vb2_is_streaming(&v->queue) ? "on" : "off",
+		  v->live ? " (live)" : "", v->st.frames, v->st.skipped,
+		  v->input_stops);
+	v4l2_info(&gc->v4l2_dev, "input: power %d signal %d locked %d period %#x\n",
+		  v->in.power, v->in.signal, v->in.locked, v->in.period);
+	if (v->in.locked)
+		v4l2_print_dv_timings(gc->v4l2_dev.name, "input timings: ",
+				      &v->in.timings, true);
+	v4l2_ctrl_handler_log_status(&v->ctrls, gc->v4l2_dev.name);
 	return 0;
 }
 
@@ -1005,6 +1276,8 @@ static int gc573_subscribe_event(struct v4l2_fh *fh,
 	switch (sub->type) {
 	case V4L2_EVENT_SOURCE_CHANGE:
 		return v4l2_src_change_event_subscribe(fh, sub);
+	case V4L2_EVENT_CTRL:
+		return v4l2_ctrl_subscribe_event(fh, sub);
 	default:
 		return -EINVAL;
 	}
@@ -1028,6 +1301,7 @@ static const struct v4l2_ioctl_ops gc573_ioctl_ops = {
 	.vidioc_query_dv_timings	= gc573_query_dv_timings,
 	.vidioc_enum_dv_timings		= gc573_enum_dv_timings,
 	.vidioc_dv_timings_cap		= gc573_dv_timings_cap,
+	.vidioc_g_edid			= gc573_g_edid,
 	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
 	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
 	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
@@ -1080,10 +1354,10 @@ static int gc573_vid_debugfs_show(struct seq_file *m, void *unused)
 
 	/* seq_printf() does not sleep: print the shared state under slock */
 	spin_lock(&v->slock);
-	seq_printf(m, "stream: running %d fmt %p4cc %ux%u sizeimage %u exp_slot_mode %d next_arm %u ch_ctrl written: ch1 %#x ch2 %#x\n",
-		   v->running, &v->pix.pixelformat, v->pix.width, v->pix.height,
-		   v->pix.sizeimage, v->exp_mode, v->next_arm, v->ch_ctrl[1],
-		   v->ch_ctrl[2]);
+	seq_printf(m, "stream: running %d live %d input_stops %u fmt %p4cc %ux%u sizeimage %u exp_slot_mode %d next_arm %u ch_ctrl written: ch1 %#x ch2 %#x\n",
+		   v->running, v->live, v->input_stops, &v->pix.pixelformat,
+		   v->pix.width, v->pix.height, v->pix.sizeimage, v->exp_mode,
+		   v->next_arm, v->ch_ctrl[1], v->ch_ctrl[2]);
 	seq_puts(m, "slots (buffer index):");
 	for (n = 0; n < GC573_VCH_SLOTS; n++)
 		seq_printf(m, " %d",
@@ -1111,6 +1385,67 @@ void gc573_video_debugfs(struct gc573 *gc)
 			    &gc573_vid_debugfs_fops);
 }
 
+/* ---- input changes ---- */
+
+/* Same signal as far as capture is concerned? */
+static bool gc573_input_same(const struct gc573_input *a,
+			     const struct gc573_input *b)
+{
+	if (a->locked != b->locked)
+		return false;
+	return !a->locked ||
+	       (v4l2_match_dv_timings(&a->timings, &b->timings, 0, true) &&
+		a->colour == b->colour && a->full_range == b->full_range &&
+		a->enc == b->enc && a->dvi == b->dvi && a->dual == b->dual &&
+		a->ddr == b->ddr);
+}
+
+/*
+ * From the HDMI poll worker on lock, loss, mode or power change (policy:
+ * header comment). Never called with the HDMI lock held. A free-running
+ * stream (no input) is stopped only when an input locks.
+ */
+void gc573_video_input_changed(struct gc573 *gc)
+{
+	struct gc573_video *v = &gc->vid;
+	const struct v4l2_event ev = {
+		.type = V4L2_EVENT_SOURCE_CHANGE,
+		.u.src_change.changes = V4L2_EVENT_SRC_CH_RESOLUTION,
+	};
+	struct gc573_input in;
+	bool same;
+
+	mutex_lock(&v->lock);
+	if (v->dead)
+		goto unlock;
+	gc573_hdmi_input(gc, &in);
+	same = gc573_input_same(&in, &v->in);
+	if (vb2_is_streaming(&v->queue) && v->running &&
+	    (v->live ? !same : in.locked)) {
+		gc573_video_hw_stop(gc);
+		gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
+		vb2_queue_error(&v->queue);
+		v->input_stops++;
+		dev_dbg(&gc->pdev->dev, "video: input changed, stream stopped\n");
+	}
+	v->in = in;
+	if (!vb2_is_busy(&v->queue)) {
+		if (in.locked &&
+		    v4l2_valid_dv_timings(&in.timings, &gc573_timings_cap,
+					  gc573_timings_fit, NULL)) {
+			v->timings = in.timings;
+			v->fmt = gc573_find_fmt(v->fmt->fourcc,
+						in.timings.bt.width);
+		}
+		gc573_fill_pix(gc, v->fmt, &v->pix);
+	}
+	v4l2_ctrl_s_ctrl(v->power_ctrl, in.power);
+	if (!same)
+		v4l2_event_queue(&v->vdev, &ev);
+unlock:
+	mutex_unlock(&v->lock);
+}
+
 /* ---- setup ---- */
 
 /* Software state the quiesce and the IRQ thread may use: before probe */
@@ -1132,6 +1467,12 @@ static void gc573_video_unregister(void *data)
 	struct gc573 *gc = data;
 
 	vb2_video_unregister_device(&gc->vid.vdev);
+}
+
+/* From the v4l2_device release: no file handle is left */
+void gc573_video_release(struct gc573 *gc)
+{
+	v4l2_ctrl_handler_free(&gc->vid.ctrls);
 }
 
 int gc573_video_init(struct gc573 *gc)
@@ -1156,6 +1497,16 @@ int gc573_video_init(struct gc573 *gc)
 	if (ret)
 		return ret;
 
+	/* freed with struct gc573 (gc573_video_release()) */
+	v4l2_ctrl_handler_init(&v->ctrls, 1);
+	v->power_ctrl = v4l2_ctrl_new_std(&v->ctrls, NULL,
+					  V4L2_CID_DV_RX_POWER_PRESENT, 0, 1,
+					  0, 0);
+	if (v->ctrls.error)
+		return v->ctrls.error;
+	gc573_hdmi_input(gc, &v->in);
+	v4l2_ctrl_s_ctrl(v->power_ctrl, v->in.power);
+
 	strscpy(vdev->name, "GC573 HDMI capture", sizeof(vdev->name));
 	vdev->fops = &gc573_fops;
 	vdev->ioctl_ops = &gc573_ioctl_ops;
@@ -1163,6 +1514,7 @@ int gc573_video_init(struct gc573 *gc)
 	vdev->v4l2_dev = &gc->v4l2_dev;
 	vdev->queue = q;
 	vdev->lock = &v->lock;
+	vdev->ctrl_handler = &v->ctrls;
 	vdev->vfl_dir = VFL_DIR_RX;
 	vdev->device_caps = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING;
 	video_set_drvdata(vdev, gc);
