@@ -4,7 +4,8 @@
  *
  * gc573-cap -d /dev/videoN [-f FMT[,FMT..]|all] [-b BUFS] [-n FRAMES]
  *           [-p] [-T IDX|all|@FILE] [-t FILE] [-L SECS] [-o FILE]
- *           [-c CYCLES] [-u] [-w MS] [-X SECS [-r]] [-D DEBUGFS_FILE]
+ *           [-c CYCLES] [-u] [-w MS] [-X SECS [-A MS] [-H SECS] [-r]]
+ *           [-D DEBUGFS_FILE]
  *
  *   default  capture -n frames per format (requeue each buffer at once);
  *            formats ENUM_FMT does not offer at the timings are skipped
@@ -35,9 +36,15 @@
  *            userspace owned. QBUFs thus come at random times
  *   -X SECS  input-change test: stream with one buffer held back (pattern
  *            filled), every buffer's tail beyond sizeimage pattern-filled,
- *            until DQBUF fails or SECS pass, with V4L2_EVENT_SOURCE_CHANGE
- *            subscribed; then check the held buffer and every tail (no DMA
- *            outside the queued buffers' images) and report the event
+ *            with V4L2_EVENT_SOURCE_CHANGE subscribed, until DQBUF fails
+ *            after an event, -A MS (default 5000) pass after the last
+ *            event, or SECS pass; then check the held buffer and every
+ *            tail (no DMA outside the queued buffers' images) and report
+ *            the events, the DQBUF error and the frames after the events.
+ *            With -o, the last frame dequeued is written to FILE.FMT
+ *   -H SECS  with -X: after STREAMOFF keep the buffers SECS before
+ *            REQBUFS 0 (as OBS does after a DQBUF error until its source
+ *            is set up again)
  *   -r       with -X: afterwards wait for a lock (-L, default 15 s), set
  *            the new timings and capture -n frames (restart)
  *   -F       capture mode: print one line per frame (sequence, timestamp,
@@ -414,15 +421,20 @@ static void free_bufs(void)
 		die("REQBUFS 0");
 }
 
-static void qbuf(unsigned int i, int pattern)
+static int qbuf_try(unsigned int i)
 {
 	struct v4l2_buffer b = {
 		.index = i, .type = CAP, .memory = V4L2_MEMORY_MMAP,
 	};
 
+	return xioctl(VIDIOC_QBUF, &b);
+}
+
+static void qbuf(unsigned int i, int pattern)
+{
 	if (pattern)
 		fill(&bufs[i]);
-	if (xioctl(VIDIOC_QBUF, &b))
+	if (qbuf_try(i))
 		die("QBUF");
 }
 
@@ -930,17 +942,20 @@ static size_t tail_changed(const struct buf *b)
 }
 
 static int changetest(uint32_t fourcc, unsigned int nb, double secs,
-		      int restart, double lock_secs, unsigned long n)
+		      double after_ms, double hold_secs, int restart,
+		      double lock_secs, unsigned long n)
 {
 	struct v4l2_event_subscription sub = {
 		.type = V4L2_EVENT_SOURCE_CHANGE,
 	};
 	unsigned long frames = 0, tails = 0, held_bad, held_tail;
-	double t0, t_event = -1, t_err = -1, t_last = -1;
+	unsigned long after_first = 0, after_last = 0;
+	double t0, t_event = -1, t_ev_last = -1, t_err = -1, t_last = -1;
 	struct v4l2_event ev;
 	struct v4l2_buffer b;
-	unsigned int i, held;
+	unsigned int i, held, events = 0;
 	int ret = 0, errored = 0;
+	struct buf last = { 0 };
 
 	if (nb < 3) {
 		fprintf(stderr, "gc573-cap: -X needs -b 3 or more\n");
@@ -962,7 +977,13 @@ static int changetest(uint32_t fourcc, unsigned int nb, double secs,
 	printf("INFO change: streaming %.4s %ux%u, buffer %u held back, tails %zu bytes\n",
 	       (char *)&fourcc, pix.width, pix.height, held,
 	       bufs[0].len - pix.sizeimage);
-	while (now_ms() - t0 < secs * 1e3 && !(errored && t_event >= 0)) {
+	if (outfile) {
+		last.p = malloc(pix.sizeimage);
+		if (!last.p)
+			die("malloc");
+	}
+	while (now_ms() - t0 < secs * 1e3 && !(errored && t_event >= 0) &&
+	       !(t_event >= 0 && now_ms() - t0 - t_ev_last >= after_ms)) {
 		struct pollfd pfd = {
 			.fd = fd, .events = errored ? POLLPRI : POLLIN | POLLPRI,
 		};
@@ -973,10 +994,14 @@ static int changetest(uint32_t fourcc, unsigned int nb, double secs,
 			memset(&ev, 0, sizeof(ev));
 			if (xioctl(VIDIOC_DQEVENT, &ev))
 				die("DQEVENT");
-			if (ev.type == V4L2_EVENT_SOURCE_CHANGE && t_event < 0) {
-				t_event = now_ms() - t0;
+			if (ev.type == V4L2_EVENT_SOURCE_CHANGE) {
+				t_ev_last = now_ms() - t0;
+				if (t_event < 0)
+					t_event = t_ev_last;
+				events++;
+				after_last = 0;
 				printf("INFO change: SOURCE_CHANGE (changes %#x) at %.0f ms, %lu frames\n",
-				       ev.u.src_change.changes, t_event, frames);
+				       ev.u.src_change.changes, t_ev_last, frames);
 			}
 		}
 		if (errored || !(pfd.revents & (POLLIN | POLLERR)))
@@ -994,12 +1019,26 @@ static int changetest(uint32_t fourcc, unsigned int nb, double secs,
 			continue;
 		}
 		frames++;
+		if (t_event >= 0) {
+			after_first++;
+			after_last++;
+		}
 		t_last = now_ms() - t0;
 		if (tail_changed(&bufs[b.index]))
 			tails++;
+		if (last.p)
+			memcpy(last.p, bufs[b.index].p, pix.sizeimage);
 		fill(&bufs[b.index]);
 		fill_tail(&bufs[b.index]);
-		qbuf(b.index, 0);
+		if (qbuf_try(b.index)) {
+			/* the queue failed after this DQBUF: EIO, as DQBUF */
+			if (errno != EIO)
+				die("QBUF");
+			errored = 1;
+			t_err = now_ms() - t0;
+			printf("INFO change: QBUF %s at %.0f ms, %lu frames\n",
+			       strerror(errno), t_err, frames);
+		}
 	}
 	held_bad = pix.sizeimage / 32 - untouched(&bufs[held], 0, pix.sizeimage);
 	held_tail = tail_changed(&bufs[held]);
@@ -1009,9 +1048,17 @@ static int changetest(uint32_t fourcc, unsigned int nb, double secs,
 	for (i = 0; i < nbufs; i++)
 		if (tail_changed(&bufs[i]))
 			tails++;
-	printf("RESULT change fmt=%.4s %ux%u frames=%lu event_ms=%.0f dqbuf_error_ms=%.0f held_blocks_changed=%lu held_tail_words_changed=%lu tails_changed=%lu\n",
-	       (char *)&fourcc, pix.width, pix.height, frames, t_event, t_err,
+	printf("RESULT change fmt=%.4s %ux%u frames=%lu event_ms=%.0f events=%u last_event_ms=%.0f frames_after_event=%lu frames_after_last_event=%lu last_frame_ms=%.0f dqbuf_error_ms=%.0f held_blocks_changed=%lu held_tail_words_changed=%lu tails_changed=%lu\n",
+	       (char *)&fourcc, pix.width, pix.height, frames, t_event,
+	       events, t_ev_last, after_first, after_last, t_last, t_err,
 	       held_bad, held_tail, tails);
+	if (last.p && frames)
+		save_frame(&last);
+	free(last.p);
+	if (hold_secs > 0) {
+		printf("INFO change: holding the buffers %.1f s\n", hold_secs);
+		usleep(hold_secs * 1e6);
+	}
 	free_bufs();
 	sub.type = V4L2_EVENT_ALL;
 	xioctl(VIDIOC_UNSUBSCRIBE_EVENT, &sub);
@@ -1062,11 +1109,11 @@ int main(int argc, char **argv)
 	const char *tl = NULL, *tsave = NULL;
 	unsigned int nb = 4, nc = 0, wait_ms = 0, nl, i, t, t_end;
 	unsigned long n = 60, rb = 0;
-	double lock_secs = 0, xsecs = 0;
+	double lock_secs = 0, xsecs = 0, after_ms = 5000, hold_secs = 0;
 	uint32_t list[NFMTS];
 	int opt, pattern = 0, under = 0, restart = 0;
 
-	while ((opt = getopt(argc, argv, "d:f:b:n:pT:t:L:o:c:uw:R:X:rFD:M:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:f:b:n:pT:t:L:o:c:uw:R:X:A:H:rFD:M:")) != -1) {
 		switch (opt) {
 		case 'd': dev = optarg; break;
 		case 'f': fl = optarg; break;
@@ -1082,6 +1129,8 @@ int main(int argc, char **argv)
 		case 'L': lock_secs = atof(optarg); break;
 		case 'o': outfile = optarg; break;
 		case 'X': xsecs = atof(optarg); break;
+		case 'A': after_ms = atof(optarg); break;
+		case 'H': hold_secs = atof(optarg); break;
 		case 'r': restart = 1; break;
 		case 'F': frame_log = 1; break;
 		case 'D': dbgfile = optarg; break;
@@ -1112,8 +1161,8 @@ int main(int argc, char **argv)
 	if (lock_secs && wait_lock(lock_secs))
 		return 3;
 	if (xsecs) {
-		failed = changetest(list[0], nb, xsecs, restart,
-				    lock_secs ? lock_secs : 15, n);
+		failed = changetest(list[0], nb, xsecs, after_ms, hold_secs,
+				    restart, lock_secs ? lock_secs : 15, n);
 		close(fd);
 		return failed ? 1 : 0;
 	}

@@ -24,9 +24,13 @@
 #             the interval G_PARM reports, first frame dropped
 #   modes     every other mode the GPU offers for the output: timings and a
 #             verified capture (GC573_MODE_FRAMES, 120, per format)
-#   change    input change while streaming: SOURCE_CHANGE, DQBUF error, no
-#             DMA outside the queued images, restart at the new timings
-#   loss      output off and on, idle and while streaming
+#   change    input change while streaming: SOURCE_CHANGE, no DMA outside
+#             the queued images; to other timings a DQBUF error and a
+#             restart at the new timings; 60 -> 59.94 Hz (same buffers) the
+#             stream carries on; an application that never sets timings
+#             gets the new ones once its queue is free
+#   loss      output off and on, idle and while streaming: the stream
+#             carries on, black while off, the pattern again after
 #   colour    RGB limited range, YCbCr 4:4:4, YCbCr 4:2:2 (report only)
 #   audio     avsync.sh on HDMI audio: 10 s capture, a burst a second,
 #             left 1 kHz and right 2 kHz (channel order, rate), 48 kHz
@@ -483,12 +487,16 @@ step_modes() {
 	src_mode 1920x1080 60
 }
 
-# Stream (cap -X), then run the host action $3... after 4 s; $1: tag,
-# $2: "-r" to restart at the new timings afterwards, or "" (no input left)
+# Stream (cap -X), then run the host action $4... after 4 s. $1: tag;
+# $2: what the stream must do: "error" (DQBUF fails after the event: the
+# input locked in other timings) or "continue" (no DQBUF error, frames
+# after the last event: the driver restarted the stream); $3: more
+# gc573-cap options: -r (restart at the new timings afterwards), -o FILE
+# (keep the last frame), -A MS, -X SECS
 change_while_streaming() {
-	local tag=$1 rs=$2 out
-	shift 2
-	vm "sudo $W/gc573-cap -d $vdev -f YUYV -b 4 -n 60 -X 20 $rs -D $dbgdir/video" \
+	local tag=$1 want=$2 opts=$3 out line err after ok
+	shift 3
+	vm "sudo $W/gc573-cap -d $vdev -f YUYV -b 4 -n 60 -X 20 $opts -D $dbgdir/video" \
 		> /tmp/gc573-live-x.txt 2>&1 &
 	local p=$!
 	sleep 4
@@ -496,16 +504,51 @@ change_while_streaming() {
 	wait $p
 	local rc=$?
 	out=$(cat /tmp/gc573-live-x.txt)
-	echo "$out" | grep -E '^(INFO change|RESULT|FAIL|LOCK)|stream:|stats:' | sed 's/^/  /'
-	check "$tag" "$rc" "($(echo "$out" | sed -n 's/^RESULT change //p')${rs:+; restart: $(echo "$out" | grep '^RESULT capture ' | grep -oE 'fmt=[^ ]+ [0-9x]+ frames=[0-9]+')})"
+	echo "$out" | grep -E '^(INFO change|RESULT|FAIL|LOCK|gc573-cap:)|stream:|stats:' | sed 's/^/  /'
+	line=$(sed -n 's/^RESULT change //p' <<< "$out")
+	err=$(grep -oE 'dqbuf_error_ms=-?[0-9]+' <<< "$line" | cut -d= -f2)
+	after=$(grep -oE 'frames_after_last_event=[0-9]+' <<< "$line" | cut -d= -f2)
+	case $want in
+	error) ok=$([ "${err:--1}" -ge 0 ]; echo $?) ;;
+	*) ok=$([ "${err:-0}" -lt 0 ] && [ "${after:-0}" -ge 60 ]; echo $?) ;;
+	esac
+	[ "$rc" = 0 ] || ok=1
+	check "$tag" "$ok" "($want: $line$(grep -q -- -r <<< "$opts" && echo "; restart: $(echo "$out" | grep '^RESULT capture ' | grep -oE 'fmt=[^ ]+ [0-9x]+ frames=[0-9]+')"))"
 }
 
+# A frame gc573-cap -o kept ($2, YUYV 1920x1080) against pattern.py; $1: tag
+frame_is_pattern() {
+	local cmp
+	vm "[ -f $W/p-1920x1080.png ] || python3 $W/pattern.py $W/p-1920x1080.png 1920 1080 >/dev/null"
+	cmp=$(vm "python3 $W/live-compare.py $W/p-1920x1080.png $2 YUYV 1920 1080 709" 2>&1)
+	check "$1" $? "($(sed -n 's/^RESULT compare //p' <<< "$cmp" | tr '\n' ' '))"
+}
+
+# Share of a YUYV frame ($1) that is limited-range black, word 0x80108010
+frame_black() {
+	vm "python3 -c 'import sys, numpy as np; a = np.fromfile(sys.argv[1], dtype=\"<u4\"); print(f\"{(a == 0x80108010).mean() * 100:.2f}\")' $1"
+}
+
+off_on() { src_off; sleep 4; src_on 1920x1080 60; }
+
 step_change() {
+	local out line
 	src_on 1920x1080 60
 	time_to_lock 10 >/dev/null
-	change_while_streaming change-1080p60-to-720p60 -r src_on 1280x720 60
-	change_while_streaming change-720p60-to-1080p60 -r src_on 1920x1080 60
-	change_while_streaming change-1080p60-to-p59.94 -r src_on 1920x1080 59.94
+	change_while_streaming change-1080p60-to-720p60 error -r src_on 1280x720 60
+	change_while_streaming change-720p60-to-1080p60 error -r src_on 1920x1080 60
+	# the buffers still fit: the driver restarts the stream at 59.94 Hz
+	change_while_streaming change-1080p60-to-p59.94 continue -r src_on 1920x1080 59.94
+	# an application that never sets timings streams through a change to
+	# 720p and keeps its buffers until after the lock (OBS): once its
+	# queue is free the device has the new timings
+	src_mode 1920x1080 60
+	change_while_streaming change-to-720p-held error "-H 6" src_on 1280x720 60
+	time_to_lock 10 >/dev/null
+	out=$(cap "-f YUYV -b 4 -n 30" 2>&1)
+	line=$(grep -E '^(RESULT capture|FAIL)|STREAMON' <<< "$out" | head -2 | tr '\n' ' ')
+	check change-adopted "$(grep -q '^RESULT capture fmt=YUYV 1280x720 frames=30 ' <<< "$out"; echo $?)" \
+		"(capture without setting timings: $line)"
 	src_mode 1920x1080 60
 }
 
@@ -528,12 +571,21 @@ step_loss() {
 	event_during loss-idle-return src_on 1920x1080 60
 	t=$(time_to_lock 10)
 	check loss-idle-relock $? "($t ms)"
-	# live stream, then the output goes off: stopped with an event
-	change_while_streaming loss-streaming "" src_off
-	# free-running stream (no input), then the output comes back: the
-	# lock stops it with an event, restart at the input's timings
+	# live stream, then the output goes off: an event, and the stream
+	# carries on free-running, black (spec/video-dma.md)
+	change_while_streaming loss-streaming continue "-o $W/lost" src_off
+	q=$(frame_black $W/lost.YUYV)
+	check loss-streaming-black "$([ "$q" = 100.00 ]; echo $?)" "(last frame: $q % limited-range black)"
+	# free-running stream (no input), then the output comes back: an event,
+	# and the stream carries on live (same timings)
 	wait_unlocked
-	change_while_streaming loss-return-streaming -r src_on 1920x1080 60
+	change_while_streaming loss-return-streaming continue "-o $W/back" src_on 1920x1080 60
+	frame_is_pattern loss-return-pattern $W/back.YUYV
+	# live stream through output off, 4 s, on (an application that ignores
+	# the events, as OBS does, keeps getting frames)
+	time_to_lock 10 >/dev/null
+	change_while_streaming loss-off-on-streaming continue "-X 30 -A 12000 -o $W/offon" off_on
+	frame_is_pattern loss-off-on-pattern $W/offon.YUYV
 }
 
 # The published colour format and range ($1: tag) follow the AVI InfoFrame
@@ -630,8 +682,8 @@ step_audioloss() {
 		sleep 1
 	done
 	check audioloss-video "$vrc" "(5 video captures while audio runs)"
-	# input loss while video streams (the driver stops the stream), relock
-	change_while_streaming audioloss-video-loss "" src_off
+	# input loss while video streams (the stream goes on free-running), relock
+	change_while_streaming audioloss-video-loss continue "" src_off
 	sleep 3
 	av_on
 	check audioloss-relock $? "(avsync.sh again, IT6805 audio ON)"

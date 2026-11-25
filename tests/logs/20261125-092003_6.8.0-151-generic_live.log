@@ -1,0 +1,53 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 09:20:03 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     4256fd0dcbf0-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   obschange
+module:  srcversion 366219901246A616D1A3654 loaded, 292FD1A2D4D0C4210A150E8 in ~/gc573-driver, /dev/video0
+
+## obschange
+  OBS started
+  OBS 32.2.0
+  video device /dev/video0 | audio device __custom__ hw:CARD=GC573,DEV=0
+  pixelformat: YUYV 4:2:2=1448695129, UYVY 4:2:2=1498831189, Y/UV 4:2:0=842094158, Planar YVU 4:2:0=842094169, 24-bit BGR 8-8-8=861030210, 32-bit BGRX 8-8-8-8=875713112, YU12 (Emulated)=842093913
+  resolution: 
+  framerate: Leave Unchanged=-1, 60.00=4294967356, 50.00=4294967346, 30.00=4294967326, 25.00=4294967321, 20.00=4294967316, 15.00=4294967311, 10.00=4294967306, 5.00=4294967301
+  settings {"buffering": false, "color_range": 0, "device_id": "/dev/video0", "pixelformat": 1448695129}
+RESULT obschange-record           PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 2578, "outputSkippedFrames": 0, "outputTotalFrames": 2576} cpu 52.0% fps 60.00)
+  obs: 09:20:16.132: ==== Recording Start ===============================================
+  obs: 09:20:28.424: v4l2-input: /dev/video0: failed to dequeue buffer
+  obs: 09:20:28.424: v4l2-input: /dev/video0: Stopped capture after 840 frames
+  obs: 0 select timeouts
+  RESULT video PASS (2578 frames, period 17.000 ms, largest interval 17.0 ms, 0 over 1.5 periods)
+  SEGMENT 0 0.0 12.0 flashes=11 bursts=12 first_flash=0.12 last_flash=11.12
+  SEGMENT 1 12.0 20.1 flashes=1 bursts=1 first_flash=12.12 last_flash=12.12
+  SEGMENT 2 20.1 34.1 flashes=0 bursts=12 first_flash=- last_flash=-
+  SEGMENT 3 34.1 43.0 flashes=0 bursts=6 first_flash=- last_flash=-
+RESULT obschange-live-before      PASS (11 flash frames in before: 0.0 12.0 s)
+  off: 1 flash frames
+RESULT obschange-live-on          FAIL (0 flash frames in on: 20.1 34.1 s)
+  720p: 0 flash frames
+RESULT obschange-stopped-720p     PASS (OBS's source stops at other timings: 1 dequeue failure)
+RESULT obschange-reopen-pattern-1280x720 FAIL (the source is 1920x1080)
+RESULT obschange-reopen-pattern-1920x1080 PASS (source 1920x1080: max |error| R/G/B 2/1/2, mean 0.49/0.33/0.52, limit 6)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 9 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT obschange-record           PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 2578, "outputSkippedFrames": 0, "outputTotalFrames": 2576} cpu 52.0% fps 60.00)
+RESULT obschange-live-before      PASS (11 flash frames in before: 0.0 12.0 s)
+RESULT obschange-live-on          FAIL (0 flash frames in on: 20.1 34.1 s)
+RESULT obschange-stopped-720p     PASS (OBS's source stops at other timings: 1 dequeue failure)
+RESULT obschange-reopen-pattern-1280x720 FAIL (the source is 1920x1080)
+RESULT obschange-reopen-pattern-1920x1080 PASS (source 1920x1080: max |error| R/G/B 2/1/2, mean 0.49/0.33/0.52, limit 6)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=6 fail=2 skip=1

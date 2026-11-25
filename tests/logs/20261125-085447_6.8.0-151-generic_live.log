@@ -1,0 +1,120 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 08:54:47 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     4256fd0dcbf0-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   change loss
+module:  srcversion 462452BAF930E9D88EC6ECF loaded, 462452BAF930E9D88EC6ECF in ~/gc573-driver, /dev/video0
+
+## change
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4402 ms, 242 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5829 ms, 282 frames
+  INFO change: DQBUF Input/output error at 5829 ms, 282 frames, last frame at 5723 ms
+    | stream: running 0 live 0 input_restarts 11 input_stops 5 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 284 frames 282 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=282 event_ms=4402 events=2 last_event_ms=5829 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5723 dqbuf_error_ms=5829 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3
+    | stream: running 1 live 1 input_restarts 11 input_stops 5 start_pending 0 fmt YUYV little-endian (0x56595559) 1280x720 sizeimage 1843200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1280x720 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.624 max=16.740 frames_not_overwritten=0 ch0_bytes=1843200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.3%) distinct_frames=1
+RESULT change-1080p60-to-720p60   PASS (error: fmt=YUYV 1920x1080 frames=282 event_ms=4402 events=2 last_event_ms=5829 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5723 dqbuf_error_ms=5829 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1280x720 frames=60)
+  INFO change: streaming YUYV 1280x720, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4414 ms, 244 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5854 ms, 282 frames
+  INFO change: DQBUF Input/output error at 5854 ms, 282 frames, last frame at 5738 ms
+    | stream: running 0 live 0 input_restarts 12 input_stops 6 start_pending 0 fmt YUYV little-endian (0x56595559) 1280x720 sizeimage 1843200 exp_slot_mode 0 next_arm 1 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 284 frames 282 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1280x720 frames=282 event_ms=4414 events=2 last_event_ms=5854 frames_after_event=38 frames_after_last_event=0 last_frame_ms=5738 dqbuf_error_ms=5854 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0000 tpf=1/60 h=88/44/148 v=4/5/36 pol=0x3
+    | stream: running 1 live 1 input_restarts 12 input_stops 6 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.593 max=16.738 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+RESULT change-720p60-to-1080p60   PASS (error: fmt=YUYV 1280x720 frames=282 event_ms=4414 events=2 last_event_ms=5854 frames_after_event=38 frames_after_last_event=0 last_frame_ms=5738 dqbuf_error_ms=5854 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4396 ms, 243 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5912 ms, 282 frames
+    | stream: running 1 live 1 input_restarts 14 input_stops 6 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 581 frames 578 skipped 3 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=578 event_ms=4396 events=2 last_event_ms=5912 frames_after_event=335 frames_after_last_event=296 last_frame_ms=10913 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3
+    | stream: running 1 live 1 input_restarts 14 input_stops 6 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.565 max=16.773 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+RESULT change-1080p60-to-p59.94   PASS (continue: fmt=YUYV 1920x1080 frames=578 event_ms=4396 events=2 last_event_ms=5912 frames_after_event=335 frames_after_last_event=296 last_frame_ms=10913 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4422 ms, 244 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5858 ms, 284 frames
+  INFO change: DQBUF Input/output error at 5859 ms, 284 frames, last frame at 5743 ms
+    | stream: running 0 live 0 input_restarts 15 input_stops 7 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 286 frames 284 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=284 event_ms=4422 events=2 last_event_ms=5858 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5743 dqbuf_error_ms=5859 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  INFO change: holding the buffers 6.0 s
+RESULT change-to-720p-held        PASS (error: fmt=YUYV 1920x1080 frames=284 event_ms=4422 events=2 last_event_ms=5858 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5743 dqbuf_error_ms=5859 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT change-adopted             PASS (capture without setting timings: RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.628 max=16.766 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=1 )
+
+## loss
+RESULT loss-idle-event            PASS (7611.790020: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+  query while off: VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed
+	Active width: 0
+	Active height: 0
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+  input:	Status      : 0x00000002 (no signal)
+  RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.664 min=16.601 max=16.692 ch0_bytes=4147200 ch0_top_word=80108010(100.0%) distinct_frames=1
+  unlocked frame:  10 80 10 80 10 80 10 80 10 80 10 80 10 80 10 80
+  unlocked frame: *
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (7616.094102: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (15 ms)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4238 ms, 233 frames
+    | stream: running 1 live 0 input_restarts 16 input_stops 7 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 2 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 494 frames 492 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=492 event_ms=4238 events=1 last_event_ms=4238 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9241 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-streaming             PASS (continue: fmt=YUYV 1920x1080 frames=492 event_ms=4238 events=1 last_event_ms=4238 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9241 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-streaming-black       PASS (last frame: 100.00 % limited-range black)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5480 ms, 310 frames
+    | stream: running 1 live 1 input_restarts 17 input_stops 7 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 609 frames 607 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=607 event_ms=5480 events=1 last_event_ms=5480 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10482 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-return-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=607 event_ms=5480 events=1 last_event_ms=5480 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10482 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-return-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4245 ms, 235 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 9681 ms, 509 frames
+    | stream: running 1 live 1 input_restarts 19 input_stops 7 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 1229 frames 1226 skipped 3 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=1226 event_ms=4245 events=2 last_event_ms=9681 frames_after_event=991 frames_after_last_event=717 last_frame_ms=21690 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-off-on-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=1226 event_ms=4245 events=2 last_event_ms=9681 frames_after_event=991 frames_after_last_event=717 last_frame_ms=21690 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-off-on-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 30 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT change-1080p60-to-720p60   PASS (error: fmt=YUYV 1920x1080 frames=282 event_ms=4402 events=2 last_event_ms=5829 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5723 dqbuf_error_ms=5829 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1280x720 frames=60)
+RESULT change-720p60-to-1080p60   PASS (error: fmt=YUYV 1280x720 frames=282 event_ms=4414 events=2 last_event_ms=5854 frames_after_event=38 frames_after_last_event=0 last_frame_ms=5738 dqbuf_error_ms=5854 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+RESULT change-1080p60-to-p59.94   PASS (continue: fmt=YUYV 1920x1080 frames=578 event_ms=4396 events=2 last_event_ms=5912 frames_after_event=335 frames_after_last_event=296 last_frame_ms=10913 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+RESULT change-to-720p-held        PASS (error: fmt=YUYV 1920x1080 frames=284 event_ms=4422 events=2 last_event_ms=5858 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5743 dqbuf_error_ms=5859 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT change-adopted             PASS (capture without setting timings: RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.628 max=16.766 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=1 )
+RESULT loss-idle-event            PASS (7611.790020: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (7616.094102: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (15 ms)
+RESULT loss-streaming             PASS (continue: fmt=YUYV 1920x1080 frames=492 event_ms=4238 events=1 last_event_ms=4238 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9241 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-streaming-black       PASS (last frame: 100.00 % limited-range black)
+RESULT loss-return-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=607 event_ms=5480 events=1 last_event_ms=5480 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10482 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-return-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+RESULT loss-off-on-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=1226 event_ms=4245 events=2 last_event_ms=9681 frames_after_event=991 frames_after_last_event=717 last_frame_ms=21690 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-off-on-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=18 fail=0 skip=1
