@@ -31,6 +31,7 @@
 #include <linux/bitfield.h>
 #include <linux/debugfs.h>
 #include <linux/delay.h>
+#include <linux/error-injection.h>
 #include <linux/gcd.h>
 #include <linux/jiffies.h>
 #include <linux/ktime.h>
@@ -1541,3 +1542,6 @@ int gc573_video_init(struct gc573 *gc)
 	return devm_add_action_or_reset(&gc->pdev->dev, gc573_video_unregister,
 					gc);
 }
+
+/* tests/cases/16-probe-fail-hpd.sh fails it (bpftrace override) */
+ALLOW_ERROR_INJECTION(gc573_video_init, ERRNO);
