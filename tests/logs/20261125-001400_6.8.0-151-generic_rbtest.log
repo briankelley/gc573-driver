@@ -1,0 +1,71 @@
+# gc573-cap -R (returned-buffer test): ch0 CH_CTRL arming race, M2 review
+# VM gc573-dev, kernel 6.8.0-151-generic, card fw 20200811, no HDMI input (M2: HDMI chips in
+# reset, FPGA free-running at 60 Hz).
+# Command: gc573-cap -d /dev/video0 -f NV12 -b 3 -R 200000 -D /sys/kernel/debug/gc573-0000:07:00.0/video
+# before: module from c14e866 (M2 as merged): gc573_buf_queue() arms free slots whenever the
+#         stream runs, a read-modify-write of ch0 CH_CTRL that can straddle a completion.
+# after:  c14e866 + the fix (gc573_buf_queue() arms only when no slot is armed). Stopped by hand
+#         after ~35500 QBUFs to free the card for M3 bring-up; debugfs at that point: frames 35474,
+#         unarmed 0, order 0, bad_status 0, underruns 757.
+# Result: the race did not reproduce: 200000 QBUFs at random times (3334 s), no write into a
+# dequeued buffer, no completion for an unarmed slot. Bound (rule of three, 95 %): per-QBUF
+# probability below 1.5e-5 under these conditions.
+
+## before
+INFO rbtest fmt=NV12 1920x1080 buffers=3 qbufs=200000 seed=1795565840
+INFO rbtest progress qbufs=20000 changed=0 t=333s
+INFO rbtest progress qbufs=40000 changed=0 t=667s
+INFO rbtest progress qbufs=60000 changed=0 t=1000s
+INFO rbtest progress qbufs=80000 changed=0 t=1334s
+INFO rbtest progress qbufs=100000 changed=0 t=1667s
+INFO rbtest progress qbufs=120000 changed=0 t=2000s
+INFO rbtest progress qbufs=140000 changed=0 t=2334s
+INFO rbtest progress qbufs=160000 changed=0 t=2667s
+INFO rbtest progress qbufs=180000 changed=0 t=3000s
+INFO rbtest progress qbufs=200000 changed=0 t=3334s
+debugfs (end of rbtest):
+  | core: INT_STATUS 0x00000000 INT_ENABLE 0x00000b33 RESET 0x00000309 TLP_ALIGN 0x00000000 INT seen 0x00000802
+  | input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+  | vip: VIP_CTRL 0x00000f01 COLOR_CTRL 0x0000000e RATE_CTRL 0x0005000a PIX_MODE 0x00000002 CLIP 0,0 1920x1080
+  | ch0: STATUS 0x00009023 CTRL 0x00000011
+  | stream: running 1 fmt NV12 little-endian (0x3231564e) 1920x1080 sizeimage 3110400 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x11 ch2 0x0
+  | slots (buffer index): -1 -1 -1 2
+  | stats: irqs 200003 frames 200002 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 5079
+  | events (oldest first): t_ns status ctrl done armed
+  |   4570395670434 0x00009024 0x00000003 1 1
+  |   4570412347698 0x00009021 0x0000000d 1 2
+  |   4570429011885 0x00009022 0x00000019 1 2
+  |   4570445677560 0x00009023 0x00000011 1 1
+  |   4570462338771 0x00009024 0x00000003 1 1
+  |   4570478999026 0x00009021 0x00000005 1 1
+  |   4570495672521 0x00009022 0x00000009 1 1
+  |   4570512340201 0x00009023 0x00000011 1 1
+  |   4570528982451 0x00009024 0x00000003 1 1
+  |   4570545636060 0x00009021 0x00000005 1 1
+  |   4570562291485 0x00009022 0x00000009 1 1
+  |   4570578958004 0x00009023 0x00000011 1 1
+  |   4570595653938 0x00009024 0x00000003 1 1
+  |   4570612258153 0x00009021 0x00000005 1 1
+  |   4570629001575 0x00009022 0x00000009 1 1
+  |   4570645666617 0x00009023 0x00000011 1 1
+  |   4570662352786 0x00009024 0x00000003 1 1
+  |   4570678996601 0x00009021 0x00000005 1 1
+  |   4570695661004 0x00009022 0x00000019 1 2
+  |   4570712332031 0x00009023 0x00000011 1 1
+  |   4570728998428 0x00009024 0x00000003 1 1
+  |   4570745654519 0x00009021 0x00000005 1 1
+  |   4570762329660 0x00009022 0x00000009 1 1
+  |   4570778995685 0x00009023 0x00000013 1 2
+  |   4570795660943 0x00009024 0x00000007 1 2
+  |   4570812344872 0x00009021 0x00000005 1 1
+  |   4570828994334 0x00009022 0x00000009 1 1
+  |   4570845663177 0x00009023 0x00000011 1 1
+  |   4570862335471 0x00009024 0x00000003 1 1
+  |   4570878985396 0x00009021 0x00000005 1 1
+  |   4570895646632 0x00008042 0x00000001 1 0
+  |   4570912353448 0x00008043 0x00000001 1 0
+RESULT rbtest fmt=NV12 buffers=3 qbufs=200000 buffers_changed=0 blocks_changed=0 mean_hold_ms=9.99 seconds=3334
+
+## after (partial)
+INFO rbtest fmt=NV12 1920x1080 buffers=3 qbufs=200000 seed=1795569275
+INFO rbtest progress qbufs=20000 changed=0 t=333s

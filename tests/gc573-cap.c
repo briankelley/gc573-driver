@@ -18,6 +18,10 @@
  *            wait, then requeue 1 and later 2 buffers, then stream again
  *   -w MS    stream MS ms without dequeueing, STREAMOFF, then check every
  *            buffer's planes (for runs where no frame completes)
+ *   -R N     returned-buffer test, N QBUFs: after each DQBUF the whole
+ *            buffer is filled with a fresh pattern, held 0-20 ms (random),
+ *            then checked; any change means DMA wrote into a buffer that
+ *            userspace owned. QBUFs thus come at random times
  *   -D FILE  the driver's debugfs "video" file, printed at key points
  *
  * Output: "RESULT ..." lines with key=value pairs; "FAIL ..." lines for
@@ -663,6 +667,59 @@ static int waitcheck(uint32_t fourcc, unsigned int nb, unsigned int ms)
 	return 0;
 }
 
+static int rbtest(uint32_t fourcc, unsigned int nb, unsigned long n)
+{
+	unsigned long q = 0, bad = 0, blocks = 0, hold_us = 0;
+	unsigned int seed = (unsigned int)time(NULL), i;
+	struct v4l2_buffer b;
+	size_t nblk, k;
+	double t0;
+	int ret = 0, e;
+
+	set_fmt(fourcc);
+	alloc_bufs(nb);
+	nblk = pix.sizeimage / 32;
+	for (i = 0; i < nbufs; i++)
+		qbuf(i, 0);
+	printf("INFO rbtest fmt=%.4s %ux%u buffers=%u qbufs=%lu seed=%u\n",
+	       (char *)&fourcc, pix.width, pix.height, nbufs, n, seed);
+	t0 = now_ms();
+	stream(1);
+	while (q < n) {
+		unsigned int us = rand_r(&seed) % 20001;
+
+		e = dqbuf(&b, DQ_TIMEOUT_MS);
+		if (e) {
+			printf("FAIL rbtest: no frame after %lu QBUFs: %s\n", q,
+			       strerror(-e));
+			ret = 1;
+			break;
+		}
+		fill(&bufs[b.index]);
+		usleep(us);
+		hold_us += us;
+		k = untouched(&bufs[b.index], 0, pix.sizeimage);
+		if (k != nblk) {
+			if (bad < 10)
+				printf("FAIL rbtest: buffer %u (sequence %u) changed while dequeued: %zu of %zu blocks, held %u us\n",
+				       b.index, b.sequence, nblk - k, nblk, us);
+			bad++;
+			blocks += nblk - k;
+		}
+		qbuf(b.index, 0);
+		if (!(++q % 20000))
+			printf("INFO rbtest progress qbufs=%lu changed=%lu t=%.0fs\n",
+			       q, bad, (now_ms() - t0) / 1e3);
+	}
+	dump_debugfs("end of rbtest");
+	stream(0);
+	printf("RESULT rbtest fmt=%.4s buffers=%u qbufs=%lu buffers_changed=%lu blocks_changed=%lu mean_hold_ms=%.2f seconds=%.0f\n",
+	       (char *)&fourcc, nbufs, q, bad, blocks,
+	       q ? hold_us / 1e3 / q : 0, (now_ms() - t0) / 1e3);
+	free_bufs();
+	return ret || bad;
+}
+
 static unsigned int parse_fmts(const char *s, uint32_t *list)
 {
 	char tmp[256], *tok, *save = NULL;
@@ -692,11 +749,11 @@ int main(int argc, char **argv)
 	const char *dev = NULL, *fl = "YUYV";
 	const char *tl = NULL;
 	unsigned int nb = 4, nc = 0, wait_ms = 0, nl, i, t, t_end;
-	unsigned long n = 60;
+	unsigned long n = 60, rb = 0;
 	uint32_t list[NFMTS];
 	int opt, pattern = 0, under = 0;
 
-	while ((opt = getopt(argc, argv, "d:f:b:n:pT:c:uw:D:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:f:b:n:pT:c:uw:R:D:")) != -1) {
 		switch (opt) {
 		case 'd': dev = optarg; break;
 		case 'f': fl = optarg; break;
@@ -707,6 +764,7 @@ int main(int argc, char **argv)
 		case 'c': nc = atoi(optarg); break;
 		case 'u': under = 1; break;
 		case 'w': wait_ms = atoi(optarg); break;
+		case 'R': rb = strtoul(optarg, NULL, 0); break;
 		case 'D': dbgfile = optarg; break;
 		default:
 			fprintf(stderr, "usage: see the comment in %s\n",
@@ -737,7 +795,9 @@ int main(int argc, char **argv)
 			}
 			break;
 		}
-		if (nc)
+		if (rb)
+			failed |= rbtest(list[0], nb, rb);
+		else if (nc)
 			failed |= cycles(list, nl, nc, nb, n);
 		else if (under)
 			failed |= underrun(list[0], nb);

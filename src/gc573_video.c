@@ -718,7 +718,14 @@ static void gc573_buf_queue(struct vb2_buffer *vb)
 
 	spin_lock(&v->slock);
 	list_add_tail(&to_gc573_vbuf(vb)->list, &v->queued);
-	if (v->running)
+	/*
+	 * Hardware clears a slot's ch0 valid bit when the slot completes, so
+	 * a read-modify-write of ch0 CH_CTRL that straddles a completion sets
+	 * that bit again. While a slot is armed only the IRQ thread arms
+	 * more, right after it has handled a completion. With none armed the
+	 * DMA is stalled and nothing can complete (spec/video-dma.md): arm now.
+	 */
+	if (v->running && !gc573_vid_armed(v))
 		gc573_vid_fill(gc, false);
 	spin_unlock(&v->slock);
 }
