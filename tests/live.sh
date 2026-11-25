@@ -39,6 +39,17 @@
 #             and relock: no overrun, never stalled, no DMA restart at the
 #             video stops, no gap (the losses' pauses are filled), bursts
 #             with the right channels after the last relock
+#   obs       OBS (tests/obs-run.sh starts it in the VM, obs-check.py
+#             drives it through obs-websocket): every pixel format OBS
+#             offers for the device, a source screenshot against pattern.py
+#   obsav     GC573_OBS_SECS (600) of OBS recording avsync.sh (V4L2 and
+#             ALSA sources): A/V offset and drift measured in the file
+#             (obs-av.py), OBS's frame counters, OBS's log clean
+#   obschange source changes while OBS records: output off and on (OBS
+#             live again by itself), a change to 720p (OBS's source stops at
+#             other timings); after the recording the source reopened as a
+#             user would (obs-check.py reopen) at 720p, and after a change to
+#             1080p: the pattern at the new size
 #   unload    unload while streaming video and audio
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
@@ -54,6 +65,7 @@ MODE_FRAMES=${GC573_MODE_FRAMES:-120}
 RELOADS=${GC573_RELOADS:-50}
 RELOCKS=${GC573_RELOCKS:-25}
 AV_SECS=${GC573_AV_SECS:-600}
+OBS_SECS=${GC573_OBS_SECS:-600}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=/tmp/gc573-live		# work directory in the VM
 SSHCTL=/tmp/gc573-live-ssh-$$
@@ -198,7 +210,9 @@ setup() {
 		gcc -O2 -Wall -o $W/gc573-aud $VMDIR/tests/gc573-aud.c -lasound -lm" ||
 		return 1
 	scp -q -o ControlPath="$SSHCTL" "$ROOT/tools/testsrc/pattern.py" \
-		"$ROOT/tests/live-compare.py" "$ROOT/tests/live-av.py" "$VM:$W/"
+		"$ROOT/tests/live-compare.py" "$ROOT/tests/live-av.py" \
+		"$ROOT/tests/obsws.py" "$ROOT/tests/obs-check.py" \
+		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$VM:$W/"
 }
 
 # The frame interval G_PARM must report for the timings in a gc573-cap
@@ -652,6 +666,122 @@ step_audioloss() {
 	av_off
 }
 
+# ---- M5: OBS in the VM (tests/obs-run.sh, obs-check.py, obs-av.py) ----
+
+# obs-check.py as the desktop user: OBS runs in the VM's Xfce session
+obsc() { vm "cd $W && python3 obs-check.py $*"; }
+
+# OBS running, with the card's V4L2 and ALSA sources in its scene
+obs_up() {
+	vm "bash $W/obs-run.sh start" | sed 's/^/  /' &&
+		obsc "setup $vdev $pcm" | sed 's/^/  /'
+}
+
+# OBS holds the device while it runs: each OBS step stops it at the end
+obs_down() { vm "bash $W/obs-run.sh stop" > /dev/null; }
+
+# Lines in OBS's current log, and OBS's capture-source lines after line $1
+obs_log_mark() { vm 'wc -l < "$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)"'; }
+obs_log_since() {
+	vm "tail -n +$(($1 + 1)) \"\$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)\"" |
+		grep -E 'v4l2-input|alsa-input|Recording (Start|Stop)'
+}
+
+# Every pixel format OBS offers for the device, through OBS's own
+# conversion: a source screenshot against pattern.py
+step_obs() {
+	src_mode 1920x1080 60
+	obs_up || { result obs-start FAIL "(OBS with obs-websocket: tests/obs-run.sh)"; obs_down; return; }
+	vm "python3 $W/pattern.py $W/pattern-1080.png 1920 1080 >/dev/null"
+	av_results obs "$(obsc "formats $W/pattern-1080.png")"
+	obs_down
+}
+
+# GC573_OBS_SECS (600) of OBS recording avsync.sh (V4L2 source with OBS's
+# defaults, ALSA source): A/V offset and drift measured in the file, OBS's
+# frame counters, and no capture trouble in OBS's log
+step_obsav() {
+	local out f m lg
+	av_on || { result obsav-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
+	sleep 3
+	obs_up || { result obsav-start FAIL "(OBS with obs-websocket)"; obs_down; av_off; return; }
+	m=$(obs_log_mark)
+	out=$(obsc "record $OBS_SECS")
+	f=$(sed -n 's/^RECORDING //p' <<< "$out")
+	check obsav-record "$([ -n "$f" ]; echo $?)" "($(grep '^STATS' <<< "$out"))"
+	lg=$(obs_log_since "$m")
+	sed 's/^/  obs: /' <<< "$lg" | head -20
+	check obsav-obs-log "$(! grep -qE 'select timed out|failed to dequeue|failed to log status' <<< "$lg"; echo $?)" \
+		"($(grep -cE 'select timed out' <<< "$lg") select timeouts, $(grep -cE 'failed to dequeue' <<< "$lg") dequeue failures)"
+	if [ -n "$f" ]; then
+		out=$(vm "python3 $W/obs-av.py '$f' --min-secs $((OBS_SECS * 9 / 10))")
+		av_results obsav "$out"
+		vm "rm -f '$f'"
+	fi
+	obs_down
+	av_off
+}
+
+# Source changes while OBS records: output off and on, then a change to
+# 720p, with the V4L2 source left alone. Live = flash frames in the
+# recording (obs-av.py --segments). At other timings the driver fails the
+# queue and OBS's source stops (OBS ignores V4L2 source-change events):
+# after the recording (whose muxer process holds the device: obs-check.py)
+# the source is reopened as a user would (obs-check.py reopen), at 720p
+# and again after a change to 1080p, and must show the pattern.
+step_obschange() {
+	local out f m lg t0 marks="" seg n k w h
+	local names=(before off on 720p)
+	av_on || { result obschange-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
+	sleep 3
+	obs_up || { result obschange-start FAIL "(OBS with obs-websocket)"; obs_down; av_off; return; }
+	m=$(obs_log_mark)
+	obsc start > /dev/null || { result obschange-record FAIL "(StartRecord)"; obs_down; av_off; return; }
+	t0=$(date +%s%N)
+	mark() { marks+="${marks:+,}$(( ($(date +%s%N) - t0) / 1000000 )).0e-3"; }
+	sleep 12
+	mark; src_off; sleep 8
+	mark; av_on; sleep 12
+	mark; "$ROOT/tools/testsrc/avsync.sh" "$OUT" 1280x720 60 > /dev/null 2>&1; sleep 8
+	out=$(obsc stop)
+	f=$(sed -n 's/^RECORDING //p' <<< "$out")
+	check obschange-record "$([ -n "$f" ]; echo $?)" "($(grep '^STATS' <<< "$out"))"
+	lg=$(obs_log_since "$m")
+	sed 's/^/  obs: /' <<< "$lg" | grep -vE 'select timed out' | head -30
+	echo "  obs: $(grep -c 'select timed out' <<< "$lg") select timeouts"
+	if [ -n "$f" ]; then
+		marks=$(python3 -c "print(','.join(f'{float(x):.1f}' for x in '$marks'.split(',')))")
+		out=$(vm "python3 $W/obs-av.py '$f' --segments $marks")
+		grep -E '^(SEGMENT|RESULT video)' <<< "$out" | sed 's/^/  /'
+		for k in 0 1 2 3; do
+			seg=$(awk -v k=$k '$1 == "SEGMENT" && $2 == k' <<< "$out")
+			n=$(grep -o 'flashes=[0-9]*' <<< "$seg" | cut -d= -f2)
+			case ${names[$k]} in
+			before|on)
+				check "obschange-live-${names[$k]}" "$([ "${n:-0}" -ge 5 ]; echo $?)" \
+					"(${n:-0} flash frames in ${names[$k]}: $(cut -d' ' -f3-4 <<< "$seg") s)" ;;
+			*)
+				echo "  ${names[$k]}: ${n:-0} flash frames" ;;
+			esac
+		done
+		vm "rm -f '$f'"
+	fi
+	check obschange-stopped-720p "$(grep -q 'failed to dequeue' <<< "$lg"; echo $?)" \
+		"(OBS's source stops at other timings: $(grep -c 'failed to dequeue' <<< "$lg") dequeue failure)"
+	av_off
+	for w in 1280 1920; do
+		h=$((w * 9 / 16))
+		vm "[ -f $W/p-${w}x$h.png ] || python3 $W/pattern.py $W/p-${w}x$h.png $w $h >/dev/null"
+		src_on "${w}x$h" 60
+		time_to_lock 10 > /dev/null
+		sleep 3
+		obsc reopen
+		sleep 4
+		av_results obschange-reopen "$(obsc "pattern $w $h $W/p-${w}x$h.png")"
+	done
+	obs_down
+}
+
 # Unload while streaming live video and audio. rmmod is refused while the
 # devices are open (module in use) and the streams keep running; unbinding
 # the PCI device stops them (the applications see an error and exit)
@@ -761,7 +891,7 @@ kml() {
 # ---- main ----
 
 all="bringup lock relock capture modes change loss colour audio avsync audioloss"
-all+=" unload reload compliance"
+all+=" obs obsav obschange unload reload compliance"
 [ $# -gt 0 ] || set -- $all
 krel=$(vm uname -r) || exit 2
 stamp=$(date -u +%Y%m%d-%H%M%S)
@@ -781,7 +911,7 @@ trap '"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off
 	vm "echo 'gc573-live: $kmark' | sudo tee /dev/kmsg >/dev/null"
 	kml reset
 	load || { echo "cannot load the module"; exit 2; }
-	echo "module:  $(vm "modinfo -F srcversion $VMDIR/gc573.ko"), $vdev"
+	echo "module:  srcversion $(vm "cat /sys/module/gc573/srcversion") loaded, $(vm "modinfo -F srcversion $VMDIR/gc573.ko") in ~/$VMDIR, $vdev"
 	for s in "$@"; do
 		echo
 		echo "## $s"
