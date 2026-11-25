@@ -136,6 +136,9 @@ struct gc573_it6805 {
 	u8 rev;
 	unsigned int cal_retrigger;
 	u32 entries, losses, releases, polls;
+	/* untraced audio paths RD takes and the driver does not (11.1) */
+	u32 audio_errors;		/* 0:b9 bits 7:6 at the ready check */
+	u32 audio_events;		/* 0:10 bit 7 while STABLE */
 };
 
 /* ---- splitter, spec/hdmi-splitter.md ---- */
