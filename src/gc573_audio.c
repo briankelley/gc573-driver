@@ -23,12 +23,16 @@
  * first period after both hold again. The stream never stalls and never
  * reports an xrun for an input change; the application sees silence.
  *
- * Video stop: its domain reset (spec/init.md "Stream stop" step 3) stops
- * the audio DMA too, clears DMA_RUN and raises no INT bit 4 (driver M4,
- * never traced: RD ran audio only with video idle). A running stream is
- * started again right after it, as at a stream start, and the time lost
- * meanwhile (about 90 ms, measured between the interrupts) is filled with
- * silence, which keeps the stream in step with the clock and with video.
+ * Video stop: the spec's sequence (spec/init.md "Stream stop" step 3)
+ * resets all three domains, and domain 8 holds the audio DMA: its reset
+ * stops the DMA, clears DMA_RUN and raises no INT bit 4 (driver M4/M5,
+ * open question 13; RD ran audio only with video idle). While a stream
+ * runs, the video stop leaves domain 8 out and audio carries on. If domain
+ * 8 is reset anyway (a stream started while the stop was under way), the
+ * stream is started again right after it, as at a stream start, and the
+ * time lost meanwhile (up to about 90 ms, measured between the
+ * interrupts) is filled with silence, which keeps the stream in step with
+ * the clock and with video.
  *
  * Pauses: at an input loss, and at times while a source plays, the FPGA
  * completes one period 10 ms late with AUDIO_DONE still in turn: one
@@ -154,9 +158,22 @@ static void gc573_aud_hw_stop(struct gc573 *gc)
 	gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
 }
 
+/* An audio stream is running: a video stop leaves its reset domain alone */
+bool gc573_audio_running(struct gc573 *gc)
+{
+	struct gc573_audio *a = &gc->aud;
+	unsigned long flags;
+	bool running;
+
+	spin_lock_irqsave(&a->lock, flags);
+	running = a->running;
+	spin_unlock_irqrestore(&a->lock, flags);
+	return running;
+}
+
 /*
- * After the video stop's domain reset (gc573_video_hw_stop()): a running
- * stream lost its DMA; start it again and fill the gap at its first period
+ * After a domain reset (gc573_video_hw_stop()): if it stopped the DMA of a
+ * running stream, start it again and fill the gap at its first period
  */
 void gc573_audio_reset_done(struct gc573 *gc)
 {

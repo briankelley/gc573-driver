@@ -1,0 +1,43 @@
+# gc573-dev on 6.8.12-gc573dbg (kmemleak, lockdep, KASAN, DMA-API debug, DEBUG_ATOMIC_SLEEP), gc573 srcversion
+# 292FD1A2D4D0C4210A150E8. Kernel-log lines matching WARNING|BUG:|KASAN|possible circular|possible recursive|
+# inconsistent lock|lockdep|DMA-API|RCU|sleeping function|Call Trace (boot-time RCU self-test and DMA-API lines
+# are informational), debug_locks, and kmemleak after two scans.
+
+## 1. Boot of 17:29: the void run 20261125-173057 (18 min), the window proofs 20261125T181950Z and
+##    20261125T183640Z (about 1060 mode changes, 44 EDID hot-plugs, 84 output off/on cycles). Taken 18:53 UTC.
+6.8.12-gc573dbg
+2026-11-25 17:29:25
+== kernel log: WARN/BUG/KASAN/lockdep/RCU/DMA-API lines (this boot)
+== debug_locks:  debug_locks: 1
+== gc573 module: gc573                 421888  0
+== kmemleak scan x2
+== kmemleak objects reported: 0
+== of them with gc573 in the backtrace: 0
+
+## 2. Boot of 18:54: the redo 20261125-185448 (30-min OBS event soak, avchange, compliance). Taken 19:29 UTC.
+6.8.12-gc573dbg
+2026-11-25 18:54:24
+== kernel log: WARN/BUG/KASAN/lockdep/RCU/DMA-API lines (this boot)
+[    0.359227] Running RCU self tests
+[    0.359229] Running RCU synchronous self tests
+[    0.359247] 	Trampoline variant of Tasks RCU enabled.
+[    0.359248] 	Rude variant of Tasks RCU enabled.
+[    0.359249] 	Tracing variant of Tasks RCU enabled.
+[    0.359316] Running RCU synchronous self tests
+[    0.359325] RCU Tasks: Setting shift to 2 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=4.
+[    0.359330] RCU Tasks Rude: Setting shift to 2 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=4.
+[    0.359335] RCU Tasks Trace: Setting shift to 2 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=4.
+[    0.462576] Running RCU synchronous self tests
+[    0.462576] Running RCU synchronous self tests
+[    0.463045] Running RCU Tasks wait API self tests
+[    0.463429] Running RCU Tasks Rude wait API self tests
+[    0.463652] Running RCU Tasks Trace wait API self tests
+[    0.496202] Running RCU synchronous self tests
+[    0.496538] Running RCU synchronous self tests
+[    0.498587] DMA-API: preallocated 65536 debug entries
+[    0.498956] DMA-API: debugging enabled by kernel config
+== debug_locks:  debug_locks: 1
+== gc573 module: gc573                 421888  0
+== kmemleak scan x2
+== kmemleak objects reported: 0
+== of them with gc573 in the backtrace: 0

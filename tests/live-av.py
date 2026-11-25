@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0
 """Analyse a gc573-aud capture of tools/testsrc/avsync.sh (M4 gate).
 
-live-av.py LOG RAW [--min-secs S] [--bursts] [--tail S]
+live-av.py LOG RAW [--min-secs S] [--bursts] [--tail S] [--segments T1,T2,..]
 
 LOG: gc573-aud -v output (A lines; V lines with -V); RAW: its -o samples
 (S16_LE, 2 channels, 48 kHz). Prints RESULT lines (PASS/FAIL):
@@ -34,6 +34,11 @@ LOG: gc573-aud -v output (A lines; V lines with -V); RAW: its -o samples
              of the most common offset; both are reported. PASS if the
              corrected offsets stay within 1 ms of a line through them and
              that line moves less than one audio period (10 ms) over the run
+--segments (seconds from the first read): per segment a line
+  SEGMENT K START END pairs=N raw=MS min=MS max=MS frames=CLUSTERS corr=MS
+with the raw offsets of the flashes in it and their mean moved by whole
+frames as for avsync (corr), for captures across source changes (does the
+offset stay where it was?)
 """
 import re
 import sys
@@ -49,14 +54,15 @@ def result(name, ok, detail):
 
 
 def onsets_of(x):
-    """First sample above 1/8 of full scale after >= 0.5 s of quiet."""
-    env = np.abs(x).max(axis=1)
-    loud = np.flatnonzero(env > 4096)
-    out, last = [], -RATE
-    for k in loud:
-        if k - last > RATE // 2:
-            out.append(int(k))
-        last = k
+    """First sample above 1/8 of full scale after >= 0.5 s of quiet. In
+    chunks: x may be a memory map of hours of samples."""
+    out, last, step = [], -RATE, 1 << 22
+    for c in range(0, len(x), step):
+        env = np.abs(x[c:c + step].astype(np.int32)).max(axis=1)
+        for k in np.flatnonzero(env > 4096) + c:
+            if k - last > RATE // 2:
+                out.append(int(k))
+            last = k
     return out
 
 
@@ -74,6 +80,11 @@ def main():
     if '--bursts' in args:
         args.remove('--bursts')
         want_bursts = True
+    segments = []
+    if '--segments' in args:
+        i = args.index('--segments')
+        segments = [float(v) for v in args[i + 1].split(',') if v]
+        del args[i:i + 2]
     log, raw = args
     a_hw, a_ts, v_seq, v_ts, v_y = [], [], [], [], []
     xruns = 0
@@ -92,7 +103,7 @@ def main():
     want_bursts |= bool(v_ts)
     a_hw = np.array(a_hw, dtype=np.float64)
     a_ts = np.array(a_ts, dtype=np.int64)
-    x = np.fromfile(raw, dtype='<i2').reshape(-1, 2).astype(np.float64)
+    x = np.memmap(raw, dtype='<i2', mode='r').reshape(-1, 2)
     ok = True
 
     t0 = a_ts[0]
@@ -128,7 +139,7 @@ def main():
     f = np.fft.rfftfreq(nfft, 1 / RATE)
     i1, i2 = np.argmin(np.abs(f - 1000)), np.argmin(np.abs(f - 2000))
     for k in onsets:
-        seg = x[k:k + n]
+        seg = x[k:k + n].astype(np.float64)
         if len(seg) < n:
             continue
         w = np.hanning(n)
@@ -212,6 +223,18 @@ def main():
     print(f"  raw offsets: mean {offs.mean():+.2f} ms, min {offs.min():+.2f}, max "
           f"{offs.max():+.2f}, std {offs.std():.2f}; frames from the most common "
           f"(count): {clusters}")
+    if segments:
+        edges = [0.0] + segments + [float(at[-1])]
+        for k in range(len(edges) - 1):
+            m = (when >= edges[k]) & (when < edges[k + 1])
+            if not np.any(m):
+                print(f"SEGMENT {k} {edges[k]:.1f} {edges[k + 1]:.1f} pairs=0")
+                continue
+            o = offs[m]
+            sv, sc = np.unique(np.round(o / tfm).astype(int), return_counts=True)
+            print(f"SEGMENT {k} {edges[k]:.1f} {edges[k + 1]:.1f} pairs={len(o)} raw={o.mean():+.2f} "
+                  f"min={o.min():+.2f} max={o.max():+.2f} frames=" +
+                  ','.join(f'{v - ref:+d}:{c}' for v, c in zip(sv, sc)) + f" corr={corr[m].mean():+.3f}")
     ok &= result('avsync', res <= 1 and abs(drift) < 10,
                  f"{len(offs)} flashes over {span_min:.1f} min: offset {corr.mean():+.3f} ms "
                  f"(std {corr.std():.3f}, min {corr.min():+.3f}, max {corr.max():+.3f}), "

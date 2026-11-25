@@ -1,0 +1,607 @@
+2026-11-25T15:13:14.822Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-25T15:13:14.833Z guard start: run pid 313402, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*, windows and audio each polled every 50 ms
+2026-11-25T15:13:14.842Z guard audio links: none
+2026-11-25T15:13:14.844Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T15:13:14.844Z guard windows: none
+2026-11-25T15:13:15.206Z live stream stop (exit 0)
+2026-11-25T15:13:15.259Z live driver load
+2026-11-25T15:13:15.362Z live obs start
+2026-11-25T15:13:21.093Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T15:13:21.286Z show mode DVI-D-0 1920x1080@60
+2026-11-25T15:13:21.732Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T15:13:21.807Z show player start 1920x1080@60 counter (pid 314068)
+2026-11-25T15:13:21.823Z show player stop (pid 314068)
+2026-11-25T15:13:21.988Z guard windows: none
+2026-11-25T15:13:22.099Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T15:13:22.507Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:13:22.540Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T15:13:22.646Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 314358)
+2026-11-25T15:13:23.193Z obs-events recording start (StartRecord, hybrid_mp4)
+2026-11-25T15:14:14.842Z guard ok: windows 1195 polls, longest interval 112 ms; audio 1198 polls, longest interval 50 ms
+2026-11-25T15:15:14.849Z guard ok: windows 2393 polls, longest interval 112 ms; audio 2396 polls, longest interval 50 ms
+2026-11-25T15:16:14.856Z guard ok: windows 3590 polls, longest interval 112 ms; audio 3593 polls, longest interval 51 ms
+2026-11-25T15:16:24.446Z obs-events event sleep
+2026-11-25T15:16:24.446Z obs-events change sleep
+2026-11-25T15:16:24.652Z avsync player stop (pid 314358)
+2026-11-25T15:16:24.700Z guard audio links: none
+2026-11-25T15:16:24.702Z guard windows: none
+2026-11-25T15:16:24.769Z obs-events output off DVI-D-0
+2026-11-25T15:16:24.934Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T15:16:32.947Z show mode DVI-D-0 1920x1080@60
+2026-11-25T15:16:33.163Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T15:16:33.742Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T15:16:33.779Z show player start 1920x1080@60 counter (pid 337492)
+2026-11-25T15:16:34.906Z show player stop (pid 337492)
+2026-11-25T15:16:35.095Z guard windows: none
+2026-11-25T15:16:35.207Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T15:16:35.688Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:16:35.690Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T15:16:35.787Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 337910)
+2026-11-25T15:17:14.863Z guard ok: windows 4778 polls, longest interval 215 ms; audio 4791 polls, longest interval 51 ms
+2026-11-25T15:18:14.870Z guard ok: windows 5975 polls, longest interval 215 ms; audio 5988 polls, longest interval 51 ms
+2026-11-25T15:19:14.876Z guard ok: windows 7172 polls, longest interval 215 ms; audio 7185 polls, longest interval 51 ms
+2026-11-25T15:19:23.799Z obs-events event rate-59.94
+2026-11-25T15:19:23.799Z obs-events change rate-59.94
+2026-11-25T15:19:23.999Z avsync player stop (pid 337910)
+2026-11-25T15:19:24.059Z guard audio links: none
+2026-11-25T15:19:24.105Z guard windows: none
+2026-11-25T15:19:24.247Z show mode DVI-D-0 1920x1080@59.94
+2026-11-25T15:19:24.926Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T15:19:25.036Z show player start 1920x1080@59.94 counter (pid 358586)
+2026-11-25T15:19:26.318Z show player stop (pid 358586)
+2026-11-25T15:19:26.422Z guard windows: none
+2026-11-25T15:19:26.601Z avsync mode DVI-D-0 1920x1080@59.94
+2026-11-25T15:19:26.916Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:19:26.918Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T15:19:26.973Z avsync player start 1920x1080@59.94 pattern amplitude 0.5 (pid 359020)
+2026-11-25T15:20:14.883Z guard ok: windows 8364 polls, longest interval 215 ms; audio 8383 polls, longest interval 51 ms
+2026-11-25T15:21:14.891Z guard ok: windows 9562 polls, longest interval 215 ms; audio 9581 polls, longest interval 52 ms
+2026-11-25T15:22:14.898Z guard ok: windows 10759 polls, longest interval 215 ms; audio 10778 polls, longest interval 52 ms
+2026-11-25T15:22:24.987Z obs-events event colour-ycbcr444
+2026-11-25T15:22:24.987Z obs-events change colour-ycbcr444
+2026-11-25T15:22:25.871Z obs-events colour DVI-D-0 ColorSpace=2 ColorRange=1
+2026-11-25T15:23:14.906Z guard ok: windows 11956 polls, longest interval 215 ms; audio 11975 polls, longest interval 52 ms
+2026-11-25T15:24:14.914Z guard ok: windows 13154 polls, longest interval 215 ms; audio 13173 polls, longest interval 52 ms
+2026-11-25T15:25:14.922Z guard ok: windows 14351 polls, longest interval 215 ms; audio 14370 polls, longest interval 52 ms
+2026-11-25T15:25:25.134Z obs-events event edid-same
+2026-11-25T15:25:25.134Z obs-events change edid-same
+2026-11-25T15:25:25.304Z obs-events edid set: default image
+2026-11-25T15:25:26.184Z avsync player stop (pid 359020)
+2026-11-25T15:25:26.262Z guard audio links: none
+2026-11-25T15:25:26.358Z guard windows: none
+2026-11-25T15:25:26.460Z avsync mode DVI-D-0 1920x1080@59.94
+2026-11-25T15:25:26.911Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T15:25:26.913Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:25:26.995Z avsync player start 1920x1080@59.94 pattern amplitude 0.5 (pid 402723)
+2026-11-25T15:26:14.931Z guard ok: windows 15547 polls, longest interval 215 ms; audio 15568 polls, longest interval 52 ms
+2026-11-25T15:27:14.938Z guard ok: windows 16744 polls, longest interval 215 ms; audio 16765 polls, longest interval 52 ms
+2026-11-25T15:28:14.946Z guard ok: windows 17942 polls, longest interval 215 ms; audio 17963 polls, longest interval 52 ms
+2026-11-25T15:28:25.007Z obs-events event rate-60
+2026-11-25T15:28:25.007Z obs-events change rate-60
+2026-11-25T15:28:25.221Z avsync player stop (pid 402723)
+2026-11-25T15:28:25.307Z guard audio links: none
+2026-11-25T15:28:25.479Z guard windows: none
+2026-11-25T15:28:25.481Z show mode DVI-D-0 1920x1080@60
+2026-11-25T15:28:26.150Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T15:28:26.151Z show player start 1920x1080@60 counter (pid 424568)
+2026-11-25T15:28:27.505Z show player stop (pid 424568)
+2026-11-25T15:28:27.593Z guard windows: none
+2026-11-25T15:28:27.786Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T15:28:28.263Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:28:28.266Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T15:28:28.281Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 424990)
+2026-11-25T15:29:14.954Z guard ok: windows 19134 polls, longest interval 215 ms; audio 19160 polls, longest interval 52 ms
+2026-11-25T15:30:14.962Z guard ok: windows 20332 polls, longest interval 215 ms; audio 20358 polls, longest interval 52 ms
+2026-11-25T15:31:14.970Z guard ok: windows 21529 polls, longest interval 215 ms; audio 21555 polls, longest interval 52 ms
+2026-11-25T15:31:24.292Z obs-events event colour-rgb-limited
+2026-11-25T15:31:24.292Z obs-events change colour-rgb-limited
+2026-11-25T15:31:25.159Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=1
+2026-11-25T15:32:14.978Z guard ok: windows 22727 polls, longest interval 215 ms; audio 22753 polls, longest interval 52 ms
+2026-11-25T15:33:14.986Z guard ok: windows 23924 polls, longest interval 215 ms; audio 23950 polls, longest interval 52 ms
+2026-11-25T15:34:14.993Z guard ok: windows 25122 polls, longest interval 215 ms; audio 25148 polls, longest interval 52 ms
+2026-11-25T15:34:24.413Z obs-events event res-720p
+2026-11-25T15:34:24.413Z obs-events change res-720p
+2026-11-25T15:34:24.614Z avsync player stop (pid 424990)
+2026-11-25T15:34:24.663Z guard audio links: none
+2026-11-25T15:34:24.721Z guard windows: none
+2026-11-25T15:34:24.865Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T15:34:25.086Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T15:34:25.822Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T15:34:25.885Z show player start 1280x720@59.94 counter (pid 468367)
+2026-11-25T15:34:36.651Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-25T15:34:37.007Z show player stop (pid 468367)
+2026-11-25T15:34:37.034Z guard windows: none
+2026-11-25T15:34:37.283Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T15:34:37.706Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:34:37.736Z guard windows: gc573-avsync 1280x720+1920+0 IsViewable
+2026-11-25T15:34:37.814Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 470005)
+2026-11-25T15:35:15.001Z guard ok: windows 26312 polls, longest interval 215 ms; audio 26345 polls, longest interval 52 ms
+2026-11-25T15:36:15.010Z guard ok: windows 27510 polls, longest interval 215 ms; audio 27543 polls, longest interval 52 ms
+2026-11-25T15:37:15.018Z guard ok: windows 28707 polls, longest interval 215 ms; audio 28740 polls, longest interval 52 ms
+2026-11-25T15:37:23.825Z obs-events event colour-rgb-full
+2026-11-25T15:37:23.825Z obs-events change colour-rgb-full
+2026-11-25T15:37:24.572Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T15:38:15.026Z guard ok: windows 29905 polls, longest interval 215 ms; audio 29938 polls, longest interval 52 ms
+2026-11-25T15:39:15.034Z guard ok: windows 31102 polls, longest interval 215 ms; audio 31135 polls, longest interval 52 ms
+2026-11-25T15:40:15.042Z guard ok: windows 32299 polls, longest interval 215 ms; audio 32332 polls, longest interval 52 ms
+2026-11-25T15:40:23.811Z obs-events event edid-new
+2026-11-25T15:40:23.811Z obs-events change edid-new
+2026-11-25T15:40:23.904Z avsync player stop (pid 470005)
+2026-11-25T15:40:23.965Z guard audio links: none
+2026-11-25T15:40:24.020Z guard windows: none
+2026-11-25T15:40:24.021Z obs-events edid set: other image
+2026-11-25T15:40:25.316Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T15:40:25.642Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T15:40:26.367Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T15:40:26.662Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T15:40:27.418Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T15:40:27.512Z show player start 1280x720@59.94 counter (pid 512338)
+2026-11-25T15:40:28.269Z show player stop (pid 512338)
+2026-11-25T15:40:28.365Z guard windows: none
+2026-11-25T15:40:28.546Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T15:40:28.933Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:40:28.954Z guard windows: gc573-avsync 1280x720+1920+0 IsViewable
+2026-11-25T15:40:29.065Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 512729)
+2026-11-25T15:41:15.050Z guard ok: windows 33480 polls, longest interval 271 ms; audio 33530 polls, longest interval 52 ms
+2026-11-25T15:42:15.058Z guard ok: windows 34677 polls, longest interval 271 ms; audio 34727 polls, longest interval 52 ms
+2026-11-25T15:43:15.065Z guard ok: windows 35875 polls, longest interval 271 ms; audio 35925 polls, longest interval 52 ms
+2026-11-25T15:43:25.077Z obs-events event sleep
+2026-11-25T15:43:25.077Z obs-events change sleep
+2026-11-25T15:43:25.158Z avsync player stop (pid 512729)
+2026-11-25T15:43:25.222Z guard audio links: none
+2026-11-25T15:43:25.275Z obs-events output off DVI-D-0
+2026-11-25T15:43:25.290Z guard windows: none
+2026-11-25T15:43:25.442Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T15:43:33.421Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T15:43:33.555Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T15:43:34.209Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T15:43:34.241Z show player start 1280x720@59.94 counter (pid 535054)
+2026-11-25T15:43:35.047Z show player stop (pid 535054)
+2026-11-25T15:43:35.072Z guard windows: none
+2026-11-25T15:43:35.329Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T15:43:35.822Z guard windows: gc573-avsync 1280x720+1920+0 IsViewable
+2026-11-25T15:43:35.843Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:43:35.905Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 535449)
+2026-11-25T15:44:15.073Z guard ok: windows 37065 polls, longest interval 271 ms; audio 37123 polls, longest interval 52 ms
+2026-11-25T15:45:15.080Z guard ok: windows 38262 polls, longest interval 271 ms; audio 38320 polls, longest interval 52 ms
+2026-11-25T15:46:15.087Z guard ok: windows 39460 polls, longest interval 271 ms; audio 39518 polls, longest interval 52 ms
+2026-11-25T15:46:23.916Z obs-events event res-1080p
+2026-11-25T15:46:23.916Z obs-events change res-1080p
+2026-11-25T15:46:24.005Z avsync player stop (pid 535449)
+2026-11-25T15:46:24.045Z guard audio links: none
+2026-11-25T15:46:24.105Z guard windows: none
+2026-11-25T15:46:24.255Z show mode DVI-D-0 1920x1080@60
+2026-11-25T15:46:24.450Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T15:46:25.241Z show player start 1920x1080@60 counter (pid 556108)
+2026-11-25T15:46:25.247Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T15:46:36.009Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-25T15:46:36.389Z show player stop (pid 556108)
+2026-11-25T15:46:36.486Z guard windows: none
+2026-11-25T15:46:36.671Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T15:46:37.176Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:46:37.176Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T15:46:37.260Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 557731)
+2026-11-25T15:47:15.094Z guard ok: windows 40649 polls, longest interval 271 ms; audio 40715 polls, longest interval 52 ms
+2026-11-25T15:48:15.102Z guard ok: windows 41847 polls, longest interval 271 ms; audio 41913 polls, longest interval 52 ms
+2026-11-25T15:49:15.110Z guard ok: windows 43044 polls, longest interval 271 ms; audio 43110 polls, longest interval 52 ms
+2026-11-25T15:49:23.271Z obs-events event colour-ycbcr422
+2026-11-25T15:49:23.272Z obs-events change colour-ycbcr422
+2026-11-25T15:49:24.168Z obs-events colour DVI-D-0 ColorSpace=1 ColorRange=1
+2026-11-25T15:50:15.118Z guard ok: windows 44242 polls, longest interval 271 ms; audio 44308 polls, longest interval 52 ms
+2026-11-25T15:51:15.126Z guard ok: windows 45439 polls, longest interval 271 ms; audio 45505 polls, longest interval 52 ms
+2026-11-25T15:52:15.133Z guard ok: windows 46636 polls, longest interval 271 ms; audio 46702 polls, longest interval 52 ms
+2026-11-25T15:52:23.542Z obs-events event edid-default
+2026-11-25T15:52:23.542Z obs-events change edid-default
+2026-11-25T15:52:23.750Z avsync player stop (pid 557731)
+2026-11-25T15:52:23.807Z guard audio links: none
+2026-11-25T15:52:23.853Z guard windows: none
+2026-11-25T15:52:23.868Z obs-events edid set: default image
+2026-11-25T15:52:25.278Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T15:52:25.603Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T15:52:26.304Z show mode DVI-D-0 1920x1080@60
+2026-11-25T15:52:26.859Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T15:52:26.936Z show player start 1920x1080@60 counter (pid 600109)
+2026-11-25T15:52:27.143Z show player stop (pid 600109)
+2026-11-25T15:52:27.361Z guard windows: none
+2026-11-25T15:52:27.476Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T15:52:27.860Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T15:52:27.867Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:52:27.972Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 600424)
+2026-11-25T15:53:15.141Z guard ok: windows 47820 polls, longest interval 271 ms; audio 47900 polls, longest interval 52 ms
+2026-11-25T15:54:15.148Z guard ok: windows 49017 polls, longest interval 271 ms; audio 49097 polls, longest interval 52 ms
+2026-11-25T15:55:15.157Z guard ok: windows 50215 polls, longest interval 271 ms; audio 50295 polls, longest interval 52 ms
+2026-11-25T15:55:23.985Z obs-events event colour-rgb-full
+2026-11-25T15:55:23.985Z obs-events change colour-rgb-full
+2026-11-25T15:55:24.846Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T15:56:15.165Z guard ok: windows 51412 polls, longest interval 271 ms; audio 51492 polls, longest interval 52 ms
+2026-11-25T15:57:15.173Z guard ok: windows 52610 polls, longest interval 271 ms; audio 52690 polls, longest interval 52 ms
+2026-11-25T15:58:15.181Z guard ok: windows 53807 polls, longest interval 271 ms; audio 53887 polls, longest interval 52 ms
+2026-11-25T15:58:24.244Z obs-events event sleep
+2026-11-25T15:58:24.244Z obs-events change sleep
+2026-11-25T15:58:24.436Z avsync player stop (pid 600424)
+2026-11-25T15:58:24.478Z guard audio links: none
+2026-11-25T15:58:24.479Z guard windows: none
+2026-11-25T15:58:24.553Z obs-events output off DVI-D-0
+2026-11-25T15:58:24.733Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T15:58:32.761Z show mode DVI-D-0 1920x1080@60
+2026-11-25T15:58:32.947Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T15:58:33.600Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T15:58:33.600Z show player start 1920x1080@60 counter (pid 644508)
+2026-11-25T15:58:34.518Z show player stop (pid 644508)
+2026-11-25T15:58:34.563Z guard windows: none
+2026-11-25T15:58:34.807Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T15:58:35.253Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:58:35.258Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T15:58:35.340Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 644902)
+2026-11-25T15:59:15.189Z guard ok: windows 54993 polls, longest interval 271 ms; audio 55084 polls, longest interval 52 ms
+2026-11-25T16:00:15.197Z guard ok: windows 56191 polls, longest interval 271 ms; audio 56282 polls, longest interval 52 ms
+2026-11-25T16:01:15.206Z guard ok: windows 57388 polls, longest interval 271 ms; audio 57479 polls, longest interval 52 ms
+2026-11-25T16:01:23.352Z obs-events event rate-59.94
+2026-11-25T16:01:23.352Z obs-events change rate-59.94
+2026-11-25T16:01:23.559Z avsync player stop (pid 644902)
+2026-11-25T16:01:23.594Z guard windows: gc573-avsync 1920x1080+1920+0 ?
+2026-11-25T16:01:23.641Z guard audio links: none
+2026-11-25T16:01:23.671Z guard windows: none
+2026-11-25T16:01:23.810Z show mode DVI-D-0 1920x1080@59.94
+2026-11-25T16:01:24.542Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T16:01:24.603Z show player start 1920x1080@59.94 counter (pid 665546)
+2026-11-25T16:01:25.905Z show player stop (pid 665546)
+2026-11-25T16:01:25.944Z guard windows: none
+2026-11-25T16:01:26.197Z avsync mode DVI-D-0 1920x1080@59.94
+2026-11-25T16:01:26.580Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T16:01:26.597Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:01:26.604Z avsync player start 1920x1080@59.94 pattern amplitude 0.5 (pid 665977)
+2026-11-25T16:02:15.213Z guard ok: windows 58579 polls, longest interval 271 ms; audio 58677 polls, longest interval 52 ms
+2026-11-25T16:03:15.220Z guard ok: windows 59777 polls, longest interval 271 ms; audio 59874 polls, longest interval 52 ms
+2026-11-25T16:04:15.228Z guard ok: windows 60974 polls, longest interval 271 ms; audio 61072 polls, longest interval 52 ms
+2026-11-25T16:04:24.616Z obs-events event colour-ycbcr444
+2026-11-25T16:04:24.616Z obs-events change colour-ycbcr444
+2026-11-25T16:04:25.487Z obs-events colour DVI-D-0 ColorSpace=2 ColorRange=1
+2026-11-25T16:05:15.235Z guard ok: windows 62172 polls, longest interval 271 ms; audio 62270 polls, longest interval 52 ms
+2026-11-25T16:06:15.244Z guard ok: windows 63369 polls, longest interval 271 ms; audio 63468 polls, longest interval 52 ms
+2026-11-25T16:07:15.252Z guard ok: windows 64567 polls, longest interval 271 ms; audio 64665 polls, longest interval 52 ms
+2026-11-25T16:07:24.863Z obs-events event edid-same
+2026-11-25T16:07:24.863Z obs-events change edid-same
+2026-11-25T16:07:25.045Z obs-events edid set: default image
+2026-11-25T16:07:25.938Z avsync player stop (pid 665977)
+2026-11-25T16:07:26.005Z guard audio links: none
+2026-11-25T16:07:26.107Z guard windows: none
+2026-11-25T16:07:26.210Z avsync mode DVI-D-0 1920x1080@59.94
+2026-11-25T16:07:26.657Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:07:26.672Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T16:07:26.765Z avsync player start 1920x1080@59.94 pattern amplitude 0.5 (pid 709711)
+2026-11-25T16:08:15.260Z guard ok: windows 65763 polls, longest interval 271 ms; audio 65863 polls, longest interval 52 ms
+2026-11-25T16:09:15.268Z guard ok: windows 66961 polls, longest interval 271 ms; audio 67060 polls, longest interval 52 ms
+2026-11-25T16:10:15.276Z guard ok: windows 68158 polls, longest interval 271 ms; audio 68258 polls, longest interval 52 ms
+2026-11-25T16:10:24.777Z obs-events event rate-60
+2026-11-25T16:10:24.777Z obs-events change rate-60
+2026-11-25T16:10:24.984Z avsync player stop (pid 709711)
+2026-11-25T16:10:25.020Z guard windows: none
+2026-11-25T16:10:25.022Z guard audio links: none
+2026-11-25T16:10:25.236Z show mode DVI-D-0 1920x1080@60
+2026-11-25T16:10:25.910Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T16:10:25.970Z show player start 1920x1080@60 counter (pid 731558)
+2026-11-25T16:10:27.299Z show player stop (pid 731558)
+2026-11-25T16:10:27.389Z guard windows: none
+2026-11-25T16:10:27.578Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T16:10:28.014Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T16:10:28.029Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:10:28.087Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 731996)
+2026-11-25T16:11:15.284Z guard ok: windows 69351 polls, longest interval 271 ms; audio 69456 polls, longest interval 52 ms
+2026-11-25T16:12:15.292Z guard ok: windows 70548 polls, longest interval 271 ms; audio 70653 polls, longest interval 52 ms
+2026-11-25T16:13:15.300Z guard ok: windows 71746 polls, longest interval 271 ms; audio 71851 polls, longest interval 52 ms
+2026-11-25T16:13:24.099Z obs-events event colour-rgb-limited
+2026-11-25T16:13:24.099Z obs-events change colour-rgb-limited
+2026-11-25T16:13:24.963Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=1
+2026-11-25T16:14:15.308Z guard ok: windows 72943 polls, longest interval 271 ms; audio 73048 polls, longest interval 52 ms
+2026-11-25T16:15:15.316Z guard ok: windows 74140 polls, longest interval 271 ms; audio 74245 polls, longest interval 52 ms
+2026-11-25T16:16:15.324Z guard ok: windows 75338 polls, longest interval 271 ms; audio 75443 polls, longest interval 52 ms
+2026-11-25T16:16:24.350Z obs-events event res-720p
+2026-11-25T16:16:24.351Z obs-events change res-720p
+2026-11-25T16:16:24.545Z avsync player stop (pid 731996)
+2026-11-25T16:16:24.629Z guard audio links: none
+2026-11-25T16:16:24.658Z guard windows: none
+2026-11-25T16:16:24.794Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T16:16:25.049Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T16:16:25.751Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T16:16:25.754Z show player start 1280x720@59.94 counter (pid 775368)
+2026-11-25T16:16:36.589Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-25T16:16:36.869Z show player stop (pid 775368)
+2026-11-25T16:16:36.964Z guard windows: none
+2026-11-25T16:16:37.145Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T16:16:37.607Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:16:37.637Z guard windows: gc573-avsync 1280x720+1920+0 IsViewable
+2026-11-25T16:16:37.656Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 776995)
+2026-11-25T16:17:15.331Z guard ok: windows 76527 polls, longest interval 271 ms; audio 76640 polls, longest interval 52 ms
+2026-11-25T16:18:15.338Z guard ok: windows 77725 polls, longest interval 271 ms; audio 77838 polls, longest interval 52 ms
+2026-11-25T16:19:15.346Z guard ok: windows 78922 polls, longest interval 271 ms; audio 79035 polls, longest interval 52 ms
+2026-11-25T16:19:23.667Z obs-events event colour-rgb-full
+2026-11-25T16:19:23.667Z obs-events change colour-rgb-full
+2026-11-25T16:19:24.378Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T16:20:15.354Z guard ok: windows 80120 polls, longest interval 271 ms; audio 80233 polls, longest interval 52 ms
+2026-11-25T16:21:15.363Z guard ok: windows 81317 polls, longest interval 271 ms; audio 81430 polls, longest interval 52 ms
+2026-11-25T16:22:15.371Z guard ok: windows 82514 polls, longest interval 271 ms; audio 82627 polls, longest interval 52 ms
+2026-11-25T16:22:23.695Z obs-events event edid-new
+2026-11-25T16:22:23.695Z obs-events change edid-new
+2026-11-25T16:22:23.791Z avsync player stop (pid 776995)
+2026-11-25T16:22:23.842Z guard audio links: none
+2026-11-25T16:22:23.891Z guard windows: none
+2026-11-25T16:22:23.908Z obs-events edid set: other image
+2026-11-25T16:22:25.270Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T16:22:25.593Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T16:22:26.314Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T16:22:26.690Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T16:22:27.182Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T16:22:27.273Z show player start 1280x720@59.94 counter (pid 819753)
+2026-11-25T16:22:28.222Z show player stop (pid 819753)
+2026-11-25T16:22:28.395Z guard windows: none
+2026-11-25T16:22:28.504Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T16:22:28.953Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:22:28.965Z guard windows: gc573-avsync 1280x720+1920+0 IsViewable
+2026-11-25T16:22:29.047Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 820155)
+2026-11-25T16:23:15.380Z guard ok: windows 83694 polls, longest interval 271 ms; audio 83825 polls, longest interval 52 ms
+2026-11-25T16:24:15.388Z guard ok: windows 84892 polls, longest interval 271 ms; audio 85023 polls, longest interval 52 ms
+2026-11-25T16:25:15.395Z guard ok: windows 86089 polls, longest interval 271 ms; audio 86220 polls, longest interval 52 ms
+2026-11-25T16:25:25.058Z obs-events event sleep
+2026-11-25T16:25:25.058Z obs-events change sleep
+2026-11-25T16:25:25.159Z avsync player stop (pid 820155)
+2026-11-25T16:25:25.190Z guard audio links: none
+2026-11-25T16:25:25.262Z guard windows: none
+2026-11-25T16:25:25.275Z obs-events output off DVI-D-0
+2026-11-25T16:25:25.420Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T16:25:33.437Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T16:25:33.580Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T16:25:34.060Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T16:25:34.176Z show player start 1280x720@59.94 counter (pid 842503)
+2026-11-25T16:25:35.044Z show player stop (pid 842503)
+2026-11-25T16:25:35.219Z guard windows: none
+2026-11-25T16:25:35.332Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T16:25:35.814Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:25:35.840Z guard windows: gc573-avsync 1280x720+1920+0 IsViewable
+2026-11-25T16:25:35.860Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 842901)
+2026-11-25T16:26:15.402Z guard ok: windows 87278 polls, longest interval 271 ms; audio 87417 polls, longest interval 52 ms
+2026-11-25T16:27:15.410Z guard ok: windows 88476 polls, longest interval 271 ms; audio 88615 polls, longest interval 52 ms
+2026-11-25T16:28:15.418Z guard ok: windows 89673 polls, longest interval 271 ms; audio 89812 polls, longest interval 52 ms
+2026-11-25T16:28:23.872Z obs-events event res-1080p
+2026-11-25T16:28:23.872Z obs-events change res-1080p
+2026-11-25T16:28:23.964Z avsync player stop (pid 842901)
+2026-11-25T16:28:24.002Z guard audio links: none
+2026-11-25T16:28:24.003Z guard windows: none
+2026-11-25T16:28:24.217Z show mode DVI-D-0 1920x1080@60
+2026-11-25T16:28:24.384Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T16:28:24.916Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T16:28:25.009Z show player start 1920x1080@60 counter (pid 863513)
+2026-11-25T16:28:35.986Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-25T16:28:36.408Z show player stop (pid 863513)
+2026-11-25T16:28:36.504Z guard windows: none
+2026-11-25T16:28:36.687Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T16:28:37.148Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:28:37.150Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T16:28:37.251Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 865158)
+2026-11-25T16:29:15.425Z guard ok: windows 90864 polls, longest interval 271 ms; audio 91010 polls, longest interval 52 ms
+2026-11-25T16:30:15.433Z guard ok: windows 92062 polls, longest interval 271 ms; audio 92207 polls, longest interval 52 ms
+2026-11-25T16:31:15.441Z guard ok: windows 93260 polls, longest interval 271 ms; audio 93405 polls, longest interval 52 ms
+2026-11-25T16:31:23.262Z obs-events event colour-ycbcr422
+2026-11-25T16:31:23.262Z obs-events change colour-ycbcr422
+2026-11-25T16:31:24.138Z obs-events colour DVI-D-0 ColorSpace=1 ColorRange=1
+2026-11-25T16:32:15.448Z guard ok: windows 94457 polls, longest interval 271 ms; audio 94603 polls, longest interval 52 ms
+2026-11-25T16:33:15.456Z guard ok: windows 95655 polls, longest interval 271 ms; audio 95800 polls, longest interval 52 ms
+2026-11-25T16:34:15.463Z guard ok: windows 96852 polls, longest interval 271 ms; audio 96997 polls, longest interval 52 ms
+2026-11-25T16:34:23.399Z obs-events event edid-default
+2026-11-25T16:34:23.399Z obs-events change edid-default
+2026-11-25T16:34:23.607Z avsync player stop (pid 865158)
+2026-11-25T16:34:23.642Z guard audio links: none
+2026-11-25T16:34:23.644Z guard windows: none
+2026-11-25T16:34:23.724Z obs-events edid set: default image
+2026-11-25T16:34:25.062Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T16:34:25.404Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T16:34:26.095Z show mode DVI-D-0 1920x1080@60
+2026-11-25T16:34:26.656Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T16:34:26.734Z show player start 1920x1080@60 counter (pid 907500)
+2026-11-25T16:34:27.075Z show player stop (pid 907500)
+2026-11-25T16:34:27.150Z guard windows: none
+2026-11-25T16:34:27.396Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T16:34:27.718Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:34:27.742Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T16:34:27.764Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 907840)
+2026-11-25T16:35:15.471Z guard ok: windows 98039 polls, longest interval 287 ms; audio 98195 polls, longest interval 52 ms
+2026-11-25T16:36:15.478Z guard ok: windows 99236 polls, longest interval 287 ms; audio 99392 polls, longest interval 52 ms
+2026-11-25T16:37:15.487Z guard ok: windows 100434 polls, longest interval 287 ms; audio 100590 polls, longest interval 52 ms
+2026-11-25T16:37:23.776Z obs-events event colour-rgb-full
+2026-11-25T16:37:23.776Z obs-events change colour-rgb-full
+2026-11-25T16:37:24.676Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T16:38:15.494Z guard ok: windows 101631 polls, longest interval 287 ms; audio 101787 polls, longest interval 52 ms
+2026-11-25T16:39:15.502Z guard ok: windows 102828 polls, longest interval 287 ms; audio 102984 polls, longest interval 52 ms
+2026-11-25T16:40:15.511Z guard ok: windows 104026 polls, longest interval 287 ms; audio 104182 polls, longest interval 52 ms
+2026-11-25T16:40:24.054Z obs-events event sleep
+2026-11-25T16:40:24.054Z obs-events change sleep
+2026-11-25T16:40:24.251Z avsync player stop (pid 907840)
+2026-11-25T16:40:24.311Z guard audio links: none
+2026-11-25T16:40:24.369Z obs-events output off DVI-D-0
+2026-11-25T16:40:24.544Z guard windows: none
+2026-11-25T16:40:24.549Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T16:40:32.605Z show mode DVI-D-0 1920x1080@60
+2026-11-25T16:40:32.883Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T16:40:33.546Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T16:40:33.631Z show player start 1920x1080@60 counter (pid 951944)
+2026-11-25T16:40:34.258Z show player stop (pid 951944)
+2026-11-25T16:40:34.450Z guard windows: none
+2026-11-25T16:40:34.565Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T16:40:35.097Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:40:35.102Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T16:40:35.187Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 952318)
+2026-11-25T16:41:15.518Z guard ok: windows 105210 polls, longest interval 287 ms; audio 105379 polls, longest interval 52 ms
+2026-11-25T16:42:15.525Z guard ok: windows 106408 polls, longest interval 287 ms; audio 106577 polls, longest interval 52 ms
+2026-11-25T16:43:15.532Z guard ok: windows 107605 polls, longest interval 287 ms; audio 107774 polls, longest interval 52 ms
+2026-11-25T16:43:23.199Z obs-events event rate-59.94
+2026-11-25T16:43:23.199Z obs-events change rate-59.94
+2026-11-25T16:43:23.406Z avsync player stop (pid 952318)
+2026-11-25T16:43:23.471Z guard audio links: none
+2026-11-25T16:43:23.517Z guard windows: none
+2026-11-25T16:43:23.661Z show mode DVI-D-0 1920x1080@59.94
+2026-11-25T16:43:24.258Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T16:43:24.266Z show player start 1920x1080@59.94 counter (pid 972973)
+2026-11-25T16:43:25.713Z show player stop (pid 972973)
+2026-11-25T16:43:25.895Z guard windows: none
+2026-11-25T16:43:26.004Z avsync mode DVI-D-0 1920x1080@59.94
+2026-11-25T16:43:26.424Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T16:43:26.426Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:43:26.545Z avsync player start 1920x1080@59.94 pattern amplitude 0.5 (pid 973400)
+2026-11-25T16:44:15.541Z guard ok: windows 108796 polls, longest interval 287 ms; audio 108972 polls, longest interval 52 ms
+2026-11-25T16:45:15.548Z guard ok: windows 109993 polls, longest interval 287 ms; audio 110169 polls, longest interval 52 ms
+2026-11-25T16:46:15.557Z guard ok: windows 111190 polls, longest interval 287 ms; audio 111366 polls, longest interval 52 ms
+2026-11-25T16:46:24.558Z obs-events event colour-ycbcr444
+2026-11-25T16:46:24.558Z obs-events change colour-ycbcr444
+2026-11-25T16:46:25.433Z obs-events colour DVI-D-0 ColorSpace=2 ColorRange=1
+2026-11-25T16:47:15.565Z guard ok: windows 112388 polls, longest interval 287 ms; audio 112564 polls, longest interval 52 ms
+2026-11-25T16:48:15.573Z guard ok: windows 113585 polls, longest interval 287 ms; audio 113761 polls, longest interval 52 ms
+2026-11-25T16:49:15.581Z guard ok: windows 114782 polls, longest interval 287 ms; audio 114959 polls, longest interval 52 ms
+2026-11-25T16:49:24.715Z obs-events event edid-same
+2026-11-25T16:49:24.715Z obs-events change edid-same
+2026-11-25T16:49:24.898Z obs-events edid set: default image
+2026-11-25T16:49:25.762Z avsync player stop (pid 973400)
+2026-11-25T16:49:25.801Z guard audio links: none
+2026-11-25T16:49:25.808Z guard windows: none
+2026-11-25T16:49:26.053Z avsync mode DVI-D-0 1920x1080@59.94
+2026-11-25T16:49:26.505Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:49:26.505Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T16:49:26.588Z avsync player start 1920x1080@59.94 pattern amplitude 0.5 (pid 1017127)
+2026-11-25T16:50:15.589Z guard ok: windows 115978 polls, longest interval 287 ms; audio 116156 polls, longest interval 52 ms
+2026-11-25T16:51:15.597Z guard ok: windows 117176 polls, longest interval 287 ms; audio 117354 polls, longest interval 52 ms
+2026-11-25T16:52:15.604Z guard ok: windows 118373 polls, longest interval 287 ms; audio 118551 polls, longest interval 52 ms
+2026-11-25T16:52:24.599Z obs-events event rate-60
+2026-11-25T16:52:24.599Z obs-events change rate-60
+2026-11-25T16:52:24.793Z avsync player stop (pid 1017127)
+2026-11-25T16:52:24.848Z guard audio links: none
+2026-11-25T16:52:24.916Z guard windows: none
+2026-11-25T16:52:25.044Z show mode DVI-D-0 1920x1080@60
+2026-11-25T16:52:25.750Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T16:52:25.830Z show player start 1920x1080@60 counter (pid 1038966)
+2026-11-25T16:52:27.084Z show player stop (pid 1038966)
+2026-11-25T16:52:27.261Z guard windows: none
+2026-11-25T16:52:27.373Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T16:52:27.759Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:52:27.798Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T16:52:27.906Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1039389)
+2026-11-25T16:53:15.612Z guard ok: windows 119565 polls, longest interval 287 ms; audio 119749 polls, longest interval 52 ms
+2026-11-25T16:54:15.619Z guard ok: windows 120762 polls, longest interval 287 ms; audio 120946 polls, longest interval 52 ms
+2026-11-25T16:55:15.627Z guard ok: windows 121959 polls, longest interval 287 ms; audio 122143 polls, longest interval 52 ms
+2026-11-25T16:55:23.917Z obs-events event colour-rgb-limited
+2026-11-25T16:55:23.917Z obs-events change colour-rgb-limited
+2026-11-25T16:55:24.796Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=1
+2026-11-25T16:56:15.635Z guard ok: windows 123157 polls, longest interval 287 ms; audio 123341 polls, longest interval 52 ms
+2026-11-25T16:57:15.643Z guard ok: windows 124354 polls, longest interval 287 ms; audio 124538 polls, longest interval 52 ms
+2026-11-25T16:58:15.651Z guard ok: windows 125552 polls, longest interval 287 ms; audio 125736 polls, longest interval 52 ms
+2026-11-25T16:58:24.086Z obs-events event res-720p
+2026-11-25T16:58:24.086Z obs-events change res-720p
+2026-11-25T16:58:24.287Z avsync player stop (pid 1039389)
+2026-11-25T16:58:24.363Z guard audio links: none
+2026-11-25T16:58:24.406Z guard windows: none
+2026-11-25T16:58:24.542Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T16:58:24.829Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T16:58:25.541Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T16:58:25.620Z show player start 1280x720@59.94 counter (pid 1082749)
+2026-11-25T16:58:36.315Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-25T16:58:36.643Z show player stop (pid 1082749)
+2026-11-25T16:58:36.746Z guard windows: none
+2026-11-25T16:58:36.922Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T16:58:37.394Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T16:58:37.420Z guard windows: gc573-avsync 1280x720+1920+0 IsViewable
+2026-11-25T16:58:37.503Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 1084379)
+2026-11-25T16:59:15.658Z guard ok: windows 126742 polls, longest interval 287 ms; audio 126933 polls, longest interval 52 ms
+2026-11-25T17:00:15.665Z guard ok: windows 127939 polls, longest interval 287 ms; audio 128131 polls, longest interval 52 ms
+2026-11-25T17:01:15.672Z guard ok: windows 129137 polls, longest interval 287 ms; audio 129328 polls, longest interval 52 ms
+2026-11-25T17:01:23.514Z obs-events event colour-rgb-full
+2026-11-25T17:01:23.514Z obs-events change colour-rgb-full
+2026-11-25T17:01:24.240Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T17:02:15.679Z guard ok: windows 130334 polls, longest interval 287 ms; audio 130525 polls, longest interval 52 ms
+2026-11-25T17:03:15.688Z guard ok: windows 131532 polls, longest interval 287 ms; audio 131723 polls, longest interval 52 ms
+2026-11-25T17:04:15.695Z guard ok: windows 132729 polls, longest interval 287 ms; audio 132920 polls, longest interval 52 ms
+2026-11-25T17:04:23.526Z obs-events event edid-new
+2026-11-25T17:04:23.526Z obs-events change edid-new
+2026-11-25T17:04:23.623Z avsync player stop (pid 1084379)
+2026-11-25T17:04:23.681Z guard audio links: none
+2026-11-25T17:04:23.726Z guard windows: none
+2026-11-25T17:04:23.739Z obs-events edid set: other image
+2026-11-25T17:04:25.036Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T17:04:25.361Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:04:26.073Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T17:04:26.301Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T17:04:26.919Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T17:04:26.959Z show player start 1280x720@59.94 counter (pid 1126693)
+2026-11-25T17:04:27.874Z show player stop (pid 1126693)
+2026-11-25T17:04:28.046Z guard windows: none
+2026-11-25T17:04:28.157Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T17:04:28.540Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T17:04:28.575Z guard windows: gc573-avsync 1280x720+1920+0 IsViewable
+2026-11-25T17:04:28.686Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 1127084)
+2026-11-25T17:05:15.703Z guard ok: windows 133912 polls, longest interval 287 ms; audio 134118 polls, longest interval 52 ms
+2026-11-25T17:06:15.711Z guard ok: windows 135109 polls, longest interval 287 ms; audio 135315 polls, longest interval 52 ms
+2026-11-25T17:07:15.719Z guard ok: windows 136307 polls, longest interval 287 ms; audio 136513 polls, longest interval 52 ms
+2026-11-25T17:07:24.698Z obs-events event sleep
+2026-11-25T17:07:24.698Z obs-events change sleep
+2026-11-25T17:07:24.805Z avsync player stop (pid 1127084)
+2026-11-25T17:07:24.834Z guard audio links: none
+2026-11-25T17:07:24.835Z guard windows: none
+2026-11-25T17:07:24.920Z obs-events output off DVI-D-0
+2026-11-25T17:07:25.101Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T17:07:33.079Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T17:07:33.245Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T17:07:33.849Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T17:07:33.930Z show player start 1280x720@59.94 counter (pid 1149390)
+2026-11-25T17:07:34.664Z show player stop (pid 1149390)
+2026-11-25T17:07:34.836Z guard windows: none
+2026-11-25T17:07:34.948Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T17:07:35.356Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T17:07:35.393Z guard windows: gc573-avsync 1280x720+1920+0 IsViewable
+2026-11-25T17:07:35.454Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 1149776)
+2026-11-25T17:08:15.727Z guard ok: windows 137495 polls, longest interval 287 ms; audio 137710 polls, longest interval 52 ms
+2026-11-25T17:09:15.735Z guard ok: windows 138692 polls, longest interval 287 ms; audio 138908 polls, longest interval 52 ms
+2026-11-25T17:10:15.742Z guard ok: windows 139890 polls, longest interval 287 ms; audio 140106 polls, longest interval 52 ms
+2026-11-25T17:10:23.464Z obs-events event res-1080p
+2026-11-25T17:10:23.464Z obs-events change res-1080p
+2026-11-25T17:10:23.566Z avsync player stop (pid 1149776)
+2026-11-25T17:10:23.598Z guard audio links: none
+2026-11-25T17:10:23.599Z guard windows: none
+2026-11-25T17:10:23.822Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:10:24.002Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:10:24.675Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:10:24.766Z show player start 1920x1080@60 counter (pid 1170397)
+2026-11-25T17:10:35.577Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-25T17:10:35.960Z show player stop (pid 1170397)
+2026-11-25T17:10:35.995Z guard windows: none
+2026-11-25T17:10:36.241Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T17:10:36.723Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T17:10:36.784Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T17:10:36.797Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1172033)
+2026-11-25T17:11:15.750Z guard ok: windows 141082 polls, longest interval 287 ms; audio 141304 polls, longest interval 52 ms
+2026-11-25T17:12:15.758Z guard ok: windows 142279 polls, longest interval 287 ms; audio 142501 polls, longest interval 52 ms
+2026-11-25T17:13:15.766Z guard ok: windows 143476 polls, longest interval 287 ms; audio 143698 polls, longest interval 52 ms
+2026-11-25T17:13:24.810Z obs-events recording stop (StopRecord)
+2026-11-25T17:13:24.810Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T17:13:24.870Z avsync player stop (pid 1172033)
+2026-11-25T17:13:24.937Z guard audio links: none
+2026-11-25T17:13:24.987Z obs-events edid set: default image
+2026-11-25T17:13:24.996Z guard windows: none
+2026-11-25T17:13:26.290Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T17:13:26.616Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:13:28.321Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:13:28.819Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:13:28.827Z show player start 1920x1080@60 counter (pid 1192948)
+2026-11-25T17:13:28.842Z show player stop (pid 1192948)
+2026-11-25T17:13:29.007Z guard windows: none
+2026-11-25T17:13:29.123Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T17:13:29.549Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T17:13:29.556Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T17:13:29.627Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1193221)
+2026-11-25T17:14:15.774Z guard ok: windows 144663 polls, longest interval 287 ms; audio 144896 polls, longest interval 52 ms
+2026-11-25T17:15:15.782Z guard ok: windows 145860 polls, longest interval 287 ms; audio 146093 polls, longest interval 52 ms
+2026-11-25T17:16:15.791Z guard ok: windows 147058 polls, longest interval 287 ms; audio 147291 polls, longest interval 52 ms
+2026-11-25T17:17:15.800Z guard ok: windows 148255 polls, longest interval 287 ms; audio 148488 polls, longest interval 53 ms
+2026-11-25T17:18:15.807Z guard ok: windows 149453 polls, longest interval 287 ms; audio 149686 polls, longest interval 53 ms
+2026-11-25T17:19:15.815Z guard ok: windows 150650 polls, longest interval 287 ms; audio 150883 polls, longest interval 53 ms
+2026-11-25T17:19:35.234Z live obs stop
+2026-11-25T17:19:35.835Z avsync player stop (pid 1193221)
+2026-11-25T17:19:35.929Z guard audio links: none
+2026-11-25T17:19:35.959Z guard windows: none
+2026-11-25T17:19:36.818Z guard end: run pid 313402 gone; windows 151055 polls, longest interval 287 ms; audio 151288 polls, longest interval 53 ms; no breach

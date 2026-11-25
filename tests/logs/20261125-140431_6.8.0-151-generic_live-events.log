@@ -1,0 +1,57 @@
+2026-11-25T14:04:31.756Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-25T14:04:31.763Z guard start: run pid 4109512, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*, windows and audio each polled every 50 ms
+2026-11-25T14:04:31.767Z guard audio links: none
+2026-11-25T14:04:31.768Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T14:04:31.768Z guard windows: none
+2026-11-25T14:04:32.140Z live stream stop (exit 0)
+2026-11-25T14:04:32.183Z live driver load
+2026-11-25T14:04:32.358Z show mode DVI-D-0 1920x1080@60
+2026-11-25T14:04:32.890Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T14:04:32.897Z show player start 1920x1080@60 (pid 4109702)
+2026-11-25T14:04:32.916Z show player stop (pid 4109702)
+2026-11-25T14:04:33.000Z guard windows: none
+2026-11-25T14:04:33.247Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:04:33.621Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:04:33.624Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:04:33.650Z avsync player start 1920x1080@60 amplitude 0.5 (pid 4110190)
+2026-11-25T14:04:36.990Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=GC573,DEV=0 -t 120 -v -V /dev/video0 -o /tmp/gc573-live/av.raw > /tmp/gc573-li
+2026-11-25T14:05:31.773Z guard ok: windows 1196 polls, longest interval 82 ms; audio 1198 polls, longest interval 50 ms
+2026-11-25T14:06:31.783Z guard ok: windows 2394 polls, longest interval 82 ms; audio 2396 polls, longest interval 50 ms
+2026-11-25T14:06:37.217Z live stream stop (exit 0)
+2026-11-25T14:06:37.740Z avsync player stop (pid 4110190)
+2026-11-25T14:06:37.786Z guard audio links: none
+2026-11-25T14:06:37.850Z guard windows: none
+2026-11-25T14:06:37.991Z show mode DVI-D-0 1920x1080@60
+2026-11-25T14:06:38.538Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T14:06:38.552Z show player start 1920x1080@60 (pid 4125656)
+2026-11-25T14:06:38.597Z show player stop (pid 4125656)
+2026-11-25T14:06:38.684Z guard windows: none
+2026-11-25T14:06:38.910Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:06:39.389Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:06:39.478Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:06:39.492Z avsync player start 1920x1080@60 amplitude 0.5 (pid 4126142)
+2026-11-25T14:06:42.524Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=GC573,DEV=0 -t 120 -v -V /dev/video0 -o /tmp/gc573-live/av.raw > /tmp/gc573-li
+2026-11-25T14:07:31.793Z guard ok: windows 3589 polls, longest interval 85 ms; audio 3593 polls, longest interval 51 ms
+2026-11-25T14:08:31.804Z guard ok: windows 4786 polls, longest interval 85 ms; audio 4790 polls, longest interval 51 ms
+2026-11-25T14:08:42.721Z live stream stop (exit 0)
+2026-11-25T14:08:43.095Z avsync player stop (pid 4126142)
+2026-11-25T14:08:43.177Z guard audio links: none
+2026-11-25T14:08:43.209Z guard windows: none
+2026-11-25T14:08:43.346Z show mode DVI-D-0 1920x1080@60
+2026-11-25T14:08:43.857Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T14:08:43.873Z show player start 1920x1080@60 (pid 4141406)
+2026-11-25T14:08:43.888Z show player stop (pid 4141406)
+2026-11-25T14:08:43.930Z guard windows: gc573-pattern 1920x1080+1920+0 ?
+2026-11-25T14:08:44.068Z guard windows: none
+2026-11-25T14:08:44.245Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:08:44.733Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:08:44.817Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:08:44.829Z avsync player start 1920x1080@60 amplitude 0.5 (pid 4141825)
+2026-11-25T14:08:47.880Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=GC573,DEV=0 -t 120 -v -V /dev/video0 -o /tmp/gc573-live/av.raw > /tmp/gc573-li
+2026-11-25T14:09:31.815Z guard ok: windows 5982 polls, longest interval 95 ms; audio 5988 polls, longest interval 51 ms
+2026-11-25T14:10:31.824Z guard ok: windows 7179 polls, longest interval 95 ms; audio 7185 polls, longest interval 51 ms
+2026-11-25T14:10:48.083Z live stream stop (exit 0)
+2026-11-25T14:10:48.632Z avsync player stop (pid 4141825)
+2026-11-25T14:10:48.680Z guard audio links: none
+2026-11-25T14:10:48.755Z guard windows: none
+2026-11-25T14:10:49.827Z guard end: run pid 4109512 gone; windows 7521 polls, longest interval 95 ms; audio 7526 polls, longest interval 51 ms; no breach

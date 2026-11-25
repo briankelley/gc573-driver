@@ -1,0 +1,30 @@
+# tests/hpd-unload.sh's method (run as an equivalent ad-hoc script), 2026-11-25 17:23 UTC: the host's ELD every
+# 10 ms, xrandr every 100 ms; rmmod at +3 s, insmod at +11 s. gc573 srcversion 292FD1A2D4D0C4210A150E8,
+# 6.8.0-151-generic. Result: no change at all, neither at the unload nor at the load: the source never saw
+# the card leave or come back. The receiver relocked after the load (VM kernel log below).
+
+2026-11-25T17:23:11.696Z eld-poll ELD monitor_present 1 eld_valid 1
+2026-11-25T17:23:11.699Z eld-poll xrandr DVI-D-0 connected 1920x1080+1920+0
+2026-11-25T17:23:11.717Z guard start: run pid 1239326, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*, windows and audio each polled every 50 ms
+2026-11-25T17:23:11.723Z guard audio links: none
+2026-11-25T17:23:11.724Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:23:11.724Z guard windows: none
+2026-11-25T17:23:14.698Z eld-poll driver unload (rmmod gc573 in the VM)
+2026-11-25T17:23:15.316Z eld-poll rmmod returned
+2026-11-25T17:23:23.323Z eld-poll driver load (insmod ~/gc573-driver/gc573.ko in the VM)
+2026-11-25T17:23:24.231Z eld-poll insmod returned
+2026-11-25T17:23:34.722Z guard end: run pid 1239326 gone; windows 446 polls, longest interval 159 ms; audio 450 polls, longest interval 50 ms; no breach
+
+## VM kernel log (UTC)
+2026-11-25T17:23:23.630933+00:00 gc573-dev kernel: gc573 0000:07:00.0: using MSI, irq 60
+2026-11-25T17:23:23.733016+00:00 gc573-dev kernel: gc573 0000:07:00.0: FPGA version 20200811
+2026-11-25T17:23:23.865948+00:00 gc573-dev kernel: gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+2026-11-25T17:23:23.866943+00:00 gc573-dev kernel: gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+2026-11-25T17:23:23.984998+00:00 gc573-dev kernel: gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+2026-11-25T17:23:23.985222+00:00 gc573-dev kernel: gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+2026-11-25T17:23:24.086945+00:00 gc573-dev kernel: gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+2026-11-25T17:23:24.232027+00:00 gc573-dev kernel: gc573 0000:07:00.0: video device video0
+2026-11-25T17:23:24.233107+00:00 gc573-dev kernel: gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+2026-11-25T17:23:24.256966+00:00 gc573-dev kernel: gc573 0000:07:00.0: HDMI: signal, not locked
+2026-11-25T17:23:25.525034+00:00 gc573-dev kernel: gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147184 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+2026-11-25T17:23:25.695108+00:00 gc573-dev kernel: gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dad (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438

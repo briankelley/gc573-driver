@@ -20,14 +20,22 @@ OUT=DVI-D-0
 export DISPLAY=${DISPLAY:-:0} XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
 raw=/tmp/exp-delivery-$tag.txt
 
+# no test window while the mode changes; the player's window is override-
+# redirect and watched as show.sh's (tools/testsrc/watchdog.sh), so it never
+# lands on the main screen
+"$ROOT/tools/testsrc/avsync.sh" --off >/dev/null 2>&1
 "$ROOT/tools/testsrc/show.sh" --off >/dev/null 2>&1
 primary=$(xrandr --query | awk '/ connected primary/{print $1; exit}')
+[ -n "$primary" ] && [ "$primary" != "$OUT" ] || exit 2
 xrandr --output "$OUT" --mode 1920x1080 --rate "$rate" --right-of "$primary" || exit 2
-x=$(xrandr --query | sed -n "s/^$OUT connected [^0-9]*[0-9]*x[0-9]*+\([0-9]*\)+.*/\1/p")
-setsid ffplay -loglevel error -noborder -an -left "$x" -top 0 -x 1920 -y 1080 \
-	-f lavfi -i "testsrc2=size=1920x1080:rate=$rate" </dev/null >/dev/null 2>&1 &
+x=$(xrandr --query | sed -n "s/^$OUT connected \(primary \)\?1920x1080+\([0-9]*\)+0 .*/\2/p")
+[ -n "$x" ] || exit 2
+SDL_X11_FORCE_OVERRIDE_REDIRECT=1 setsid ffplay -loglevel error -noborder -an -left "$x" -top 0 -x 1920 -y 1080 \
+	-window_title gc573-exp -f lavfi -i "testsrc2=size=1920x1080:rate=$rate" </dev/null >/dev/null 2>&1 &
 pid=$!
+setsid "$ROOT/tools/testsrc/watchdog.sh" "$pid" "$OUT" 1920 1080 "$x" </dev/null >/dev/null 2>&1 &
 trap 'kill "$pid" 2>/dev/null' EXIT
+"$ROOT/tools/testsrc/window-check.sh" gc573-exp 1920 1080 "$x" || exit 2
 sleep 6
 ssh -n "$VM" "bdf=\$(basename \$(readlink -f /sys/bus/pci/drivers/gc573/0000:*)) &&
 	mkdir -p /tmp/gc573-exp &&

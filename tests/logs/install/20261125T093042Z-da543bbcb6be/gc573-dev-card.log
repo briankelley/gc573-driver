@@ -1,0 +1,104 @@
+# install.sh / uninstall.sh with the card, gc573-dev
+date: 2026-11-25 09:30:42 UTC  ref: da543bb (da543bbcb6be)
+vm: Ubuntu 24.04.5 LTS, kernel 6.8.0-151-generic
+card: 0000:07:00.0
+=== prepare
+  no gc573 in DKMS
+  done
+0 upgraded, 0 newly installed, 0 to remove and 23 not upgraded.
+  driver:  override: vfio-pci persisted: vfio-pci dkms:  video:  alsa: 
+RESULT	prepare	PASS	override 0000:07:00.0 -> vfio-pci, card not bound to gc573
+=== install-notty
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override binds the card (0000:07:00.0) to (none).
+  This is how the card is given to a virtual machine (VFIO passthrough).
+  While it stays, gc573 cannot use the card on this system.
+  (not asking: no terminal)
+  override left in place. To use the card with gc573 later: sudo driverctl unset-override 0000:07:00.0 (to put it back: sudo driverctl set-override 0000:07:00.0 (none))
+  driver:  override: vfio-pci persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+RESULT	install-notty	FAIL	exit 0; driver:  override: vfio-pci persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+=== install-no
+Connection to 192.168.122.40 closed.
+  n
+  n
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override binds the card (0000:07:00.0) to (none).
+  This is how the card is given to a virtual machine (VFIO passthrough).
+  While it stays, gc573 cannot use the card on this system.
+  Remove the override now, so that gc573 drives the card? [y/N] override left in place. To use the card with gc573 later: sudo driverctl unset-override 0000:07:00.0 (to put it back: sudo driverctl set-override 0000:07:00.0 (none))
+  driver:  override: vfio-pci persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+RESULT	install-no	PASS	asked; n: override left in place, card not bound
+=== install-yes
+Connection to 192.168.122.40 closed.
+  y
+  y
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override binds the card (0000:07:00.0) to (none).
+  This is how the card is given to a virtual machine (VFIO passthrough).
+  While it stays, gc573 cannot use the card on this system.
+  Remove the override now, so that gc573 drives the card? [y/N] driverctl: failed to bind device 0000:07:00.0 to driver 
+  install.sh: driverctl unset-override 0000:07:00.0 failed; the override may still be in place (driverctl list-overrides)
+  driver:  override: (null) persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+RESULT	install-yes	FAIL	exit 1; state ''; driver:  override: (null) persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+=== reboot
+  driver:  override: vfio-pci persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+ls: cannot access '/sys/bus/pci/devices/0000:07:00.0/video4linux': No such file or directory
+  lock: ; capture: Unable to detect what device /dev/ is, exiting. rc=1 
+RESULT	reboot	FAIL	lock ''; capture 'Unable to detect what device /dev/ is, exiting. rc=1 '; driver:  override: vfio-pci persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+=== uninstall
+Connection to 192.168.122.40 closed.
+  y
+  y
+  unloaded gc573
+  removing gc573 0.1 from DKMS (all kernels)
+  done
+  driver:  override: vfio-pci persisted: vfio-pci dkms:  video:  alsa: 
+RESULT	uninstall	FAIL	exit 0; left ''; driver:  override: vfio-pci persisted: vfio-pci dkms:  video:  alsa: 
+=== cleanup
+Processing triggers for man-db (2.12.0-4build2) ...
+  driver:  override: (null) persisted:  dkms:  video:  alsa: 
+RESULT	cleanup	PASS	no override, driverctl purged, rebooted

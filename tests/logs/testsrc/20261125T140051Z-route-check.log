@@ -1,0 +1,99 @@
+2026-11-25T14:00:51.148Z check start: guard pid 4097977; recording the monitor of alsa_output.usb-Generic_USB2.0_Device_20121120222016-00.analog-stereo (the default sink)
+2026-11-25T14:00:51.187Z guard start: run pid 4097972, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*, windows and audio each polled every 50 ms, windows: a breach where they overlap another output
+2026-11-25T14:00:51.191Z guard audio links: none
+2026-11-25T14:00:51.192Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T14:00:51.192Z guard windows: none
+2026-11-25T14:00:52.152Z check avsync start (silent)
+2026-11-25T14:00:52.301Z show mode DVI-D-0 1920x1080@60
+2026-11-25T14:00:52.832Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T14:00:52.841Z show player start 1920x1080@60 (pid 4098149)
+2026-11-25T14:00:52.855Z show player stop (pid 4098149)
+2026-11-25T14:00:52.909Z guard windows: none
+2026-11-25T14:00:53.189Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:00:53.680Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:00:53.697Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:00:53.734Z avsync player start 1920x1080@60 pattern amplitude 0 (pid 4098642)
+2026-11-25T14:00:56.741Z check off: output off under the player
+2026-11-25T14:00:56.804Z guard audio links: none
+2026-11-25T14:00:56.893Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T14:00:57.013Z avsync player stop (pid 4098642)
+2026-11-25T14:00:57.118Z guard windows: none
+2026-11-25T14:01:00.865Z check off: output on, avsync again
+2026-11-25T14:01:01.029Z show mode DVI-D-0 1920x1080@60
+2026-11-25T14:01:01.178Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T14:01:01.683Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T14:01:01.799Z show player start 1920x1080@60 (pid 4099650)
+2026-11-25T14:01:01.819Z show player stop (pid 4099650)
+2026-11-25T14:01:01.921Z guard windows: none
+2026-11-25T14:01:02.119Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:01:02.717Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:01:02.799Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:01:02.810Z avsync player start 1920x1080@60 pattern amplitude 0 (pid 4100261)
+2026-11-25T14:01:05.818Z check rate: 1080p59.94 set under the player
+2026-11-25T14:01:05.874Z guard audio links: none
+2026-11-25T14:01:09.939Z check rate: 1080p60 set under the player
+2026-11-25T14:01:14.075Z check size: 720p set under the player
+2026-11-25T14:01:14.305Z avsync player stop (pid 4100261)
+2026-11-25T14:01:14.379Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T14:01:14.434Z guard windows: none
+2026-11-25T14:01:18.267Z check size: back to 1080p60, avsync again
+2026-11-25T14:01:18.429Z show mode DVI-D-0 1920x1080@60
+2026-11-25T14:01:18.615Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T14:01:19.238Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T14:01:19.239Z show player start 1920x1080@60 (pid 4102278)
+2026-11-25T14:01:19.253Z show player stop (pid 4102278)
+2026-11-25T14:01:19.427Z guard windows: none
+2026-11-25T14:01:19.555Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:01:20.099Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:01:20.111Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:01:20.182Z avsync player start 1920x1080@60 pattern amplitude 0 (pid 4102609)
+2026-11-25T14:01:23.636Z check edid: another image under the player
+2026-11-25T14:01:24.470Z guard audio links: none
+2026-11-25T14:01:24.594Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T14:01:24.600Z avsync player stop (pid 4102609)
+2026-11-25T14:01:24.912Z guard windows: none
+2026-11-25T14:01:24.917Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T14:01:28.481Z check edid: the default image again
+2026-11-25T14:01:29.456Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T14:01:29.771Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T14:01:32.340Z check edid: avsync again
+2026-11-25T14:01:32.501Z show mode DVI-D-0 1920x1080@60
+2026-11-25T14:01:32.955Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T14:01:33.026Z show player start 1920x1080@60 (pid 4104101)
+2026-11-25T14:01:33.046Z show player stop (pid 4104101)
+2026-11-25T14:01:33.233Z guard windows: none
+2026-11-25T14:01:33.402Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:01:33.756Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:01:33.781Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:01:33.795Z avsync player start 1920x1080@60 pattern amplitude 0 (pid 4104673)
+2026-11-25T14:01:36.802Z check unload: driver unload in the VM under the player
+2026-11-25T14:01:42.213Z check unload: driver load in the VM
+2026-11-25T14:01:46.068Z check unload: avsync again
+2026-11-25T14:01:46.111Z avsync player stop (pid 4104673)
+2026-11-25T14:01:46.171Z guard windows: none
+2026-11-25T14:01:46.173Z guard audio links: none
+2026-11-25T14:01:46.370Z show mode DVI-D-0 1920x1080@60
+2026-11-25T14:01:46.778Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T14:01:46.779Z show player start 1920x1080@60 (pid 4106407)
+2026-11-25T14:01:46.795Z show player stop (pid 4106407)
+2026-11-25T14:01:48.935Z guard windows: none
+2026-11-25T14:01:49.063Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:01:49.530Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:01:49.614Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:01:49.626Z avsync player start 1920x1080@60 pattern amplitude 0 (pid 4106954)
+2026-11-25T14:01:51.197Z guard ok: windows 1141 polls, longest interval 299 ms; audio 1198 polls, longest interval 51 ms
+2026-11-25T14:01:52.630Z check restart: avsync.sh again while it runs
+2026-11-25T14:01:52.643Z avsync player stop (pid 4106954)
+2026-11-25T14:01:52.677Z guard windows: none
+2026-11-25T14:01:52.686Z guard audio links: none
+2026-11-25T14:01:52.914Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T14:01:53.388Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T14:01:53.434Z avsync player start 1920x1080@60 pattern amplitude 0 (pid 4107659)
+2026-11-25T14:01:53.480Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T14:01:56.441Z check stop: avsync --off
+2026-11-25T14:01:56.467Z avsync player stop (pid 4107659)
+2026-11-25T14:01:56.550Z guard audio links: none
+2026-11-25T14:01:56.606Z guard windows: none
+2026-11-25T14:01:57.758Z check monitor of alsa_output.usb-Generic_USB2.0_Device_20121120222016-00.analog-stereo: peak |sample| 0 over 64.5 s (0: digital silence)
+2026-11-25T14:01:57.759Z check end
+2026-11-25T14:01:58.199Z guard end: run pid 4097972 gone; windows 1270 polls, longest interval 299 ms; audio 1329 polls, longest interval 51 ms; no breach

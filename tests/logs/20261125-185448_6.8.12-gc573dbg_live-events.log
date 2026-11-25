@@ -1,0 +1,310 @@
+2026-11-25T18:54:48.874Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-25T18:54:48.892Z guard start: run pid 1997448, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-25T18:54:48.904Z guard x11 start: DVI-D-0 none; outputs HDMI-0 1920x1200+0+0
+2026-11-25T18:54:48.918Z guard audio links: none
+2026-11-25T18:54:49.570Z live stream stop (exit 0)
+2026-11-25T18:54:57.872Z live driver load
+2026-11-25T18:54:58.790Z live obs start
+2026-11-25T18:54:59.519Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-25T18:55:05.534Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T18:55:05.739Z show mode DVI-D-0 1920x1080@60
+2026-11-25T18:55:06.024Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1998403 "ffplay"
+2026-11-25T18:55:06.139Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 1998403 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T18:55:06.262Z show player start 1920x1080@60 counter (pid 1998403)
+2026-11-25T18:55:06.276Z show player stop (pid 1998403)
+2026-11-25T18:55:06.310Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T18:55:06.310Z guard x11 destroy 0x3a00007
+2026-11-25T18:55:06.569Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T18:55:06.883Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1998659 "ffplay"
+2026-11-25T18:55:07.040Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 1998659 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T18:55:07.067Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T18:55:07.126Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1998659)
+2026-11-25T18:55:08.083Z obs-events recording start (StartRecord, hybrid_mp4)
+2026-11-25T18:55:48.922Z guard ok: audio 1197 polls, longest interval 50 ms; windows: test windows created 2 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 1, breaches 0, X events 46
+2026-11-25T18:56:48.932Z guard ok: audio 2394 polls, longest interval 50 ms; windows: test windows created 2 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 1, breaches 0, X events 46
+2026-11-25T18:57:09.753Z obs-events event sleep
+2026-11-25T18:57:09.753Z obs-events change sleep
+2026-11-25T18:57:09.985Z avsync player stop (pid 1998659)
+2026-11-25T18:57:10.036Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T18:57:10.036Z guard x11 destroy 0x3a00007
+2026-11-25T18:57:10.046Z guard audio links: none
+2026-11-25T18:57:10.104Z obs-events output off DVI-D-0
+2026-11-25T18:57:10.260Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-25T18:57:18.323Z show mode DVI-D-0 1920x1080@60
+2026-11-25T18:57:18.432Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-25T18:57:18.856Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2006846 ""
+2026-11-25T18:57:18.986Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2006846 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T18:57:19.106Z show player start 1920x1080@60 counter (pid 2006846)
+2026-11-25T18:57:20.191Z show player stop (pid 2006846)
+2026-11-25T18:57:20.217Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T18:57:20.218Z guard x11 destroy 0x3a00007
+2026-11-25T18:57:20.483Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T18:57:20.652Z guard x11 create 0x3a00002 1920x1080+1920+0 override 1 ffplay/ffplay pid 2007187 ""
+2026-11-25T18:57:20.652Z guard x11 destroy 0x3a00002
+2026-11-25T18:57:20.815Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2007187 ""
+2026-11-25T18:57:20.980Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T18:57:20.981Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2007187 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T18:57:21.074Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 2007187)
+2026-11-25T18:57:48.943Z guard ok: audio 3591 polls, longest interval 50 ms; windows: test windows created 5 (0 created outside DVI-D-0, unmapped), maps 4, maps inside DVI-D-0 4, unmapped geometries outside 0, output changes 3, breaches 0, X events 112
+2026-11-25T18:58:48.953Z guard ok: audio 4788 polls, longest interval 50 ms; windows: test windows created 5 (0 created outside DVI-D-0, unmapped), maps 4, maps inside DVI-D-0 4, unmapped geometries outside 0, output changes 3, breaches 0, X events 112
+2026-11-25T18:59:09.082Z obs-events event rate-59.94
+2026-11-25T18:59:09.082Z obs-events change rate-59.94
+2026-11-25T18:59:09.291Z avsync player stop (pid 2007187)
+2026-11-25T18:59:09.333Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T18:59:09.333Z guard x11 destroy 0x3a00007
+2026-11-25T18:59:09.374Z guard audio links: none
+2026-11-25T18:59:09.548Z show mode DVI-D-0 1920x1080@59.94
+2026-11-25T18:59:10.109Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2014078 ""
+2026-11-25T18:59:10.252Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2014078 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T18:59:10.353Z show player start 1920x1080@59.94 counter (pid 2014078)
+2026-11-25T18:59:11.654Z show player stop (pid 2014078)
+2026-11-25T18:59:11.676Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T18:59:11.676Z guard x11 destroy 0x3a00007
+2026-11-25T18:59:11.944Z avsync mode DVI-D-0 1920x1080@59.94
+2026-11-25T18:59:12.231Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2014411 "ffplay"
+2026-11-25T18:59:12.305Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2014411 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T18:59:12.331Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T18:59:12.373Z avsync player start 1920x1080@59.94 pattern amplitude 0.5 (pid 2014411)
+2026-11-25T18:59:48.963Z guard ok: audio 5985 polls, longest interval 50 ms; windows: test windows created 7 (0 created outside DVI-D-0, unmapped), maps 6, maps inside DVI-D-0 6, unmapped geometries outside 0, output changes 3, breaches 0, X events 134
+2026-11-25T19:00:48.973Z guard ok: audio 7182 polls, longest interval 50 ms; windows: test windows created 7 (0 created outside DVI-D-0, unmapped), maps 6, maps inside DVI-D-0 6, unmapped geometries outside 0, output changes 3, breaches 0, X events 134
+2026-11-25T19:01:08.383Z obs-events event colour-ycbcr444
+2026-11-25T19:01:08.383Z obs-events change colour-ycbcr444
+2026-11-25T19:01:10.092Z obs-events colour DVI-D-0 ColorSpace=2 ColorRange=1
+2026-11-25T19:01:48.983Z guard ok: audio 8379 polls, longest interval 50 ms; windows: test windows created 7 (0 created outside DVI-D-0, unmapped), maps 6, maps inside DVI-D-0 6, unmapped geometries outside 0, output changes 3, breaches 0, X events 136
+2026-11-25T19:02:48.993Z guard ok: audio 9576 polls, longest interval 50 ms; windows: test windows created 7 (0 created outside DVI-D-0, unmapped), maps 6, maps inside DVI-D-0 6, unmapped geometries outside 0, output changes 3, breaches 0, X events 136
+2026-11-25T19:03:09.813Z obs-events event edid-same
+2026-11-25T19:03:09.813Z obs-events change edid-same
+2026-11-25T19:03:10.004Z obs-events edid set: default image
+2026-11-25T19:03:11.736Z avsync player stop (pid 2014411)
+2026-11-25T19:03:11.775Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:03:11.775Z guard x11 destroy 0x3a00007
+2026-11-25T19:03:11.784Z guard audio links: none
+2026-11-25T19:03:12.021Z avsync mode DVI-D-0 1920x1080@59.94
+2026-11-25T19:03:12.331Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2029261 "ffplay"
+2026-11-25T19:03:12.456Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2029261 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:03:12.486Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T19:03:12.571Z avsync player start 1920x1080@59.94 pattern amplitude 0.5 (pid 2029261)
+2026-11-25T19:03:49.003Z guard ok: audio 10773 polls, longest interval 50 ms; windows: test windows created 8 (0 created outside DVI-D-0, unmapped), maps 7, maps inside DVI-D-0 7, unmapped geometries outside 0, output changes 3, breaches 0, X events 146
+2026-11-25T19:04:49.014Z guard ok: audio 11970 polls, longest interval 50 ms; windows: test windows created 8 (0 created outside DVI-D-0, unmapped), maps 7, maps inside DVI-D-0 7, unmapped geometries outside 0, output changes 3, breaches 0, X events 146
+2026-11-25T19:05:08.580Z obs-events event rate-60
+2026-11-25T19:05:08.580Z obs-events change rate-60
+2026-11-25T19:05:08.801Z avsync player stop (pid 2029261)
+2026-11-25T19:05:08.834Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:05:08.834Z guard x11 destroy 0x3a00007
+2026-11-25T19:05:08.857Z guard audio links: none
+2026-11-25T19:05:09.058Z show mode DVI-D-0 1920x1080@60
+2026-11-25T19:05:09.581Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2036623 "ffplay"
+2026-11-25T19:05:09.723Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2036623 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:05:09.791Z show player start 1920x1080@60 counter (pid 2036623)
+2026-11-25T19:05:11.162Z show player stop (pid 2036623)
+2026-11-25T19:05:11.195Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:05:11.195Z guard x11 destroy 0x3a00007
+2026-11-25T19:05:11.448Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T19:05:11.758Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2036958 "ffplay"
+2026-11-25T19:05:11.889Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2036958 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:05:11.914Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T19:05:12.018Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 2036958)
+2026-11-25T19:05:49.023Z guard ok: audio 13167 polls, longest interval 51 ms; windows: test windows created 10 (0 created outside DVI-D-0, unmapped), maps 9, maps inside DVI-D-0 9, unmapped geometries outside 0, output changes 3, breaches 0, X events 168
+2026-11-25T19:06:49.033Z guard ok: audio 14364 polls, longest interval 52 ms; windows: test windows created 10 (0 created outside DVI-D-0, unmapped), maps 9, maps inside DVI-D-0 9, unmapped geometries outside 0, output changes 3, breaches 0, X events 168
+2026-11-25T19:07:10.026Z obs-events event colour-rgb-limited
+2026-11-25T19:07:10.027Z obs-events change colour-rgb-limited
+2026-11-25T19:07:11.636Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=1
+2026-11-25T19:07:49.043Z guard ok: audio 15561 polls, longest interval 52 ms; windows: test windows created 10 (0 created outside DVI-D-0, unmapped), maps 9, maps inside DVI-D-0 9, unmapped geometries outside 0, output changes 3, breaches 0, X events 170
+2026-11-25T19:08:49.052Z guard ok: audio 16758 polls, longest interval 52 ms; windows: test windows created 10 (0 created outside DVI-D-0, unmapped), maps 9, maps inside DVI-D-0 9, unmapped geometries outside 0, output changes 3, breaches 0, X events 170
+2026-11-25T19:09:09.376Z obs-events event res-720p
+2026-11-25T19:09:09.376Z obs-events change res-720p
+2026-11-25T19:09:09.608Z avsync player stop (pid 2036958)
+2026-11-25T19:09:09.639Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:09:09.639Z guard x11 destroy 0x3a00007
+2026-11-25T19:09:09.651Z guard audio links: none
+2026-11-25T19:09:09.865Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T19:09:10.059Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-25T19:09:10.388Z guard x11 create 0x3a00002 1280x720+1920+0 override 1 ffplay/ffplay pid 2051699 ""
+2026-11-25T19:09:10.389Z guard x11 destroy 0x3a00002
+2026-11-25T19:09:10.582Z guard x11 create 0x3a00007 1280x720+1920+0 override 1 ffplay/ffplay pid 2051699 "ffplay"
+2026-11-25T19:09:10.704Z guard x11 map 0x3a00007 1280x720+1920+0 ffplay/ffplay pid 2051699 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-25T19:09:10.786Z show player start 1280x720@59.94 counter (pid 2051699)
+2026-11-25T19:09:21.679Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-25T19:09:22.050Z show player stop (pid 2051699)
+2026-11-25T19:09:22.068Z guard x11 unmap 0x3a00007 1280x720+1920+0
+2026-11-25T19:09:22.068Z guard x11 destroy 0x3a00007
+2026-11-25T19:09:22.338Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T19:09:22.624Z guard x11 create 0x3a00007 1280x720+1920+0 override 1 ffplay/ffplay pid 2052660 "ffplay"
+2026-11-25T19:09:22.733Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T19:09:22.748Z guard x11 map 0x3a00007 1280x720+1920+0 ffplay/ffplay pid 2052660 "gc573-avsync": inside DVI-D-0 1280x720+1920+0
+2026-11-25T19:09:22.844Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 2052660)
+2026-11-25T19:09:49.062Z guard ok: audio 17955 polls, longest interval 52 ms; windows: test windows created 13 (0 created outside DVI-D-0, unmapped), maps 11, maps inside DVI-D-0 11, unmapped geometries outside 0, output changes 4, breaches 0, X events 201
+2026-11-25T19:10:49.070Z guard ok: audio 19151 polls, longest interval 52 ms; windows: test windows created 13 (0 created outside DVI-D-0, unmapped), maps 11, maps inside DVI-D-0 11, unmapped geometries outside 0, output changes 4, breaches 0, X events 201
+2026-11-25T19:11:08.853Z obs-events event colour-rgb-full
+2026-11-25T19:11:08.853Z obs-events change colour-rgb-full
+2026-11-25T19:11:10.357Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T19:11:49.077Z guard ok: audio 20348 polls, longest interval 52 ms; windows: test windows created 13 (0 created outside DVI-D-0, unmapped), maps 11, maps inside DVI-D-0 11, unmapped geometries outside 0, output changes 4, breaches 0, X events 203
+2026-11-25T19:12:49.087Z guard ok: audio 21545 polls, longest interval 52 ms; windows: test windows created 13 (0 created outside DVI-D-0, unmapped), maps 11, maps inside DVI-D-0 11, unmapped geometries outside 0, output changes 4, breaches 0, X events 203
+2026-11-25T19:13:08.144Z obs-events event edid-new
+2026-11-25T19:13:08.144Z obs-events change edid-new
+2026-11-25T19:13:08.234Z avsync player stop (pid 2052660)
+2026-11-25T19:13:08.263Z guard x11 unmap 0x3a00007 1280x720+1920+0
+2026-11-25T19:13:08.263Z guard x11 destroy 0x3a00007
+2026-11-25T19:13:08.303Z guard audio links: none
+2026-11-25T19:13:08.351Z obs-events edid set: other image
+2026-11-25T19:13:10.339Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-25T19:13:10.608Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-25T19:13:11.426Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T19:13:11.639Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-25T19:13:12.173Z guard x11 create 0x4000007 1280x720+1920+0 override 1 ffplay/ffplay pid 2066782 "ffplay"
+2026-11-25T19:13:12.313Z guard x11 map 0x4000007 1280x720+1920+0 ffplay/ffplay pid 2066782 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-25T19:13:12.355Z show player start 1280x720@59.94 counter (pid 2066782)
+2026-11-25T19:13:13.346Z show player stop (pid 2066782)
+2026-11-25T19:13:13.380Z guard x11 unmap 0x4000007 1280x720+1920+0
+2026-11-25T19:13:13.380Z guard x11 destroy 0x4000007
+2026-11-25T19:13:13.632Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T19:13:13.944Z guard x11 create 0x4000007 1280x720+1920+0 override 1 ffplay/ffplay pid 2067144 "ffplay"
+2026-11-25T19:13:14.019Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T19:13:14.032Z guard x11 map 0x4000007 1280x720+1920+0 ffplay/ffplay pid 2067144 "gc573-avsync": inside DVI-D-0 1280x720+1920+0
+2026-11-25T19:13:14.153Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 2067144)
+2026-11-25T19:13:49.095Z guard ok: audio 22742 polls, longest interval 52 ms; windows: test windows created 15 (0 created outside DVI-D-0, unmapped), maps 13, maps inside DVI-D-0 13, unmapped geometries outside 0, output changes 7, breaches 0, X events 251
+2026-11-25T19:14:49.105Z guard ok: audio 23939 polls, longest interval 52 ms; windows: test windows created 15 (0 created outside DVI-D-0, unmapped), maps 13, maps inside DVI-D-0 13, unmapped geometries outside 0, output changes 7, breaches 0, X events 251
+2026-11-25T19:15:08.162Z obs-events event sleep
+2026-11-25T19:15:08.162Z obs-events change sleep
+2026-11-25T19:15:08.260Z avsync player stop (pid 2067144)
+2026-11-25T19:15:08.283Z guard x11 unmap 0x4000007 1280x720+1920+0
+2026-11-25T19:15:08.283Z guard x11 destroy 0x4000007
+2026-11-25T19:15:08.327Z guard audio links: none
+2026-11-25T19:15:08.378Z obs-events output off DVI-D-0
+2026-11-25T19:15:08.525Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-25T19:15:16.540Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T19:15:16.662Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-25T19:15:17.445Z guard x11 create 0x4000007 1280x720+1920+0 override 1 ffplay/ffplay pid 2074770 ""
+2026-11-25T19:15:17.576Z guard x11 map 0x4000007 1280x720+1920+0 ffplay/ffplay pid 2074770 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-25T19:15:17.692Z show player start 1280x720@59.94 counter (pid 2074770)
+2026-11-25T19:15:18.143Z show player stop (pid 2074770)
+2026-11-25T19:15:18.174Z guard x11 unmap 0x4000007 1280x720+1920+0
+2026-11-25T19:15:18.174Z guard x11 destroy 0x4000007
+2026-11-25T19:15:18.442Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-25T19:15:18.781Z guard x11 create 0x4000007 1280x720+1920+0 override 1 ffplay/ffplay pid 2075075 "ffplay"
+2026-11-25T19:15:18.907Z guard x11 map 0x4000007 1280x720+1920+0 ffplay/ffplay pid 2075075 "gc573-avsync": inside DVI-D-0 1280x720+1920+0
+2026-11-25T19:15:18.923Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T19:15:19.002Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 2075075)
+2026-11-25T19:15:49.114Z guard ok: audio 25136 polls, longest interval 52 ms; windows: test windows created 17 (0 created outside DVI-D-0, unmapped), maps 15, maps inside DVI-D-0 15, unmapped geometries outside 0, output changes 9, breaches 0, X events 316
+2026-11-25T19:16:49.124Z guard ok: audio 26333 polls, longest interval 52 ms; windows: test windows created 17 (0 created outside DVI-D-0, unmapped), maps 15, maps inside DVI-D-0 15, unmapped geometries outside 0, output changes 9, breaches 0, X events 316
+2026-11-25T19:17:09.010Z obs-events event res-1080p
+2026-11-25T19:17:09.010Z obs-events change res-1080p
+2026-11-25T19:17:09.127Z avsync player stop (pid 2075075)
+2026-11-25T19:17:09.158Z guard x11 unmap 0x4000007 1280x720+1920+0
+2026-11-25T19:17:09.158Z guard x11 destroy 0x4000007
+2026-11-25T19:17:09.205Z guard audio links: none
+2026-11-25T19:17:09.384Z show mode DVI-D-0 1920x1080@60
+2026-11-25T19:17:09.555Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-25T19:17:09.905Z guard x11 create 0x4000002 1920x1080+1920+0 override 1 ffplay/ffplay pid 2082075 ""
+2026-11-25T19:17:09.905Z guard x11 destroy 0x4000002
+2026-11-25T19:17:10.115Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2082075 "ffplay"
+2026-11-25T19:17:10.250Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 2082075 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:17:10.349Z show player start 1920x1080@60 counter (pid 2082075)
+2026-11-25T19:17:21.127Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-25T19:17:21.577Z show player stop (pid 2082075)
+2026-11-25T19:17:21.605Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-25T19:17:21.606Z guard x11 destroy 0x4000007
+2026-11-25T19:17:21.862Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T19:17:22.200Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2083025 ""
+2026-11-25T19:17:22.359Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 2083025 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:17:22.385Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T19:17:22.490Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 2083025)
+2026-11-25T19:17:49.133Z guard ok: audio 27530 polls, longest interval 52 ms; windows: test windows created 20 (0 created outside DVI-D-0, unmapped), maps 17, maps inside DVI-D-0 17, unmapped geometries outside 0, output changes 10, breaches 0, X events 342
+2026-11-25T19:18:49.143Z guard ok: audio 28727 polls, longest interval 52 ms; windows: test windows created 20 (0 created outside DVI-D-0, unmapped), maps 17, maps inside DVI-D-0 17, unmapped geometries outside 0, output changes 10, breaches 0, X events 342
+2026-11-25T19:19:08.499Z obs-events event colour-ycbcr422
+2026-11-25T19:19:08.499Z obs-events change colour-ycbcr422
+2026-11-25T19:19:10.173Z obs-events colour DVI-D-0 ColorSpace=1 ColorRange=1
+2026-11-25T19:19:49.154Z guard ok: audio 29924 polls, longest interval 52 ms; windows: test windows created 20 (0 created outside DVI-D-0, unmapped), maps 17, maps inside DVI-D-0 17, unmapped geometries outside 0, output changes 10, breaches 0, X events 344
+2026-11-25T19:20:49.161Z guard ok: audio 31121 polls, longest interval 52 ms; windows: test windows created 20 (0 created outside DVI-D-0, unmapped), maps 17, maps inside DVI-D-0 17, unmapped geometries outside 0, output changes 10, breaches 0, X events 344
+2026-11-25T19:21:09.832Z obs-events event edid-default
+2026-11-25T19:21:09.832Z obs-events change edid-default
+2026-11-25T19:21:10.042Z avsync player stop (pid 2083025)
+2026-11-25T19:21:10.090Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-25T19:21:10.090Z guard x11 destroy 0x4000007
+2026-11-25T19:21:10.099Z guard audio links: none
+2026-11-25T19:21:10.159Z obs-events edid set: default image
+2026-11-25T19:21:12.181Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-25T19:21:12.461Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-25T19:21:13.265Z show mode DVI-D-0 1920x1080@60
+2026-11-25T19:21:13.436Z guard x11 create 0x3a00002 1920x1080+1920+0 override 1 ffplay/ffplay pid 2097323 ""
+2026-11-25T19:21:13.436Z guard x11 destroy 0x3a00002
+2026-11-25T19:21:13.594Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2097323 "ffplay"
+2026-11-25T19:21:13.761Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2097323 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:21:13.809Z show player start 1920x1080@60 counter (pid 2097323)
+2026-11-25T19:21:14.143Z show player stop (pid 2097323)
+2026-11-25T19:21:14.170Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:21:14.170Z guard x11 destroy 0x3a00007
+2026-11-25T19:21:14.427Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T19:21:14.656Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2097600 "ffplay"
+2026-11-25T19:21:14.722Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T19:21:14.763Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2097600 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:21:14.789Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 2097600)
+2026-11-25T19:21:49.168Z guard ok: audio 32318 polls, longest interval 52 ms; windows: test windows created 23 (0 created outside DVI-D-0, unmapped), maps 19, maps inside DVI-D-0 19, unmapped geometries outside 0, output changes 12, breaches 0, X events 380
+2026-11-25T19:22:49.175Z guard ok: audio 33515 polls, longest interval 52 ms; windows: test windows created 23 (0 created outside DVI-D-0, unmapped), maps 19, maps inside DVI-D-0 19, unmapped geometries outside 0, output changes 12, breaches 0, X events 380
+2026-11-25T19:23:08.797Z obs-events event colour-rgb-full
+2026-11-25T19:23:08.798Z obs-events change colour-rgb-full
+2026-11-25T19:23:10.482Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T19:23:49.181Z guard ok: audio 34712 polls, longest interval 52 ms; windows: test windows created 23 (0 created outside DVI-D-0, unmapped), maps 19, maps inside DVI-D-0 19, unmapped geometries outside 0, output changes 12, breaches 0, X events 382
+2026-11-25T19:24:49.192Z guard ok: audio 35909 polls, longest interval 52 ms; windows: test windows created 23 (0 created outside DVI-D-0, unmapped), maps 19, maps inside DVI-D-0 19, unmapped geometries outside 0, output changes 12, breaches 0, X events 382
+2026-11-25T19:25:08.177Z obs-events recording stop (StopRecord)
+2026-11-25T19:25:08.177Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T19:25:08.257Z avsync player stop (pid 2097600)
+2026-11-25T19:25:08.300Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:25:08.300Z guard x11 destroy 0x3a00007
+2026-11-25T19:25:08.343Z guard audio links: none
+2026-11-25T19:25:08.511Z show mode DVI-D-0 1920x1080@60
+2026-11-25T19:25:08.669Z guard x11 create 0x3a00002 1920x1080+1920+0 override 1 ffplay/ffplay pid 2112062 ""
+2026-11-25T19:25:08.669Z guard x11 destroy 0x3a00002
+2026-11-25T19:25:08.824Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2112062 ""
+2026-11-25T19:25:08.999Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2112062 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:25:09.100Z show player start 1920x1080@60 counter (pid 2112062)
+2026-11-25T19:25:09.116Z show player stop (pid 2112062)
+2026-11-25T19:25:09.151Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:25:09.151Z guard x11 destroy 0x3a00007
+2026-11-25T19:25:09.398Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T19:25:09.560Z guard x11 create 0x3a00002 1920x1080+1920+0 override 1 ffplay/ffplay pid 2112327 ""
+2026-11-25T19:25:09.560Z guard x11 destroy 0x3a00002
+2026-11-25T19:25:09.697Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2112327 "ffplay"
+2026-11-25T19:25:09.830Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2112327 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:25:09.846Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T19:25:09.926Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 2112327)
+2026-11-25T19:25:49.202Z guard ok: audio 37106 polls, longest interval 52 ms; windows: test windows created 27 (0 created outside DVI-D-0, unmapped), maps 21, maps inside DVI-D-0 21, unmapped geometries outside 0, output changes 12, breaches 0, X events 404
+2026-11-25T19:26:49.210Z guard ok: audio 38302 polls, longest interval 52 ms; windows: test windows created 27 (0 created outside DVI-D-0, unmapped), maps 21, maps inside DVI-D-0 21, unmapped geometries outside 0, output changes 12, breaches 0, X events 404
+2026-11-25T19:27:17.351Z live obs stop
+2026-11-25T19:27:18.296Z avsync player stop (pid 2112327)
+2026-11-25T19:27:18.332Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:27:18.332Z guard x11 destroy 0x3a00007
+2026-11-25T19:27:18.336Z guard audio links: none
+2026-11-25T19:27:18.542Z show mode DVI-D-0 1920x1080@60
+2026-11-25T19:27:18.876Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2120518 "ffplay"
+2026-11-25T19:27:19.005Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2120518 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:27:19.128Z show player start 1920x1080@60 (pid 2120518)
+2026-11-25T19:27:19.174Z show player stop (pid 2120518)
+2026-11-25T19:27:19.203Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:27:19.203Z guard x11 destroy 0x3a00007
+2026-11-25T19:27:19.492Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T19:27:19.821Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2120986 "ffplay"
+2026-11-25T19:27:19.965Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2120986 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:27:19.991Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T19:27:20.068Z avsync player start 1920x1080@60 amplitude 0.5 (pid 2120986)
+2026-11-25T19:27:23.138Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=GC573,DEV=0 -t 80 -v -V /dev/video0 -o /tmp/gc573-live/avc.raw > /tmp/gc573-li
+2026-11-25T19:27:43.074Z live colour ColorSpace=2 ColorRange=1
+2026-11-25T19:27:49.220Z guard ok: audio 39499 polls, longest interval 52 ms; windows: test windows created 29 (0 created outside DVI-D-0, unmapped), maps 23, maps inside DVI-D-0 23, unmapped geometries outside 0, output changes 12, breaches 0, X events 426
+2026-11-25T19:28:03.077Z live colour ColorSpace=0 ColorRange=1
+2026-11-25T19:28:23.086Z live colour ColorSpace=0 ColorRange=0
+2026-11-25T19:28:43.437Z live stream stop (exit 0)
+2026-11-25T19:28:43.912Z avsync player stop (pid 2120986)
+2026-11-25T19:28:43.953Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:28:43.953Z guard x11 destroy 0x3a00007
+2026-11-25T19:28:43.975Z guard audio links: none
+2026-11-25T19:28:44.163Z show mode DVI-D-0 1920x1080@60
+2026-11-25T19:28:44.324Z guard x11 create 0x3a00002 1920x1080+1920+0 override 1 ffplay/ffplay pid 2127577 ""
+2026-11-25T19:28:44.324Z guard x11 destroy 0x3a00002
+2026-11-25T19:28:44.460Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 2127577 "ffplay"
+2026-11-25T19:28:44.570Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 2127577 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-25T19:28:44.682Z show player start 1920x1080@60 (pid 2127577)
+2026-11-25T19:28:49.231Z guard ok: audio 40696 polls, longest interval 52 ms; windows: test windows created 31 (0 created outside DVI-D-0, unmapped), maps 24, maps inside DVI-D-0 24, unmapped geometries outside 0, output changes 12, breaches 0, X events 440
+2026-11-25T19:28:52.635Z show player stop (pid 2127577)
+2026-11-25T19:28:52.652Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-25T19:28:52.652Z guard x11 destroy 0x3a00007
+2026-11-25T19:29:07.234Z guard end: run pid 1997448 gone; audio 41036 polls, longest interval 52 ms; windows: test windows created 31 (0 created outside DVI-D-0, unmapped), maps 24, maps inside DVI-D-0 24, unmapped geometries outside 0, output changes 12, breaches 0, X events 442; no breach

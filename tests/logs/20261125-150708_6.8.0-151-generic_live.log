@@ -1,0 +1,52 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 15:07:08 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     853ccdf220f4-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   obsav
+module:  srcversion 292FD1A2D4D0C4210A150E8 loaded, 292FD1A2D4D0C4210A150E8 in ~/gc573-driver, /dev/video0
+
+## obsav
+RESULT obsav-driver-duration      PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obsav-driver-avsync        PASS (60 flashes over 1.0 min: offset +30.678 ms (std 0.049, min +30.554, max +30.752), drift -0.0006 ms/min = -0.001 ms over the run, residual <= 0.125 ms)
+    raw offsets: mean +30.68 ms, min +30.55, max +30.75, std 0.05; frames from the most common (count): +0: 60
+  OBS started (recording format hybrid_mp4)
+  OBS 32.2.0
+  video device /dev/v4l/by-path/pci-0000:07:00.0-video-index0 | audio device __custom__ hw:CARD=GC573,DEV=0
+  pixelformat: YUYV 4:2:2=1448695129, UYVY 4:2:2=1498831189, Y/UV 4:2:0=842094158, Planar YVU 4:2:0=842094169, 24-bit BGR 8-8-8=861030210, 32-bit BGRX 8-8-8-8=875713112, YU12 (Emulated)=842093913
+  resolution: 
+  framerate: Leave Unchanged=-1, 60.00=4294967356, 50.00=4294967346, 30.00=4294967326, 25.00=4294967321, 20.00=4294967316, 15.00=4294967311, 10.00=4294967306, 5.00=4294967301
+  settings {"buffering": false, "color_range": 0, "device_id": "/dev/v4l/by-path/pci-0000:07:00.0-video-index0", "pixelformat": 1448695129}
+RESULT obsav-record               PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 10806, "outputSkippedFrames": 0, "outputTotalFrames": 10804} cpu 68.8% fps 60.00)
+  obs: 15:08:20.121: ==== Recording Start ===============================================
+RESULT obsav-obs-log              PASS (0 select timeouts, 0 dequeue failures)
+RESULT obsav-duration             PASS (179.2 s of video, 180.1 s of audio)
+RESULT obsav-video                PASS (10750 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obsav-flashes              PASS (177 flash frames, 180 burst onsets, 177 paired within 0.5 s)
+RESULT obsav-offset               PASS (burst onset - flash frame: mean +59.42 ms, std 1.76, min +42.94, max +59.60 over 177 flashes (positive: audio late); the source's own +30.68 ms taken out: OBS +28.74 ms)
+RESULT obsav-drift                SKIP (+0.135 ms/min = +0.40 ms over 3.0 min (one frame period: 16.7 ms); means per minute +59.3 +59.3 +59.6; under 5 min, shorter than two cycles of the canvas beat)
+    offset in frame periods (count): +3: 2, +4: 175
+  OBS - driver in this session: +28.74 ms (OBS +59.42, driver +30.68: burst onset - flash frame)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 0 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT obsav-driver-duration      PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obsav-driver-avsync        PASS (60 flashes over 1.0 min: offset +30.678 ms (std 0.049, min +30.554, max +30.752), drift -0.0006 ms/min = -0.001 ms over the run, residual <= 0.125 ms)
+RESULT obsav-record               PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 10806, "outputSkippedFrames": 0, "outputTotalFrames": 10804} cpu 68.8% fps 60.00)
+RESULT obsav-obs-log              PASS (0 select timeouts, 0 dequeue failures)
+RESULT obsav-duration             PASS (179.2 s of video, 180.1 s of audio)
+RESULT obsav-video                PASS (10750 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obsav-flashes              PASS (177 flash frames, 180 burst onsets, 177 paired within 0.5 s)
+RESULT obsav-offset               PASS (burst onset - flash frame: mean +59.42 ms, std 1.76, min +42.94, max +59.60 over 177 flashes (positive: audio late); the source's own +30.68 ms taken out: OBS +28.74 ms)
+RESULT obsav-drift                SKIP (+0.135 ms/min = +0.40 ms over 3.0 min (one frame period: 16.7 ms); means per minute +59.3 +59.3 +59.6; under 5 min, shorter than two cycles of the canvas beat)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=10 fail=0 skip=2

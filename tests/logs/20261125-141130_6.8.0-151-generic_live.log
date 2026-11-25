@@ -1,0 +1,156 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 14:11:30 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     1154b0647223-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   obsws obsevents obsav
+module:  srcversion 292FD1A2D4D0C4210A150E8 loaded, 292FD1A2D4D0C4210A150E8 in ~/gc573-driver, /dev/video0
+
+## obsws
+  OBS started
+  OBS 32.2.0
+  video device /dev/v4l/by-path/pci-0000:07:00.0-video-index0 | audio device __custom__ hw:CARD=GC573,DEV=0
+  pixelformat: YUYV 4:2:2=1448695129, UYVY 4:2:2=1498831189, Y/UV 4:2:0=842094158, Planar YVU 4:2:0=842094169, 24-bit BGR 8-8-8=861030210, 32-bit BGRX 8-8-8-8=875713112, YU12 (Emulated)=842093913
+  resolution: 
+  framerate: Leave Unchanged=-1, 60.00=4294967356, 50.00=4294967346, 30.00=4294967326, 25.00=4294967321, 20.00=4294967316, 15.00=4294967311, 10.00=4294967306, 5.00=4294967301
+  settings {"buffering": true, "color_range": 0, "device_id": "/dev/v4l/by-path/pci-0000:07:00.0-video-index0", "pixelformat": 1448695129}
+RESULT obsws-obsws-screenshot     PASS (native 1920x1080 PNG: pattern, max error 2 (limit 8), counter 814)
+  SHOTS png native: 1920x1080, request 55.2 / 62.7 / 64.5 ms (min/median/max); {'pattern': 10}; max error 2
+  SHOTS jpg native: 1920x1080, request 18.6 / 22.2 / 29.4 ms (min/median/max); {'bad': 10}; max error 24
+  SHOTS png 960x540: 960x540, request 12.3 / 17.8 / 28.0 ms (min/median/max); {'pattern': 10}; max error 2
+  SHOTS jpg 960x540: 960x540, request 3.6 / 9.8 / 13.8 ms (min/median/max); {'bad': 10}; max error 27
+RESULT obsws-obsws-meters         FAIL (398 InputVolumeMeters events in 20 s, 398 with the audio source; 12 bursts (peak over -30 dBFS on both channels), spacing median 1.004 s, min 1.003, max 4.976; 386 updates below -60 dBFS)
+RESULT obsws-record               PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 3606, "outputSkippedFrames": 0, "outputTotalFrames": 3604} cpu 68.0% fps 60.00)
+  Traceback (most recent call last):
+    File "/tmp/gc573-live/obs-events.py", line 810, in <module>
+      sys.exit(main())
+               ^^^^^^
+    File "/tmp/gc573-live/obs-events.py", line 783, in main
+      return 0 if cmd_recheck(a.file, a.every) else 1
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/tmp/gc573-live/obs-events.py", line 689, in cmd_recheck
+      dur = float(info['format']['duration'])
+                  ~~~~~~~~~~~~~~^^^^^^^^^^^^
+  KeyError: 'duration'
+RESULT obsws-rec-duration         PASS (60.1 s of video, 60.1 s of audio)
+RESULT obsws-rec-video            PASS (3605 frames, period 17.000 ms, largest interval 17.0 ms, 0 over 1.5 periods)
+RESULT obsws-rec-flashes          PASS (60 flash frames, 60 burst onsets, 60 paired within 0.5 s)
+RESULT obsws-rec-offset           PASS (burst onset - flash frame: mean -16.66 ms, std 8.81, min -40.21, max -5.87 over 60 flashes (positive: audio late))
+RESULT obsws-rec-drift            PASS (+12.330 ms/min = +12.12 ms over 1.0 min (one frame period: 17.0 ms); means per minute -16.7)
+    offset in frame periods (count): -2: 1, -1: 35, +0: 24
+
+## obsevents
+  OBS started
+  OBS 32.2.0
+  video device /dev/v4l/by-path/pci-0000:07:00.0-video-index0 | audio device __custom__ hw:CARD=GC573,DEV=0
+  pixelformat: YUYV 4:2:2=1448695129, UYVY 4:2:2=1498831189, Y/UV 4:2:0=842094158, Planar YVU 4:2:0=842094169, 24-bit BGR 8-8-8=861030210, 32-bit BGRX 8-8-8-8=875713112, YU12 (Emulated)=842093913
+  resolution: 
+  framerate: Leave Unchanged=-1, 60.00=4294967356, 50.00=4294967346, 30.00=4294967326, 25.00=4294967321, 20.00=4294967316, 15.00=4294967311, 10.00=4294967306, 5.00=4294967301
+  settings {"buffering": true, "color_range": 0, "device_id": "/dev/v4l/by-path/pci-0000:07:00.0-video-index0", "pixelformat": 1448695129}
+RESULT obsevents-obsev-restart    PASS (2/2 recovered; TTFGF min 1.11 s, max 1.16 s)
+RESULT obsevents-obsev-sleep      PASS (2/2 recovered; TTFGF min 1.82 s, max 1.90 s)
+RESULT obsevents-obsev-rate-59.94 PASS (2/2 recovered; TTFGF min 2.32 s, max 2.34 s)
+RESULT obsevents-obsev-rate-60    PASS (2/2 recovered; TTFGF min 2.26 s, max 2.38 s)
+RESULT obsevents-obsev-res-720p   PASS (2/2 recovered; TTFGF min 0.22 s, max 0.23 s)
+RESULT obsevents-obsev-res-1080p  PASS (2/2 recovered; TTFGF min 0.20 s, max 0.23 s)
+RESULT obsevents-obsev-colour-rgb-limited PASS (2/2 recovered; TTFGF min 0.60 s, max 0.61 s)
+RESULT obsevents-obsev-colour-ycbcr444 PASS (2/2 recovered; TTFGF min 1.04 s, max 1.05 s)
+RESULT obsevents-obsev-colour-ycbcr422 PASS (2/2 recovered; TTFGF min 0.00 s, max 0.00 s)
+RESULT obsevents-obsev-colour-rgb-full PASS (2/2 recovered; TTFGF min 1.02 s, max 1.08 s)
+RESULT obsevents-obsev-edid-same  PASS (2/2 recovered; TTFGF min 0.27 s, max 0.27 s)
+RESULT obsevents-obsev-edid-new   PASS (2/2 recovered; TTFGF min 2.86 s, max 3.09 s)
+RESULT obsevents-obsev-edid-default PASS (2/2 recovered; TTFGF min 2.84 s, max 3.13 s)
+  EVENTS /home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/logs/20261125-141130_6.8.0-151-generic_live-events.log
+  EVENT restart recovered ttfgf=1.11 (the test source alone: bad +0.92..+0.92, good +1.11..+1.20)
+  EVENT sleep recovered ttfgf=1.82 (off: bad +0.25..+1.42, black +1.61..+7.96; on: black +1.06..+1.74, good +1.82..+1.91; source 1920x1080)
+  EVENT rate-59.94 recovered ttfgf=2.34 (bad +1.21..+1.78, black +1.97..+2.25, good +2.34..+2.42; source 1920x1080)
+  EVENT rate-60 recovered ttfgf=2.38 (bad +1.17..+1.74, black +1.93..+2.31, good +2.38..+2.47; source 1920x1080)
+  EVENT res-720p recovered ttfgf=0.22 (not by itself in 12 s: bad +1.35..+1.65, black +1.85..+12.00; TTFGF from the reopen at +12.05: black +0.02..+0.16, good +0.22..+0.26; source 1280x720)
+  EVENT res-1080p recovered ttfgf=0.20 (not by itself in 12 s: black +1.23..+12.01; TTFGF from the reopen at +12.04: black +0.01..+0.15, good +0.20..+0.28; source 1920x1080)
+  EVENT colour-rgb-limited recovered ttfgf=0.61 (good +0.08..+0.08, bad +0.17..+0.52, good +0.61..+5.01; max error after 3; driver before: colour 0 vic 16 full_range 1, input_restarts 8 input_stops 2; after: colour 0 vic 16 full_range 0, input_restarts 9 input_stops 2)
+  EVENT colour-ycbcr444 recovered ttfgf=1.04 (good +0.09..+0.26, black +0.36..+0.96, good +1.04..+4.98; max error after 5; driver before: colour 0 vic 16 full_range 0, input_restarts 9 input_stops 2; after: colour 2 vic 16 full_range 0, input_restarts 11 input_stops 2)
+  EVENT colour-ycbcr422 recovered ttfgf=0.00 (good +0.10..+4.99; max error after 5; driver before: colour 2 vic 16 full_range 0, input_restarts 11 input_stops 2; after: colour 2 vic 16 full_range 0, input_restarts 11 input_stops 2)
+  EVENT colour-rgb-full recovered ttfgf=1.02 (good +0.12..+0.47, bad +0.56..+0.56, black +0.64..+0.94, good +1.02..+4.97; max error after 2; driver before: colour 2 vic 16 full_range 0, input_restarts 11 input_stops 2; after: colour 0 vic 16 full_range 1, input_restarts 13 input_stops 2)
+  EVENT edid-same recovered ttfgf=0.27 (no change: good +0.27..+0.36; source 1920x1080)
+  EVENT edid-new recovered ttfgf=3.09 (hot-plug: black +2.57..+2.72, bad +2.90..+2.90, good +3.09..+3.17; source 1920x1080)
+  EVENT edid-default recovered ttfgf=3.13 (hot-plug: black +2.61..+2.76, bad +2.94..+2.94, good +3.13..+3.22; source 1920x1080)
+  EVENT restart recovered ttfgf=1.16 (the test source alone: bad +0.96..+0.96, good +1.16..+1.25)
+  EVENT sleep recovered ttfgf=1.90 (off: bad +0.31..+1.46, black +1.64..+7.96; on: black +1.02..+1.83, good +1.90..+1.99; source 1920x1080)
+  EVENT rate-59.94 recovered ttfgf=2.32 (bad +1.17..+1.75, black +1.94..+2.24, good +2.32..+2.40; source 1920x1080)
+  EVENT rate-60 recovered ttfgf=2.26 (bad +1.11..+1.69, black +1.89..+2.19, good +2.26..+2.35; source 1920x1080)
+  EVENT res-720p recovered ttfgf=0.23 (not by itself in 12 s: bad +1.32..+1.61, black +1.80..+12.00; TTFGF from the reopen at +12.05: black +0.02..+0.17, good +0.23..+0.26; source 1280x720)
+  EVENT res-1080p recovered ttfgf=0.23 (not by itself in 12 s: black +1.42..+12.00; TTFGF from the reopen at +12.02: black +0.01..+0.18, good +0.23..+0.32; source 1920x1080)
+  EVENT colour-rgb-limited recovered ttfgf=0.60 (good +0.09..+0.09, bad +0.17..+0.51, good +0.60..+5.03; max error after 3; driver before: colour 0 vic 16 full_range 1, input_restarts 25 input_stops 4; after: colour 0 vic 16 full_range 0, input_restarts 26 input_stops 4)
+  EVENT colour-ycbcr444 recovered ttfgf=1.05 (good +0.11..+0.30, black +0.39..+0.97, good +1.05..+4.98; max error after 5; driver before: colour 0 vic 16 full_range 0, input_restarts 26 input_stops 4; after: colour 2 vic 16 full_range 0, input_restarts 28 input_stops 4)
+  EVENT colour-ycbcr422 recovered ttfgf=0.00 (good +0.10..+4.97; max error after 5; driver before: colour 2 vic 16 full_range 0, input_restarts 28 input_stops 4; after: colour 2 vic 16 full_range 0, input_restarts 28 input_stops 4)
+  EVENT colour-rgb-full recovered ttfgf=1.08 (good +0.10..+0.52, black +0.60..+1.00, good +1.08..+5.02; max error after 2; driver before: colour 2 vic 16 full_range 0, input_restarts 28 input_stops 4; after: colour 0 vic 16 full_range 1, input_restarts 30 input_stops 4)
+  EVENT edid-same recovered ttfgf=0.27 (no change: good +0.27..+0.35; source 1920x1080)
+  EVENT edid-new recovered ttfgf=2.86 (hot-plug: black +2.50..+2.78, good +2.86..+2.95; source 1920x1080)
+  EVENT edid-default recovered ttfgf=2.84 (hot-plug: black +2.53..+2.76, good +2.84..+2.92; source 1920x1080)
+  obs: 94 select timeouts, 4 dequeue failures, 4 device opens
+
+## obsav
+RESULT obsav-driver-duration      PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT obsav-driver-avsync        PASS (59 flashes over 1.0 min: offset +45.396 ms (std 0.045, min +45.280, max +45.454), drift -0.0138 ms/min = -0.014 ms over the run, residual <= 0.116 ms)
+    raw offsets: mean +40.31 ms, min +28.67, max +45.45, std 7.67; frames from the most common (count): -1: 18, +0: 41
+  OBS started
+  OBS 32.2.0
+  video device /dev/v4l/by-path/pci-0000:07:00.0-video-index0 | audio device __custom__ hw:CARD=GC573,DEV=0
+  pixelformat: YUYV 4:2:2=1448695129, UYVY 4:2:2=1498831189, Y/UV 4:2:0=842094158, Planar YVU 4:2:0=842094169, 24-bit BGR 8-8-8=861030210, 32-bit BGRX 8-8-8-8=875713112, YU12 (Emulated)=842093913
+  resolution: 
+  framerate: Leave Unchanged=-1, 60.00=4294967356, 50.00=4294967346, 30.00=4294967326, 25.00=4294967321, 20.00=4294967316, 15.00=4294967311, 10.00=4294967306, 5.00=4294967301
+  settings {"buffering": true, "color_range": 0, "device_id": "/dev/v4l/by-path/pci-0000:07:00.0-video-index0", "pixelformat": 1448695129}
+RESULT obsav-record               PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 10806, "outputSkippedFrames": 0, "outputTotalFrames": 10804} cpu 68.6% fps 60.00)
+  obs: 14:16:56.637: ==== Recording Start ===============================================
+RESULT obsav-obs-log              PASS (0 select timeouts, 0 dequeue failures)
+RESULT obsav-duration             PASS (180.1 s of video, 180.1 s of audio)
+RESULT obsav-video                PASS (10805 frames, period 17.000 ms, largest interval 17.0 ms, 0 over 1.5 periods)
+RESULT obsav-flashes              PASS (176 flash frames, 180 burst onsets, 176 paired within 0.5 s)
+RESULT obsav-offset               FAIL (burst onset - flash frame: mean +52.08 ms, std 7.67, min +23.58, max +73.58 over 176 flashes (positive: audio late))
+RESULT obsav-drift                PASS (+5.087 ms/min = +15.18 ms over 3.0 min (one frame period: 17.0 ms); means per minute +44.5 +56.0 +56.0)
+    offset in frame periods (count): +1: 1, +2: 46, +3: 127, +4: 2
+  OBS - driver in this session: +11.77 ms (OBS +52.08, driver +40.31: burst onset - flash frame)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 1939 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT obsws-obsws-screenshot     PASS (native 1920x1080 PNG: pattern, max error 2 (limit 8), counter 814)
+RESULT obsws-obsws-meters         FAIL (398 InputVolumeMeters events in 20 s, 398 with the audio source; 12 bursts (peak over -30 dBFS on both channels), spacing median 1.004 s, min 1.003, max 4.976; 386 updates below -60 dBFS)
+RESULT obsws-record               PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 3606, "outputSkippedFrames": 0, "outputTotalFrames": 3604} cpu 68.0% fps 60.00)
+RESULT obsws-rec-duration         PASS (60.1 s of video, 60.1 s of audio)
+RESULT obsws-rec-video            PASS (3605 frames, period 17.000 ms, largest interval 17.0 ms, 0 over 1.5 periods)
+RESULT obsws-rec-flashes          PASS (60 flash frames, 60 burst onsets, 60 paired within 0.5 s)
+RESULT obsws-rec-offset           PASS (burst onset - flash frame: mean -16.66 ms, std 8.81, min -40.21, max -5.87 over 60 flashes (positive: audio late))
+RESULT obsws-rec-drift            PASS (+12.330 ms/min = +12.12 ms over 1.0 min (one frame period: 17.0 ms); means per minute -16.7)
+RESULT obsevents-obsev-restart    PASS (2/2 recovered; TTFGF min 1.11 s, max 1.16 s)
+RESULT obsevents-obsev-sleep      PASS (2/2 recovered; TTFGF min 1.82 s, max 1.90 s)
+RESULT obsevents-obsev-rate-59.94 PASS (2/2 recovered; TTFGF min 2.32 s, max 2.34 s)
+RESULT obsevents-obsev-rate-60    PASS (2/2 recovered; TTFGF min 2.26 s, max 2.38 s)
+RESULT obsevents-obsev-res-720p   PASS (2/2 recovered; TTFGF min 0.22 s, max 0.23 s)
+RESULT obsevents-obsev-res-1080p  PASS (2/2 recovered; TTFGF min 0.20 s, max 0.23 s)
+RESULT obsevents-obsev-colour-rgb-limited PASS (2/2 recovered; TTFGF min 0.60 s, max 0.61 s)
+RESULT obsevents-obsev-colour-ycbcr444 PASS (2/2 recovered; TTFGF min 1.04 s, max 1.05 s)
+RESULT obsevents-obsev-colour-ycbcr422 PASS (2/2 recovered; TTFGF min 0.00 s, max 0.00 s)
+RESULT obsevents-obsev-colour-rgb-full PASS (2/2 recovered; TTFGF min 1.02 s, max 1.08 s)
+RESULT obsevents-obsev-edid-same  PASS (2/2 recovered; TTFGF min 0.27 s, max 0.27 s)
+RESULT obsevents-obsev-edid-new   PASS (2/2 recovered; TTFGF min 2.86 s, max 3.09 s)
+RESULT obsevents-obsev-edid-default PASS (2/2 recovered; TTFGF min 2.84 s, max 3.13 s)
+RESULT obsav-driver-duration      PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT obsav-driver-avsync        PASS (59 flashes over 1.0 min: offset +45.396 ms (std 0.045, min +45.280, max +45.454), drift -0.0138 ms/min = -0.014 ms over the run, residual <= 0.116 ms)
+RESULT obsav-record               PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 10806, "outputSkippedFrames": 0, "outputTotalFrames": 10804} cpu 68.6% fps 60.00)
+RESULT obsav-obs-log              PASS (0 select timeouts, 0 dequeue failures)
+RESULT obsav-duration             PASS (180.1 s of video, 180.1 s of audio)
+RESULT obsav-video                PASS (10805 frames, period 17.000 ms, largest interval 17.0 ms, 0 over 1.5 periods)
+RESULT obsav-flashes              PASS (176 flash frames, 180 burst onsets, 176 paired within 0.5 s)
+RESULT obsav-offset               FAIL (burst onset - flash frame: mean +52.08 ms, std 7.67, min +23.58, max +73.58 over 176 flashes (positive: audio late))
+RESULT obsav-drift                PASS (+5.087 ms/min = +15.18 ms over 3.0 min (one frame period: 17.0 ms); means per minute +44.5 +56.0 +56.0)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=30 fail=2 skip=1

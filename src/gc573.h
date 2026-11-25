@@ -54,6 +54,8 @@ struct snd_pcm_substream;
 #define GC573_RESET_DOMAIN_0		BIT(0)
 #define GC573_RESET_DOMAIN_8		BIT(8)
 #define GC573_RESET_DOMAIN_9		BIT(9)
+#define GC573_RESET_DOMAINS		(GC573_RESET_DOMAIN_0 | GC573_RESET_DOMAIN_8 | \
+					 GC573_RESET_DOMAIN_9)
 
 /* Interrupt bits, spec/interrupts.md */
 #define GC573_INT_VID_TERM		BIT(0)		/* video stream terminated */
@@ -288,6 +290,10 @@ struct gc573_video {
 	struct v4l2_pix_format pix;
 	const struct gc573_fmt *fmt;
 	struct gc573_input in;		/* input as last seen by the device */
+	bool adopt_pending;		/* input changed while the queue was busy */
+	bool start_pending;		/* restart waits for a queued buffer */
+	bool failed;			/* queue marked failed (vb2_queue_error) */
+	u32 input_restarts;		/* streams restarted by an input change */
 	bool dead;			/* quiesced: never start again */
 	struct completion term;		/* INT bit 0: stream terminated */
 	u64 irq_ns;			/* time of the last INT bit 1 */
@@ -302,7 +308,7 @@ struct gc573_video {
 	u32 ch_ctrl[GC573_VCH_NUM];	/* CH_CTRL values written (ch1, ch2) */
 	u32 vip_ctrl;			/* VIP_CTRL while streaming, w/o OUT_EN */
 	bool live;			/* streaming from a locked input */
-	u32 input_stops;		/* streams stopped by an input change */
+	u32 input_stops;		/* streams failed by an input change */
 	u32 sequence;
 	unsigned int skip;		/* completions still to drop */
 	int exp_mode;			/* exp_slot_mode for this stream */
@@ -385,6 +391,7 @@ struct gc573 {
 	struct gc573_audio aud;
 };
 
+int gc573_reset_domain_mask(struct gc573 *gc, u32 mask);
 int gc573_reset_domains(struct gc573 *gc);
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val);
 void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val);
@@ -417,6 +424,7 @@ void gc573_video_release(struct gc573 *gc);
 void gc573_audio_early_init(struct gc573 *gc);
 int gc573_audio_init(struct gc573 *gc);
 void gc573_audio_quiesce(struct gc573 *gc);
+bool gc573_audio_running(struct gc573 *gc);
 void gc573_audio_reset_done(struct gc573 *gc);
 void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns);
 void gc573_audio_debugfs(struct gc573 *gc);

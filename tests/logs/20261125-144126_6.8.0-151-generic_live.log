@@ -1,0 +1,165 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 14:41:26 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     853ccdf220f4-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   obsevents obssoak
+module:  srcversion 292FD1A2D4D0C4210A150E8 loaded, 292FD1A2D4D0C4210A150E8 in ~/gc573-driver, /dev/video0
+
+## obsevents
+  OBS started (recording format hybrid_mp4)
+  OBS 32.2.0
+  video device /dev/v4l/by-path/pci-0000:07:00.0-video-index0 | audio device __custom__ hw:CARD=GC573,DEV=0
+  pixelformat: YUYV 4:2:2=1448695129, UYVY 4:2:2=1498831189, Y/UV 4:2:0=842094158, Planar YVU 4:2:0=842094169, 24-bit BGR 8-8-8=861030210, 32-bit BGRX 8-8-8-8=875713112, YU12 (Emulated)=842093913
+  resolution: 
+  framerate: Leave Unchanged=-1, 60.00=4294967356, 50.00=4294967346, 30.00=4294967326, 25.00=4294967321, 20.00=4294967316, 15.00=4294967311, 10.00=4294967306, 5.00=4294967301
+  settings {"buffering": true, "color_range": 1, "device_id": "/dev/v4l/by-path/pci-0000:07:00.0-video-index0", "pixelformat": 1448695129}
+RESULT obsevents-obsev-restart    PASS (1/1 recovered; TTFGF min 1.12 s, max 1.12 s)
+RESULT obsevents-obsev-sleep      PASS (1/1 recovered; TTFGF min 1.87 s, max 1.87 s)
+RESULT obsevents-obsev-rate-59.94 PASS (1/1 recovered; TTFGF min 2.31 s, max 2.31 s)
+RESULT obsevents-obsev-rate-60    PASS (1/1 recovered; TTFGF min 2.27 s, max 2.27 s)
+RESULT obsevents-obsev-res-720p   PASS (1/1 recovered; TTFGF min 0.25 s, max 0.25 s)
+RESULT obsevents-obsev-res-1080p  PASS (1/1 recovered; TTFGF min 1.16 s, max 1.16 s)
+RESULT obsevents-obsev-colour-rgb-limited PASS (1/1 recovered; TTFGF min 0.59 s, max 0.59 s)
+RESULT obsevents-obsev-colour-ycbcr444 PASS (1/1 recovered; TTFGF min 1.10 s, max 1.10 s)
+RESULT obsevents-obsev-colour-ycbcr422 PASS (1/1 recovered; TTFGF min 0.00 s, max 0.00 s)
+RESULT obsevents-obsev-colour-rgb-full PASS (1/1 recovered; TTFGF min 1.08 s, max 1.08 s)
+RESULT obsevents-obsev-edid-same  PASS (1/1 recovered; TTFGF min 0.25 s, max 0.25 s)
+RESULT obsevents-obsev-edid-new   PASS (1/1 recovered; TTFGF min 2.90 s, max 2.90 s)
+RESULT obsevents-obsev-edid-default PASS (1/1 recovered; TTFGF min 3.12 s, max 3.12 s)
+  EVENTS /home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/logs/20261125-144126_6.8.0-151-generic_live-events.log
+  EVENT restart recovered ttfgf=1.12 (the test source alone: bad +0.94..+0.94, good +1.12..+1.20)
+  EVENT sleep recovered ttfgf=1.87 (off: bad +0.29..+1.43, black +1.61..+8.02; on: black +1.00..+1.79, good +1.87..+1.95; source 1920x1080)
+  EVENT rate-59.94 recovered ttfgf=2.31 (bad +1.16..+1.74, black +1.93..+2.23, good +2.31..+2.40; source 1920x1080)
+  EVENT rate-60 recovered ttfgf=2.27 (bad +1.13..+1.71, black +1.89..+2.19, good +2.27..+2.36; source 1920x1080)
+  EVENT res-720p recovered ttfgf=0.25 (not by itself in 12 s: bad +1.19..+1.77, black +1.96..+11.98; TTFGF from the reopen at +12.03: black +0.02..+0.19, good +0.25..+0.30; source 1280x720)
+  EVENT res-1080p recovered ttfgf=1.16 (not by itself in 12 s: black +1.21..+11.98; TTFGF from the reopen at +12.00: black +0.01..+1.09, good +1.16..+1.25; source 1920x1080)
+  EVENT colour-rgb-limited recovered ttfgf=0.59 (good +0.09..+0.09, bad +0.17..+0.50, good +0.59..+5.00; max error after 3; driver before: colour 0 vic 16 full_range 1, input_restarts 60 input_stops 9; after: colour 0 vic 16 full_range 0, input_restarts 61 input_stops 9)
+  EVENT colour-ycbcr444 recovered ttfgf=1.10 (good +0.08..+0.25, bad +0.34..+0.34, black +0.42..+1.02, good +1.10..+4.98; max error after 5; driver before: colour 0 vic 16 full_range 0, input_restarts 61 input_stops 9; after: colour 2 vic 16 full_range 0, input_restarts 63 input_stops 9)
+  EVENT colour-ycbcr422 recovered ttfgf=0.00 (good +0.10..+4.95; max error after 5; driver before: colour 2 vic 16 full_range 0, input_restarts 63 input_stops 9; after: colour 2 vic 16 full_range 0, input_restarts 63 input_stops 9)
+  EVENT colour-rgb-full recovered ttfgf=1.08 (good +0.09..+0.53, bad +0.61..+1.00, good +1.08..+4.98; max error after 2; driver before: colour 2 vic 16 full_range 0, input_restarts 63 input_stops 9; after: colour 0 vic 16 full_range 1, input_restarts 65 input_stops 9)
+  EVENT edid-same recovered ttfgf=0.25 (no change: good +0.25..+0.33; source 1920x1080)
+  EVENT edid-new recovered ttfgf=2.90 (hot-plug: black +2.58..+2.81, good +2.90..+3.00; source 1920x1080)
+  EVENT edid-default recovered ttfgf=3.12 (hot-plug: black +2.52..+2.75, bad +2.93..+2.93, good +3.12..+3.20; source 1920x1080)
+  obs: 55 select timeouts, 2 dequeue failures, 2 device opens
+  RECFORMAT hybrid_mp4; muxer: in OBS
+RESULT obsevents-hybrid-obsev-res-720p PASS (1/1 recovered; TTFGF min 0.27 s, max 0.27 s)
+RESULT obsevents-hybrid-obsev-res-1080p PASS (1/1 recovered; TTFGF min 0.23 s, max 0.23 s)
+  EVENTS /home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/logs/20261125-144126_6.8.0-151-generic_live-events.log
+  EVENT res-720p recovered ttfgf=0.27 (not by itself in 12 s: bad +1.46..+1.77, black +1.98..+12.03; TTFGF from the reopen at +12.09: black +0.04..+0.20, good +0.27..+0.31; source 1280x720)
+  EVENT res-1080p recovered ttfgf=0.23 (not by itself in 12 s: black +1.25..+12.01; TTFGF from the reopen at +12.03: black +0.02..+0.17, good +0.23..+0.32; source 1920x1080)
+  RECORDING /home/dev/obs-rec/2026-11-25 14-42-48.mp4
+RESULT obsevents-hybrid-obsrec-image FAIL (13 frames sampled every 2.0 s over 26 s at 1920x1080: NOT the pattern at the start and end; in order: pattern x1, bad x1, black x11; max error in the pattern frames 4 (limit 8)
+  INFO obsrec-counter steps from one recorded frame to the next (step: count): 0: 340, 1: 11, 2: 4, 658: 1, 64859: 1
+  obs log: 14:41:52.336: v4l2-input: /dev/v4l/by-path/pci-0000:07:00.0-video-index0: failed to dequeue buffer
+  obs log: 14:42:04.824: v4l2-input: /dev/v4l/by-path/pci-0000:07:00.0-video-index0: failed to dequeue buffer
+  obs log: 14:42:51.870: v4l2-input: /dev/v4l/by-path/pci-0000:07:00.0-video-index0: failed to dequeue buffer
+  obs log: 14:43:04.428: v4l2-input: /dev/v4l/by-path/pci-0000:07:00.0-video-index0: failed to dequeue buffer
+  mkv: EVENTS /home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/logs/20261125-144126_6.8.0-151-generic_live-events.log
+  RECFORMAT mkv; muxer: obs-ffmpeg-mux (pid 24288)
+  mkv: EVENT res-720p NOT-RECOVERED ttfgf=- (not by itself in 12 s: bad +1.47..+1.79, black +1.99..+11.99; TTFGF from the reopen at +12.04: black +0.03..+19.95; source 1920x1080) [source live (1849 -> 1876); driver: colour 0 vic 4 full_range 1, input_restarts 72 input_stops 12]
+  mkv: EVENT res-1080p NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.02..+14.96) [source live (908 -> 936); driver: colour 0 vic 4 full_range 1, input_restarts 72 input_stops 12]
+  INFO mkv (report only): obsev-res-720p FAIL (0/1 recovered)
+  INFO mkv (report only): obsev-res-1080p FAIL (0/1 recovered)
+  mkv: obs log: 14:43:30.341: v4l2-input: /dev/v4l/by-path/pci-0000:07:00.0-video-index0: failed to dequeue buffer
+  mkv: obs log: 14:43:40.450: v4l2-input: Unable to set format
+  mkv: obs log: 14:43:40.450: v4l2-input: Initialization failed, errno: Device or resource busy
+
+## obssoak
+  OBS started (recording format hybrid_mp4)
+  OBS 32.2.0
+  video device /dev/v4l/by-path/pci-0000:07:00.0-video-index0 | audio device __custom__ hw:CARD=GC573,DEV=0
+  pixelformat: YUYV 4:2:2=1448695129, UYVY 4:2:2=1498831189, Y/UV 4:2:0=842094158, Planar YVU 4:2:0=842094169, 24-bit BGR 8-8-8=861030210, 32-bit BGRX 8-8-8-8=875713112, YU12 (Emulated)=842093913
+  resolution: 
+  framerate: Leave Unchanged=-1, 60.00=4294967356, 50.00=4294967346, 30.00=4294967326, 25.00=4294967321, 20.00=4294967316, 15.00=4294967311, 10.00=4294967306, 5.00=4294967301
+  settings {"buffering": true, "color_range": 0, "device_id": "/dev/v4l/by-path/pci-0000:07:00.0-video-index0", "pixelformat": 1448695129}
+  obssoak: 420 s from 14:44:31 UTC, a change every 60 s
+RESULT obssoak-obsev-sleep        PASS (1/1 recovered; TTFGF min 1.89 s, max 1.89 s)
+RESULT obssoak-obsev-rate-59.94   PASS (1/1 recovered; TTFGF min 2.35 s, max 2.35 s)
+RESULT obssoak-obsev-rate-60      PASS (1/1 recovered; TTFGF min 2.33 s, max 2.33 s)
+RESULT obssoak-obsev-colour-rgb-limited PASS (1/1 recovered; TTFGF min 1.11 s, max 1.11 s)
+RESULT obssoak-obsev-colour-ycbcr444 PASS (1/1 recovered; TTFGF min 1.08 s, max 1.08 s)
+RESULT obssoak-obsev-edid-same    PASS (1/1 recovered; TTFGF min 0.32 s, max 0.32 s)
+  EVENTS /home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/logs/20261125-144126_6.8.0-151-generic_live-events.log
+  BASELINE good (good +0.03..+0.12)
+  RECFORMAT hybrid_mp4; muxer: in OBS
+  MARK 61.2
+  EVENT sleep recovered ttfgf=1.89 (off: bad +0.30..+1.55, black +1.76..+7.95; on: black +1.19..+1.80, good +1.89..+1.98; source 1920x1080)
+  MARK 120.5
+  EVENT rate-59.94 recovered ttfgf=2.35 (bad +1.20..+1.82, black +2.03..+2.27, good +2.35..+2.44; source 1920x1080)
+  MARK 181.9
+  EVENT colour-ycbcr444 recovered ttfgf=1.08 (good +0.09..+0.27, black +0.37..+0.99, good +1.08..+4.95; max error after 5; driver before: colour 0 vic 16 full_range 1, input_restarts 76 input_stops 12; after: colour 2 vic 16 full_range 0, input_restarts 78 input_stops 12)
+  MARK 240.0
+  EVENT edid-same recovered ttfgf=0.32 (no change: good +0.32..+0.42; source 1920x1080)
+  MARK 301.6
+  EVENT rate-60 recovered ttfgf=2.33 (bad +1.05..+1.70, black +1.91..+2.24, good +2.33..+2.43; source 1920x1080)
+  MARK 361.0
+  EVENT colour-rgb-limited recovered ttfgf=1.11 (good +0.09..+0.28, black +0.38..+1.01, good +1.11..+4.96; max error after 3; driver before: colour 2 vic 16 full_range 0, input_restarts 80 input_stops 12; after: colour 0 vic 16 full_range 0, input_restarts 82 input_stops 12)
+  RECORDING /home/dev/obs-rec/2026-11-25 14-44-33.mp4
+  SHOTS {'good': 190, 'bad': 4}
+  screenshots that were not good: 4 (SHOT lines in the event log's run)
+RESULT obssoak-obsrec-image       PASS (14 frames sampled every 30.0 s over 421 s at 1920x1080: first and last samples the pattern; in order: pattern x14; max error in the pattern frames 6 (limit 8)
+  INFO obsrec-counter steps from one recorded frame to the next (step: count): 0: 78, 1: 220, 2: 49, 3: 4, 4: 5, 5: 1
+RESULT obssoak-rec-duration       PASS (421.1 s of video, 421.1 s of audio)
+RESULT obssoak-rec-video          PASS (25268 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obssoak-rec-flashes        PASS (382 flash frames, 401 burst onsets, 378 paired within 0.5 s; unpaired at 71.9, 72.7, 124.1, 305.2 s)
+RESULT obssoak-rec-segments       FAIL (7 segments between changes, each paired again with a flash every second and a mean offset within 45 ms; not: segments 1, 2, 3, 4, 5, 6; paired again after a change: median +17.50 s, max +43.67 s from the change)
+RESULT obssoak-rec-offset         FAIL (burst onset - flash frame: mean -238.95 ms, std 149.85, min -418.06, max +31.44 over 378 flashes (positive: audio late))
+RESULT obssoak-rec-drift          SKIP (-48.389 ms/min = -338.96 ms over 7.0 min (one frame period: 16.7 ms); means per minute +15.0 -187.6 -196.1 -384.9 -394.8 -161.6 -383.2 -391.8; the source restarts at each change)
+  SEGMENT 0 0.0 61.2 flashes=61 bursts=62 back=+41.20 pairs_after=20 offset=+8.9 ok
+  SEGMENT 1 61.2 120.5 flashes=50 bursts=48 back=+12.50 pairs_after=47 offset=-194.8 NOT OK
+  SEGMENT 2 120.5 181.9 flashes=53 bursts=57 back=+43.67 pairs_after=18 offset=-192.4 NOT OK
+  SEGMENT 3 181.9 240.0 flashes=47 bursts=57 back=+22.50 pairs_after=32 offset=-396.1 NOT OK
+  SEGMENT 4 240.0 301.6 flashes=55 bursts=61 back=+42.03 pairs_after=20 offset=-393.9 NOT OK
+  SEGMENT 5 301.6 361.0 flashes=57 bursts=56 back=+4.63 pairs_after=55 offset=-152.8 NOT OK
+  SEGMENT 6 361.0 421.1 flashes=59 bursts=60 back=+2.47 pairs_after=58 offset=-391.2 NOT OK
+    offset in frame periods (count): -25: 7, -24: 125, -23: 24, -22: 3, -21: 1, -13: 27, -12: 31, -11: 24, -10: 18, -9: 53, -8: 3, -1: 8, +0: 15, +1: 11, +2: 28
+  mem: 1795617871 7079192 98824 78040 871 1377 447621:1720416
+RESULT obssoak-memory             PASS (from minute 5 to the end: MemAvailable -10780 kB, Slab +436 kB, SUnreclaim +44 kB; limits Slab 4096, SUnreclaim 2048)
+RESULT obssoak-cpu                PASS (report only: OBS 275.9 % of one CPU, the IRQ thread 0.34 %, the VM 69.8 % of its CPUs, over 421 s)
+  obs: 32 select timeouts, 0 dequeue failures, 0 device opens
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 1921 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT obsevents-obsev-restart    PASS (1/1 recovered; TTFGF min 1.12 s, max 1.12 s)
+RESULT obsevents-obsev-sleep      PASS (1/1 recovered; TTFGF min 1.87 s, max 1.87 s)
+RESULT obsevents-obsev-rate-59.94 PASS (1/1 recovered; TTFGF min 2.31 s, max 2.31 s)
+RESULT obsevents-obsev-rate-60    PASS (1/1 recovered; TTFGF min 2.27 s, max 2.27 s)
+RESULT obsevents-obsev-res-720p   PASS (1/1 recovered; TTFGF min 0.25 s, max 0.25 s)
+RESULT obsevents-obsev-res-1080p  PASS (1/1 recovered; TTFGF min 1.16 s, max 1.16 s)
+RESULT obsevents-obsev-colour-rgb-limited PASS (1/1 recovered; TTFGF min 0.59 s, max 0.59 s)
+RESULT obsevents-obsev-colour-ycbcr444 PASS (1/1 recovered; TTFGF min 1.10 s, max 1.10 s)
+RESULT obsevents-obsev-colour-ycbcr422 PASS (1/1 recovered; TTFGF min 0.00 s, max 0.00 s)
+RESULT obsevents-obsev-colour-rgb-full PASS (1/1 recovered; TTFGF min 1.08 s, max 1.08 s)
+RESULT obsevents-obsev-edid-same  PASS (1/1 recovered; TTFGF min 0.25 s, max 0.25 s)
+RESULT obsevents-obsev-edid-new   PASS (1/1 recovered; TTFGF min 2.90 s, max 2.90 s)
+RESULT obsevents-obsev-edid-default PASS (1/1 recovered; TTFGF min 3.12 s, max 3.12 s)
+RESULT obsevents-hybrid-obsev-res-720p PASS (1/1 recovered; TTFGF min 0.27 s, max 0.27 s)
+RESULT obsevents-hybrid-obsev-res-1080p PASS (1/1 recovered; TTFGF min 0.23 s, max 0.23 s)
+RESULT obsevents-hybrid-obsrec-image FAIL (13 frames sampled every 2.0 s over 26 s at 1920x1080: NOT the pattern at the start and end; in order: pattern x1, bad x1, black x11; max error in the pattern frames 4 (limit 8)
+RESULT obssoak-obsev-sleep        PASS (1/1 recovered; TTFGF min 1.89 s, max 1.89 s)
+RESULT obssoak-obsev-rate-59.94   PASS (1/1 recovered; TTFGF min 2.35 s, max 2.35 s)
+RESULT obssoak-obsev-rate-60      PASS (1/1 recovered; TTFGF min 2.33 s, max 2.33 s)
+RESULT obssoak-obsev-colour-rgb-limited PASS (1/1 recovered; TTFGF min 1.11 s, max 1.11 s)
+RESULT obssoak-obsev-colour-ycbcr444 PASS (1/1 recovered; TTFGF min 1.08 s, max 1.08 s)
+RESULT obssoak-obsev-edid-same    PASS (1/1 recovered; TTFGF min 0.32 s, max 0.32 s)
+RESULT obssoak-obsrec-image       PASS (14 frames sampled every 30.0 s over 421 s at 1920x1080: first and last samples the pattern; in order: pattern x14; max error in the pattern frames 6 (limit 8)
+RESULT obssoak-rec-duration       PASS (421.1 s of video, 421.1 s of audio)
+RESULT obssoak-rec-video          PASS (25268 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obssoak-rec-flashes        PASS (382 flash frames, 401 burst onsets, 378 paired within 0.5 s; unpaired at 71.9, 72.7, 124.1, 305.2 s)
+RESULT obssoak-rec-segments       FAIL (7 segments between changes, each paired again with a flash every second and a mean offset within 45 ms; not: segments 1, 2, 3, 4, 5, 6; paired again after a change: median +17.50 s, max +43.67 s from the change)
+RESULT obssoak-rec-offset         FAIL (burst onset - flash frame: mean -238.95 ms, std 149.85, min -418.06, max +31.44 over 378 flashes (positive: audio late))
+RESULT obssoak-rec-drift          SKIP (-48.389 ms/min = -338.96 ms over 7.0 min (one frame period: 16.7 ms); means per minute +15.0 -187.6 -196.1 -384.9 -394.8 -161.6 -383.2 -391.8; the source restarts at each change)
+RESULT obssoak-memory             PASS (from minute 5 to the end: MemAvailable -10780 kB, Slab +436 kB, SUnreclaim +44 kB; limits Slab 4096, SUnreclaim 2048)
+RESULT obssoak-cpu                PASS (report only: OBS 275.9 % of one CPU, the IRQ thread 0.34 %, the VM 69.8 % of its CPUs, over 421 s)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=29 fail=3 skip=2

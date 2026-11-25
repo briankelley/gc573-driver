@@ -1,0 +1,7 @@
+gc573-dev	prepare	PASS	override 0000:07:00.0 -> vfio-pci, card not bound to gc573
+gc573-dev	install-notty	PASS	exit 0; installed (dkms: gc573/0.1, 6.8.0-151-generic); override left, removal and restore commands printed
+gc573-dev	install-no	PASS	asked; n: override left in place, card not bound
+gc573-dev	install-yes	PASS	y: override removed and recorded (override 0000:07:00.0 vfio-pci); the card is up: video /dev/video0, ALSA card GC573
+gc573-dev	reboot	PASS	gc573 loaded by its alias and bound after the boot; input locked at 1920x1080; 30 frames streamed
+gc573-dev	uninstall	PASS	unloaded, nothing left in DKMS, /lib/modules, /usr/src; override back: 0000:07:00.0 -> vfio-pci
+gc573-dev	cleanup	PASS	no override, driverctl purged, rebooted

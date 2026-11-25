@@ -1,0 +1,79 @@
+# GC573 regression suite
+date:    2026-11-25 07:53:11 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion F6965BD4F8B9D2DD86A1FC3
+rev:     478000b7fcb3-dirty
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+gc573 already loaded: unloading
+
+## 17-audio
+  PCM hw:CARD=GC573,DEV=0, video /dev/video0
+    FORMAT:  S16_LE
+    CHANNELS: 2
+    RATE: 48000
+    PERIOD_SIZE: [480 24000]
+    BUFFER_SIZE: [960 96000]
+  ok: hw params: S16_LE, 2 channels, 48000 Hz, periods from 480 frames
+    RESULT audio frames=144000 secs=2.990 rate=48000.079 xruns=0 restarts=0
+  ok: capture ran, no overrun
+  ok: rate 48000.079 Hz (48000 +- 0.1 %), 144000 frames in 2.990 s
+  ok: all samples zero (0 reads with a sample)
+  ok: 300 periods, 300 of them delivered as silence (no input)
+  ok: AUDIO_DONE alternated 1, 2 (order, bad_done unchanged)
+  ok: stop/start: 21 starts, 21 INT bit 4, no overrun, no stop without INT bit 4
+  ok: 3 video captures
+  FAILED: audio through them: no overrun, 3 DMA restarts, 10361 frames of silence filled (the video stops leave the audio domain alone)
+  ok: 432281 frames in the 9 s run: no stall (>= 8.5 s worth)
+  ok: rate across them 48000.046 Hz (48000 +- 0.1 %: a 90 ms gap would be -1 %)
+  ok: video stop/start stress while audio runs: RESULT cycles=30 frames=90 start_to_first_frame_ms_mean=142.4 max=144.1 streamoff_ms_mean=103.0 max=103.5
+  FAILED: audio through them: no overrun, 30 DMA restarts, 106797 frames filled, AUDIO_DONE out of turn 0, 47992.647 Hz
+  ok: rmmod refused while open (rmmod: ERROR: Module gc573 is in use)
+  ok: unbind while capturing: exit 0 after 122 ms; capture exited with 1
+  ok: capture after rebind: 48000 frames
+  FAIL: see above
+  -- kernel log (21 lines)
+  | [ 3861.604212] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3861.705569] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3861.837863] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3861.839131] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 3861.942365] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 3861.943090] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 3862.044550] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 3862.187962] gc573 0000:07:00.0: video device video0
+  | [ 3862.188213] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 3862.213614] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 3862.748271] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 3895.259762] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 3895.361156] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 3895.496450] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 3895.498256] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 3895.605452] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 3895.606203] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 3895.709542] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 3895.851518] gc573 0000:07:00.0: video device video0
+  | [ 3895.854866] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 3895.868366] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT 17-audio             FAIL (36s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 17-audio             FAIL (36s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=0 fail=1 skip=2

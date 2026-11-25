@@ -11,11 +11,21 @@
  * (spec/video-dma.md "Free-running with no input"), as in M2.
  *
  * Input changes (gc573_video_input_changed(), from the HDMI poll worker):
- * every lock, loss and mode change raises V4L2_EVENT_SOURCE_CHANGE. A
- * running stream is stopped and its buffers are returned with an error,
- * and the queue is marked failed (vb2_queue_error()): the application
- * stops streaming, queries and sets the new timings, and starts again.
- * When the queue is not busy the device adopts the new input's timings.
+ * every lock, loss and mode change raises V4L2_EVENT_SOURCE_CHANGE, and
+ * the application should stop streaming, query and set the timings and
+ * start again. A stream also follows the input by itself wherever its
+ * buffers still fit, for applications that ignore the event (OBS):
+ * - input lost: the stream restarts free-running (black at 60 Hz);
+ * - input locked in the stream's timings: the stream restarts from it;
+ * - input locked in other timings: the stream stops, its buffers are
+ *   returned with an error and the queue is marked failed
+ *   (vb2_queue_error()).
+ * A restart is the hardware stop and start of STREAMOFF and STREAMON on
+ * the same buffers: those in flight are queued again, the sequence counts
+ * on, the first frame after it is dropped as after STREAMON, and the
+ * colorimetry G_FMT reports follows the input.
+ * When the queue is not busy the device adopts the new input's timings; a
+ * change while it was busy is adopted once it is free (REQBUFS 0, close).
  * STREAMON with a locked input whose timings differ fails with -EPIPE.
  *
  * Buffers: single-planar API, one contiguous buffer per frame. Each plane
@@ -32,8 +42,10 @@
 #include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/error-injection.h>
+#include <linux/fs.h>
 #include <linux/gcd.h>
 #include <linux/jiffies.h>
+#include <linux/kernel.h>
 #include <linux/ktime.h>
 #include <linux/math64.h>
 #include <linux/moduleparam.h>
@@ -86,6 +98,16 @@ static int exp_rate_bits = -1;
 module_param(exp_rate_bits, int, 0644);
 MODULE_PARM_DESC(exp_rate_bits,
 		 "Experiment, spec/open-questions.md #33; read at stream start. RATE_CTRL bits 0 and 3 := this value's bits 0 and 3 (-1: keep them)");
+
+/*
+ * Experiment, spec/open-questions.md #13 (reset domain contents; which one
+ * stops the audio DMA): the domains a video stop resets, and a debugfs
+ * trigger (exp_reset) that resets domains while video is idle.
+ */
+static int exp_stop_domains = -1;
+module_param(exp_stop_domains, int, 0644);
+MODULE_PARM_DESC(exp_stop_domains,
+		 "Experiment, spec/open-questions.md #13; read at stream stop. Domains to reset: mask of 0x001, 0x100, 0x200 (0: none; -1: the driver's choice, all three with 0x100 left out while audio runs)");
 
 static const u32 gc573_vch_base[GC573_VCH_NUM] = {
 	GC573_VCH0_BASE, GC573_VCH1_BASE, GC573_VCH2_BASE,
@@ -706,13 +728,18 @@ static void gc573_vid_return_all(struct gc573 *gc, enum vb2_buffer_state st)
 
 /*
  * spec/init.md "Stream stop (video)" steps 1-3: output off, wait for INT
- * bit 0, reset the domains. vid.lock held. Safe to call when not running.
+ * bit 0, reset the domains. Domain 8 holds the audio DMA and nothing the
+ * video path reads back (open question 13, driver M5: domain 0 resets the
+ * video DMA, COLOR_CTRL, CLIP and the CSC banks, the same as all three):
+ * while an audio stream runs it is left out, and audio carries on through
+ * the stop. vid.lock held. Safe to call when not running.
  */
 void gc573_video_hw_stop(struct gc573 *gc)
 {
 	struct gc573_video *v = &gc->vid;
 	struct device *dev = &gc->pdev->dev;
 	unsigned long t0 = jiffies;
+	int domains = READ_ONCE(exp_stop_domains);
 	u32 vip;
 
 	spin_lock(&v->slock);
@@ -729,8 +756,13 @@ void gc573_video_hw_stop(struct gc573 *gc)
 			dev_warn(dev, "video stop: timeout waiting for INT bit 0\n");
 		}
 	}
-	gc573_reset_domains(gc);
-	/* the reset stops the audio DMA as well */
+	if (domains < 0) {
+		domains = GC573_RESET_DOMAINS;
+		if (gc573_audio_running(gc))
+			domains &= ~GC573_RESET_DOMAIN_8;
+	}
+	gc573_reset_domain_mask(gc, domains);
+	/* a reset of domain 8 stops the audio DMA: start it again */
 	gc573_audio_reset_done(gc);
 	dev_dbg(dev, "video stopped in %u ms\n",
 		jiffies_to_msecs(jiffies - t0));
@@ -920,6 +952,8 @@ static void gc573_buf_cleanup(struct vb2_buffer *vb)
 	dma_unmap_sgtable(&gc->pdev->dev, b->sgt, DMA_FROM_DEVICE, 0);
 }
 
+static void gc573_vid_hw_start(struct gc573 *gc, bool restart);
+
 static void gc573_buf_queue(struct vb2_buffer *vb)
 {
 	struct gc573 *gc = vb2_get_drv_priv(vb->vb2_queue);
@@ -937,25 +971,25 @@ static void gc573_buf_queue(struct vb2_buffer *vb)
 	if (v->running && !gc573_vid_armed(v))
 		gc573_vid_fill(gc, false);
 	spin_unlock(&v->slock);
+	/* a restart after an input change waited for this buffer */
+	if (v->start_pending && !v->dead) {
+		v->start_pending = false;
+		gc573_vid_hw_start(gc, true);
+	}
 }
 
-/* spec/video-dma.md "Start"; at least one buffer is queued */
-static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
+/*
+ * spec/video-dma.md "Start", from the input as it is: live from a locked
+ * input in the stream's timings, free-running without one. At least one
+ * buffer is queued. A restart keeps the sequence and the statistics.
+ * vid.lock held.
+ */
+static void gc573_vid_hw_start(struct gc573 *gc, bool restart)
 {
-	struct gc573 *gc = vb2_get_drv_priv(q);
 	struct gc573_video *v = &gc->vid;
 	struct gc573_vbuf *first;
 	unsigned int c, n;
 
-	if (v->dead) {
-		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
-		return -ENODEV;
-	}
-	/* a locked input in other timings: query and set them first */
-	if (v->in.locked && !gc573_vid_input_matches(v)) {
-		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
-		return -EPIPE;
-	}
 	v->live = v->in.locked;
 
 	gc573_vid_setup(gc);
@@ -966,10 +1000,12 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 		v->exp_mode = 0;
 	v->next_arm = 0;
 	v->arm_seq = 0;
-	v->sequence = 0;
 	v->skip = GC573_VID_SKIP;
 	memset(v->ch_ctrl, 0, sizeof(v->ch_ctrl));
-	memset(&v->st, 0, sizeof(v->st));
+	if (!restart) {
+		v->sequence = 0;
+		memset(&v->st, 0, sizeof(v->st));
+	}
 
 	/* every slot of every channel in use points at memory we own */
 	first = list_first_entry(&v->queued, struct gc573_vbuf, list);
@@ -987,12 +1023,32 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 	spin_unlock(&v->slock);
 
 	dev_dbg(&gc->pdev->dev,
-		"video start: %p4cc %ux%u %s, %u slot(s) armed, exp_slot_mode %d, IN 1004 %#x 1008 %#x 100c %#x 1010 %#x\n",
-		&v->pix.pixelformat, v->pix.width, v->pix.height,
-		v->live ? "live" : "no input", gc573_vid_armed(v), v->exp_mode,
+		"video %s: %p4cc %ux%u %s, %u slot(s) armed, exp_slot_mode %d, IN 1004 %#x 1008 %#x 100c %#x 1010 %#x\n",
+		restart ? "restart" : "start", &v->pix.pixelformat,
+		v->pix.width, v->pix.height, v->live ? "live" : "no input",
+		gc573_vid_armed(v), v->exp_mode,
 		gc573_rd(gc, GC573_IN_STATUS), gc573_rd(gc, GC573_IN_WIDTH),
 		gc573_rd(gc, GC573_IN_HEIGHT),
 		gc573_rd(gc, GC573_IN_FRAME_PERIOD));
+}
+
+static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
+{
+	struct gc573 *gc = vb2_get_drv_priv(q);
+	struct gc573_video *v = &gc->vid;
+
+	v->failed = false;
+	v->start_pending = false;
+	if (v->dead) {
+		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
+		return -ENODEV;
+	}
+	/* a locked input in other timings: query and set them first */
+	if (v->in.locked && !gc573_vid_input_matches(v)) {
+		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
+		return -EPIPE;
+	}
+	gc573_vid_hw_start(gc, false);
 	return 0;
 }
 
@@ -1004,6 +1060,7 @@ static void gc573_stop_streaming(struct vb2_queue *q)
 	/* after the quiesce the engines are reset and the IRQ is off */
 	if (!v->dead)
 		gc573_video_hw_stop(gc);
+	v->start_pending = false;
 	gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
 
 	dev_dbg(&gc->pdev->dev,
@@ -1342,10 +1399,10 @@ static int gc573_log_status(struct file *file, void *priv)
 		  gc573_rd(gc, GC573_IN_STATUS), gc573_rd(gc, GC573_IN_WIDTH),
 		  gc573_rd(gc, GC573_IN_HEIGHT),
 		  gc573_rd(gc, GC573_IN_FRAME_PERIOD));
-	v4l2_info(&gc->v4l2_dev, "stream: %s%s, frames %u, skipped %u, stopped by input changes %u\n",
+	v4l2_info(&gc->v4l2_dev, "stream: %s%s, frames %u, skipped %u; input changes: %u restarts, %u stops\n",
 		  vb2_is_streaming(&v->queue) ? "on" : "off",
 		  v->live ? " (live)" : "", v->st.frames, v->st.skipped,
-		  v->input_stops);
+		  v->input_restarts, v->input_stops);
 	v4l2_info(&gc->v4l2_dev, "input: power %d signal %d locked %d period %#x\n",
 		  v->in.power, v->in.signal, v->in.locked, v->in.period);
 	if (v->in.locked)
@@ -1353,6 +1410,55 @@ static int gc573_log_status(struct file *file, void *priv)
 				      &v->in.timings, true);
 	v4l2_ctrl_handler_log_status(&v->ctrls, gc->v4l2_dev.name);
 	return 0;
+}
+
+/*
+ * The device takes the input's timings while the queue is free (policy:
+ * header comment). vid.lock held.
+ */
+static void gc573_vid_adopt_input(struct gc573 *gc)
+{
+	struct gc573_video *v = &gc->vid;
+
+	v->adopt_pending = false;
+	if (v->in.locked &&
+	    v4l2_valid_dv_timings(&v->in.timings, &gc573_timings_cap,
+				  gc573_timings_fit, NULL)) {
+		v->timings = v->in.timings;
+		v->fmt = gc573_find_fmt(v->fmt->fourcc, v->in.timings.bt.width);
+	}
+	gc573_fill_pix(gc, v->fmt, &v->pix);
+}
+
+/* REQBUFS and the last close can free the queue. vid.lock held. */
+static void gc573_vid_queue_freed(struct gc573 *gc)
+{
+	struct gc573_video *v = &gc->vid;
+
+	if (v->adopt_pending && !v->dead && !vb2_is_busy(&v->queue))
+		gc573_vid_adopt_input(gc);
+}
+
+static int gc573_reqbufs(struct file *file, void *priv,
+			 struct v4l2_requestbuffers *p)
+{
+	struct gc573 *gc = video_drvdata(file);
+	int ret = vb2_ioctl_reqbufs(file, priv, p);
+
+	gc573_vid_queue_freed(gc);
+	return ret;
+}
+
+/* the video device, and with it struct gc573, outlives this call */
+static int gc573_vid_release_file(struct file *file)
+{
+	struct gc573 *gc = video_drvdata(file);
+	int ret = vb2_fop_release(file);
+
+	mutex_lock(&gc->vid.lock);
+	gc573_vid_queue_freed(gc);
+	mutex_unlock(&gc->vid.lock);
+	return ret;
 }
 
 static int gc573_subscribe_event(struct v4l2_fh *fh,
@@ -1388,7 +1494,7 @@ static const struct v4l2_ioctl_ops gc573_ioctl_ops = {
 	.vidioc_dv_timings_cap		= gc573_dv_timings_cap,
 	.vidioc_g_edid			= gc573_g_edid,
 	.vidioc_s_edid			= gc573_s_edid,
-	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
+	.vidioc_reqbufs			= gc573_reqbufs,
 	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
 	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,
 	.vidioc_querybuf		= vb2_ioctl_querybuf,
@@ -1404,7 +1510,7 @@ static const struct v4l2_ioctl_ops gc573_ioctl_ops = {
 static const struct v4l2_file_operations gc573_fops = {
 	.owner		= THIS_MODULE,
 	.open		= v4l2_fh_open,
-	.release	= vb2_fop_release,
+	.release	= gc573_vid_release_file,
 	.unlocked_ioctl	= video_ioctl2,
 	.mmap		= vb2_fop_mmap,
 	.poll		= vb2_fop_poll,
@@ -1440,8 +1546,9 @@ static int gc573_vid_debugfs_show(struct seq_file *m, void *unused)
 
 	/* seq_printf() does not sleep: print the shared state under slock */
 	spin_lock(&v->slock);
-	seq_printf(m, "stream: running %d live %d input_stops %u fmt %p4cc %ux%u sizeimage %u exp_slot_mode %d next_arm %u ch_ctrl written: ch1 %#x ch2 %#x\n",
-		   v->running, v->live, v->input_stops, &v->pix.pixelformat,
+	seq_printf(m, "stream: running %d live %d input_restarts %u input_stops %u start_pending %d fmt %p4cc %ux%u sizeimage %u exp_slot_mode %d next_arm %u ch_ctrl written: ch1 %#x ch2 %#x\n",
+		   v->running, v->live, v->input_restarts, v->input_stops,
+		   v->start_pending, &v->pix.pixelformat,
 		   v->pix.width, v->pix.height, v->pix.sizeimage, v->exp_mode,
 		   v->next_arm, v->ch_ctrl[1], v->ch_ctrl[2]);
 	seq_puts(m, "slots (buffer index):");
@@ -1465,10 +1572,57 @@ static int gc573_vid_debugfs_show(struct seq_file *m, void *unused)
 }
 DEFINE_SHOW_ATTRIBUTE(gc573_vid_debugfs);
 
+/*
+ * Experiment, open question 13: write a mask of 0x001, 0x100 and 0x200 to
+ * reset those domains (spec/init.md step 2 per domain) while video is
+ * idle; audio may run. DMA_RUN before and after goes to the kernel log;
+ * then a running audio stream is started again if the reset stopped it,
+ * as after a video stop.
+ */
+static ssize_t gc573_exp_reset_write(struct file *file, const char __user *ubuf,
+				     size_t len, loff_t *ppos)
+{
+	struct gc573 *gc = file->private_data;
+	struct gc573_video *v = &gc->vid;
+	u32 mask, run0, run1, rst;
+	int ret;
+
+	ret = kstrtou32_from_user(ubuf, len, 0, &mask);
+	if (ret)
+		return ret;
+	if (!mask || (mask & ~GC573_RESET_DOMAINS))
+		return -EINVAL;
+	mutex_lock(&v->lock);
+	if (v->dead || vb2_is_streaming(&v->queue)) {
+		ret = -EBUSY;
+		goto out;
+	}
+	run0 = gc573_rd(gc, GC573_DMA_RUN);
+	ret = gc573_reset_domain_mask(gc, mask);
+	run1 = gc573_rd(gc, GC573_DMA_RUN);
+	rst = gc573_rd(gc, GC573_RESET);
+	dev_info(&gc->pdev->dev,
+		 "exp_reset %#x: %d, RESET=%#010x, DMA_RUN %#010x -> %#010x\n",
+		 mask, ret, rst, run0, run1);
+	gc573_audio_reset_done(gc);
+out:
+	mutex_unlock(&v->lock);
+	return ret ? ret : len;
+}
+
+static const struct file_operations gc573_exp_reset_fops = {
+	.owner = THIS_MODULE,
+	.open = simple_open,
+	.write = gc573_exp_reset_write,
+	.llseek = noop_llseek,
+};
+
 void gc573_video_debugfs(struct gc573 *gc)
 {
 	debugfs_create_file("video", 0444, gc->debugfs, gc,
 			    &gc573_vid_debugfs_fops);
+	debugfs_create_file("exp_reset", 0200, gc->debugfs, gc,
+			    &gc573_exp_reset_fops);
 }
 
 /* ---- input changes ---- */
@@ -1487,9 +1641,71 @@ static bool gc573_input_same(const struct gc573_input *a,
 }
 
 /*
+ * After a stop: the buffers in the slots go back to the head of the
+ * queue, in arming order. slock held.
+ */
+static void gc573_vid_unarm(struct gc573_video *v)
+{
+	struct gc573_vbuf *b[GC573_VCH_SLOTS];
+	unsigned int n, i, k = 0;
+
+	for (n = 0; n < GC573_VCH_SLOTS; n++) {
+		struct gc573_vbuf *s = v->slot[n];
+
+		if (!s)
+			continue;
+		for (i = k; i && b[i - 1]->armed > s->armed; i--)
+			b[i] = b[i - 1];
+		b[i] = s;
+		k++;
+		v->slot[n] = NULL;
+	}
+	while (k--)
+		list_add(&b[k]->list, &v->queued);
+}
+
+/*
+ * A streaming queue follows a change of the input (policy: header
+ * comment). vid.lock held; v->in is the new input.
+ */
+static void gc573_vid_follow_input(struct gc573 *gc)
+{
+	struct gc573_video *v = &gc->vid;
+	struct device *dev = &gc->pdev->dev;
+
+	if (v->failed)
+		return;
+	if (v->in.locked && !gc573_vid_input_matches(v)) {
+		gc573_video_hw_stop(gc);
+		v->start_pending = false;
+		gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
+		vb2_queue_error(&v->queue);
+		v->failed = true;
+		v->input_stops++;
+		dev_dbg(dev, "video: input in other timings, stream stopped\n");
+		return;
+	}
+	/* free-running already, and still no input */
+	if (!v->in.locked && !v->live && (v->running || v->start_pending))
+		return;
+	gc573_video_hw_stop(gc);
+	spin_lock(&v->slock);
+	gc573_vid_unarm(v);
+	v->start_pending = list_empty(&v->queued);
+	spin_unlock(&v->slock);
+	/* same timings, so the same buffer layout; new colorimetry */
+	gc573_fill_pix(gc, v->fmt, &v->pix);
+	v->input_restarts++;
+	if (!v->start_pending)
+		gc573_vid_hw_start(gc, true);
+	dev_dbg(dev, "video: input changed, stream restarted %s%s\n",
+		v->in.locked ? "live" : "free-running",
+		v->start_pending ? " at the next QBUF" : "");
+}
+
+/*
  * From the HDMI poll worker on lock, loss, mode or power change (policy:
- * header comment). Never called with the HDMI lock held. A free-running
- * stream (no input) is stopped only when an input locks.
+ * header comment). Never called with the HDMI lock held.
  */
 void gc573_video_input_changed(struct gc573 *gc)
 {
@@ -1506,28 +1722,17 @@ void gc573_video_input_changed(struct gc573 *gc)
 		goto unlock;
 	gc573_hdmi_input(gc, &in);
 	same = gc573_input_same(&in, &v->in);
-	if (vb2_is_streaming(&v->queue) && v->running &&
-	    (v->live ? !same : in.locked)) {
-		gc573_video_hw_stop(gc);
-		gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
-		vb2_queue_error(&v->queue);
-		v->input_stops++;
-		dev_dbg(&gc->pdev->dev, "video: input changed, stream stopped\n");
-	}
 	v->in = in;
-	if (!vb2_is_busy(&v->queue)) {
-		if (in.locked &&
-		    v4l2_valid_dv_timings(&in.timings, &gc573_timings_cap,
-					  gc573_timings_fit, NULL)) {
-			v->timings = in.timings;
-			v->fmt = gc573_find_fmt(v->fmt->fourcc,
-						in.timings.bt.width);
-		}
-		gc573_fill_pix(gc, v->fmt, &v->pix);
-	}
 	v4l2_ctrl_s_ctrl(v->power_ctrl, in.power);
-	if (!same)
-		v4l2_event_queue(&v->vdev, &ev);
+	if (same)
+		goto unlock;
+	v4l2_event_queue(&v->vdev, &ev);
+	if (vb2_is_streaming(&v->queue))
+		gc573_vid_follow_input(gc);
+	if (!vb2_is_busy(&v->queue))
+		gc573_vid_adopt_input(gc);
+	else
+		v->adopt_pending = true;
 unlock:
 	mutex_unlock(&v->lock);
 }

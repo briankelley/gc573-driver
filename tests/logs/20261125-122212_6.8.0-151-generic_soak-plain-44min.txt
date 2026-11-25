@@ -1,0 +1,26 @@
+# Plain soak (tests/live.sh soak, GC573_SOAK_SECS=7200) on the generic kernel
+# 6.8.0-151 at aae57a9: avsync.sh, 1080p60 YUYV video and audio in one
+# gc573-aud process. Started 12:22:19 UTC and stopped by hand at 13:06 UTC
+# (44.3 min), when the soak became an event soak (M5 addendum). live.sh had
+# printed only its header, so the analysis was run by hand on the capture's
+# files: live-av.py soak.txt (without the last line, which the stop cut
+# short) soak.raw.
+
+RESULT duration   PASS (2657.4 s, 127563776 frames, minimum 0 s)
+RESULT xruns      PASS (0 overruns)
+RESULT rate       PASS (48001.243 Hz against CLOCK_MONOTONIC, +25.9 ppm)
+RESULT gaps       PASS (per-second medians move <= 0.14 ms from one second to the next; within 2.60 ms of one line over the run; single reads within 5.62 ms of it; 265746 reads)
+RESULT bursts     PASS (2657 in 2657.6 s)
+RESULT channels   PASS (left 999.8 Hz, right 2000.2 Hz over 2657 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT video      PASS (159445 frames, 0 sequence gaps, interval 16.669 ms, 0 off by more than half a period, 2 by more than 10 %)
+  raw offsets: mean -31.34 ms, min -111.32, max -11.10, std 15.31; frames from the most common (count): -5: 3, -4: 12, -3: 57, -2: 144, -1: 267, +0: 1393, +1: 335
+RESULT avsync     PASS (2211 flashes over 44.3 min: offset -27.914 ms (std 0.065, min -28.260, max -27.772), drift +0.0001 ms/min = +0.006 ms over the run, residual <= 0.348 ms)
+
+# Memory (the sampler drops the page cache and reclaimable slab first, aae57a9)
+# and CPU, from the sampler's file (45 samples, one a minute; CLK_TCK 100,
+# 4 CPUs):
+#   minute 0:  MemAvailable 7215612 kB, Slab 97940 kB, SUnreclaim 78184 kB
+#   minute 5:  MemAvailable 7245588 kB, Slab 97892 kB, SUnreclaim 78228 kB
+#   minute 44: MemAvailable 7241636 kB, Slab 97876 kB, SUnreclaim 78316 kB
+#   from minute 5: Slab -16 kB, SUnreclaim +88 kB (limits: 4096, 2048)
+#   CPU: gc573-aud 1.33 % of one CPU, the IRQ thread 1.04 %, the VM 0.73 % of 4 CPUs

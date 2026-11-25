@@ -1,0 +1,7 @@
+gc573-dev	prepare	PASS	override 0000:07:00.0 -> vfio-pci, card not bound to gc573
+gc573-dev	install-notty	FAIL	exit 0; driver:  override: vfio-pci persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+gc573-dev	install-no	PASS	asked; n: override left in place, card not bound
+gc573-dev	install-yes	FAIL	exit 1; state ''; driver:  override: (null) persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+gc573-dev	reboot	FAIL	lock ''; capture 'Unable to detect what device /dev/ is, exiting. rc=1 '; driver:  override: vfio-pci persisted: vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+gc573-dev	uninstall	FAIL	exit 0; left ''; driver:  override: vfio-pci persisted: vfio-pci dkms:  video:  alsa: 
+gc573-dev	cleanup	PASS	no override, driverctl purged, rebooted

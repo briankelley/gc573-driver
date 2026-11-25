@@ -12,3 +12,5 @@ Module.symvers
 vendor-ref/
 *.o_shipped
 .claude/
+# Python bytecode (guard.py imports xwatch.py)
+__pycache__/

@@ -1,0 +1,183 @@
+2026-11-25T17:23:59.196Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-25T17:23:59.204Z guard start: run pid 1244306, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*, windows and audio each polled every 50 ms
+2026-11-25T17:23:59.207Z guard audio links: none
+2026-11-25T17:23:59.209Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:23:59.209Z guard windows: none
+2026-11-25T17:23:59.616Z live stream stop (exit 0)
+2026-11-25T17:23:59.687Z live driver load
+2026-11-25T17:23:59.998Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:24:00.595Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:24:00.600Z show player start 1920x1080@60 (pid 1244480)
+2026-11-25T17:24:00.618Z show player stop (pid 1244480)
+2026-11-25T17:24:00.709Z guard windows: none
+2026-11-25T17:24:00.953Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T17:24:01.499Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T17:24:01.514Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T17:24:01.578Z avsync player start 1920x1080@60 amplitude 0.5 (pid 1244898)
+2026-11-25T17:24:04.607Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=GC573,DEV=0 -t 80 -v -V /dev/video0 -o /tmp/gc573-live/avc.raw > /tmp/gc573-li
+2026-11-25T17:24:24.071Z live colour ColorSpace=2 ColorRange=1
+2026-11-25T17:24:44.025Z live colour ColorSpace=0 ColorRange=1
+2026-11-25T17:24:59.215Z guard ok: windows 1196 polls, longest interval 115 ms; audio 1198 polls, longest interval 51 ms
+2026-11-25T17:25:04.007Z live colour ColorSpace=0 ColorRange=0
+2026-11-25T17:25:24.853Z live stream stop (exit 0)
+2026-11-25T17:25:25.170Z avsync player stop (pid 1244898)
+2026-11-25T17:25:25.210Z guard audio links: none
+2026-11-25T17:25:25.276Z guard windows: none
+2026-11-25T17:25:25.287Z live obs start
+2026-11-25T17:25:31.009Z obs-events events start: reps 1, all
+2026-11-25T17:25:31.009Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T17:25:31.231Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:25:31.604Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:25:31.634Z show player start 1920x1080@60 counter (pid 1256958)
+2026-11-25T17:25:32.021Z obs-events change restart
+2026-11-25T17:25:32.215Z show player stop (pid 1256958)
+2026-11-25T17:25:32.312Z guard windows: none
+2026-11-25T17:25:32.450Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:25:32.930Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:25:32.996Z show player start 1920x1080@60 counter (pid 1257295)
+2026-11-25T17:25:33.199Z obs-events change sleep
+2026-11-25T17:25:33.383Z show player stop (pid 1257295)
+2026-11-25T17:25:33.419Z guard windows: none
+2026-11-25T17:25:33.485Z obs-events output off DVI-D-0
+2026-11-25T17:25:33.669Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T17:25:41.663Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:25:41.801Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:25:42.442Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:25:42.500Z show player start 1920x1080@60 counter (pid 1258299)
+2026-11-25T17:25:43.308Z obs-events change rate-59.94
+2026-11-25T17:25:43.509Z show player stop (pid 1258299)
+2026-11-25T17:25:43.538Z guard windows: none
+2026-11-25T17:25:43.747Z show mode DVI-D-0 1920x1080@59.94
+2026-11-25T17:25:44.423Z show player start 1920x1080@59.94 counter (pid 1258744)
+2026-11-25T17:25:44.460Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:25:45.737Z obs-events change rate-60
+2026-11-25T17:25:45.925Z show player stop (pid 1258744)
+2026-11-25T17:25:46.025Z guard windows: none
+2026-11-25T17:25:46.163Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:25:46.952Z show player start 1920x1080@60 counter (pid 1259178)
+2026-11-25T17:25:47.012Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:25:48.203Z obs-events change res-720p
+2026-11-25T17:25:48.382Z show player stop (pid 1259178)
+2026-11-25T17:25:48.475Z guard windows: none
+2026-11-25T17:25:48.618Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T17:25:48.844Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T17:25:49.405Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T17:25:49.510Z show player start 1280x720@59.94 counter (pid 1259612)
+2026-11-25T17:25:59.224Z guard ok: windows 2368 polls, longest interval 219 ms; audio 2395 polls, longest interval 51 ms
+2026-11-25T17:26:00.415Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-25T17:26:00.712Z obs-events change res-1080p
+2026-11-25T17:26:00.803Z show player stop (pid 1259612)
+2026-11-25T17:26:00.830Z guard windows: none
+2026-11-25T17:26:01.042Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:26:01.231Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:26:01.913Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:26:01.992Z show player start 1920x1080@60 counter (pid 1261242)
+2026-11-25T17:26:12.800Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-25T17:26:13.174Z obs-events change colour-rgb-limited
+2026-11-25T17:26:13.581Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=1
+2026-11-25T17:26:18.862Z obs-events change colour-ycbcr444
+2026-11-25T17:26:19.305Z obs-events colour DVI-D-0 ColorSpace=2 ColorRange=1
+2026-11-25T17:26:24.612Z obs-events change colour-ycbcr422
+2026-11-25T17:26:25.010Z obs-events colour DVI-D-0 ColorSpace=1 ColorRange=1
+2026-11-25T17:26:30.259Z obs-events change colour-rgb-full
+2026-11-25T17:26:30.658Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T17:26:36.082Z obs-events change edid-same
+2026-11-25T17:26:36.258Z obs-events edid set: default image
+2026-11-25T17:26:36.651Z obs-events change edid-new
+2026-11-25T17:26:36.831Z show player stop (pid 1261242)
+2026-11-25T17:26:36.934Z obs-events edid set: other image
+2026-11-25T17:26:36.938Z guard windows: none
+2026-11-25T17:26:37.861Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T17:26:38.185Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:26:38.868Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:26:39.492Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:26:39.497Z show player start 1920x1080@60 counter (pid 1265929)
+2026-11-25T17:26:39.743Z obs-events change edid-default
+2026-11-25T17:26:39.928Z show player stop (pid 1265929)
+2026-11-25T17:26:40.018Z guard windows: none
+2026-11-25T17:26:40.030Z obs-events edid set: default image
+2026-11-25T17:26:40.960Z guard output DVI-D-0: no mode (off or unplugged)
+2026-11-25T17:26:41.270Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:26:41.975Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:26:42.494Z show player start 1920x1080@60 counter (pid 1266386)
+2026-11-25T17:26:42.496Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:26:42.830Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T17:26:42.899Z show player stop (pid 1266386)
+2026-11-25T17:26:43.115Z guard windows: none
+2026-11-25T17:26:43.182Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:26:43.659Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:26:43.715Z show player start 1920x1080@60 counter (pid 1266731)
+2026-11-25T17:26:43.789Z obs-events events start: reps 1, res-720p,res-1080p, recording
+2026-11-25T17:26:43.789Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T17:26:43.859Z show player stop (pid 1266731)
+2026-11-25T17:26:44.109Z guard windows: none
+2026-11-25T17:26:44.110Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:26:44.627Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:26:44.633Z show player start 1920x1080@60 counter (pid 1267028)
+2026-11-25T17:26:44.867Z obs-events recording start (StartRecord, hybrid_mp4)
+2026-11-25T17:26:46.115Z obs-events change res-720p
+2026-11-25T17:26:46.345Z show player stop (pid 1267028)
+2026-11-25T17:26:46.455Z guard windows: none
+2026-11-25T17:26:46.583Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T17:26:46.793Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T17:26:47.504Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T17:26:47.591Z show player start 1280x720@59.94 counter (pid 1267506)
+2026-11-25T17:26:58.360Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-25T17:26:58.683Z obs-events change res-1080p
+2026-11-25T17:26:58.777Z show player stop (pid 1267506)
+2026-11-25T17:26:58.875Z guard windows: none
+2026-11-25T17:26:59.014Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:26:59.211Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:26:59.231Z guard ok: windows 3525 polls, longest interval 269 ms; audio 3593 polls, longest interval 51 ms
+2026-11-25T17:26:59.879Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:26:59.971Z show player start 1920x1080@60 counter (pid 1269150)
+2026-11-25T17:27:10.778Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-25T17:27:17.152Z obs-events recording stop (StopRecord)
+2026-11-25T17:27:17.152Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T17:27:17.219Z show player stop (pid 1269150)
+2026-11-25T17:27:17.259Z guard windows: none
+2026-11-25T17:27:17.457Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:27:17.976Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:27:17.981Z show player start 1920x1080@60 counter (pid 1271509)
+2026-11-25T17:27:22.202Z live obs stop
+2026-11-25T17:27:22.750Z live obs start
+2026-11-25T17:27:28.459Z obs-events events start: reps 1, res-720p,res-1080p, recording
+2026-11-25T17:27:28.459Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T17:27:28.539Z show player stop (pid 1271509)
+2026-11-25T17:27:28.729Z guard windows: none
+2026-11-25T17:27:28.791Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:27:29.248Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:27:29.348Z show player start 1920x1080@60 counter (pid 1273070)
+2026-11-25T17:27:29.596Z obs-events recording start (StartRecord, mkv)
+2026-11-25T17:27:30.842Z obs-events change res-720p
+2026-11-25T17:27:31.055Z show player stop (pid 1273070)
+2026-11-25T17:27:31.163Z guard windows: none
+2026-11-25T17:27:31.293Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T17:27:31.599Z guard output DVI-D-0: 1280x720+1920+0
+2026-11-25T17:27:32.305Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T17:27:32.344Z show player start 1280x720@59.94 counter (pid 1273551)
+2026-11-25T17:27:43.069Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-25T17:27:59.238Z guard ok: windows 4707 polls, longest interval 306 ms; audio 4791 polls, longest interval 51 ms
+2026-11-25T17:28:04.114Z obs-events change res-1080p
+2026-11-25T17:28:10.160Z show player stop (pid 1273551)
+2026-11-25T17:28:10.271Z guard windows: none
+2026-11-25T17:28:10.395Z show mode DVI-D-0 1280x720@59.94
+2026-11-25T17:28:10.823Z guard windows: gc573-pattern 1280x720+1920+0 IsViewable
+2026-11-25T17:28:10.885Z show player start 1280x720@59.94 counter (pid 1278511)
+2026-11-25T17:28:32.717Z obs-events recording stop (StopRecord)
+2026-11-25T17:28:32.717Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-25T17:28:32.791Z show player stop (pid 1278511)
+2026-11-25T17:28:32.896Z guard windows: none
+2026-11-25T17:28:33.027Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:28:33.224Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T17:28:33.914Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:28:33.982Z show player start 1920x1080@60 counter (pid 1281590)
+2026-11-25T17:28:34.025Z live obs stop
+2026-11-25T17:28:34.611Z show player stop (pid 1281590)
+2026-11-25T17:28:34.806Z guard windows: none
+2026-11-25T17:28:34.868Z show mode DVI-D-0 1920x1080@60
+2026-11-25T17:28:35.389Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T17:28:35.399Z show player start 1920x1080@60 (pid 1281933)
+2026-11-25T17:28:43.245Z show player stop (pid 1281933)
+2026-11-25T17:28:43.365Z guard windows: none
+2026-11-25T17:28:44.244Z guard end: run pid 1244306 gone; windows 5581 polls, longest interval 306 ms; audio 5674 polls, longest interval 51 ms; no breach

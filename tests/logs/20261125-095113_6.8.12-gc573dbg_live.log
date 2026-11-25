@@ -1,0 +1,57 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 09:51:13 UTC
+vm:      gc573-dev, kernel 6.8.12-gc573dbg
+rev:     9441cbc8b9d5-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   soak
+module:  srcversion 292FD1A2D4D0C4210A150E8 loaded, 292FD1A2D4D0C4210A150E8 in ~/gc573-driver, /dev/video0
+
+## soak
+  soak: 1800 s from 09:51:29 UTC
+RESULT soak-capture               PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=86402400 secs=1799.990 rate=48001.329 xruns=0 restarts=0 )
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 195136 silent 4724 filled 2383 pauses 5 starts 3 restarts 0 stops 3 stop_missing 0
+  order 0 bad_done 0 stale 0 late 0 interval_us 8939..11125
+RESULT soak-periods               PASS (driver: 180005 periods, 0 source pauses filled with 0 frames; none late or out of order)
+  stream: running 0 live 1 input_restarts 14 input_stops 5 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+  stats: irqs 108000 frames 107999 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+RESULT soak-duration              PASS (1800.0 s, 86402400 frames, minimum 1782 s)
+RESULT soak-xruns                 PASS (0 overruns)
+RESULT soak-rate                  PASS (48001.329 Hz against CLOCK_MONOTONIC, +27.7 ppm)
+RESULT soak-gaps                  PASS (per-second medians move <= 0.12 ms from one second to the next; within 1.78 ms of one line over the run; single reads within 1.74 ms of it; 180005 reads)
+RESULT soak-bursts                PASS (1800 in 1800.0 s)
+RESULT soak-channels              PASS (left 999.8 Hz, right 2000.2 Hz over 1800 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT soak-video                 PASS (107999 frames, 0 sequence gaps, interval 16.666 ms, 0 off by more than half a period, 2 by more than 10 %)
+RESULT soak-avsync                PASS (1698 flashes over 30.0 min: offset -23.945 ms (std 0.038, min -24.106, max -23.823), drift -0.0000 ms/min = -0.001 ms over the run, residual <= 0.162 ms)
+    raw offsets: mean -26.32 ms, min -90.61, max -7.19, std 9.24; frames from the most common (count): -4: 2, -3: 16, -2: 31, -1: 190, +0: 1393, +1: 66
+  mem: 1795600289 5645384 547528 478896 2 221 41150:272818
+  mem: 1795600831 5635152 560500 483688 581 621 42593:486414
+  mem: 1795601433 5624396 575296 491180 1934 1633 45685:720570
+  mem: 1795602035 5613816 590908 499336 2546 2059 47222:958094
+RESULT soak-memory                FAIL (31 samples over 30 min; from minute 5: Slab +35300 kB, SUnreclaim +17192 kB, MemAvailable -9956 kB, IRQ thread 1.04 %, VM total 0.9 % of 4 CPUs)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 0 driver lines
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+
+## summary
+RESULT soak-capture               PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=86402400 secs=1799.990 rate=48001.329 xruns=0 restarts=0 )
+RESULT soak-periods               PASS (driver: 180005 periods, 0 source pauses filled with 0 frames; none late or out of order)
+RESULT soak-duration              PASS (1800.0 s, 86402400 frames, minimum 1782 s)
+RESULT soak-xruns                 PASS (0 overruns)
+RESULT soak-rate                  PASS (48001.329 Hz against CLOCK_MONOTONIC, +27.7 ppm)
+RESULT soak-gaps                  PASS (per-second medians move <= 0.12 ms from one second to the next; within 1.78 ms of one line over the run; single reads within 1.74 ms of it; 180005 reads)
+RESULT soak-bursts                PASS (1800 in 1800.0 s)
+RESULT soak-channels              PASS (left 999.8 Hz, right 2000.2 Hz over 1800 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT soak-video                 PASS (107999 frames, 0 sequence gaps, interval 16.666 ms, 0 off by more than half a period, 2 by more than 10 %)
+RESULT soak-avsync                PASS (1698 flashes over 30.0 min: offset -23.945 ms (std 0.038, min -24.106, max -23.823), drift -0.0000 ms/min = -0.001 ms over the run, residual <= 0.162 ms)
+RESULT soak-memory                FAIL (31 samples over 30 min; from minute 5: Slab +35300 kB, SUnreclaim +17192 kB, MemAvailable -9956 kB, IRQ thread 1.04 %, VM total 0.9 % of 4 CPUs)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+SUMMARY pass=13 fail=1 skip=0
