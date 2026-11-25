@@ -1,5 +1,5 @@
 # title: TX port 1 power-down followed by port reset
-# evidence: T1/S01 init; T3/S30 t=22107.3, 31401.9; T3/S20 t=1167.0; S
+# evidence: T1/S01 init; T3/S30 t=22107.3, 31401.9; T3/S20 t=1167.0; T4: 12, inside port 1 HPD/RxSense events; S
 # chapter: hdmi-splitter.md section 7.2
 # columns: n op dev bank reg mask value note
 # ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');

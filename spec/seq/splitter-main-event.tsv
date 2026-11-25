@@ -1,5 +1,6 @@
 # title: main-block status pass: W1C acknowledge and timer-1 expiry
-# evidence: T3/S30 t=34660.9-34664.0; T3/S31 t=40224.0-40227.1, t=29807.6-29809.7 (inside the 5V-off pass); S
+# evidence: T3/S30 t=34660.9-34664.0; T3/S31 t=40224.0-40227.1, t=29807.6-29809.7 (inside the 5V-off pass);
+#           T4/S40 t=3029.8, S41 94663.8, S43 93161.4, S44 4999.9, 53576.1, S45 3339.8, 10964.0; S
 # chapter: hdmi-splitter.md sections 5.2, 5.3, 9.6
 # RD's HDCP actions on 0x06 and 58/1 0x21-0x23 (chapter 5.2) never ran: these read 00 in every trace.
 # A timer-0 expiry (0x07 bit4) would run RD's HPD retry pulse (chapter 5.2); untraced.

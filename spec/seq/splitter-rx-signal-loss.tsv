@@ -1,8 +1,10 @@
 # title: TMDS lost with 5V held (source mode change): clock lost + SCDT off
-# evidence: T3/S31 t=24728.6-24743.1 (2160p -> 1080p switch); S
-# chapter: hdmi-splitter.md sections 6.3, 9.5
+# evidence: T3/S31 t=24728.6-24743.1 (2160p -> 1080p switch); T4/S41 t=91447.7, T4/S43 t=90041.4, T4/S44 t=1832.2, T4/S45 t=7767.9 (PC source mode changes); S
+# chapter: hdmi-splitter.md sections 6.3, 9.5, 9.8
 # HPD toward the source stays high. RX 0x07 bits 2:0 then re-latch every poll while 5V is present
 # without TMDS (traced 07 each cycle in S31 t=24728.6-26732.5); RD only acknowledges them.
+# Variants: T3/S31 read 0x05 = 4e, 0x07 = 07, 0x12 = 80 (bus-mode and 0x12 bit7 rows); every T4 loss read
+# 0x05 = 04 and 0x06 = b1 or 31 (lock-lost rows: enables off, fixed EQ 81).
 # columns: n op dev bank reg mask value note
 # ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
 #      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter
@@ -12,14 +14,14 @@
 # note: 'cond:' marks a conditional row; 'RD: RMW mask ff' = RD reads first, a plain write is equivalent
 n	op	dev	bank	reg	mask	value	note
 0	R	58	0	05	-	12	summary: RX + TX port 1 events
-1	R	70	0	05	-	4e	RX status/level snapshot
-2	R	70	0	06	-	-	
-3	R	70	0	07	-	07	
+1	R	70	0	05	-	04	RX status/level snapshot
+2	R	70	0	06	-	b1	
+3	R	70	0	07	-	-	
 4	R	70	0	08	-	-	
 5	R	70	0	09	-	-	
 6	R	70	0	10	-	02	
 7	R	70	0	11	-	-	
-8	R	70	0	12	-	80	
+8	R	70	0	12	-	-	
 9	R	70	0	13	-	01	
 10	R	70	0	14	-	-	
 11	R	70	0	15	-	-	
@@ -34,7 +36,7 @@ n	op	dev	bank	reg	mask	value	note
 20	W	70	0	09	-	{read}	
 21	W	70	0	10	-	{read}	
 22	W	70	0	11	-	{read}	
-23	R	70	0	13	-	-	bit0 = 1: 5V still present
+23	R	70	0	13	-	-	cond: 0x05 bit1 (bus mode changed): bus check, bit6 = 0 (HDMI)
 24	W	70	0	05	-	04	W1C bit2
 25	M	70	0	53	e0	00	
 26	M	70	0	54	ff	00	RD: RMW mask ff
@@ -55,42 +57,52 @@ n	op	dev	bank	reg	mask	value	note
 41	M	70	*	0f	03	00	
 42	M	70	0	23	02	02	bit1 pulse
 43	M	70	0	23	02	00	
-44	R	70	0	19	-	-	bit7 = 0: SCDT off
-45	M	70	0	40	03	02	
-46	W	58	0	0d	-	00	all TX ports: source = original
-47	M	58	0	31	03	00	
-48	M	6a	-	18	80	00	TX port 1 reset
-49	W	6a	-	19	-	00	RD: RMW mask ff
-50	W	6a	-	1a	-	00	RD: RMW mask ff
-51	W	6a	-	1b	-	00	RD: RMW mask ff
-52	W	6a	-	1c	-	00	RD: RMW mask ff
-53	M	6a	-	88	03	03	TMDS output off
-54	M	6a	-	01	03	03	port soft reset (bit0 self-clears, register defaults return)
-55	M	6a	-	01	03	00	
-56	R	6a	-	03	-	-	HPD reads 0 now; returns about 130 ms later
-57	M	6c	-	18	80	00	TX port 2 reset
-58	W	6c	-	19	-	00	RD: RMW mask ff
-59	W	6c	-	1a	-	00	RD: RMW mask ff
-60	W	6c	-	1b	-	00	RD: RMW mask ff
-61	W	6c	-	1c	-	00	RD: RMW mask ff
-62	M	6c	-	88	03	03	TMDS output off
-63	M	6c	-	01	03	03	port soft reset (bit0 self-clears, register defaults return)
-64	M	6c	-	01	03	00	
-65	R	6c	-	03	-	-	HPD reads 0 now; returns about 130 ms later
-66	R	70	0	1a	-	-	0x12 bit7 detail
-67	R	70	0	1b	-	-	
-68	W	70	0	1a	-	ff	clear
-69	W	70	0	1b	-	07	clear
-70	M	58	0	0c	08	08	bit3 pulse
-71	M	58	0	0c	08	00	
-72	W	70	0	12	-	{read}	W1C acknowledge of 0x12, last
-73	R	6a	-	10	-	-	TX port 1 event pass: cleared by the soft reset
-74	R	6a	-	11	-	-	
-75	R	6a	-	12	-	-	
-76	R	6a	-	13	-	-	
-77	R	6a	-	14	-	-	
-78	W	6a	-	10	-	{read}	
-79	W	6a	-	11	-	{read}	
-80	W	6a	-	12	-	{read}	
-81	W	6a	-	13	-	{read}	
-82	W	6a	-	14	-	{read}	
+44	M	70	0	53	e0	00	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost); lock enables off
+45	M	70	0	55	07	00	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost)
+46	M	70	0	5d	06	00	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost)
+47	M	70	0	5e	08	00	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost)
+48	M	70	0	5f	01	00	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost)
+49	M	70	*	0f	03	03	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost); no EQ search running; fixed EQ code 81 on all channels
+50	W	70	3	27	-	81	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost); no EQ search running
+51	W	70	3	28	-	81	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost); no EQ search running
+52	W	70	3	29	-	81	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost); no EQ search running
+53	M	70	*	0f	03	00	cond: 0x06 bit0 with 0x13 bit7 = 0 (lock lost); no EQ search running
+54	R	70	0	19	-	-	bit7 = 0: SCDT off
+55	M	70	0	40	03	02	
+56	W	58	0	0d	-	00	all TX ports: source = original
+57	M	58	0	31	03	00	
+58	M	6a	-	18	80	00	TX port 1 reset
+59	W	6a	-	19	-	00	RD: RMW mask ff
+60	W	6a	-	1a	-	00	RD: RMW mask ff
+61	W	6a	-	1b	-	00	RD: RMW mask ff
+62	W	6a	-	1c	-	00	RD: RMW mask ff
+63	M	6a	-	88	03	03	TMDS output off
+64	M	6a	-	01	03	03	port soft reset (bit0 self-clears, register defaults return)
+65	M	6a	-	01	03	00	
+66	R	6a	-	03	-	-	HPD reads 0 now; returns about 90 ms later (chapter 2.2)
+67	M	6c	-	18	80	00	TX port 2 reset
+68	W	6c	-	19	-	00	RD: RMW mask ff
+69	W	6c	-	1a	-	00	RD: RMW mask ff
+70	W	6c	-	1b	-	00	RD: RMW mask ff
+71	W	6c	-	1c	-	00	RD: RMW mask ff
+72	M	6c	-	88	03	03	TMDS output off
+73	M	6c	-	01	03	03	port soft reset (bit0 self-clears, register defaults return)
+74	M	6c	-	01	03	00	
+75	R	6c	-	03	-	-	HPD reads 0 now; returns about 90 ms later (chapter 2.2)
+76	R	70	0	1a	-	-	cond: 0x12 bit7; 0x12 bit7 detail
+77	R	70	0	1b	-	-	cond: 0x12 bit7
+78	W	70	0	1a	-	ff	cond: 0x12 bit7; clear
+79	W	70	0	1b	-	07	cond: 0x12 bit7; clear
+80	M	58	0	0c	08	08	cond: 0x12 bit7; bit3 pulse
+81	M	58	0	0c	08	00	cond: 0x12 bit7
+82	W	70	0	12	-	{read}	W1C acknowledge of 0x12, last
+83	R	6a	-	10	-	-	TX port 1 event pass: cleared by the soft reset
+84	R	6a	-	11	-	-	
+85	R	6a	-	12	-	-	
+86	R	6a	-	13	-	-	
+87	R	6a	-	14	-	-	
+88	W	6a	-	10	-	{read}	
+89	W	6a	-	11	-	{read}	
+90	W	6a	-	12	-	{read}	
+91	W	6a	-	13	-	{read}	
+92	W	6a	-	14	-	{read}	

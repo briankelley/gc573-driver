@@ -1,6 +1,7 @@
 # title: TX port 1 path select (bypass), output enable, SCDC TMDS_Config, unmute (HDMI 1.4 link)
 # evidence: T3/S30 t=32083.7-32568.4 (2160p 4:2:0); T3/S31 t=27038.5-27520.5 and 37603.2-38191.3 (1080p, the second with
-#           the PLL-recovery rows); T3/S20 t=3879.1-4363.2; S
+#           the PLL-recovery rows); T3/S20 t=3879.1-4363.2; T4/S40 t=278.9-764.8, S41 91896.8, S43 90666.2,
+#           S44 2284.1, 51144.6, S45 905.1, 8212.4 (to the unmute); S
 # chapter: hdmi-splitter.md section 7.5
 # trigger: TX port 1 0x10 bit7 event or 0x03 levels after splitter-tx1-power-on.tsv.
 # clk > 310 MHz (HDMI 2.0 link) uses another link setup, UNVERIFIED (chapter 7.6).

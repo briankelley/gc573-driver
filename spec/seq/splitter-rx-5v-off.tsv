@@ -231,7 +231,7 @@ n	op	dev	bank	reg	mask	value	note
 216	M	6a	-	88	03	03	TMDS output off
 217	M	6a	-	01	03	03	port soft reset (bit0 self-clears, register defaults return)
 218	M	6a	-	01	03	00	
-219	R	6a	-	03	-	-	HPD reads 0 now; returns about 130 ms later
+219	R	6a	-	03	-	-	HPD reads 0 now; returns about 90 ms later (chapter 2.2)
 220	M	6c	-	18	80	00	TX port 2 reset
 221	W	6c	-	19	-	00	RD: RMW mask ff
 222	W	6c	-	1a	-	00	RD: RMW mask ff
@@ -240,7 +240,7 @@ n	op	dev	bank	reg	mask	value	note
 225	M	6c	-	88	03	03	TMDS output off
 226	M	6c	-	01	03	03	port soft reset (bit0 self-clears, register defaults return)
 227	M	6c	-	01	03	00	
-228	R	6c	-	03	-	-	HPD reads 0 now; returns about 130 ms later
+228	R	6c	-	03	-	-	HPD reads 0 now; returns about 90 ms later (chapter 2.2)
 229	R	70	0	1a	-	-	cond: 0x12 bit7; 0x12 bit7 detail
 230	R	70	0	1b	-	-	cond: 0x12 bit7
 231	W	70	0	1a	-	ff	cond: 0x12 bit7; clear

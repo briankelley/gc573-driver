@@ -1,6 +1,7 @@
 # title: HDMI splitter (0x58) initialisation, power-on to idle (no input needed)
 # evidence: T1/S01 t=187.7-286.7 (all 641 transfers, order and values); T3/S20 t=188.1-281 (625 transfers) identical
-#           except the conditional rows; S for masks
+#           except the conditional rows; T4/S40 pub 573.7-666.4: same transfer directions and order (I2C records lost,
+#           aligned through the interrupt status; the timer rows ran in all four port power-downs); S for masks
 # chapter: hdmi-splitter.md section 3.2 (phases A-L); rclk algorithm 3.3; calibration wait 3.4; end state 3.5
 # columns: n op dev bank reg mask value note
 # ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value = traced, informative);
@@ -194,12 +195,12 @@ n	op	dev	bank	reg	mask	value	note
 179	M	58	0	0d	03	00	port 0 source = original
 180	R	6a	-	03	-	-	port 1 HPD level (bit0)
 181	R	6c	-	03	-	-	port 2 HPD level (bit0)
-182	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-183	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-184	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-185	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-186	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-187	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+182	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+183	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+184	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+185	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+186	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+187	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
 188	W	68	-	01	-	06	video-clock reset start
 189	M	68	-	94	01	01	
 190	M	68	-	94	01	00	
@@ -229,12 +230,12 @@ n	op	dev	bank	reg	mask	value	note
 214	M	58	0	0d	c0	00	port 3 source = original
 215	R	6a	-	03	-	-	port 1 HPD level (bit0)
 216	R	6c	-	03	-	-	port 2 HPD level (bit0)
-217	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-218	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-219	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-220	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-221	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
-222	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped); optional, see chapter 5.3
+217	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+218	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+219	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+220	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+221	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
+222	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: skipped; T4/S40: armed (aligned)); optional, see chapter 5.3
 223	W	6e	-	01	-	06	video-clock reset start
 224	M	6e	-	94	01	01	
 225	M	6e	-	94	01	00	
@@ -303,12 +304,12 @@ n	op	dev	bank	reg	mask	value	note
 288	M	58	0	0d	0c	00	port 1 source = original
 289	R	6a	-	03	-	-	port 1 HPD level (bit0)
 290	R	6c	-	03	-	-	port 2 HPD level (bit0)
-291	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-292	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-293	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-294	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-295	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-296	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+291	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+292	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+293	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+294	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+295	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+296	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
 297	W	6a	-	01	-	06	video-clock reset start
 298	M	6a	-	94	01	01	
 299	M	6a	-	94	01	00	
@@ -377,12 +378,12 @@ n	op	dev	bank	reg	mask	value	note
 362	M	58	0	0d	30	00	port 2 source = original
 363	R	6a	-	03	-	-	port 1 HPD level (bit0)
 364	R	6c	-	03	-	-	port 2 HPD level (bit0)
-365	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-366	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-367	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-368	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-369	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
-370	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed); optional, see chapter 5.3
+365	M	58	0	1a	02	00	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+366	W	58	0	19	-	0f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+367	W	58	0	1d	-	af	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+368	W	58	0	19	-	3f	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+369	W	58	0	07	-	ff	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
+370	M	58	0	1a	02	02	cond: only if 6a:03 bit0 = 0 and 6c:03 bit0 = 0 (T1: armed; T3/S20: armed; T4/S40: armed (aligned)); optional, see chapter 5.3
 371	W	6c	-	01	-	06	video-clock reset start
 372	M	6c	-	94	01	01	
 373	M	6c	-	94	01	00	

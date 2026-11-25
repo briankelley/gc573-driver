@@ -1,8 +1,10 @@
 # title: TX port 1 power-on with clock measurement, AFE and video-clock reset
-# evidence: T3/S30 t=31892.3-32005.4 (2160p 4:2:0); T3/S31 t=26837.2-26952.8, 37245.6-37358.9 (1080p); T3/S20 t=3689.7; S
+# evidence: T3/S30 t=31892.3-32005.4 (2160p 4:2:0); T3/S31 t=26837.2-26952.8, 37245.6-37358.9 (1080p); T3/S20 t=3689.7;
+#           T4: 12 power-ons (1080p60 x3, 2160p30 RGB x5, 2160p60 4:2:0 x4), from SCDT on and from port events; S
 # chapter: hdmi-splitter.md section 7.2
 # variables: afe84, afe88, afe87, afe89, afe8b from the AFE table (chapter 7.4) for the measured clk.
-# 1080p60 (traced, T3/S31): afe84=04 afe88=00 afe87=03 afe89=80 afe8b=03.
+# 1080p60 (traced, T3/S31, T4): afe84=04 afe88=00 afe87=03 afe89=80 afe8b=03.
+# 297 MHz, RGB or 4:2:0 (traced, T3/S20, S30, T4): afe84=04 afe88=04 afe87=09 afe89=21 afe8b=09.
 # columns: n op dev bank reg mask value note
 # ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
 #      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter

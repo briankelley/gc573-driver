@@ -1,7 +1,8 @@
 # title: RX bit-error check (per channel error counters)
-# evidence: T3/S30 t=32080.6-32083.6 and every 6th poll cycle; T3/S20 t=3875.7; T3/S31 t=578.0, 26769.8; S
+# evidence: T3/S30 t=32080.6-32083.6 and every 6th poll cycle; T3/S20 t=3875.7; T3/S31 t=578.0, 26769.8;
+#           T4: 1000 checks, 13 replayed; S
 # chapter: hdmi-splitter.md section 6.6
-# pass: eb bit7 = 1 and ea <= 0x50 (RD compares the low byte only). Every trace: ea = 00, eb = 80.
+# pass: eb bit7 = 1 and ea <= 0x50 (RD compares the low byte only). Every trace: ea = 00, eb = 80 (T4: 3000 channel reads).
 # columns: n op dev bank reg mask value note
 # ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
 #      P poll until (reg & mask) == value (interval/timeout in note); D delay, value = ms; X step described in the chapter

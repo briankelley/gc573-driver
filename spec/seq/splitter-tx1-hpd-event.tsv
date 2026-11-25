@@ -1,8 +1,10 @@
-# title: TX port 1 HPD (or RxSense) rises: source HPD high, port re-powered
-# evidence: T3/S30 t=31396.5-31408.4 (HPD rise), t=31464.4-31480.1 (RxSense rise); T3/S20 t=451.9, 1164.1; T3/S31 t=24872.1, 24952.5, 33660.5, 33728.4; S
-# chapter: hdmi-splitter.md sections 7.1, 7.2, 9.2, 9.5
-# RD order for an HPD rise: source HPD high, power-down, power-on (partial: no clock/AFE while the RX
-# has no stable video). For an RxSense rise RD raises the source HPD after the power-on (second cond block).
+# title: TX port 1 HPD or RxSense rises: source HPD high, port re-powered
+# evidence: T3/S30 t=31396.5-31408.4 (HPD rise), t=31464.4-31480.3 (RxSense rise); T3/S20 t=451.9, 1164.1; T3/S31 t=24872.1, 24952.5, 33660.5, 33728.4; T4/S41 t=91599.8, T4/S43 t=90209.4, 90281.4, T4/S44 t=1988.0, 50823.9, T4/S45 t=400.2, 7912.1; S
+# chapter: hdmi-splitter.md sections 7.1, 7.2, 9.2, 9.5, 9.8
+# RD handles the bits in order. HPD rise: source HPD high, power-down, power-on. RxSense rise: power-down,
+# power-on, source HPD high. Both bits in one pass run both blocks (T4). The power-on is partial while the RX
+# has no stable video and full (clock measurement, AFE, 100 ms) when it has (T4/S43 t=90281.4, T4/S44 t=50823.9,
+# T4/S45 t=400.2: variables afe84..afe8b as in splitter-tx1-power-on.tsv).
 # With no EDID yet parsed RD then reads the port EDID over DDC (T3/S20 t=455).
 # columns: n op dev bank reg mask value note
 # ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');
@@ -23,59 +25,153 @@ n	op	dev	bank	reg	mask	value	note
 8	W	6a	-	12	-	{read}	
 9	W	6a	-	13	-	{read}	
 10	W	6a	-	14	-	{read}	
-11	R	6a	-	03	-	-	levels: bit0 HPD, bit1 RxSense
-12	R	70	0	13	-	-	cond: HPD rise (0x10 bit0): source HPD before the power-down; gate: continue only if bit0 (5V) = 1
-13	M	70	*	0f	03	03	cond: HPD rise (0x10 bit0): source HPD before the power-down; source HPD high
-14	R	70	3	ab	-	-	cond: HPD rise (0x10 bit0): source HPD before the power-down; next write only if it does not read ca
-15	W	70	3	ab	-	ca	cond: ab was not ca; bit7 = HPD level
-16	M	70	*	0f	03	00	cond: HPD rise (0x10 bit0): source HPD before the power-down; 
-17	W	70	0	26	-	00	cond: HPD rise (0x10 bit0): source HPD before the power-down; 
-18	W	70	0	55	-	ff	cond: HPD rise (0x10 bit0): source HPD before the power-down; RX 0x07 event enables on
-19	M	58	0	08	02	00	TX port 1 power-down: enable off
-20	M	6a	-	18	dc	00	keep HPD/RxSense event enables
-21	M	6a	-	19	07	00	
-22	W	6a	-	1a	-	00	RD: RMW mask ff
-23	W	6a	-	1b	-	00	RD: RMW mask ff
-24	W	6a	-	1c	-	00	RD: RMW mask ff
-25	M	6a	-	84	60	60	AFE power-down
-26	M	6a	-	86	08	00	
-27	M	6a	-	88	03	03	TMDS output off
-28	M	6a	-	01	26	26	
-29	M	58	0	0d	0c	00	source = original
-30	R	6a	-	03	-	-	port 1 HPD (bit0)
-31	R	6c	-	03	-	-	port 2 HPD (bit0)
-32	M	58	0	1a	02	00	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
-33	W	58	0	19	-	0f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
-34	W	58	0	1d	-	af	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
-35	W	58	0	19	-	3f	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
-36	W	58	0	07	-	ff	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
-37	M	58	0	1a	02	02	cond: only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
-38	W	6a	-	01	-	06	video-clock reset
-39	M	6a	-	94	01	01	
-40	M	6a	-	94	01	00	
-41	W	6a	-	01	-	04	
-42	W	6a	-	01	-	00	
-43	M	6a	-	01	20	20	bit5 pulse
-44	M	6a	-	01	20	00	
-45	W	58	0	0c	-	20	TX port 1 reset pulse
-46	W	58	0	0c	-	00	
-47	M	6a	-	18	80	00	
-48	W	6a	-	19	-	00	
-49	W	6a	-	1a	-	00	
-50	W	6a	-	1b	-	00	
-51	W	6a	-	1c	-	00	
-52	M	6a	-	35	10	10	bit4 pulse
-53	M	6a	-	35	10	00	
-54	M	58	0	08	02	02	TX port 1 power-on: enable
-55	M	6a	-	c1	f0	80	
-56	M	6a	-	84	e0	80	AFE power-up
-57	M	6a	-	86	08	08	
-58	M	6a	-	02	01	00	
-59	M	6a	-	19	07	07	
-60	R	70	0	13	-	-	cond: RxSense rise (0x10 bit1): source HPD after the power-on; gate: continue only if bit0 (5V) = 1
-61	M	70	*	0f	03	03	cond: RxSense rise (0x10 bit1): source HPD after the power-on; source HPD high
-62	R	70	3	ab	-	-	cond: RxSense rise (0x10 bit1): source HPD after the power-on; next write only if it does not read ca
-63	W	70	3	ab	-	ca	cond: ab was not ca; bit7 = HPD level
-64	M	70	*	0f	03	00	cond: RxSense rise (0x10 bit1): source HPD after the power-on; 
-65	W	70	0	26	-	00	cond: RxSense rise (0x10 bit1): source HPD after the power-on; 
-66	W	70	0	55	-	ff	cond: RxSense rise (0x10 bit1): source HPD after the power-on; RX 0x07 event enables on
+11	R	6a	-	03	-	-	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; levels: bit0 HPD, bit1 RxSense
+12	R	70	0	13	-	-	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; gate: continue only if bit0 (5V) = 1
+13	M	70	*	0f	03	03	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; source HPD high
+14	R	70	3	ab	-	-	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; next write only if it does not read ca
+15	W	70	3	ab	-	ca	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; ab was not ca; bit7 = HPD level
+16	M	70	*	0f	03	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+17	W	70	0	26	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+18	W	70	0	55	-	ff	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX 0x07 event enables on
+19	M	58	0	08	02	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; TX port 1 power-down: enable off
+20	M	6a	-	18	dc	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; keep HPD/RxSense event enables
+21	M	6a	-	19	07	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+22	W	6a	-	1a	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RD: RMW mask ff
+23	W	6a	-	1b	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RD: RMW mask ff
+24	W	6a	-	1c	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RD: RMW mask ff
+25	M	6a	-	84	60	60	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; AFE power-down
+26	M	6a	-	86	08	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+27	M	6a	-	88	03	03	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; TMDS output off
+28	M	6a	-	01	26	26	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+29	M	58	0	0d	0c	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; source = original
+30	R	6a	-	03	-	-	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; port 1 HPD (bit0)
+31	R	6c	-	03	-	-	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; port 2 HPD (bit0)
+32	M	58	0	1a	02	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+33	W	58	0	19	-	0f	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+34	W	58	0	1d	-	af	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+35	W	58	0	19	-	3f	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+36	W	58	0	07	-	ff	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+37	M	58	0	1a	02	02	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+38	W	6a	-	01	-	06	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; video-clock reset
+39	M	6a	-	94	01	01	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+40	M	6a	-	94	01	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+41	W	6a	-	01	-	04	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+42	W	6a	-	01	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+43	M	6a	-	01	20	20	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; bit5 pulse
+44	M	6a	-	01	20	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+45	W	58	0	0c	-	20	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; TX port 1 reset pulse
+46	W	58	0	0c	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+47	M	6a	-	18	80	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+48	W	6a	-	19	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+49	W	6a	-	1a	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+50	W	6a	-	1b	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+51	W	6a	-	1c	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+52	M	6a	-	35	10	10	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; bit4 pulse
+53	M	6a	-	35	10	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+54	M	58	0	08	02	02	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; TX port 1 power-on: enable
+55	M	6a	-	c1	f0	80	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+56	M	6a	-	84	e0	80	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; AFE power-up
+57	M	6a	-	86	08	08	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+58	M	6a	-	02	01	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+59	M	6a	-	19	07	07	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1
+60	W	6a	-	10	-	c0	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on; clear pending TX events
+61	W	6a	-	11	-	ff	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+62	W	6a	-	12	-	ff	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+63	W	6a	-	13	-	ff	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+64	W	6a	-	14	-	ff	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+65	W	6a	-	15	-	ff	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+66	W	6a	-	01	-	24	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+67	W	6a	-	01	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+68	X	6a	-	06	-	-	tx-clock-measure: cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on; measure TX clock -> clk [kHz], chapter 7.3
+69	R	70	0	98	-	-	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on; input colour depth, bits 5:4 (scales clk for 10/12-bit)
+70	M	6a	-	af	c0	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+71	M	6a	-	84	07	{afe84}	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on; AFE by clock, chapter 7.4
+72	M	6a	-	88	04	{afe88}	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+73	M	6a	-	87	1f	{afe87}	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+74	M	6a	-	89	bf	{afe89}	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on; bit6 preserved
+75	M	6a	-	8a	0f	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+76	M	6a	-	8b	0f	{afe8b}	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+77	D	-	-	-	-	100	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on; RD sleep
+78	W	6a	-	01	-	06	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on; video-clock reset
+79	M	6a	-	94	01	01	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+80	M	6a	-	94	01	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+81	W	6a	-	01	-	04	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+82	W	6a	-	01	-	00	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on
+83	M	6a	-	18	80	80	cond: 0x10 bit0 (HPD changed) with 0x03 bit0 = 1; RX video stable (0x19 bit7 = 1): full power-on; video-stable event enable
+84	R	6a	-	03	-	-	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; levels
+85	M	58	0	08	02	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; TX port 1 power-down: enable off
+86	M	6a	-	18	dc	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; keep HPD/RxSense event enables
+87	M	6a	-	19	07	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+88	W	6a	-	1a	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RD: RMW mask ff
+89	W	6a	-	1b	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RD: RMW mask ff
+90	W	6a	-	1c	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RD: RMW mask ff
+91	M	6a	-	84	60	60	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; AFE power-down
+92	M	6a	-	86	08	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+93	M	6a	-	88	03	03	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; TMDS output off
+94	M	6a	-	01	26	26	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+95	M	58	0	0d	0c	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; source = original
+96	R	6a	-	03	-	-	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; port 1 HPD (bit0)
+97	R	6c	-	03	-	-	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; port 2 HPD (bit0)
+98	M	58	0	1a	02	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+99	W	58	0	19	-	0f	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+100	W	58	0	1d	-	af	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+101	W	58	0	19	-	3f	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+102	W	58	0	07	-	ff	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+103	M	58	0	1a	02	02	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; only if neither port 1 nor port 2 has HPD; optional (chapter 5.3)
+104	W	6a	-	01	-	06	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; video-clock reset
+105	M	6a	-	94	01	01	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+106	M	6a	-	94	01	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+107	W	6a	-	01	-	04	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+108	W	6a	-	01	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+109	M	6a	-	01	20	20	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; bit5 pulse
+110	M	6a	-	01	20	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+111	W	58	0	0c	-	20	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; TX port 1 reset pulse
+112	W	58	0	0c	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+113	M	6a	-	18	80	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+114	W	6a	-	19	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+115	W	6a	-	1a	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+116	W	6a	-	1b	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+117	W	6a	-	1c	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+118	M	6a	-	35	10	10	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; bit4 pulse
+119	M	6a	-	35	10	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+120	M	58	0	08	02	02	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; TX port 1 power-on: enable
+121	M	6a	-	c1	f0	80	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+122	M	6a	-	84	e0	80	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; AFE power-up
+123	M	6a	-	86	08	08	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+124	M	6a	-	02	01	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+125	M	6a	-	19	07	07	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+126	W	6a	-	10	-	c0	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on; clear pending TX events
+127	W	6a	-	11	-	ff	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+128	W	6a	-	12	-	ff	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+129	W	6a	-	13	-	ff	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+130	W	6a	-	14	-	ff	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+131	W	6a	-	15	-	ff	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+132	W	6a	-	01	-	24	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+133	W	6a	-	01	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+134	X	6a	-	06	-	-	tx-clock-measure: cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on; measure TX clock -> clk [kHz], chapter 7.3
+135	R	70	0	98	-	-	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on; input colour depth, bits 5:4 (scales clk for 10/12-bit)
+136	M	6a	-	af	c0	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+137	M	6a	-	84	07	{afe84}	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on; AFE by clock, chapter 7.4
+138	M	6a	-	88	04	{afe88}	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+139	M	6a	-	87	1f	{afe87}	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+140	M	6a	-	89	bf	{afe89}	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on; bit6 preserved
+141	M	6a	-	8a	0f	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+142	M	6a	-	8b	0f	{afe8b}	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+143	D	-	-	-	-	100	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on; RD sleep
+144	W	6a	-	01	-	06	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on; video-clock reset
+145	M	6a	-	94	01	01	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+146	M	6a	-	94	01	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+147	W	6a	-	01	-	04	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+148	W	6a	-	01	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on
+149	M	6a	-	18	80	80	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX video stable (0x19 bit7 = 1): full power-on; video-stable event enable
+150	R	70	0	13	-	-	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; gate: continue only if bit0 (5V) = 1
+151	M	70	*	0f	03	03	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; source HPD high
+152	R	70	3	ab	-	-	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; next write only if it does not read ca
+153	W	70	3	ab	-	ca	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; ab was not ca; bit7 = HPD level
+154	M	70	*	0f	03	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+155	W	70	0	26	-	00	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1
+156	W	70	0	55	-	ff	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RX 0x07 event enables on
+157	R	6a	-	03	-	-	cond: 0x10 bit1 (RxSense changed) with 0x03 bit1 = 1; RD reads the levels again
+158	R	6a	-	03	-	-	cond: 0x10 bit7 (video stable changed); bring-up check: bits 0, 2 and 7
+159	R	70	0	13	-	-	cond: 0x10 bit7 and 0x03 bits 0, 2, 7 set; RX state
+160	R	6a	-	03	-	-	cond: 0x10 bit7 and 0x03 bits 0, 2, 7 set; re-check; RD then runs splitter-tx1-output-enable.tsv after the EQ step of this poll cycle

@@ -1,5 +1,5 @@
 # title: apply the HDMI 1.x EQ search result
-# evidence: T3/S30 t=32006.9-32020.2; T3/S20 t=3804.8-3818.1; T3/S31 t=37525.9-37539.1; S
+# evidence: T3/S30 t=32006.9-32020.2; T3/S20 t=3804.8-3818.1; T3/S31 t=37525.9-37539.1; T4/S40 t=23.9-37.1; S
 # chapter: hdmi-splitter.md section 6.6
 # invalid channel: use the first valid channel's code; no valid channel: 9f on all, retry the search (max 3)
 # columns: n op dev bank reg mask value note

@@ -1,5 +1,6 @@
 # title: assert HPD toward the HDMI source (input connector)
-# evidence: T3/S20 t=453.8, 1104.8; T3/S30 t=31282.4; T3/S31 t=33548.8; S
+# evidence: T3/S20 t=453.8, 1104.8; T3/S30 t=31282.4; T3/S31 t=33548.8; T4/S40 (aligned); inside every T4 port 1 HPD/RxSense
+#           event (ab already ca: no write); S
 # chapter: hdmi-splitter.md section 6.4
 # precondition: 0x70 bank 0 selected; EDID RAM loaded (our driver; RD does not guarantee it)
 # columns: n op dev bank reg mask value note

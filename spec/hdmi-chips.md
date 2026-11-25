@@ -125,7 +125,7 @@ Validate the image with `edid-decode` (no errors or warnings) in the test suite.
 ## PC loopback source (`T4`)
 A host GPU output (GT 710, DVI-D, through a DVI-to-HDMI cable) feeds HDMI IN. Facts about this source, for tests (`T4`; C):
 - With RD's EDID the GPU picked 2160p60 YCbCr 4:2:0 in HDMI mode (AVI InfoFrame present) by default: 297 MHz TMDS through a DVI connector.
-- 1080p60 and 2160p29.97 arrived as RGB 4:4:4 8-bit in HDMI mode with an AVI InfoFrame (RGB, full range, IT content); both chips read 0x13 = 0xbf. During each mode change both briefly report DVI (0x13 = 0xbd) until the splitter unmutes TX port 1; RD logs that transient.
+- 1080p60 and 2160p29.97 arrived as RGB 4:4:4 8-bit in HDMI mode with an AVI InfoFrame (RGB, full range, IT content); both chips read 0x13 = 0xbf. During each mode change the IT6805 reports DVI (0x13 = 0xbd) from video detection until the splitter unmutes TX port 1, and HDMI 1–3 ms after the unmute. The splitter RX reports HDMI again at its first read after SCDT on, 0.55–0.87 s before the unmute (`hdmi-splitter.md` §9.8). RD logs the IT6805's transient.
 - No audio: the GPU sent no audio packets (the host's HDMI audio output is off). Enabling it may make the loopback an audio source too (UNVERIFIED).
 - Mode changes at the source with 5 V held: sync is lost and regained (TMDS back after 0.8–1.1 s) with no HPD or power-mode change; stable again 1.4–1.7 s after the loss (`hdmi-it6805.md`).
 - Frame rate 60.006 Hz at 1080p60 and 2160p60 (IN_FRAME_PERIOD 0x00196daf), 29.973 Hz at 2160p29.97.

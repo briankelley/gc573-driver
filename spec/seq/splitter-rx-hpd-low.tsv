@@ -1,5 +1,5 @@
 # title: deassert HPD toward the HDMI source
-# evidence: T3/S20 t=593.6; T3/S30 t=22100.4; T3/S31 t=29776.1; T1/S01 (no-op form); S
+# evidence: T3/S20 t=593.6; T3/S30 t=22100.4; T3/S31 t=29776.1; T1/S01 (no-op form); T4/S40 (aligned); S
 # chapter: hdmi-splitter.md section 6.4
 # columns: n op dev bank reg mask value note
 # ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');

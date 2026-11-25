@@ -1,5 +1,5 @@
 # title: TX port DDC master: SCDC read (offset 0x20 shown)
-# evidence: T3/S30 t=32191.2-32193.8; T3/S20, S31; S
+# evidence: T3/S30 t=32191.2-32193.8; T3/S20, S31; T4; S
 # chapter: hdmi-splitter.md section 7.7
 # columns: n op dev bank reg mask value note
 # ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');

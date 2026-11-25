@@ -1,5 +1,5 @@
 # title: source 5V appears at the HDMI input (RX 0x05 bit0, 0x13 bit0 = 1)
-# evidence: T3/S30 t=31272.5-31283.8 (replug); T3/S20 t=391.8 and T3/S31 t=33540.5 same steps; S
+# evidence: T3/S30 t=31272.5-31283.8 (replug); T3/S20 t=391.8 and T3/S31 t=33540.5 same steps; T4/S40 (aligned); S
 # chapter: hdmi-splitter.md sections 6.3, 9.2
 # RD raises HPD here only if a downstream EDID was already parsed (S20 load: no; S30/S31: yes).
 # Our driver: raise HPD here if the EDID RAM is loaded.

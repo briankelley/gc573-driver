@@ -1,6 +1,7 @@
 # title: RX video stable (SCDT on): FIFO reset and TX port 1 power-on
-# evidence: T3/S30 t=31884.4-32006.9; T3/S20 t=3684.1; T3/S31 t=26828.4, 37240.1; S
-# chapter: hdmi-splitter.md sections 6.3, 7.2, 9.4
+# evidence: T3/S30 t=31884.4-32006.9; T3/S20 t=3684.1; T3/S31 t=26828.4, 37240.1; T4/S40 t=89.6, S41 91707.7, S43 90281.4,
+#           S44 2088.2, 50648.1, S45 400.2, 8024.2 (1080p60, 2160p30 RGB, 2160p60 4:2:0); S
+# chapter: hdmi-splitter.md sections 6.3, 7.2, 9.4, 9.7, 9.8
 # TX port 1 power-on rows (from '58 0 08' to '18 80 80') are also table splitter-tx1-power-on.tsv.
 # variable r14: value read from 0x70 reg 0x14 in this table. The 'cond: 0x11 bit3' / '0x12' rows ran at
 # T3/S31 t=37240.1, where the AVI events arrived with SCDT on.

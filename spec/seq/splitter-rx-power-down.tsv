@@ -1,5 +1,5 @@
 # title: RX power-down (includes HPD low and EQ defaults)
-# evidence: T1/S01 init; T3/S20 t=594.6; T3/S30 t=22097.5; T3/S31 t=29773.2; S
+# evidence: T1/S01 init; T3/S20 t=594.6; T3/S30 t=22097.5; T3/S31 t=29773.2; T4/S40 (aligned); S
 # chapter: hdmi-splitter.md section 6.3
 # columns: n op dev bank reg mask value note
 # ops: W write value; M read-modify-write: new = (old & ~mask) | (value & mask); R read (value: traced example or '-');

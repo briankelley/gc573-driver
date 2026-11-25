@@ -1,5 +1,6 @@
 # title: TX port DDC master: read one 32-byte EDID chunk
-# evidence: T3/S20 t=455.0-462.1 (first chunk; 16 chunks in t=455-581); T1/S01i t=511-819 (no source: no-ACK, 12 attempts); S
+# evidence: T3/S20 t=455.0-462.1 (first chunk; 16 chunks in t=455-581); T1/S01i t=511-819 (no source: no-ACK, 12 attempts);
+#           T4/S40 (aligned); S
 # chapter: hdmi-splitter.md section 7.7
 # a 128-byte block = 4 chunks; RD retries a failed block up to 4 times.
 # columns: n op dev bank reg mask value note

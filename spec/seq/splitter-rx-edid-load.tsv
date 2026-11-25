@@ -1,6 +1,6 @@
 # title: load the source-facing EDID (RX EDID RAM 0xd8), 256 bytes
-# evidence: T3/S20 t=511.4-1107.6 (RD copy path; DDC reads omitted); S
-# chapter: hdmi-splitter.md sections 6.5, 8.3
+# evidence: T3/S20 t=511.4-1107.6 (RD copy path; DDC reads omitted); T4/S40 pub 909.7-1540.4 (aligned); S
+# chapter: hdmi-splitter.md sections 6.5, 8.3, 9.7
 # rows from 'c5 01 01' to the end of the second HPD-high block run only when the source already saw
 # HPD high; at driver init (HPD low, no source) skip them and raise HPD later on 5V.
 # RAM offsets 0x7f and 0xff are never written; the checksums go to 0x70 regs 0xc9/0xca.
