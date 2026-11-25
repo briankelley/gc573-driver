@@ -13,8 +13,9 @@ The card has no working Linux driver. Community ports of AVerMedia's old CL511HN
 - DKMS packaging with install and uninstall scripts.
 - OBS: video in every format it offers, A/V sync measured from a recording, and every kind of source change, with OBS driven unattended through obs-websocket.
 - A 2-hour soak: OBS recorded while the source changed every 3 minutes (40 changes, all recovered).
+- 30 minutes of the same on a debug kernel (kmemleak, lockdep, KASAN, DMA-API debugging): no leak and no kernel warning.
 
-Gate logs are in `tests/logs/`. After the host validation: 4K and HDCP sources (M6). The hardware spec is in `spec/`.
+Gate logs are in `tests/logs/`. After the host validation comes a Roku through an HDCP filter (M6). Then picture controls and scaling, 4K, and the rest of the card (M7–M9). The hardware spec is in `spec/`.
 
 Targets: 1080p60 capture first, then 4K60/HDR.
 
