@@ -112,8 +112,13 @@ wait_unlocked() {
 	return 1
 }
 
+# the in-tree modules it depends on first, as tests/lib.sh gc573_load does
+# (after a boot nothing has loaded videodev and videobuf2 yet)
 load() {
-	vm "cd $VMDIR && { lsmod | grep -q '^gc573 ' || sudo insmod ./gc573.ko; }" &&
+	vm "cd $VMDIR && { lsmod | grep -q '^gc573 ' || {
+		deps=\$(modinfo -F depends ./gc573.ko | tr , ' ') &&
+		{ [ -z \"\$deps\" ] || sudo modprobe -a \$deps; } &&
+		sudo insmod ./gc573.ko; }; }" &&
 		find_vdev
 }
 unload() { vm "sudo rmmod gc573"; }
