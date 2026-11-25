@@ -28,8 +28,11 @@
 # player is closed before anything else (a check that fails leaves none
 # behind), and before the mode is set; the window is override-redirect, so the
 # window manager never moves it (window-check.sh verifies it, or the player is
-# closed); and a watchdog (watchdog.sh) runs --off within 0.2 s once OUTPUT no
-# longer shows the player's geometry (output off, unplugged, another mode).
+# closed); ffplay runs with place.so (place.c), so the window is created at its
+# final geometry on OUTPUT, never has another, and is mapped only after a
+# check under a server grab; and a watchdog (watchdog.sh) runs --off within
+# 0.2 s once OUTPUT no longer shows the player's geometry (output off,
+# unplugged, another mode).
 # tools/testsrc/guard.py watches both rules for a whole test run.
 #
 # --pattern: the picture is pattern.py's exact-value pattern with a frame
@@ -120,6 +123,7 @@ esac
 # no test player may outlive a failed check below, nor exist while the mode changes
 "$here/show.sh" --off
 stop_procs
+place=$("$here/place.sh") || { off; echo "cannot build the window placement library ($here/place.c)" >&2; exit 1; }
 
 xrandr --query | grep -q "^$out connected" || { echo "$out is not connected (HPD low?)" >&2; exit 1; }
 
@@ -174,19 +178,23 @@ fi
 # aevalsrc gates per sample (a filter's enable= only switches per 1024-sample frame)
 gate="lt(mod(t\\,$period)\\,$frame)"
 graph+="aevalsrc=exprs='$amp*sin(2*PI*1000*t)*$gate|$amp*sin(2*PI*2000*t)*$gate':channel_layout=stereo:sample_rate=48000,aformat=sample_fmts=s16[out1]"
+err=$run/avsync-ffplay.err
 SDL_AUDIODRIVER=pipewire PIPEWIRE_NODE=$sink \
   PIPEWIRE_PROPS="{ node.name = gc573-avsync node.description = gc573-avsync node.dont-reconnect = true }" \
-  SDL_X11_FORCE_OVERRIDE_REDIRECT=1 setsid ffplay -loglevel error \
-  -noborder -left "$x" -top 0 -x "$w" -y "$h" -window_title gc573-avsync -f lavfi -i "$graph" >/dev/null 2>&1 < /dev/null &
-echo $! > "$pidf"
-setsid "$here/watchdog.sh" "$(cat "$pidf")" "$out" "$w" "$h" "$x" "$here/avsync.sh" --off \
+  LD_PRELOAD=$place GC573_PLACE="$x 0 $w $h $out" SDL_X11_FORCE_OVERRIDE_REDIRECT=1 setsid ffplay -loglevel error \
+  -noborder -left "$x" -top 0 -x "$w" -y "$h" -window_title gc573-avsync -f lavfi -i "$graph" >/dev/null 2> "$err" < /dev/null &
+pid=$!
+echo "$pid" > "$pidf"
+setsid "$here/watchdog.sh" "$pid" "$out" "$w" "$h" "$x" "$here/avsync.sh" --off \
   >/dev/null 2>&1 < /dev/null &
 echo $! > "$wdf"
-if ! chk=$("$here/window-check.sh" gc573-avsync "$w" "$h" "$x"); then
+if ! chk=$("$here/window-check.sh" gc573-avsync "$w" "$h" "$x" "$pid"); then
   off
-  echo "test window not as required, closed: $chk" >&2
+  echo "test window not as required, closed: $chk $(tr '\n' ' ' < "$err")" >&2
   exit 1
 fi
+grep -q "^gc573-place: mapped at ${w}x$h+$x+0 on $out\$" "$err" || {
+  off; echo "the test window was not placed by place.so: $(tr '\n' ' ' < "$err")" >&2; exit 1; }
 # the stream: linked to the HDMI sink and nothing else
 links=
 for _ in $(seq 30); do
@@ -199,5 +207,11 @@ if [ -z "$links" ] || grep -qv " -> $sink:" <<< "$links"; then
   echo "the player's audio is not linked to $sink alone: ${links:-no link}" >&2
   exit 1
 fi
-evlog "player start $mode@$rate$([ "$pattern" = 0 ] || echo " pattern") amplitude $amp (pid $(cat "$pidf"))"
+# closed meanwhile (--off, the watchdog, show.sh, guard.py): there is no start to report
+if ! kill -0 "$pid" 2>/dev/null || [ "$(cat "$pidf" 2>/dev/null)" != "$pid" ]; then
+  off
+  echo "the player (pid $pid) was closed while it started" >&2
+  exit 1
+fi
+evlog "player start $mode@$rate$([ "$pattern" = 0 ] || echo " pattern") amplitude $amp (pid $pid)"
 echo "avsync on $out ($mode@$rate at +$x+0)$([ "$pattern" = 0 ] || echo ", pattern with counter"): flash every $n frames, burst L 1 kHz / R 2 kHz, amplitude $amp, on $sink alone ($(wc -l <<< "$links") links); pid $(cat "$pidf"); $chk"

@@ -1,0 +1,184 @@
+# The guard's breach at 2026-11-25 17:49:21.807Z (void debug-kernel run 20261125-173057): root cause.
+#
+# Logged: "guard windows: gc573-pattern 1280x720+640+360 IsViewable", right after show.sh set DVI-D-0 to
+# 1280x720@59.94. +640+360 is where SDL 2.30 creates ffplay's hidden 640x480 window: SDL_WINDOWPOS_UNDEFINED,
+# centred on display 0, the primary HDMI-0 1920x1200. show.sh's window-check.sh found the window at +1920+0 a
+# moment later, and logged "player start (pid )", because the guard had removed the pid file meanwhile.
+#
+# Code (public sources, host versions: libsdl2 2.30.0+dfsg-1ubuntu3.1, ffmpeg 6.1.1-3ubuntu5):
+# - ffplay 6.1.1 fftools/ffplay.c:3728 SDL_CreateWindow(..., SDL_WINDOWPOS_UNDEFINED x2, 640, 480,
+#   SDL_WINDOW_HIDDEN | ...). video_open() (1321-1342), at the first frame: SetWindowTitle, SetWindowSize,
+#   SetWindowPosition(-left, -top), ShowWindow, in that order.
+# - SDL 2.30.0 src/video/x11/SDL_x11window.c X11_SetWindowPosition (787-845): XMoveWindow, then XSync, and a
+#   wait until the X server reports the new position. X11_ShowWindow (1155-1182): XMapRaised, waiting for the
+#   MapNotify. One connection, so the X server moves the window before it maps it. Nothing else in SDL moves
+#   a window that is not fullscreen.
+#
+# Experiment, on gc573-dev's own display only (Xfce on Virtual-1 1280x800, the same SDL and ffmpeg packages;
+# the user's screen untouched): 200 ffplay starts with show.sh's window options (override-redirect, -noborder,
+# -left 0 -top 0 -x 1280 -y 720, title gc573-pattern), each shown for 0.2 s. SDL creates the window at
+# 640x480+320+160 there. Two watchers ran side by side:
+# - tools/testsrc/xwatch.py: the X server's own CreateNotify, ConfigureNotify and MapNotify events, in
+#   order, with geometry;
+# - guard.py's poll as it was then: `xwininfo -root -tree` for the geometry, then `xwininfo -id` for the map
+#   state, every 50 ms.
+#
+# Result: the window was never mapped anywhere but its target. The breach was the poll's own artefact. Its
+# tree query caught the window in the ~7 ms it sits resized at the creation position, unmapped. Its second
+# query, after the move and the map, read "IsViewable". It paired the two.
+#
+# Fix (commit with this log):
+# - guard.py watches windows by these X events (xwatch.py), not by polling.
+# - ffplay runs with tools/testsrc/place.so, so the window never sits on the primary output, not even
+#   hidden. The window is created at its final geometry. It is mapped only after a check under a server
+#   grab: override-redirect, at that geometry, inside OUTPUT's RandR monitor, overlapping no other.
+#
+## 1. Without place.so: 200 starts (starts 200, seen viewable 200)
+# X server events (xwatch.py): 200 maps of a gc573-pattern window, 200 at its target 1280x720+0+0 inside Virtual-1, 0 anywhere else.
+# Every window that was mapped went through (count: sequence):
+#   200: create 640x480+320+160 -> configure 1280x720+320+160 -> configure 1280x720+0+0 -> map 1280x720+0+0
+#
+# The old poll (guard.test_windows(): the tree for the geometry, then xwininfo -id for the map state),
+# every 50 ms: 7 reports of a gc573-pattern window "IsViewable" at its creation position
+# +320+160 (on the host: +640+360, on the primary). For each, the X server events of that time:
+
+2026-11-25T18:08:21.505Z oldpoll gc573-pattern 1280x720+320+160 IsViewable
+    2026-11-25T18:08:21.358Z xwatch create 0x4200002 640x480+320+160 override 1 ffplay/ffplay pid 7547 ""
+    2026-11-25T18:08:21.433Z xwatch create 0x4200008 640x480+320+160 override 1 ffplay/ffplay pid 7547 ""
+    2026-11-25T18:08:21.479Z xwatch configure 0x4200008 1280x720+320+160 unmapped
+    2026-11-25T18:08:21.487Z xwatch configure 0x4200008 1280x720+0+0 unmapped
+    2026-11-25T18:08:21.490Z xwatch map 0x4200008 1280x720+0+0 ffplay/ffplay pid 7547 "gc573-pattern": inside Virtual-1 1280x800+0+0
+
+2026-11-25T18:08:41.291Z oldpoll gc573-pattern 1280x720+320+160 IsViewable
+    2026-11-25T18:08:41.217Z xwatch create 0x4200008 640x480+320+160 override 1 ffplay/ffplay pid 9109 ""
+    2026-11-25T18:08:41.264Z xwatch configure 0x4200008 1280x720+320+160 unmapped
+    2026-11-25T18:08:41.271Z xwatch configure 0x4200008 1280x720+0+0 unmapped
+    2026-11-25T18:08:41.274Z xwatch map 0x4200008 1280x720+0+0 ffplay/ffplay pid 9109 "gc573-pattern": inside Virtual-1 1280x800+0+0
+
+2026-11-25T18:08:41.928Z oldpoll gc573-pattern 640x480+320+160 IsViewable
+    2026-11-25T18:08:41.848Z xwatch create 0x4200008 640x480+320+160 override 1 ffplay/ffplay pid 9161 ""
+    2026-11-25T18:08:41.902Z xwatch configure 0x4200008 1280x720+320+160 unmapped
+    2026-11-25T18:08:41.909Z xwatch configure 0x4200008 1280x720+0+0 unmapped
+    2026-11-25T18:08:41.911Z xwatch map 0x4200008 1280x720+0+0 ffplay/ffplay pid 9161 "gc573-pattern": inside Virtual-1 1280x800+0+0
+
+2026-11-25T18:08:43.918Z oldpoll gc573-pattern 1280x720+320+160 IsViewable
+    2026-11-25T18:08:43.771Z xwatch create 0x4200002 640x480+320+160 override 1 ffplay/ffplay pid 9317 ""
+    2026-11-25T18:08:43.852Z xwatch create 0x4200008 640x480+320+160 override 1 ffplay/ffplay pid 9317 ""
+    2026-11-25T18:08:43.896Z xwatch configure 0x4200008 1280x720+320+160 unmapped
+    2026-11-25T18:08:43.903Z xwatch configure 0x4200008 1280x720+0+0 unmapped
+    2026-11-25T18:08:43.906Z xwatch map 0x4200008 1280x720+0+0 ffplay/ffplay pid 9317 "gc573-pattern": inside Virtual-1 1280x800+0+0
+
+2026-11-25T18:09:00.463Z oldpoll gc573-pattern 1280x720+320+160 IsViewable
+    2026-11-25T18:09:00.314Z xwatch create 0x4200002 640x480+320+160 override 1 ffplay/ffplay pid 10627 ""
+    2026-11-25T18:09:00.394Z xwatch create 0x4200008 640x480+320+160 override 1 ffplay/ffplay pid 10627 "ffplay"
+    2026-11-25T18:09:00.441Z xwatch configure 0x4200008 1280x720+320+160 unmapped
+    2026-11-25T18:09:00.449Z xwatch configure 0x4200008 1280x720+0+0 unmapped
+    2026-11-25T18:09:00.451Z xwatch map 0x4200008 1280x720+0+0 ffplay/ffplay pid 10627 "gc573-pattern": inside Virtual-1 1280x800+0+0
+
+2026-11-25T18:09:13.017Z oldpoll gc573-pattern 1280x720+320+160 IsViewable
+    2026-11-25T18:09:12.944Z xwatch create 0x4200008 640x480+320+160 override 1 ffplay/ffplay pid 11620 ""
+    2026-11-25T18:09:12.991Z xwatch configure 0x4200008 1280x720+320+160 unmapped
+    2026-11-25T18:09:12.999Z xwatch configure 0x4200008 1280x720+0+0 unmapped
+    2026-11-25T18:09:13.001Z xwatch map 0x4200008 1280x720+0+0 ffplay/ffplay pid 11620 "gc573-pattern": inside Virtual-1 1280x800+0+0
+
+2026-11-25T18:10:24.372Z oldpoll gc573-pattern 1280x720+320+160 IsViewable
+    2026-11-25T18:10:24.227Z xwatch create 0x4200002 640x480+320+160 override 1 ffplay/ffplay pid 16845 ""
+    2026-11-25T18:10:24.305Z xwatch create 0x4200008 640x480+320+160 override 1 ffplay/ffplay pid 16845 "ffplay"
+    2026-11-25T18:10:24.349Z xwatch configure 0x4200008 1280x720+320+160 unmapped
+    2026-11-25T18:10:24.356Z xwatch configure 0x4200008 1280x720+0+0 unmapped
+    2026-11-25T18:10:24.358Z xwatch map 0x4200008 1280x720+0+0 ffplay/ffplay pid 16845 "gc573-pattern": inside Virtual-1 1280x800+0+0
+
+xwatch: test windows created 379 (0 created outside Virtual-1, unmapped), maps 200, maps inside Virtual-1 200, unmapped geometries outside 200, output changes 0, breaches 0, X events 2000
+old poll: 2026-11-25T18:10:27.265Z oldpoll gc573-pattern 1280x720+0+0 IsViewable; every report it made (count: report):
+     84 gc573-pattern 1280x720+0+0 ?
+    767 gc573-pattern 1280x720+0+0 IsViewable
+      6 gc573-pattern 1280x720+320+160 IsViewable
+      1 gc573-pattern 640x480+320+160 IsViewable
+
+## 2. With place.so (tools/testsrc/place.c): 200 starts, GC573_PLACE="0 80 1280 720 Virtual-1", then each refusal
+== part 1: 200 starts
+    200 mapped 
+== part 2: refusals
+no GC573_PLACE:        exit 3 gc573-place: GC573_PLACE="X Y W H OUTPUT" is required, have "" 
+malformed:             exit 3 gc573-place: GC573_PLACE="X Y W H OUTPUT" is required, have "0 80 1280" 
+unknown monitor:       exit 3 gc573-place: not mapped at 1280x720+0+80 on NOPE: monitor Virtual-1 1280x800+0+0 overlaps it 
+not override-redirect: exit 3 gc573-place: not mapped at 1280x720+0+80 on Virtual-1: the window is not override-redirect 
+not inside monitor:    exit 3 gc573-place: not mapped at 1280x720+200+80 on Virtual-1: monitor Virtual-1 is 1280x800+0+0 
+monitors: Monitors: 2  0: +*Virtual-1 1280/325x800/203+0+0  Virtual-1  1: OVER 400/100x300/75+800+400  
+overlapped by OVER:    exit 3 gc573-place: not mapped at 1280x720+0+80 on Virtual-1: monitor OVER 400x300+800+400 overlaps it 
+monitors: Monitors: 1  0: +*Virtual-1 1280/325x800/203+0+0  Virtual-1 
+control, placed again: mapped 
+2026-11-25T18:16:13.274Z xwatch end: test windows created 371 (1 created outside Virtual-1, unmapped), maps 201, maps inside Virtual-1 201, unmapped geometries outside 0, output changes 0, breaches 0, X events 1632
+every test window created, by geometry (count: geometry, name at creation):
+    342 1280x720+0+80 ""
+     28 1280x720+0+80 "ffplay"
+      1 1280x720+200+80 1280x800+0+0)
+(the one at +200+80 is the "not inside monitor" refusal: created there by request, never mapped)
+
+## 3. guard.py with the event watcher, on the VM display: 5 placed starts, then a plain ffplay at +200+80
+## (outside Virtual-1): the guard stops the run at the map
+2026-11-25T18:17:17.353Z guard start: run pid 27284, output Virtual-1, audio allowed to None*; windows event-driven (X11), audio polled every 50 ms
+2026-11-25T18:17:17.371Z guard x11 start: Virtual-1 1280x800+0+0; outputs Virtual-1 1280x800+0+0
+2026-11-25T18:17:17.489Z guard audio links: none
+2026-11-25T18:17:18.038Z guard x11 create 0x4200002 1280x720+0+80 override 1 ffplay/ffplay pid 27312 ""
+2026-11-25T18:17:18.041Z guard x11 destroy 0x4200002
+2026-11-25T18:17:18.118Z guard x11 create 0x4200008 1280x720+0+80 override 1 ffplay/ffplay pid 27312 ""
+2026-11-25T18:17:18.169Z guard x11 map 0x4200008 1280x720+0+80 ffplay/ffplay pid 27312 "gc573-pattern": inside Virtual-1 1280x800+0+0
+2026-11-25T18:17:18.949Z guard x11 unmap 0x4200008 1280x720+0+80
+2026-11-25T18:17:18.949Z guard x11 destroy 0x4200008
+2026-11-25T18:17:19.096Z guard x11 create 0x4200002 1280x720+0+80 override 1 ffplay/ffplay pid 27381 ""
+2026-11-25T18:17:19.097Z guard x11 destroy 0x4200002
+2026-11-25T18:17:19.176Z guard x11 create 0x4200008 1280x720+0+80 override 1 ffplay/ffplay pid 27381 ""
+2026-11-25T18:17:19.226Z guard x11 map 0x4200008 1280x720+0+80 ffplay/ffplay pid 27381 "gc573-pattern": inside Virtual-1 1280x800+0+0
+2026-11-25T18:17:19.997Z guard x11 unmap 0x4200008 1280x720+0+80
+2026-11-25T18:17:19.997Z guard x11 destroy 0x4200008
+2026-11-25T18:17:20.213Z guard x11 create 0x4200008 1280x720+0+80 override 1 ffplay/ffplay pid 27447 "ffplay"
+2026-11-25T18:17:20.262Z guard x11 map 0x4200008 1280x720+0+80 ffplay/ffplay pid 27447 "gc573-pattern": inside Virtual-1 1280x800+0+0
+2026-11-25T18:17:21.050Z guard x11 unmap 0x4200008 1280x720+0+80
+2026-11-25T18:17:21.051Z guard x11 destroy 0x4200008
+2026-11-25T18:17:21.190Z guard x11 create 0x4200002 1280x720+0+80 override 1 ffplay/ffplay pid 27513 ""
+2026-11-25T18:17:21.191Z guard x11 destroy 0x4200002
+2026-11-25T18:17:21.265Z guard x11 create 0x4200008 1280x720+0+80 override 1 ffplay/ffplay pid 27513 ""
+2026-11-25T18:17:21.315Z guard x11 map 0x4200008 1280x720+0+80 ffplay/ffplay pid 27513 "gc573-pattern": inside Virtual-1 1280x800+0+0
+2026-11-25T18:17:22.105Z guard x11 unmap 0x4200008 1280x720+0+80
+2026-11-25T18:17:22.105Z guard x11 destroy 0x4200008
+2026-11-25T18:17:22.243Z guard x11 create 0x4200002 1280x720+0+80 override 1 ffplay/ffplay pid 27579 ""
+2026-11-25T18:17:22.244Z guard x11 destroy 0x4200002
+2026-11-25T18:17:22.321Z guard x11 create 0x4200008 1280x720+0+80 override 1 ffplay/ffplay pid 27579 ""
+2026-11-25T18:17:22.374Z guard x11 map 0x4200008 1280x720+0+80 ffplay/ffplay pid 27579 "gc573-pattern": inside Virtual-1 1280x800+0+0
+2026-11-25T18:17:23.157Z guard x11 unmap 0x4200008 1280x720+0+80
+2026-11-25T18:17:23.157Z guard x11 destroy 0x4200008
+2026-11-25T18:17:23.167Z test plain ffplay at +200+80 (outside Virtual-1)
+2026-11-25T18:17:23.307Z guard x11 create 0x4200002 640x480+320+160 override 1 ffplay/ffplay pid 27646 ""
+2026-11-25T18:17:23.310Z guard x11 destroy 0x4200002
+2026-11-25T18:17:23.385Z guard x11 create 0x4200008 640x480+320+160 override 1 ffplay/ffplay pid 27646 "ffplay"
+2026-11-25T18:17:23.428Z guard x11 configure 0x4200008 1280x720+320+160 unmapped
+2026-11-25T18:17:23.428Z guard x11 configure 0x4200008 1280x720+200+80 unmapped
+2026-11-25T18:17:23.430Z guard x11 map 0x4200008 1280x720+200+80 ffplay/ffplay pid 27646 "gc573-pattern": outside Virtual-1 1280x800+0+0
+2026-11-25T18:17:23.430Z guard x11 BREACH: test window 0x4200008 ffplay/ffplay pid 27646 "gc573-pattern" mapped at 1280x720+200+80 (map): outside Virtual-1 1280x800+0+0
+2026-11-25T18:17:23.431Z guard BREACH: test window 0x4200008 ffplay/ffplay pid 27646 "gc573-pattern" mapped at 1280x720+200+80 (map): outside Virtual-1 1280x800+0+0: closing every test player and stopping the run
+2026-11-25T18:17:25.777Z guard run stopped; windows now: none; audio links now: none
+
+## 2b. place.so after the race fix (its "mapped at" line written before the ungrab; window-check.sh also wants
+## IsViewable): 40 starts, then each refusal
+== part 1: 40 starts
+     40 mapped gc573-place: mapped at 1280x720+0+80 on Virtual-1 
+== part 2: refusals
+no GC573_PLACE:        exit 3 gc573-place: GC573_PLACE="X Y W H OUTPUT" is required, have "" 
+malformed:             exit 3 gc573-place: GC573_PLACE="X Y W H OUTPUT" is required, have "0 80 1280" 
+unknown monitor:       exit 3 gc573-place: not mapped at 1280x720+0+80 on NOPE: monitor Virtual-1 1280x800+0+0 overlaps it 
+not override-redirect: exit 3 gc573-place: not mapped at 1280x720+0+80 on Virtual-1: the window is not override-redirect 
+not inside monitor:    exit 3 gc573-place: not mapped at 1280x720+200+80 on Virtual-1: monitor Virtual-1 is 1280x800+0+0 
+monitors: Monitors: 2  0: +*Virtual-1 1280/325x800/203+0+0  Virtual-1  1: OVER 400/100x300/75+800+400  
+overlapped by OVER:    exit 3 gc573-place: not mapped at 1280x720+0+80 on Virtual-1: monitor OVER 400x300+800+400 overlaps it 
+monitors: Monitors: 1  0: +*Virtual-1 1280/325x800/203+0+0  Virtual-1 
+control, placed again: mapped gc573-place: mapped at 1280x720+0+80 on Virtual-1 
+2026-11-25T18:53:34.733Z xwatch end: test windows created 84 (2 created outside Virtual-1, unmapped), maps 41, maps inside Virtual-1 41, unmapped geometries outside 0, output changes 0, breaches 0, X events 352
+every test window created, by geometry (count: geometry, name at creation):
+     76 1280x720+0+80 ""
+      6 1280x720+0+80 "ffplay"
+      2 1280x720+200+80 1280x800+0+0)
+(at +200+80: the "not inside monitor" refusal and SDL's GL re-creation of it, never mapped)
+
+## 4. On the host (tests/window-proof.sh): 20261125T181950Z-window-proof.log (528 starts, the first place.so)
+## and 20261125T183640Z-window-proof.log (528 starts, the final code).

@@ -1,19 +1,29 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0
-"""Guard for a test run on the PC loopback (host only). Every 50 ms it checks
-the two rules the test sources must keep (each on its own thread), and logs
-what it sees (UTC, milliseconds) whenever it changes:
-- every mapped test window (a window named gc573-*) lies inside OUTPUT's
-  geometry; with OUTPUT off, no test window is mapped at all;
-- every test audio stream (a PipeWire node named gc573-*, or one of ffplay's)
-  is linked to the NVIDIA HDMI sink and nothing else.
+"""Guard for a test run on the PC loopback (host only). It checks the two
+rules the test sources must keep, each on its own thread, and logs what it
+sees (UTC, milliseconds):
+- Windows, event-driven (xwatch.py): every test window (WM_CLASS ffplay or a
+  name gc573-*) is mapped only inside OUTPUT's CRTC and stays there while
+  mapped; it is never managed by the window manager; OUTPUT does not change
+  under a mapped one. The X server's create, configure and map events carry
+  the geometry, so even a one-frame map elsewhere is seen. The poll used
+  before read the geometry and the map state in two requests. At
+  2026-11-25 17:49:21.807Z it paired a hidden window's position from before
+  ffplay moved it with the map state from after: a false breach
+  (tests/logs/20261125T180804Z-window-rootcause.log).
+- Audio, every 50 ms: every test audio stream (a PipeWire node named
+  gc573-*, or one of ffplay's) is linked to the NVIDIA HDMI sink and
+  nothing else.
 On a breach it logs it, closes every test player, and stops the run: the
-process PID and all its descendants (SIGTERM, then SIGKILL after 1 s). Exit
-status 3 then. It ends by itself when PID ends (status 0), with a summary.
+process PID and all its descendants (SIGTERM, then SIGKILL after 1 s). It
+then exits with status 3. A window watcher that cannot start, or that
+fails, counts as a breach. The guard ends by itself when PID ends (status
+0), with a summary.
 --other-outputs: for runs that pull OUTPUT away under a running player on
-purpose (to test the players' own watchdog and the audio routing), a window
-is a breach only where it overlaps another connected output; one that just
-sits off-screen for the watchdog's 0.2 s is logged but allowed.
+purpose (to test the players' own watchdog and the audio routing). A window
+is then a breach only where it overlaps another output; one that sits
+off-screen for the watchdog's 0.2 s is logged but allowed.
 
   guard.py --pid PID --log FILE [--output DVI-D-0] [--other-outputs]
 """
@@ -26,6 +36,8 @@ import subprocess
 import sys
 import threading
 import time
+
+from xwatch import Watcher
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ENV = dict(os.environ, DISPLAY=os.environ.get('DISPLAY', ':0'),
@@ -43,31 +55,21 @@ def run(*cmd):
         return ''
 
 
-def geometries():
-    """{output: (w, h, x, y)} of every output that shows a mode"""
-    out = {}
-    for line in run('xrandr', '--current').splitlines():
-        m = re.match(r'(\S+) connected (?:primary )?(\d+)x(\d+)\+(\d+)\+(\d+) ', line)
-        if m:
-            out[m.group(1)] = tuple(int(v) for v in m.groups()[1:])
-    return out
-
-
-def overlaps(x, y, w, h, g):
-    return x < g[2] + g[0] and g[2] < x + w and y < g[3] + g[1] and g[3] < y + h
-
-
 def test_windows():
-    """(name, x, y, w, h, map state) of every window named gc573-*"""
+    """(name, x, y, w, h, map state) of every window named gc573-*, for the log
+    line after a breach (the watcher judges; this is not atomic either)"""
     out = []
     for line in run('xwininfo', '-root', '-tree').splitlines():
-        m = re.match(r'\s*(0x[0-9a-f]+) "(gc573-[^"]*)":.*\s(\d+)x(\d+)[+-]-?\d+[+-]-?\d+\s+\+(-?\d+)\+(-?\d+)', line)
+        m = re.match(r'\s*(0x[0-9a-f]+) "(gc573-[^"]*)":', line)
         if not m:
             continue
-        wid, name, w, h, x, y = m.groups()
-        info = run('xwininfo', '-id', wid)
-        ms = re.search(r'Map State: (\w+)', info)
-        out.append((name, int(x), int(y), int(w), int(h), ms.group(1) if ms else '?'))
+        info = run('xwininfo', '-id', m.group(1))
+        v = {k: re.search(rf'{k}: *(\S+)', info) for k in
+             ('Absolute upper-left X', 'Absolute upper-left Y', 'Width', 'Height', 'Map State')}
+        if all(v.values()):
+            out.append((m.group(2), int(v['Absolute upper-left X'].group(1)),
+                        int(v['Absolute upper-left Y'].group(1)), int(v['Width'].group(1)),
+                        int(v['Height'].group(1)), v['Map State'].group(1)))
     return sorted(out)
 
 
@@ -189,27 +191,6 @@ def main():
             last[key] = text
             say(text)
 
-    def windows_step():
-        geos = geometries()
-        geo = geos.get(a.output)
-        wins = test_windows()
-        changed('g', f'output {a.output}: ' + ('%dx%d+%d+%d' % geo if geo else 'no mode (off or unplugged)'))
-        changed('w', 'windows: ' + ('; '.join(f'{n} {w}x{h}+{x}+{y} {m}' for n, x, y, w, h, m in wins) or 'none'))
-        bad = []
-        for n, x, y, w, h, m in wins:
-            if m == 'IsUnMapped':
-                continue
-            if a.other_outputs:
-                hit = [o for o, g in geos.items() if o != a.output and overlaps(x, y, w, h, g)]
-                if hit:
-                    bad.append(f'window {n} {w}x{h}+{x}+{y} ({m}) overlaps {", ".join(hit)}')
-                continue
-            if not geo or x < geo[2] or y < geo[3] or x + w > geo[2] + geo[0] or y + h > geo[3] + geo[1]:
-                bad.append(f'window {n} {w}x{h}+{x}+{y} ({m}) outside {a.output} '
-                           + ('%dx%d+%d+%d' % geo if geo else '(no mode)'))
-        if bad:
-            found(bad)
-
     def audio_step():
         links = test_links()
         changed('l', 'audio links: ' + ('; '.join(f'{p} -> {q}' for p, q in links) or 'none'))
@@ -217,18 +198,35 @@ def main():
         if bad:
             found(bad)
 
-    say(f'start: run pid {a.pid}, output {a.output}, audio allowed to {sink}*, windows and audio '
-        'each polled every 50 ms' + (', windows: a breach where they overlap another output'
-                                     if a.other_outputs else ''))
-    pollers = [Poller('windows', windows_step), Poller('audio', audio_step)]
+    say(f'start: run pid {a.pid}, output {a.output}, audio allowed to {sink}*; windows event-driven '
+        '(X11), audio polled every 50 ms' + (', windows: a breach where they overlap another output'
+                                              if a.other_outputs else ''))
+    try:
+        watcher = Watcher(a.output, lambda m: say('x11 ' + m), lambda m: found([m]),
+                          overlap=a.other_outputs)
+    except Exception as e:  # no watch on the windows: no run
+        say(f'BREACH: the window watcher cannot start ({e!r}): closing every test player and stopping the run')
+        close_players()
+        stop_run(a.pid)
+        close_players()
+        return 3
+
+    def watch():
+        try:
+            watcher.run(lambda: not alive() or breach.is_set())
+        except Exception as e:  # noqa: BLE001
+            found([f'the window watcher failed ({e!r})'])
+
+    pollers = [Poller('audio', audio_step)]
     threads = [threading.Thread(target=p.loop, args=(alive, breach), daemon=True) for p in pollers]
+    threads.append(threading.Thread(target=watch, daemon=True))
     for t in threads:
         t.start()
     t_beat = time.monotonic()
     while alive() and not breach.is_set():
         breach.wait(1)
         if time.monotonic() - t_beat >= 60:
-            say('ok: ' + '; '.join(p.stats() for p in pollers))
+            say('ok: ' + '; '.join(p.stats() for p in pollers) + '; windows: ' + watcher.summary())
             t_beat = time.monotonic()
     if breach.is_set():
         say('BREACH: ' + '; '.join(reasons) + ': closing every test player and stopping the run')
@@ -239,7 +237,8 @@ def main():
         return 3
     for t in threads:
         t.join(1)
-    say(f'end: run pid {a.pid} gone; ' + '; '.join(p.stats() for p in pollers) + '; no breach')
+    say(f'end: run pid {a.pid} gone; ' + '; '.join(p.stats() for p in pollers) + '; windows: '
+        + watcher.summary() + '; no breach')
     return 0
 
 

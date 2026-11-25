@@ -17,6 +17,12 @@
 # - The player's window is override-redirect (SDL_X11_FORCE_OVERRIDE_REDIRECT=1): the
 #   window manager never manages or moves it. While its output is off it sits off-screen.
 #   window-check.sh verifies that, and its place on OUTPUT, or the player is closed.
+# - ffplay runs with place.so (place.c, built by place.sh). The window is created at its
+#   final geometry on OUTPUT and never has another, mapped or not. It is mapped only after
+#   a check under a server grab: override-redirect, at that geometry, inside OUTPUT's
+#   RandR monitor and overlapping no other. Otherwise the player exits without a window.
+#   (Without it, SDL creates the window hidden on the primary output and moves it before
+#   the map.)
 # - A watchdog (watchdog.sh) closes it within 0.2 s once OUTPUT no longer shows the
 #   player's geometry: output off, unplugged (driver unload, card reset or move), another
 #   mode. --off closes it explicitly.
@@ -59,6 +65,7 @@ esac
 # no test player may outlive a failed check below, nor exist while the mode changes
 "$here/avsync.sh" --off
 stop
+place=$("$here/place.sh") || { echo "cannot build the window placement library ($here/place.c)" >&2; exit 1; }
 xrandr --query | grep -q "^$out connected" || { echo "$out is not connected (HPD low?)" >&2; exit 1; }
 primary=$(xrandr --query | awk '/ connected primary/{print $1; exit}')
 [ -n "$primary" ] && [ "$primary" != "$out" ] || { echo "no primary output other than $out" >&2; exit 1; }
@@ -69,21 +76,33 @@ x=$(xrandr --query | sed -n "s/^$out connected \(primary \)\?${w}x$h+\([0-9]*\)+
 [ -n "$x" ] || { echo "$out does not show ${w}x$h after the mode set" >&2; exit 1; }
 png=$run/pattern-${w}x$h.png
 [ -f "$png" ] || "$here/pattern.py" "$png" "$w" "$h" >/dev/null
+err=$run/ffplay.err
 if [ "$counter" = 1 ]; then
-  SDL_X11_FORCE_OVERRIDE_REDIRECT=1 ffplay -loglevel error -an -noborder -left "$x" -top 0 -x "$w" -y "$h" \
+  LD_PRELOAD=$place GC573_PLACE="$x 0 $w $h $out" SDL_X11_FORCE_OVERRIDE_REDIRECT=1 \
+    ffplay -loglevel error -an -noborder -left "$x" -top 0 -x "$w" -y "$h" \
     -window_title gc573-pattern -f lavfi -i "$("$here/counter-graph.sh" "$png" "$w" "$h" "$fps" "$n")" \
-    >/dev/null 2>&1 < /dev/null &
+    >/dev/null 2> "$err" < /dev/null &
 else
-  SDL_X11_FORCE_OVERRIDE_REDIRECT=1 ffplay -loglevel error -an -noborder -left "$x" -top 0 -x "$w" -y "$h" -loop 0 \
-    -window_title gc573-pattern "$png" >/dev/null 2>&1 < /dev/null &
+  LD_PRELOAD=$place GC573_PLACE="$x 0 $w $h $out" SDL_X11_FORCE_OVERRIDE_REDIRECT=1 \
+    ffplay -loglevel error -an -noborder -left "$x" -top 0 -x "$w" -y "$h" -loop 0 \
+    -window_title gc573-pattern "$png" >/dev/null 2> "$err" < /dev/null &
 fi
-echo $! > "$pidf"
-setsid "$here/watchdog.sh" "$(cat "$pidf")" "$out" "$w" "$h" "$x" >/dev/null 2>&1 < /dev/null &
+pid=$!
+echo "$pid" > "$pidf"
+setsid "$here/watchdog.sh" "$pid" "$out" "$w" "$h" "$x" >/dev/null 2>&1 < /dev/null &
 echo $! > "$wdf"
-if ! chk=$("$here/window-check.sh" gc573-pattern "$w" "$h" "$x"); then
+if ! chk=$("$here/window-check.sh" gc573-pattern "$w" "$h" "$x" "$pid"); then
   stop
-  echo "test window not as required, closed: $chk" >&2
+  echo "test window not as required, closed: $chk $(tr '\n' ' ' < "$err")" >&2
   exit 1
 fi
-evlog "player start $mode@$rate$([ "$counter" = 0 ] || echo " counter") (pid $(cat "$pidf"))"
-echo "pattern $png$([ "$counter" = 0 ] || echo " with counter") on $out ($mode@$rate at +$x+0), pid $(cat "$pidf"); $chk"
+grep -q "^gc573-place: mapped at ${w}x$h+$x+0 on $out\$" "$err" || {
+  stop; echo "the test window was not placed by place.so: $(tr '\n' ' ' < "$err")" >&2; exit 1; }
+# closed meanwhile (--off, avsync.sh, guard.py): there is no start to report
+if ! kill -0 "$pid" 2>/dev/null || [ "$(cat "$pidf" 2>/dev/null)" != "$pid" ]; then
+  stop
+  echo "the player (pid $pid) was closed while it started" >&2
+  exit 1
+fi
+evlog "player start $mode@$rate$([ "$counter" = 0 ] || echo " counter") (pid $pid)"
+echo "pattern $png$([ "$counter" = 0 ] || echo " with counter") on $out ($mode@$rate at +$x+0), pid $pid; $chk"
