@@ -5,9 +5,12 @@
 # and writes zeros, so a stream runs: 48 kHz against the clock, no
 # overrun, silence, AUDIO_DONE in order, INT bit 4 at every stop. Then the
 # PCM's hw params (S16_LE, 2 channels, 48 kHz only, periods in steps of
-# 480 frames), 20 stop/start cycles, rmmod refused while the PCM is open,
-# unbind while capturing (the application sees an error and exits, unbind
-# < 5 s) and a capture after the rebind. SKIP without the alsa-lib headers.
+# 480 frames), 20 stop/start cycles, audio across 3 video stream
+# start/stops (the video stop's domain reset stops the audio DMA; the
+# driver restarts it and fills the gap with silence, so the stream neither
+# stalls nor loses time: rate within 0.1 %), rmmod refused while the PCM is open, unbind
+# while capturing (the application sees an error and exits, unbind < 5 s)
+# and a capture after the rebind. SKIP without the alsa-lib headers.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
@@ -16,6 +19,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 [ -e /usr/include/alsa/asoundlib.h ] || skip "alsa-lib headers (libasound2-dev) not installed"
 aud=$(gc573_aud_build "$tmp") || fail "cannot build gc573-aud"
+cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 
 gc573_load || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
@@ -67,6 +71,28 @@ dst=$(( $(gc573_aud_stat starts) - st0 )) dsp=$(( $(gc573_aud_stat stops) - sp0 
 check "$([ "$rc" = 0 ] && [ "${xruns:-1}" = 0 ] && [ "$dst" -ge 20 ] && [ "$dst" = "$dsp" ] &&
 	[ "$(gc573_aud_stat stop_missing)" = "$m0" ]; echo $?)" \
 	"stop/start: $dst starts, $dsp INT bit 4, no overrun, no stop without INT bit 4"
+
+# audio across 3 video stream start/stops
+r0=$(gc573_aud_stat restarts) f0=$(gc573_aud_stat filled)
+"$aud" -D "$pcm" -t 9 -v > "$tmp/a3" 2>&1 &
+apid=$!
+sleep 1.5
+vrc=0
+for i in 1 2 3; do
+	"$cap" -d "$dev" -f YUYV -b 4 -n 60 > "$tmp/v$i" 2>&1 || vrc=1
+	sleep 0.7
+done
+wait "$apid"
+rc=$?
+read -r frames secs rate xruns <<< "$(result_of "$tmp/a3")"
+dr=$(( $(gc573_aud_stat restarts) - r0 )) df=$(( $(gc573_aud_stat filled) - f0 ))
+check "$([ "$vrc" = 0 ]; echo $?)" "3 video captures"
+check "$([ "$rc" = 0 ] && [ "${xruns:-1}" = 0 ] && [ "$dr" = 3 ]; echo $?)" \
+	"audio through them: no overrun, $dr DMA restarts after the domain resets, $df frames of silence filled"
+check "$([ "${frames:-0}" -ge $((48000 * 85 / 10)) ]; echo $?)" \
+	"$frames frames in the 9 s run: no stall (>= 8.5 s worth)"
+check "$(near "${rate:-0}" 48000 48; echo $?)" \
+	"rate across them $rate Hz (48000 +- 0.1 %: a 90 ms gap left unfilled would be -1 %)"
 
 # rmmod while the PCM is open, unbind while capturing, rebind
 "$aud" -D "$pcm" -t 60 > "$tmp/a4" 2>&1 &

@@ -313,7 +313,9 @@ struct gc573_video {
 struct gc573_astats {
 	u64 periods;			/* periods delivered */
 	u64 silent;			/* of these, delivered as silence */
+	u64 filled;			/* silent frames for domain resets */
 	u32 starts;			/* streams started */
+	u32 restarts;			/* DMA started again after a reset */
 	u32 stops;			/* INT bit 4 */
 	u32 stop_missing;		/* stop without INT bit 4 */
 	u32 order;			/* AUDIO_DONE not the buffer expected */
@@ -343,6 +345,7 @@ struct gc573_audio {
 	bool running;			/* periods are being delivered */
 	bool stopping;			/* stopped, INT bit 4 not waited for */
 	bool dead;			/* quiesced: never start again */
+	bool resync;			/* restarted: fill the gap first */
 	bool good;			/* the last period carried samples */
 	u8 next;			/* AUDIO_DONE value expected next */
 	u32 sample_period;		/* AUDIO_SAMPLE_PERIOD, last period */
@@ -412,6 +415,7 @@ void gc573_video_release(struct gc573 *gc);
 void gc573_audio_early_init(struct gc573 *gc);
 int gc573_audio_init(struct gc573 *gc);
 void gc573_audio_quiesce(struct gc573 *gc);
+void gc573_audio_reset_done(struct gc573 *gc);
 void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns);
 void gc573_audio_debugfs(struct gc573 *gc);
 

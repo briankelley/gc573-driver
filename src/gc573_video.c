@@ -730,6 +730,8 @@ void gc573_video_hw_stop(struct gc573 *gc)
 		}
 	}
 	gc573_reset_domains(gc);
+	/* the reset stops the audio DMA as well */
+	gc573_audio_reset_done(gc);
 	dev_dbg(dev, "video stopped in %u ms\n",
 		jiffies_to_msecs(jiffies - t0));
 }

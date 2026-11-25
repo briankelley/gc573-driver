@@ -23,6 +23,15 @@
  * first period after both hold again. The stream never stalls and never
  * reports an xrun for an input change; the application sees silence.
  *
+ * Video stop: its domain reset (spec/init.md "Stream stop" step 3) stops
+ * the audio DMA too, clears DMA_RUN and raises no INT bit 4 (driver M4,
+ * never traced: RD ran audio only with video idle). A running stream is
+ * started again right after it, as at a stream start, and the time lost
+ * meanwhile (about 90 ms, measured between the interrupts) is filled with
+ * silence, which keeps the stream in step with the clock and with video.
+ * At an input loss the FPGA completes one period 10 ms late; that pause
+ * is not filled (there is no audio then; the stream is 10 ms behind).
+ *
  * Locking: aud.lock protects the stream state shared with the hard IRQ
  * handler and the audio DMA registers. DMA_RUN (0x008) changes only by
  * read-modify-write under gc->dma_run_lock (spec/audio.md "Driver notes").
@@ -58,6 +67,12 @@
 #define GC573_AUD_PERIOD_MAX		(GC573_AUD_RATE / 2 * GC573_AUD_FRAME_BYTES)
 /* INT bit 4 came 38 us after the stop write (spec/audio.md "Stop") */
 #define GC573_AUD_STOP_MS		100
+/*
+ * Silence filled in after a domain reset, at most: 1 s, and with the
+ * period that follows less than the ring, so the pointer cannot wrap past
+ * itself between two updates
+ */
+#define GC573_AUD_FILL_MAX		(GC573_AUD_RATE * GC573_AUD_FRAME_BYTES)
 /* a period interval above this counts as late (nominal 10 ms) */
 #define GC573_AUD_LATE_US		15000
 
@@ -126,6 +141,26 @@ static void gc573_aud_hw_stop(struct gc573 *gc)
 	gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
 }
 
+/*
+ * After the video stop's domain reset (gc573_video_hw_stop()): a running
+ * stream lost its DMA; start it again and fill the gap at its first period
+ */
+void gc573_audio_reset_done(struct gc573 *gc)
+{
+	struct gc573_audio *a = &gc->aud;
+	unsigned long flags;
+
+	spin_lock_irqsave(&a->lock, flags);
+	if (a->running &&
+	    !(gc573_rd(gc, GC573_DMA_RUN) & GC573_DMA_RUN_AUDIO)) {
+		a->st.restarts++;
+		a->next = GC573_AUDIO_DONE_BUF0;
+		a->resync = true;
+		gc573_aud_hw_start(gc);
+	}
+	spin_unlock_irqrestore(&a->lock, flags);
+}
+
 /* Remove and shutdown, spec/init.md "Remove / quiesce" step 1 */
 void gc573_audio_quiesce(struct gc573 *gc)
 {
@@ -177,6 +212,7 @@ void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns)
 	struct gc573_audio *a = &gc->aud;
 	struct snd_pcm_substream *elapsed = NULL;
 	unsigned int buf, us;
+	u64 lost;
 	u8 *src;
 	u16 fill;
 
@@ -193,7 +229,22 @@ void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns)
 	}
 
 	us = a->last_ns ? div_u64(ns - a->last_ns, NSEC_PER_USEC) : 0;
-	if (us) {
+	if (a->resync) {
+		/*
+		 * Restarted after a domain reset: the time from the last
+		 * period to the start of this one, in silence
+		 */
+		lost = 0;
+		if (us > 10 * USEC_PER_MSEC)
+			lost = DIV_ROUND_CLOSEST_ULL((u64)(us - 10 * USEC_PER_MSEC) *
+						     a->rate, USEC_PER_SEC);
+		lost = min_t(u64, lost * GC573_AUD_FRAME_BYTES,
+			     min_t(unsigned int, GC573_AUD_FILL_MAX,
+				   a->buffer_bytes - 2 * GC573_AUD_HW_BYTES));
+		gc573_aud_put(a, NULL, lost);
+		a->st.filled += lost / GC573_AUD_FRAME_BYTES;
+		a->resync = false;
+	} else if (us) {
 		a->st.interval_max_us = max(a->st.interval_max_us, us);
 		a->st.interval_min_us = min(a->st.interval_min_us, us);
 		if (us > GC573_AUD_LATE_US)
@@ -310,6 +361,7 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 		a->next = GC573_AUDIO_DONE_BUF0;
 		a->last_ns = 0;
 		a->good = false;
+		a->resync = false;
 		a->st.starts++;
 		a->st.interval_max_us = 0;
 		a->st.interval_min_us = UINT_MAX;
@@ -320,8 +372,11 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 		if (!a->running)
 			break;
 		a->running = false;
-		a->stopping = true;
-		gc573_aud_hw_stop(gc);
+		/* a domain reset in progress may have stopped it, silently */
+		if (gc573_rd(gc, GC573_DMA_RUN) & GC573_DMA_RUN_AUDIO) {
+			a->stopping = true;
+			gc573_aud_hw_stop(gc);
+		}
 		break;
 	default:
 		ret = -EINVAL;
@@ -397,8 +452,9 @@ static int gc573_aud_debugfs_show(struct seq_file *m, void *unused)
 	seq_printf(m, "regs: DMA_RUN %#010x AUDIO_DONE %#010x AUDIO_SAMPLE_PERIOD %#010x (%u Hz)\n",
 		   gc573_rd(gc, GC573_DMA_RUN), gc573_rd(gc, GC573_AUDIO_DONE),
 		   sp, gc573_aud_rate(sp));
-	seq_printf(m, "periods %llu silent %llu starts %u stops %u stop_missing %u\n",
-		   st.periods, st.silent, st.starts, st.stops, st.stop_missing);
+	seq_printf(m, "periods %llu silent %llu filled %llu starts %u restarts %u stops %u stop_missing %u\n",
+		   st.periods, st.silent, st.filled, st.starts, st.restarts,
+		   st.stops, st.stop_missing);
 	seq_printf(m, "order %u bad_done %u stale %u late %u interval_us %u..%u\n",
 		   st.order, st.bad_done, st.stale, st.late,
 		   st.interval_min_us == UINT_MAX ? 0 : st.interval_min_us,
