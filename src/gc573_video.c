@@ -1139,7 +1139,17 @@ static struct v4l2_fract gc573_vid_nominal(const struct v4l2_bt_timings *bt)
  * Frame interval: with a matching locked input the period the FPGA
  * measured (0x1010, spec/hdmi-it6805.md 8.3), reported as the nominal
  * interval when within 0.1 % of it; else the DV timings' nominal one.
+ *
+ * Delivery (spec/video-pipeline.md "Delivery rate", open question 33):
+ * inputs at 50 Hz and below complete every 16.667 ms, an input frame being
+ * repeated, and no register marks the repeats; 59.93-60 Hz inputs complete
+ * at their own rate. Every completion reaches the application, so below
+ * GC573_VID_LOCK_MIN_DHZ the interval reported is the delivered 1/60. The
+ * boundary between the two regimes is not known; 59.5 Hz keeps every
+ * observed mode right.
  */
+#define GC573_VID_LOCK_MIN_DHZ		595	/* 59.5 Hz, in 0.1 Hz */
+
 static struct v4l2_fract gc573_vid_interval(struct gc573_video *v)
 {
 	struct v4l2_fract nom = gc573_vid_nominal(&v->timings.bt), f;
@@ -1150,6 +1160,9 @@ static struct v4l2_fract gc573_vid_interval(struct gc573_video *v)
 		nom = v4l2_calc_timeperframe(&v->timings);
 	if (!gc573_vid_input_matches(v) || !v->in.period)
 		return nom;
+	if ((u64)v->in.period * GC573_VID_LOCK_MIN_DHZ >
+	    (u64)GC573_IN_FRAME_PERIOD_HZ * 10)
+		return (struct v4l2_fract){ 1, 60 };
 	a = (u64)v->in.period * nom.denominator;
 	b = (u64)nom.numerator * GC573_IN_FRAME_PERIOD_HZ;
 	if (abs_diff(a, b) <= div_u64(b, 1000))

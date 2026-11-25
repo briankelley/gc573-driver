@@ -18,8 +18,9 @@
 #   capture   1080p60 and 1080p59.94, 6 formats x GC573_LIVE_FRAMES (600):
 #             each format's last frame compared with pattern.py, all frames
 #             identical (full-frame hash), no sequence gaps, G_PARM equal
-#             to the DV timings' nominal interval, mean interval within
-#             0.1 % of the interval G_PARM reports, first frame dropped
+#             to the DV timings' nominal interval (1/60 below 59.5 Hz: the
+#             card delivers those at 60 Hz), mean interval within 0.1 % of
+#             the interval G_PARM reports, first frame dropped
 #   modes     every other mode the GPU offers for the output: timings and a
 #             verified capture (GC573_MODE_FRAMES, 120, per format)
 #   change    input change while streaming: SOURCE_CHANGE, DQBUF error, no
@@ -131,7 +132,9 @@ setup() {
 		"$ROOT/tests/live-compare.py" "$VM:$W/"
 }
 
-# The nominal frame interval of the timings in a gc573-cap LOCK line ($1)
+# The frame interval G_PARM must report for the timings in a gc573-cap
+# LOCK line ($1): their nominal interval; 1/60 below 59.5 Hz, which the
+# card delivers at 60 Hz (spec/video-pipeline.md "Delivery rate")
 nominal_interval() {
 	python3 - "$1" <<'EOF'
 import math, re, sys
@@ -145,6 +148,8 @@ d = int(kv['pixelclock'])
 fl = int(kv['flags'], 16)
 if fl & 2 and fl & 4:	# CAN_REDUCE_FPS and REDUCED_FPS
     n, d = n * 1001, d * 1000
+if d < 59.5 * n:
+    n, d = 1, 60
 g = math.gcd(n, d)
 print(f"{n // g}/{d // g}")
 EOF
