@@ -565,6 +565,9 @@ step_audio() {
 step_avsync() {
 	local out d0 d1 n bad=""
 	av_on || { result avsync-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
+	# the GPU's output timing steps once when ffplay goes full screen (see
+	# src_mode); settle() needs 90 identical frames, which avsync never has
+	sleep 3
 	d0=$(aud_dbg)
 	vm "sudo $W/gc573-aud -D $pcm -t $AV_SECS -v -V $vdev -o $W/av.raw > $W/av.txt 2>&1"
 	check avsync-capture $? "($(vm "grep -E '^(PARAMS|RESULT)' $W/av.txt" | tr '\n' ' '))"

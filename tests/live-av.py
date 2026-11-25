@@ -12,15 +12,19 @@ LOG: gc573-aud -v output (A lines; V lines with -V); RAW: its -o samples
   rate       frames against CLOCK_MONOTONIC: within 0.05 % of 48 kHz
   gaps       no step in the frame/time line: the median of each second's
              read timestamps, against a straight line through all of them,
-             stays within 3 ms (a lost or an inserted 10 ms period is a
-             10 ms step; single reads may be late by IRQ latency)
+             moves less than 3 ms from one second to the next (a lost or an
+             inserted 10 ms period is a 10 ms step; single reads may be late
+             by IRQ latency, and the line bends slowly where the clock's own
+             rate changes, e.g. NTP after a boot: both reported)
   bursts     (with --bursts or V lines) a tone burst about once a second
   channels   per burst the dominant frequency: left 1 kHz, right 2 kHz,
              each within 1 % (a wrong rate or channel order shows here),
              and the other channel's tone at least 30 dB down
   tail       (with --tail S) the bursts of the last S seconds: one a
              second, each with the channels right (after a relock)
-  video      with V lines: no sequence gap, frame intervals within 10 %
+  video      with V lines: no sequence gap, every frame interval within
+             half a period (a lost or doubled frame fails; intervals more
+             than 10 % off, IRQ latency, are reported)
   avsync     with V lines: per flash (the first frame of each run of frames
              with mean luma > 128) the burst onset within 0.5 s; offset =
              onset time (ALSA timestamps, a line through the reads within
@@ -100,15 +104,17 @@ def main():
     per_s = max(1, int(len(at) / secs)) if secs > 0 else 1
     med = np.array([np.median(resid[i:i + per_s])
                     for i in range(0, len(resid) - per_s + 1, per_s)])
-    step = (med.max() - med.min()) * 1e3 if len(med) else 0.0
+    bend = (med.max() - med.min()) * 1e3 if len(med) else 0.0
+    step = np.abs(np.diff(med)).max() * 1e3 if len(med) > 1 else 0.0
     ok &= result('duration', secs >= min_secs,
                  f"{secs:.1f} s, {len(x)} frames, minimum {min_secs:.0f} s")
     ok &= result('xruns', xruns == 0, f"{xruns} overruns")
     ok &= result('rate', abs(rate / RATE - 1) < 5e-4,
                  f"{rate:.3f} Hz against CLOCK_MONOTONIC, {(rate / RATE - 1) * 1e6:+.1f} ppm")
     ok &= result('gaps', step < 3,
-                 f"per-second medians within {step:.2f} ms, single reads within "
-                 f"{np.abs(resid).max() * 1e3:.2f} ms of the line, {len(a_hw)} reads")
+                 f"per-second medians move <= {step:.2f} ms from one second to the next; "
+                 f"within {bend:.2f} ms of one line over the run; single reads within "
+                 f"{np.abs(resid).max() * 1e3:.2f} ms of it; {len(a_hw)} reads")
 
     onsets = onsets_of(x)
     if want_bursts:
@@ -161,10 +167,12 @@ def main():
     dseq = np.diff(v_seq)
     ivl = np.diff(v_ts) / 1e9
     tf = float(np.median(ivl))
+    vhalf = int(np.sum(np.abs(ivl / tf - 1) > 0.5))
     vbad = int(np.sum(np.abs(ivl / tf - 1) > 0.1))
-    ok &= result('video', np.all(dseq == 1) and vbad == 0,
+    ok &= result('video', np.all(dseq == 1) and vhalf == 0,
                  f"{len(v_seq)} frames, {int(np.sum(dseq != 1))} sequence gaps, "
-                 f"interval {tf * 1e3:.3f} ms, {vbad} off by > 10 %")
+                 f"interval {tf * 1e3:.3f} ms, {vhalf} off by more than half a period, "
+                 f"{vbad} by more than 10 %")
 
     hot = v_y > 128
     first = np.flatnonzero(hot & ~np.concatenate(([False], hot[:-1])))
