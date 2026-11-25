@@ -1,0 +1,103 @@
+# GC573 experiment: audio capture with the M4 driver (spec/audio.md "Unknown", open question 5)
+date:    2026-11-25 04:40-05:45 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+source:  host DVI-D-0 (GT 710, NVIDIA 470) 1920x1080p60; tools/testsrc/avsync.sh (bursts: one 60 Hz frame,
+         800 samples, half scale, left 1 kHz, right 2 kHz, once a second) where noted
+tools:   tests/gc573-aud.c (-v: per read frames, hw pointer, ALSA timestamp, peaks; -M: AUDIO_SAMPLE_PERIOD,
+         AUDIO_DONE, DMA_RUN from BAR0), tests/live-av.py, per-burst alignment check (lr.py, below)
+driver:  the M4 driver as committed, at the stage noted per run; exp_audio_raw / exp_audio_fill as noted
+
+## 1. No input (IT6805 audio WAIT_READY, AUDIO_SAMPLE_PERIOD 0xffffffff), exp_audio_raw=1, exp_audio_fill=0x5a5a
+3 s: 300 periods, AUDIO_DONE 1, 2, 1, 2, intervals 9.820-10.176 ms, INT bit 4 at the stop.
+Every sample 0: the fill written into each buffer after its copy never came back, so the FPGA
+writes every period, zeros without input. Rate 48000.255 Hz against CLOCK_MONOTONIC.
+  RESULT audio frames=144000 secs=2.990 rate=48000.255 xruns=0 restarts=0
+  reads 300, with a nonzero sample 0
+
+## 2. Live audio (avsync), 5 s
+AUDIO_SAMPLE_PERIOD 0x823 (48008 Hz -> 48000), IT6805 audio ON. Layout S16_LE interleaved, left then right,
+bit-exact: burst onset left 0, 2139, 4240, 6270, ... (16384 sin(2 pi 1000 n / 48000)), right 0, 4240, 8192, ...;
+800 samples a burst; zeros between bursts.
+  RESULT duration   PASS (5.0 s, 240000 frames, minimum 0 s)
+  RESULT xruns      PASS (0 overruns)
+  RESULT rate       PASS (48000.916 Hz against CLOCK_MONOTONIC, +19.1 ppm)
+  RESULT gaps       PASS (per-second medians within 0.02 ms, single reads within 0.12 ms of the line, 500 reads)
+  RESULT bursts     PASS (5 in 5.0 s)
+  RESULT channels   PASS (left 999.8 Hz, right 2000.2 Hz over 5 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+
+## 3. Audio across video start/stop, before the restart (driver without gc573_audio_reset_done())
+14 s capture, 3 video captures from 2 s: the audio stopped at the first video stop (3.2 s of
+periods); afterwards DMA_RUN read 0 and the stop logged "audio stop: no INT bit 4 in 100 ms".
+  RESULT audio frames=152640 secs=3.170 rate=48000.787 xruns=0 restarts=0
+
+## 4. The same with the restart and the frame-exact fill
+  RESULT duration   PASS (14.0 s, 672074 frames, minimum 0 s)
+  RESULT xruns      PASS (0 overruns)
+  RESULT rate       PASS (47999.822 Hz against CLOCK_MONOTONIC, -3.7 ppm)
+  RESULT gaps       PASS (per-second medians within 0.12 ms, single reads within 0.24 ms of the line, 1378 reads)
+  RESULT bursts     PASS (14 in 14.0 s)
+  RESULT channels   FAIL (left 2000.2 Hz, right 999.8 Hz over 14 bursts, worst 100.02 % off, other tone <= 84.3 dB, 14 bad)
+  (channels FAIL: this session had the words swapped, see 6)
+
+## 5. Input loss and relock, raw (exp_audio_raw=1) and with the silence policy
+Host: 6 s output off; 15 s output and avsync on; 25 s avsync off (output on); 31 s avsync on; 37 s output off.
+Per read: AUDIO_SAMPLE_PERIOD transitions, intervals over 12 ms, samples while it reads all ones:
+  4198 reads, 2015040 frames
+    t=  0.000 read     0 hw=     480 peak=0,0 nonzero=  0 : sp None -> 00000823
+    t=  5.640 read   563 hw=  270720 peak=0,0 nonzero=  0 : late 19.72 ms
+    t=  6.470 read   646 hw=  310560 peak=0,0 nonzero=  0 : sp 00000823 -> ffffffff
+    t= 15.940 read  1593 hw=  765120 peak=0,0 nonzero=  0 : sp ffffffff -> 00000823
+    t= 29.519 read  2950 hw= 1416480 peak=0,0 nonzero=  0 : late 20.05 ms
+    t= 30.349 read  3033 hw= 1456320 peak=0,0 nonzero=  0 : sp 00000823 -> ffffffff
+    t= 31.289 read  3127 hw= 1501440 peak=0,0 nonzero=  0 : sp ffffffff -> 00000823
+    t= 37.009 read  3698 hw= 1775520 peak=0,0 nonzero=  0 : late 19.90 ms
+    t= 37.839 read  3781 hw= 1815360 peak=0,0 nonzero=  0 : sp 00000823 -> ffffffff
+  reads with sp valid: 2740  with peak > 0: 36  with 0 < peak < 4096: 0
+  first low-level reads (index, peak): []
+At each loss one period interval of 20 ms (AUDIO_DONE still alternating: a 10 ms pause, not a lost
+period), then AUDIO_SAMPLE_PERIOD stays 0x823 for 0.83 s before it reads all ones; the samples are
+zero from the loss on. Periods keep coming every 10 ms throughout. No sample outside the bursts in
+either run. With the policy (exp_audio_raw=0) the first burst after audio returned (31.456 s,
+26 ms after AUDIO_SAMPLE_PERIOD turned valid) was delivered:
+  AUDIO_SAMPLE_PERIOD transitions (s, from, to): [(6.61, '00000823', 'ffffffff'), (16.48, 'ffffffff', '00000823'), (16.76, '00000823', '00000824'), (16.77, '00000824', '00000823'), (16.79, '00000823', '00000824'), (16.8, '00000824', '00000823'), (16.85, '00000823', '00000824'), (16.86, '00000824', '00000823'), (30.579, '00000823', 'ffffffff'), (31.429, 'ffffffff', '00000823'), (31.449, '00000823', '00000824'), (31.459, '00000824', '00000823'), (31.509, '00000823', '00000824'), (31.529, '00000824', '00000823'), (37.959, '00000823', 'ffffffff')]
+  burst onsets (s, by sample count): [0.24, 1.24, 2.24, 3.24, 4.24, 5.24, 17.945, 18.945, 19.945, 20.945, 21.945, 22.945, 23.945, 31.456, 32.456, 33.456, 34.456, 35.456, 36.456]
+  nonzero samples outside the bursts: 0
+
+## 6. Channel alignment
+One avsync session (module load 4) delivered every burst with the words offset by one: left held
+R[n-1], right L[n] (left 0, 0, 4240, 8192, ...; right 0, 2139, 4240, ...). It held for that whole
+session, through 30 stream restarts (lr1) and 10 domain resets (lr2):
+  channel alignment per burst: {'swapped': 14}
+  channel alignment per burst: {'swapped': 62}
+  channel alignment per burst: {'swapped': 40}
+Every other session was aligned: 12 module reloads with a new avsync session each, 40 avsync
+sessions in one load (avsync --off, on, 2.6 s capture), and all runs above but a5/lr1/lr2:
+  reload 1: {'aligned': 3}; reload 2: {'aligned': 3}; reload 3: {'aligned': 3}; reload 4: {'aligned': 3}; reload 5: {'aligned': 3}; reload 6: {'aligned': 3}; reload 7: {'aligned': 3}; reload 8: {'aligned': 3}; reload 9: {'aligned': 3}; reload 10: {'aligned': 3}; reload 11: {'aligned': 3}; reload 12: {'aligned': 3}
+  session 1: {'aligned': 3}; session 2: {'aligned': 3}; session 3: {'aligned': 2}; session 4: {'aligned': 3}; session 5: {'aligned': 2}; session 6: {'aligned': 2}; session 7: {'aligned': 3}; session 8: {'aligned': 2}; session 9: {'aligned': 2}; session 10: {'aligned': 2}; session 11: {'aligned': 2}; session 12: {'aligned': 3}; session 13: {'aligned': 3}; session 14: {'aligned': 2}; session 15: {'aligned': 3}; session 16: {'aligned': 3}; session 17: {'aligned': 2}; session 18: {'aligned': 3}; session 19: {'aligned': 2}; session 20: {'aligned': 2}; session 21: {'aligned': 2}; session 22: {'aligned': 2}; session 23: {'aligned': 2}; session 24: {'aligned': 2}; session 25: {'aligned': 3}; session 26: {'aligned': 2}; session 27: {'aligned': 3}; session 28: {'aligned': 2}; session 29: {'aligned': 2}; session 30: {'aligned': 2}; session 31: {'aligned': 3}; session 32: {'aligned': 2}; session 33: {'aligned': 2}; session 34: {'aligned': 2}; session 35: {'aligned': 2}; session 36: {'aligned': 2}; session 37: {'aligned': 3}; session 38: {'aligned': 2}; session 39: {'aligned': 2}; session 40: {'aligned': 2}
+So 1 session of 53+ had the swap; what sets it is not known (the source, the IT6805 audio FIFO, or
+the FPGA's word phase). The driver has no traced control for it. RD's untraced audio paths, an
+audio logic reset on 0:b9 bits 7:6 or on 0:10 bit 7 (spec/hdmi-it6805.md 11.1), are skipped by the
+driver; it now counts both (debugfs hdmi, "it6805: audio errors N events N").
+
+per-burst check (lr.py): aligned = left [0, 2139, ...] with right [0, 4240, ...] from the same frame;
+swapped = left [0, 0, 4240, 8192] with right [0, 2139, 4240]
+
+## 7. Fresh audio start (source audio stopped >= 5 s, then avsync.sh), exp_audio_raw=1, 4 runs
+The capture runs from 1 s before the source starts. AUDIO_SAMPLE_PERIOD turns valid at read 141,
+138, 149, 144 (1.38-1.49 s after the source started); the first sample, the source's first burst,
+follows 4-5 periods later and arrives complete (left 2139, 4240, ..., right 4240, 8192, ... from its
+second sample). No period holds a sample while AUDIO_SAMPLE_PERIOD reads all ones (0 of 4 runs).
+Started the moment the IT6805 audio state went ON, a capture saw AUDIO_SAMPLE_PERIOD all ones for
+another 12-14 periods (silent +14, +12 with the policy): silence the hardware gives anyway. The
+IT6805's audio event (0:10 bit 7 while STABLE, untraced) counter rose by 1-2 at each source audio
+start or stop (3, 4, 4, 6, 7, 8, 9 over these runs); no event without such a transition was seen.
+
+## 8. Ten minutes of audio and video (tests/live.sh avsync, log 20261125-052609)
+600.0 s, 28800960 frames (48001.265 Hz against CLOCK_MONOTONIC, +26.4 ppm), no overrun, read
+timestamps within 0.41 ms of a line (per-second medians), 600 bursts with the channels right,
+35997 video frames without a sequence gap. A/V offset (burst onset - flash frame, frame-corrected)
+-23.555 ms, std 0.054 ms, drift -0.0028 ms/min (-0.028 ms over the run). Without input the periods
+ran at +5 ppm against the clock (run 1, 3 s); with the source they run at its rate and do not drift
+against its video: with a live source the source's audio clock paces the periods, not the FPGA's
+(spec/audio.md "Running", the question it leaves open). The absolute offset differs between avsync
+sessions (-14.38 ms in a 20 s run of another session): the source's own audio latency.

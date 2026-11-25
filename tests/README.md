@@ -12,7 +12,7 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
 - Env: `GC573_ITER` (load/unload cycles, default 50), `GC573_I2C_ROUNDS`
   (`04-i2c-reads` rounds per reader, default 200), `GC573_INPUT` (HDMI input
   source and mode for the log, default `none`), `GC573_KO` (module path).
-- The no-input cases (`10`, `12`, `13`, `14`, `15`) take the HDMI input
+- The no-input cases (`10`, `12`, `13`, `14`, `15`, `17`) take the HDMI input
   away first (`gc573_input_off`: `VIDIOC_S_EDID` with 0 blocks, then no lock
   for 1 s), so the suite runs with the loopback source on or off. Live-input
   checks are in `live.sh` (below).
@@ -60,6 +60,7 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `14-exp-slot-bits` | exp. | open question 8 result check via `exp_slot_mode` 1-5: ch0 CH_CTRL (run, slot-valid bits) gates all channels; ch1/ch2 CH_CTRL, even 0, has no visible effect |
 | `15-video-returned-buffers` | M2 fix | `gc573-cap -R`: `GC573_RB_QBUFS` (default 6000) QBUFs at random points of the frame (NV12, 3 buffers, each dequeued buffer pattern-filled and held 0-20 ms): no DMA into a dequeued buffer, no completion for an unarmed slot |
 | `16-probe-fail-hpd` | M3 review | a probe that fails after the HDMI chips came up (bpftrace overrides `gc573_video_init()` with -ENOMEM) leaves GPIO bit 2, the IT6805-side HPD, low (read through `resource0`); before that: bit 2 high while bound, low after a normal unbind. SKIP without bpftrace or function error injection |
+| `17-audio` | M4 | no input: ALSA hw params (S16_LE, 2 channels, 48 kHz, periods from 480 frames); 3 s capture at 48 kHz +- 0.1 % against the clock, no overrun, all samples zero, every period silent, AUDIO_DONE in order (debugfs `audio`); 20 stop/start cycles (INT bit 4 each), rmmod refused while the PCM is open, unbind while capturing (< 5 s, the application exits), capture after the rebind. SKIP without the alsa-lib headers |
 
 Experiment `exp-delivery.sh RATE [N] [TAG]` (host side like `live.sh`,
 open question 33): a moving source (ffplay `testsrc2`) on the output at RATE,
@@ -69,7 +70,7 @@ pattern and which registers change with it. The driver's `exp_rate_fps` and
 `exp_rate_bits` parameters set RATE_CTRL for such a stream. Result:
 `logs/20261125-041700_6.8.0-151-generic_exp-delivery.log`.
 
-Helpers: `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep (`-T all`, or a list saved with `-t`), stop/start, underrun, wait and returned-buffer modes; live input: lock wait `-L`, frame save `-o`, input-change test `-X` with restart `-r`, per-frame log `-F`; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`, `live-compare.py` (saved frame vs `tools/testsrc/pattern.py`). Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.
+Helpers: `gc573-aud.c` (ALSA capture tool, alsa-lib: per-read frame count and timestamp, raw samples, BAR0 snapshot, a V4L2 capture beside it for A/V timing, stop/start), `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep (`-T all`, or a list saved with `-t`), stop/start, underrun, wait and returned-buffer modes; live input: lock wait `-L`, frame save `-o`, input-change test `-X` with restart `-r`, per-frame log `-F`; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`, `live-compare.py` (saved frame vs `tools/testsrc/pattern.py`). Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.
 
 ## Live input (`live.sh`, host)
 `tests/live.sh [STEP...]` runs on the host: it drives the loopback output

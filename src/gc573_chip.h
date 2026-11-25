@@ -245,6 +245,7 @@ struct gc573_hdmi {
 	/* published input state, also read by the ioctls */
 	spinlock_t slock;
 	struct gc573_input in;
+	bool audio_on;			/* IT6805 audio ON (11.1); READ_ONCE */
 	unsigned int lock_polls;	/* polls since the entry, for 0x1010 */
 	u32 period_raw;			/* 0x1010 at the last poll */
 	u32 fpga_rejects;		/* polls the FPGA measurement held a lock */

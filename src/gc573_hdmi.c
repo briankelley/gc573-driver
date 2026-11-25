@@ -516,6 +516,7 @@ static void gc573_hdmi_poll(struct work_struct *work)
 	r1 = gc573_sp_poll(h);
 	r2 = gc573_it6805_poll(h);
 	gc573_chip_end(h);
+	WRITE_ONCE(h->audio_on, h->it.audio == GC573_AUD_ON);
 	h->polls++;
 	if (r1 || r2)
 		h->poll_errors++;

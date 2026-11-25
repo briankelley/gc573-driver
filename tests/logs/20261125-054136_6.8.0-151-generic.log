@@ -1,0 +1,73 @@
+# GC573 regression suite
+date:    2026-11-25 05:41:36 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 5ACDD4DE9356CF1147D6ABE
+rev:     363a3b6b5bae-dirty
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+gc573 already loaded: unloading
+
+## 17-audio
+  PCM hw:CARD=GC573,DEV=0, video /dev/video0
+    FORMAT:  S16_LE
+    CHANNELS: 2
+    RATE: 48000
+    PERIOD_SIZE: [480 24000]
+    BUFFER_SIZE: [960 96000]
+  ok: hw params: S16_LE, 2 channels, 48000 Hz, periods from 480 frames
+    RESULT audio frames=144000 secs=2.990 rate=47999.405 xruns=0 restarts=0
+  ok: capture ran, no overrun
+  ok: rate 47999.405 Hz (48000 +- 0.1 %), 144000 frames in 2.990 s
+  ok: all samples zero (0 reads with a sample)
+  ok: 300 periods, 300 of them delivered as silence (no input)
+  ok: AUDIO_DONE alternated 1, 2 (order, bad_done unchanged)
+  ok: stop/start: 21 starts, 21 INT bit 4, no overrun, no stop without INT bit 4
+  ok: rmmod refused while open (rmmod: ERROR: Module gc573 is in use)
+  ok: unbind while capturing: exit 0 after 120 ms; capture exited with 1
+  ok: capture after rebind: 48000 frames
+  audio without input: OK
+  -- kernel log (21 lines)
+  | [ 7650.448758] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 7650.550660] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 7650.683957] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 7650.685328] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 7650.790145] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 7650.791110] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 7650.892741] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 7651.033123] gc573 0000:07:00.0: video device video0
+  | [ 7651.034020] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 7651.045331] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 7651.585358] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 7663.015630] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 7663.117411] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 7663.252564] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 7663.255106] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 7663.367290] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 7663.367998] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 7663.470159] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 7663.608598] gc573 0000:07:00.0: video device video0
+  | [ 7663.608950] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 7663.622199] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT 17-audio             PASS (15s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 17-audio             PASS (15s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=1 fail=0 skip=2
