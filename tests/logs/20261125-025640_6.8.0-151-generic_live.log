@@ -1,0 +1,1262 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 02:56:40 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     feb5126cc88b
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   bringup lock relock capture modes change loss colour unload reload compliance
+module:  DE13971A51A8D18601062F4, /dev/video0
+
+## bringup
+  [10798.621071] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  [10798.730359] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  [10798.731063] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  [10798.832743] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  [10798.976571] gc573 0000:07:00.0: video device video0
+  [10798.991709] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT bringup-connected          PASS (DVI-D-0 connected)
+  driver: 00ffffffffffff0031d83057000000000124010380a05a780eee91a3544c99260f505420000001010101010101010101010101010101023a801871382d40582c450040846300001e000000fd00173d0f440f000a202020202020000000fc004743353733204c696e75780a2000000010000000000000000000000000000001e4020324f14c101f22212004130203111201230904078301000067030c0010000021e200ca00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ba
+  host:   00ffffffffffff0031d83057000000000124010380a05a780eee91a3544c99260f505420000001010101010101010101010101010101023a801871382d40582c450040846300001e000000fd00173d0f440f000a202020202020000000fc004743353733204c696e75780a2000000010000000000000000000000000000001e4020324f14c101f22212004130203111201230904078301000067030c0010000021e200ca00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ba
+RESULT bringup-edid-host          PASS (256 bytes on the host, 256 from G_EDID)
+RESULT bringup-edid-decode        PASS (EDID conformity: PASS)
+
+## lock
+  	Active width: 1920
+  	Active height: 1080
+  	Total width: 2200
+  	Total height: 1125
+  	Frame format: progressive
+  	Polarities: +vsync +hsync
+  	Pixelclock: 148500000 Hz (60.00 frames per second)
+  	Horizontal frontporch: 88
+  	Horizontal sync: 44
+  	Horizontal backporch: 148
+  	Vertical frontporch: 4
+  	Vertical sync: 5
+  	Vertical backporch: 36
+  	Standards: CTA-861, DMT
+  	CTA-861 VIC: 16
+  	Flags: framerate can be reduced by 1/1.001, can detect reduced framerates, CE-video, has CTA-861 VIC
+RESULT lock-1080p60               PASS (1451 ms from output on)
+  	Active width: 1920
+  	Active height: 1080
+  	Total width: 2200
+  	Total height: 1125
+  	Frame format: progressive
+  	Polarities: +vsync +hsync
+  	Pixelclock: 148500000 Hz (60.00 frames per second)
+  	Horizontal frontporch: 88
+  	Horizontal sync: 44
+  	Horizontal backporch: 148
+  	Vertical frontporch: 4
+  	Vertical sync: 5
+  	Vertical backporch: 36
+  	Standards: CTA-861, DMT
+  	CTA-861 VIC: 16
+  	Flags: framerate can be reduced by 1/1.001, framerate is reduced by 1/1.001, can detect reduced framerates, CE-video, has CTA-861 VIC
+RESULT lock-1080p59.94            PASS (1646 ms from the mode switch)
+RESULT lock-power-present         PASS (power_present: 1)
+RESULT lock-event-mode-change     PASS (10806.580626: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-loss            PASS (10809.568609: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-lock            PASS (10812.457162: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+  Video input : 0 (HDMI: ok)
+  ioctl: VIDIOC_ENUMINPUT
+  	Input       : 0
+  	Name        : HDMI
+  	Type        : 0x00000002 (Camera)
+  	Audioset    : 0x00000000
+  	Tuner       : 0x00000000
+  	Standard    : 0x0000000000000000 ()
+  	Status      : 0x00000000 (ok)
+  	Capabilities: 0x00000002 (DV timings)
+
+## relock
+  ms from the switch to the new rate: 1785 1647 1659 1744 1678 1710 1713 1669 1643 1756 1672 1665 1613 1696 1674 1661 1639 1728 1684 1690 1668 1680 1601 1668 1624 1751 1708 1754 1719 1715 1687 1735 1666 1662 1794 1765 1703 1731 1679 1677 1668 1753 1668 1619 1632 1677 1649 1657 1610 1676
+RESULT relock                     PASS (50 of 50 switches locked within 3 s, slowest 1794 ms; fpga_rejects 120 level_changes 1 )
+
+## capture
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0068 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.524 max=16.820 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.517 max=16.817 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.480 max=16.824 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.564 max=16.796 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.548 max=16.785 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.560 max=16.772 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT cap-1080p60-timings        PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.524 max 16.820
+RESULT cap-1080p60-YUYV           PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-YUYV-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.524 max 16.820)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.517 max 16.817
+RESULT cap-1080p60-UYVY           PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-UYVY-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.517 max 16.817)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.480 max 16.824
+RESULT cap-1080p60-NV12           PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-NV12-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.480 max 16.824)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.564 max 16.796
+RESULT cap-1080p60-YV12           PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-YV12-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.564 max 16.796)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.548 max 16.785
+RESULT cap-1080p60-BGR3           PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-BGR3-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.548 max 16.785)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.560 max 16.772
+RESULT cap-1080p60-XR24           PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-XR24-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.560 max 16.772)
+RESULT cap-1080p60-first-frame    PASS (skipped 1 in 6 of 6 streams)
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9462 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.555 max=16.787 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.558 max=16.802 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.601 max=16.791 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.511 max=16.839 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.593 max=16.793 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.553 max=16.796 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT cap-1080p59.94-timings     PASS (1920x1080 at 59.9462 Hz, expected 1920x1080 at 59.94)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.555 max 16.787
+RESULT cap-1080p59.94-YUYV        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-YUYV-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.555 max 16.787)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.558 max 16.802
+RESULT cap-1080p59.94-UYVY        PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-UYVY-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.558 max 16.802)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.601 max 16.791
+RESULT cap-1080p59.94-NV12        PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-NV12-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.601 max 16.791)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.511 max 16.839
+RESULT cap-1080p59.94-YV12        PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-YV12-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.511 max 16.839)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.593 max 16.793
+RESULT cap-1080p59.94-BGR3        PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-BGR3-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.593 max 16.793)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.553 max 16.796
+RESULT cap-1080p59.94-XR24        PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-XR24-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.553 max 16.796)
+RESULT cap-1080p59.94-first-frame PASS (skipped 1 in 6 of 6 streams)
+
+## modes
+== 1920x1080 @ 50.00
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x90 vic=31 fps=50.0057 h=528/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.623 max=16.707 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.564 max=16.773 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.571 max=16.793 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.552 max=16.773 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.608 max=16.745 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.602 max=16.738 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT mode-1920x1080@50.00-timings PASS (1920x1080 at 50.0057 Hz, expected 1920x1080 at 50.00)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.623 max 16.707
+RESULT mode-1920x1080@50.00-YUYV  PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-YUYV-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.623 max 16.707)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.564 max 16.773
+RESULT mode-1920x1080@50.00-UYVY  PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-UYVY-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.564 max 16.773)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.571 max 16.793
+RESULT mode-1920x1080@50.00-NV12  PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-NV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.571 max 16.793)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.552 max 16.773
+RESULT mode-1920x1080@50.00-YV12  PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-YV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.552 max 16.773)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.608 max 16.745
+RESULT mode-1920x1080@50.00-BGR3  PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-BGR3-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.608 max 16.745)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.602 max 16.738
+RESULT mode-1920x1080@50.00-XR24  PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-XR24-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.602 max 16.738)
+RESULT mode-1920x1080@50.00-first-frame PASS (skipped 1 in 6 of 6 streams)
+== 1920x1080 @ 29.97
+  LOCK after_ms=0 1920x1080p pixelclock=74250000 flags=0x296 vic=34 fps=29.9751 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.560 max=16.741 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.589 max=16.733 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.617 max=16.765 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.615 max=16.748 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.619 max=16.717 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.571 max=16.765 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT mode-1920x1080@29.97-timings PASS (1920x1080 at 29.9751 Hz, expected 1920x1080 at 29.97)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 33.3610, -50.0435 %, min 16.560 max 16.741
+RESULT mode-1920x1080@29.97-YUYV  PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-YUYV-cadence FAIL (mean 16.6660 ms, expected 33.3610, -50.0435 %, min 16.560 max 16.741)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.589 max 16.733
+RESULT mode-1920x1080@29.97-UYVY  PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-UYVY-cadence FAIL (mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.589 max 16.733)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.617 max 16.765
+RESULT mode-1920x1080@29.97-NV12  PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-NV12-cadence FAIL (mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.617 max 16.765)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 33.3610, -50.0435 %, min 16.615 max 16.748
+RESULT mode-1920x1080@29.97-YV12  PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-YV12-cadence FAIL (mean 16.6660 ms, expected 33.3610, -50.0435 %, min 16.615 max 16.748)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.619 max 16.717
+RESULT mode-1920x1080@29.97-BGR3  PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-BGR3-cadence FAIL (mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.619 max 16.717)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.571 max 16.765
+RESULT mode-1920x1080@29.97-XR24  PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-XR24-cadence FAIL (mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.571 max 16.765)
+RESULT mode-1920x1080@29.97-first-frame PASS (skipped 1 in 6 of 6 streams)
+== 1920x1080 @ 25.00
+  LOCK after_ms=0 1920x1080p pixelclock=74250000 flags=0x90 vic=33 fps=25.0028 h=528/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.564 max=16.774 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.504 max=16.755 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.550 max=16.794 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.579 max=16.754 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.583 max=16.760 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.555 max=16.801 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT mode-1920x1080@25.00-timings PASS (1920x1080 at 25.0028 Hz, expected 1920x1080 at 25.00)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.564 max 16.774
+RESULT mode-1920x1080@25.00-YUYV  PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-YUYV-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.564 max 16.774)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.504 max 16.755
+RESULT mode-1920x1080@25.00-UYVY  PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-UYVY-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.504 max 16.755)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.550 max 16.794
+RESULT mode-1920x1080@25.00-NV12  PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-NV12-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.550 max 16.794)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.579 max 16.754
+RESULT mode-1920x1080@25.00-YV12  PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-YV12-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.579 max 16.754)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.583 max 16.760
+RESULT mode-1920x1080@25.00-BGR3  PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-BGR3-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.583 max 16.760)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 39.9955, -58.3303 %, min 16.555 max 16.801
+RESULT mode-1920x1080@25.00-XR24  PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-XR24-cadence FAIL (mean 16.6660 ms, expected 39.9955, -58.3303 %, min 16.555 max 16.801)
+RESULT mode-1920x1080@25.00-first-frame PASS (skipped 1 in 6 of 6 streams)
+== 1920x1080 @ 23.98
+  LOCK after_ms=0 1920x1080p pixelclock=74250000 flags=0x296 vic=32 fps=23.9801 h=638/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.452 max=16.843 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.564 max=16.794 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.456 max=16.866 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.527 max=16.792 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.520 max=16.823 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.463 max=16.804 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT mode-1920x1080@23.98-timings PASS (1920x1080 at 23.9801 Hz, expected 1920x1080 at 23.98)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6680 ms, expected 41.7012, -60.0300 %, min 16.452 max 16.843
+RESULT mode-1920x1080@23.98-YUYV  PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-YUYV-cadence FAIL (mean 16.6680 ms, expected 41.7012, -60.0300 %, min 16.452 max 16.843)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.564 max 16.794
+RESULT mode-1920x1080@23.98-UYVY  PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-UYVY-cadence FAIL (mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.564 max 16.794)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.456 max 16.866
+RESULT mode-1920x1080@23.98-NV12  PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-NV12-cadence FAIL (mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.456 max 16.866)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 41.7012, -60.0348 %, min 16.527 max 16.792
+RESULT mode-1920x1080@23.98-YV12  PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-YV12-cadence FAIL (mean 16.6660 ms, expected 41.7012, -60.0348 %, min 16.527 max 16.792)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.520 max 16.823
+RESULT mode-1920x1080@23.98-BGR3  PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-BGR3-cadence FAIL (mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.520 max 16.823)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.463 max 16.804
+RESULT mode-1920x1080@23.98-XR24  PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-XR24-cadence FAIL (mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.463 max 16.804)
+RESULT mode-1920x1080@23.98-first-frame PASS (skipped 1 in 6 of 6 streams)
+== 1280x720 @ 59.94
+  LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9502 h=110/40/220 v=5/5/20 pol=0x3
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.553 max=16.809 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=1
+  RESULT capture fmt=UYVY 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.583 max=16.786 ch0_bytes=1843200 ch0_top_word=eb80eb80(6.3%) distinct_frames=1
+  RESULT capture fmt=NV12 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.582 max=16.794 ch0_bytes=921600 ch0_top_word=10101010(6.2%) ch1_bytes=460800 ch1_top_word=80808080(54.8%) distinct_frames=1
+  RESULT capture fmt=YV12 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.565 max=16.759 ch0_bytes=921600 ch0_top_word=10101010(6.2%) ch1_bytes=230400 ch1_top_word=80808080(57.1%) ch2_bytes=230400 ch2_top_word=80808080(57.2%) distinct_frames=1
+  RESULT capture fmt=BGR3 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.631 max=16.738 ch0_bytes=2764800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.591 max=16.780 ch0_bytes=3686400 ch0_top_word=00ffffff(16.4%) distinct_frames=1
+RESULT mode-1280x720@59.94-timings PASS (1280x720 at 59.9502 Hz, expected 1280x720 at 59.94)
+    INFO compare YUYV Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=355096 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=355096 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 355096 of 460800 (flat windows)
+    RESULT compare fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.553 max 16.809
+RESULT mode-1280x720@59.94-YUYV   PASS (fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-YUYV-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.553 max 16.809)
+    INFO compare UYVY Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=355096 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=355096 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 355096 of 460800 (flat windows)
+    RESULT compare fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.583 max 16.786
+RESULT mode-1280x720@59.94-UYVY   PASS (fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-UYVY-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.583 max 16.786)
+    INFO compare NV12 Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=175988 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=175988 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 175988 of 230400 (flat windows)
+    RESULT compare fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.582 max 16.794
+RESULT mode-1280x720@59.94-NV12   PASS (fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-NV12-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.582 max 16.794)
+    INFO compare YV12 Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=175988 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=175988 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 175988 of 230400 (flat windows)
+    RESULT compare fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.565 max 16.759
+RESULT mode-1280x720@59.94-YV12   PASS (fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-YV12-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.565 max 16.759)
+    INFO compare BGR3 R n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604832,1:316768
+    INFO compare BGR3 G n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604768,1:316832
+    INFO compare BGR3 B n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604736,1:316864
+    RESULT compare fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.631 max 16.738
+RESULT mode-1280x720@59.94-BGR3   PASS (fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-BGR3-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.631 max 16.738)
+    INFO compare XR24 R n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604832,1:316768
+    INFO compare XR24 G n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604768,1:316832
+    INFO compare XR24 B n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604736,1:316864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.591 max 16.780
+RESULT mode-1280x720@59.94-XR24   PASS (fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-XR24-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.591 max 16.780)
+RESULT mode-1280x720@59.94-first-frame PASS (skipped 1 in 6 of 6 streams)
+== 1280x720 @ 50.00
+  LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x90 vic=19 fps=50.0057 h=440/40/220 v=5/5/20 pol=0x3
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.595 max=16.756 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=1
+  RESULT capture fmt=UYVY 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.572 max=16.745 ch0_bytes=1843200 ch0_top_word=eb80eb80(6.3%) distinct_frames=1
+  RESULT capture fmt=NV12 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.579 max=16.718 ch0_bytes=921600 ch0_top_word=10101010(6.2%) ch1_bytes=460800 ch1_top_word=80808080(54.8%) distinct_frames=1
+  RESULT capture fmt=YV12 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.595 max=16.771 ch0_bytes=921600 ch0_top_word=10101010(6.2%) ch1_bytes=230400 ch1_top_word=80808080(57.1%) ch2_bytes=230400 ch2_top_word=80808080(57.2%) distinct_frames=1
+  RESULT capture fmt=BGR3 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.568 max=16.761 ch0_bytes=2764800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.565 max=16.763 ch0_bytes=3686400 ch0_top_word=00ffffff(16.4%) distinct_frames=1
+RESULT mode-1280x720@50.00-timings PASS (1280x720 at 50.0057 Hz, expected 1280x720 at 50.00)
+    INFO compare YUYV Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=355096 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=355096 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 355096 of 460800 (flat windows)
+    RESULT compare fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.595 max 16.756
+RESULT mode-1280x720@50.00-YUYV   PASS (fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-YUYV-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.595 max 16.756)
+    INFO compare UYVY Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=355096 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=355096 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 355096 of 460800 (flat windows)
+    RESULT compare fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.572 max 16.745
+RESULT mode-1280x720@50.00-UYVY   PASS (fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-UYVY-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.572 max 16.745)
+    INFO compare NV12 Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=175988 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=175988 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 175988 of 230400 (flat windows)
+    RESULT compare fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.579 max 16.718
+RESULT mode-1280x720@50.00-NV12   PASS (fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-NV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.579 max 16.718)
+    INFO compare YV12 Y n=921600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=175988 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=175988 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 175988 of 230400 (flat windows)
+    RESULT compare fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.595 max 16.771
+RESULT mode-1280x720@50.00-YV12   PASS (fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-YV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.595 max 16.771)
+    INFO compare BGR3 R n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604832,1:316768
+    INFO compare BGR3 G n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604768,1:316832
+    INFO compare BGR3 B n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604736,1:316864
+    RESULT compare fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.568 max 16.761
+RESULT mode-1280x720@50.00-BGR3   PASS (fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-BGR3-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.568 max 16.761)
+    INFO compare XR24 R n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604832,1:316768
+    INFO compare XR24 G n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604768,1:316832
+    INFO compare XR24 B n=921600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:604736,1:316864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.565 max 16.763
+RESULT mode-1280x720@50.00-XR24   PASS (fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-XR24-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.565 max 16.763)
+RESULT mode-1280x720@50.00-first-frame PASS (skipped 1 in 6 of 6 streams)
+== 720x576 @ 50.00
+  LOCK after_ms=0 720x576p pixelclock=27000000 flags=0xd0 vic=17 fps=50.0057 h=12/64/68 v=5/5/39 pol=0
+  RESULT capture fmt=YUYV 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.603 max=16.721 ch0_bytes=829440 ch0_top_word=80eb80eb(6.3%) distinct_frames=1
+  RESULT capture fmt=UYVY 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.592 max=16.764 ch0_bytes=829440 ch0_top_word=eb80eb80(6.3%) distinct_frames=1
+  RESULT capture fmt=NV12 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.611 max=16.770 ch0_bytes=414720 ch0_top_word=ebebebeb(6.4%) ch1_bytes=207360 ch1_top_word=80808080(54.5%) distinct_frames=1
+  SKIP capture fmt=YV12: not offered at 720x576
+  RESULT capture fmt=BGR3 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.567 max=16.772 ch0_bytes=1244160 ch0_top_word=ffffffff(6.1%) distinct_frames=1
+  RESULT capture fmt=XR24 720x576 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.606 max=16.711 ch0_bytes=1658880 ch0_top_word=00ffffff(16.3%) distinct_frames=1
+RESULT mode-720x576@50.00-timings PASS (720x576 at 50.0057 Hz, expected 720x576 at 50.00)
+    INFO compare YUYV Y n=414720 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YUYV Cb n=156448 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=156448 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 156448 of 207360 (flat windows)
+    RESULT compare fmt=YUYV 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.603 max 16.721
+RESULT mode-720x576@50.00-YUYV    PASS (fmt=YUYV 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-YUYV-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.603 max 16.721)
+    INFO compare UYVY Y n=414720 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare UYVY Cb n=156448 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=156448 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 156448 of 207360 (flat windows)
+    RESULT compare fmt=UYVY 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.592 max 16.764
+RESULT mode-720x576@50.00-UYVY    PASS (fmt=UYVY 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-UYVY-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.592 max 16.764)
+    INFO compare NV12 Y n=414720 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare NV12 Cb n=77698 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=77698 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 77698 of 103680 (flat windows)
+    RESULT compare fmt=NV12 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.611 max 16.770
+RESULT mode-720x576@50.00-NV12    PASS (fmt=NV12 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-NV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.611 max 16.770)
+RESULT mode-720x576@50.00-YV12    SKIP (not offered at 720x576)
+    INFO compare BGR3 R n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272259,1:142461
+    INFO compare BGR3 G n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272195,1:142525
+    INFO compare BGR3 B n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272163,1:142557
+    RESULT compare fmt=BGR3 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.567 max 16.772
+RESULT mode-720x576@50.00-BGR3    PASS (fmt=BGR3 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-BGR3-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.567 max 16.772)
+    INFO compare XR24 R n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272259,1:142461
+    INFO compare XR24 G n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272195,1:142525
+    INFO compare XR24 B n=414720 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:272163,1:142557
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.606 max 16.711
+RESULT mode-720x576@50.00-XR24    PASS (fmt=XR24 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-XR24-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.606 max 16.711)
+RESULT mode-720x576@50.00-first-frame PASS (skipped 1 in 5 of 5 streams)
+== 720x480 @ 59.94
+  LOCK after_ms=0 720x480p pixelclock=27000000 flags=0xd0 vic=2 fps=59.9469 h=16/62/60 v=9/6/30 pol=0
+  RESULT capture fmt=YUYV 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.576 max=16.770 ch0_bytes=691200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.613 max=16.734 ch0_bytes=691200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.622 max=16.738 ch0_bytes=345600 ch0_top_word=ebebebeb(6.5%) ch1_bytes=172800 ch1_top_word=80808080(54.9%) distinct_frames=1
+  SKIP capture fmt=YV12: not offered at 720x480
+  RESULT capture fmt=BGR3 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.620 max=16.782 ch0_bytes=1036800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 720x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.583 max=16.802 ch0_bytes=1382400 ch0_top_word=00ffffff(16.3%) distinct_frames=1
+RESULT mode-720x480@59.94-timings PASS (720x480 at 59.9469 Hz, expected 720x480 at 59.94)
+    INFO compare YUYV Y n=345600 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YUYV Cb n=130304 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=130304 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 130304 of 172800 (flat windows)
+    RESULT compare fmt=YUYV 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.576 max 16.770
+RESULT mode-720x480@59.94-YUYV    PASS (fmt=YUYV 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-YUYV-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.576 max 16.770)
+    INFO compare UYVY Y n=345600 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare UYVY Cb n=130304 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=130304 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 130304 of 172800 (flat windows)
+    RESULT compare fmt=UYVY 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.613 max 16.734
+RESULT mode-720x480@59.94-UYVY    PASS (fmt=UYVY 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-UYVY-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.613 max 16.734)
+    INFO compare NV12 Y n=345600 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare NV12 Cb n=64284 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=64284 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 64284 of 86400 (flat windows)
+    RESULT compare fmt=NV12 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.622 max 16.738
+RESULT mode-720x480@59.94-NV12    PASS (fmt=NV12 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-NV12-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.622 max 16.738)
+RESULT mode-720x480@59.94-YV12    SKIP (not offered at 720x480)
+    INFO compare BGR3 R n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226832,1:118768
+    INFO compare BGR3 G n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226768,1:118832
+    INFO compare BGR3 B n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226736,1:118864
+    RESULT compare fmt=BGR3 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.620 max 16.782
+RESULT mode-720x480@59.94-BGR3    PASS (fmt=BGR3 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-BGR3-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.620 max 16.782)
+    INFO compare XR24 R n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226832,1:118768
+    INFO compare XR24 G n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226768,1:118832
+    INFO compare XR24 B n=345600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:226736,1:118864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.583 max 16.802
+RESULT mode-720x480@59.94-XR24    PASS (fmt=XR24 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-XR24-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.583 max 16.802)
+RESULT mode-720x480@59.94-first-frame PASS (skipped 1 in 5 of 5 streams)
+== 640x480 @ 59.94
+  LOCK after_ms=0 640x480p pixelclock=25175000 flags=0x80 vic=1 fps=59.9472 h=16/96/48 v=10/2/33 pol=0
+  RESULT capture fmt=YUYV 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.642 max=16.720 ch0_bytes=614400 ch0_top_word=80108010(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.604 max=16.741 ch0_bytes=614400 ch0_top_word=10801080(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.575 max=16.791 ch0_bytes=307200 ch0_top_word=ebebebeb(6.2%) ch1_bytes=153600 ch1_top_word=80808080(55.1%) distinct_frames=1
+  RESULT capture fmt=YV12 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.641 max=16.730 ch0_bytes=307200 ch0_top_word=ebebebeb(6.2%) ch1_bytes=76800 ch1_top_word=80808080(57.5%) ch2_bytes=76800 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.632 max=16.729 ch0_bytes=921600 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.564 max=16.829 ch0_bytes=1228800 ch0_top_word=00ffffff(16.1%) distinct_frames=1
+RESULT mode-640x480@59.94-timings PASS (640x480 at 59.9472 Hz, expected 640x480 at 59.94)
+    INFO compare YUYV Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YUYV Cb n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 114392 of 153600 (flat windows)
+    RESULT compare fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.642 max 16.720
+RESULT mode-640x480@59.94-YUYV    PASS (fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-YUYV-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.642 max 16.720)
+    INFO compare UYVY Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare UYVY Cb n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 114392 of 153600 (flat windows)
+    RESULT compare fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.604 max 16.741
+RESULT mode-640x480@59.94-UYVY    PASS (fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-UYVY-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.604 max 16.741)
+    INFO compare NV12 Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare NV12 Cb n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 56436 of 76800 (flat windows)
+    RESULT compare fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.575 max 16.791
+RESULT mode-640x480@59.94-NV12    PASS (fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-NV12-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.575 max 16.791)
+    INFO compare YV12 Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YV12 Cb n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 56436 of 76800 (flat windows)
+    RESULT compare fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.641 max 16.730
+RESULT mode-640x480@59.94-YV12    PASS (fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-YV12-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.641 max 16.730)
+    INFO compare BGR3 R n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201632,1:105568
+    INFO compare BGR3 G n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201568,1:105632
+    INFO compare BGR3 B n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201536,1:105664
+    RESULT compare fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.632 max 16.729
+RESULT mode-640x480@59.94-BGR3    PASS (fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-BGR3-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.632 max 16.729)
+    INFO compare XR24 R n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201632,1:105568
+    INFO compare XR24 G n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201568,1:105632
+    INFO compare XR24 B n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201536,1:105664
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.564 max 16.829
+RESULT mode-640x480@59.94-XR24    PASS (fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-XR24-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.564 max 16.829)
+RESULT mode-640x480@59.94-first-frame PASS (skipped 1 in 6 of 6 streams)
+== 640x480 @ 59.93
+  LOCK after_ms=0 640x480p pixelclock=25175000 flags=0x80 vic=1 fps=59.9354 h=16/96/48 v=10/2/33 pol=0
+  RESULT capture fmt=YUYV 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.589 max=16.791 ch0_bytes=614400 ch0_top_word=80108010(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.653 max=16.744 ch0_bytes=614400 ch0_top_word=10801080(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.634 max=16.755 ch0_bytes=307200 ch0_top_word=ebebebeb(6.2%) ch1_bytes=153600 ch1_top_word=80808080(55.1%) distinct_frames=1
+  RESULT capture fmt=YV12 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.643 max=16.784 ch0_bytes=307200 ch0_top_word=ebebebeb(6.2%) ch1_bytes=76800 ch1_top_word=80808080(57.5%) ch2_bytes=76800 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.587 max=16.805 ch0_bytes=921600 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 640x480 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.686 min=16.634 max=16.733 ch0_bytes=1228800 ch0_top_word=00ffffff(16.1%) distinct_frames=1
+RESULT mode-640x480@59.93-timings PASS (640x480 at 59.9354 Hz, expected 640x480 at 59.93)
+    INFO compare YUYV Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YUYV Cb n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 114392 of 153600 (flat windows)
+    RESULT compare fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.589 max 16.791
+RESULT mode-640x480@59.93-YUYV    PASS (fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-YUYV-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.589 max 16.791)
+    INFO compare UYVY Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare UYVY Cb n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=114392 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 114392 of 153600 (flat windows)
+    RESULT compare fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.653 max 16.744
+RESULT mode-640x480@59.93-UYVY    PASS (fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-UYVY-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.653 max 16.744)
+    INFO compare NV12 Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare NV12 Cb n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 56436 of 76800 (flat windows)
+    RESULT compare fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.634 max 16.755
+RESULT mode-640x480@59.93-NV12    PASS (fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-NV12-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.634 max 16.755)
+    INFO compare YV12 Y n=307200 min=-1 max=1 max_abs=0.83 out_of_limit=0
+    INFO compare YV12 Cb n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=56436 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 56436 of 76800 (flat windows)
+    RESULT compare fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.643 max 16.784
+RESULT mode-640x480@59.93-YV12    PASS (fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-YV12-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.643 max 16.784)
+    INFO compare BGR3 R n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201632,1:105568
+    INFO compare BGR3 G n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201568,1:105632
+    INFO compare BGR3 B n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201536,1:105664
+    RESULT compare fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.587 max 16.805
+RESULT mode-640x480@59.93-BGR3    PASS (fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-BGR3-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.587 max 16.805)
+    INFO compare XR24 R n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201632,1:105568
+    INFO compare XR24 G n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201568,1:105632
+    INFO compare XR24 B n=307200 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:201536,1:105664
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 120 gaps 0 err 0 distinct 1; mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.634 max 16.733
+RESULT mode-640x480@59.93-XR24    PASS (fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-XR24-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.634 max 16.733)
+RESULT mode-640x480@59.93-first-frame PASS (skipped 1 in 6 of 6 streams)
+
+## change
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4353 ms, 244 frames
+  INFO change: DQBUF Input/output error at 4353 ms, 244 frames, last frame at 4203 ms
+    | stream: running 0 live 1 input_stops 1 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 245 frames 244 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=244 event_ms=4353 dqbuf_error_ms=4353 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=1254 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9502 h=110/40/220 v=5/5/20 pol=0x3
+    | stream: running 1 live 1 input_stops 1 fmt YUYV little-endian (0x56595559) 1280x720 sizeimage 1843200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1280x720 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.735 min=5.547 max=31.615 frames_not_overwritten=0 ch0_bytes=1843200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.3%) distinct_frames=2
+RESULT change-1080p60-to-720p60   PASS (fmt=YUYV 1920x1080 frames=244 event_ms=4353 dqbuf_error_ms=4353 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1280x720 frames=60)
+  INFO change: streaming YUYV 1280x720, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4383 ms, 244 frames
+  INFO change: DQBUF Input/output error at 4383 ms, 244 frames, last frame at 4207 ms
+    | stream: running 0 live 1 input_stops 2 fmt YUYV little-endian (0x56595559) 1280x720 sizeimage 1843200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 245 frames 244 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1280x720 frames=244 event_ms=4383 dqbuf_error_ms=4383 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=1253 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0068 h=88/44/148 v=4/5/36 pol=0x3
+    | stream: running 1 live 1 input_stops 2 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.833 min=16.575 max=26.522 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=2
+RESULT change-720p60-to-1080p60   PASS (fmt=YUYV 1280x720 frames=244 event_ms=4383 dqbuf_error_ms=4383 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4314 ms, 243 frames
+  INFO change: DQBUF Input/output error at 4314 ms, 243 frames, last frame at 4173 ms
+    | stream: running 0 live 1 input_stops 3 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 2 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 244 frames 243 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=243 event_ms=4314 dqbuf_error_ms=4314 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=1253 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9462 h=88/44/148 v=4/5/36 pol=0x3
+    | stream: running 1 live 1 input_stops 3 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.762 min=16.600 max=22.070 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=2
+RESULT change-1080p60-to-p59.94   PASS (fmt=YUYV 1920x1080 frames=243 event_ms=4314 dqbuf_error_ms=4314 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+
+## loss
+RESULT loss-idle-event            PASS (11258.774497: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+  query while off: VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed
+	Active width: 0
+	Active height: 0
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+  input:	Status      : 0x00000002 (no signal)
+  RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.604 max=16.746 ch0_bytes=4147200 ch0_top_word=80108010(100.0%) distinct_frames=1
+  unlocked frame:  10 80 10 80 10 80 10 80 10 80 10 80 10 80 10 80
+  unlocked frame: *
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (11263.138988: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (28 ms)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4136 ms, 233 frames
+  INFO change: DQBUF Input/output error at 4136 ms, 233 frames, last frame at 4013 ms
+    | stream: running 0 live 1 input_stops 4 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 234 frames 233 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=233 event_ms=4136 dqbuf_error_ms=4136 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-streaming             PASS (fmt=YUYV 1920x1080 frames=233 event_ms=4136 dqbuf_error_ms=4136 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5469 ms, 282 frames
+  INFO change: DQBUF Input/output error at 5469 ms, 282 frames, last frame at 5359 ms
+    | stream: running 0 live 0 input_stops 5 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 1 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 283 frames 282 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=282 event_ms=5469 dqbuf_error_ms=5469 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0068 h=88/44/148 v=4/5/36 pol=0x3
+    | stream: running 1 live 1 input_stops 5 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.581 max=16.758 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+RESULT loss-return-streaming      PASS (fmt=YUYV 1920x1080 frames=282 event_ms=5469 dqbuf_error_ms=5469 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+
+## colour
+  it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 146823 kHz HDMI dc 0 avi 00 00 28 84 10 00 bus single SDR
+  splitter: avi 0d 02 b3 00 28 84 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+  input: power 1 signal 1 locked 1 period 0x196dad fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 0 enc 0 dvi 0 dual 0 ddr 0
+RESULT colour-rgb-limited-avi     PASS (splitter AVI PB1 00 PB3 84 PB5 00: colour 0 full_range 0; published: colour 0 full_range 0)
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0068 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.562 max=16.792 ch0_bytes=4147200 ch0_top_word=80eb80ea(3.1%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.552 max=16.774 ch0_bytes=4147200 ch0_top_word=eb80ea80(3.1%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.589 max=16.750 ch0_bytes=2073600 ch0_top_word=11101011(4.4%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.554 max=16.764 ch0_bytes=2073600 ch0_top_word=11101011(4.4%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.569 max=16.769 ch0_bytes=6220800 ch0_top_word=eaeaeaea(1.0%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.603 max=16.730 ch0_bytes=8294400 ch0_top_word=00eaeaea(8.1%) distinct_frames=1
+RESULT colour-rgb-limited-timings PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+    INFO compare YUYV Y n=2073600 min=-2 max=1 max_abs=1.60 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.562 max 16.792
+RESULT colour-rgb-limited-YUYV    PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-YUYV-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.562 max 16.792)
+    INFO compare UYVY Y n=2073600 min=-2 max=1 max_abs=1.60 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.552 max 16.774
+RESULT colour-rgb-limited-UYVY    PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-UYVY-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.552 max 16.774)
+    INFO compare NV12 Y n=2073600 min=-2 max=1 max_abs=1.60 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.589 max 16.750
+RESULT colour-rgb-limited-NV12    PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-NV12-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.589 max 16.750)
+    INFO compare YV12 Y n=2073600 min=-2 max=1 max_abs=1.60 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.554 max 16.764
+RESULT colour-rgb-limited-YV12    PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-YV12-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.554 max 16.764)
+    INFO compare BGR3 R n=2073600 min=-21 max=17 max_abs=21.00 out_of_limit=2034720 hist=-21:349952,-20:349952,-19:38880,-18:64800,-17:25920,-16:12960,-15:12960,-14:12960,-13:12960,-11:12960,-10:12960,-9:12960,-8:12960,-6:12960,-5:12960,-4:12960,-3:38880,-2:38880,-1:12960,1:38880,2:38880,3:12960,4:12960,6:12960,7:12960,8:12960,9:12960,11:12960,12:12960,13:64800,14:64800,15:25920,16:349888,17:323968
+    INFO compare BGR3 G n=2073600 min=-21 max=17 max_abs=21.00 out_of_limit=2060640 hist=-21:349888,-20:349888,-19:12960,-18:38880,-17:25920,-16:12960,-15:12960,-14:12960,-13:12960,-11:12960,-10:12960,-9:12960,-8:12960,-6:38880,-5:38880,-4:12960,-3:64800,-2:64800,-1:12960,1:12960,2:12960,3:12960,4:12960,6:12960,7:12960,8:12960,9:12960,11:12960,12:12960,13:64800,14:64800,15:25920,16:349952,17:324032
+    INFO compare BGR3 B n=2073600 min=-21 max=17 max_abs=21.00 out_of_limit=2060640 hist=-21:349856,-20:349856,-19:38880,-18:64800,-17:25920,-16:12960,-15:12960,-14:12960,-13:38880,-12:25920,-11:12960,-10:12960,-9:12960,-8:12960,-6:12960,-5:12960,-4:12960,-3:38880,-2:38880,-1:12960,1:12960,2:12960,3:12960,4:12960,6:12960,7:12960,8:12960,9:12960,11:12960,12:12960,13:64800,14:64800,15:25920,16:349984,17:324064
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=21.00 max_err_G=21.00 max_err_B=21.00 out_of_limit=6156000
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.569 max 16.769
+RESULT colour-rgb-limited-BGR3    FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=21.00 max_err_G=21.00 max_err_B=21.00 out_of_limit=6156000; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-BGR3-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.569 max 16.769)
+    INFO compare XR24 R n=2073600 min=-21 max=17 max_abs=21.00 out_of_limit=2034720 hist=-21:349952,-20:349952,-19:38880,-18:64800,-17:25920,-16:12960,-15:12960,-14:12960,-13:12960,-11:12960,-10:12960,-9:12960,-8:12960,-6:12960,-5:12960,-4:12960,-3:38880,-2:38880,-1:12960,1:38880,2:38880,3:12960,4:12960,6:12960,7:12960,8:12960,9:12960,11:12960,12:12960,13:64800,14:64800,15:25920,16:349888,17:323968
+    INFO compare XR24 G n=2073600 min=-21 max=17 max_abs=21.00 out_of_limit=2060640 hist=-21:349888,-20:349888,-19:12960,-18:38880,-17:25920,-16:12960,-15:12960,-14:12960,-13:12960,-11:12960,-10:12960,-9:12960,-8:12960,-6:38880,-5:38880,-4:12960,-3:64800,-2:64800,-1:12960,1:12960,2:12960,3:12960,4:12960,6:12960,7:12960,8:12960,9:12960,11:12960,12:12960,13:64800,14:64800,15:25920,16:349952,17:324032
+    INFO compare XR24 B n=2073600 min=-21 max=17 max_abs=21.00 out_of_limit=2060640 hist=-21:349856,-20:349856,-19:38880,-18:64800,-17:25920,-16:12960,-15:12960,-14:12960,-13:38880,-12:25920,-11:12960,-10:12960,-9:12960,-8:12960,-6:12960,-5:12960,-4:12960,-3:38880,-2:38880,-1:12960,1:12960,2:12960,3:12960,4:12960,6:12960,7:12960,8:12960,9:12960,11:12960,12:12960,13:64800,14:64800,15:25920,16:349984,17:324064
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=21.00 max_err_G=21.00 max_err_B=21.00 out_of_limit=6156000
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.603 max 16.730
+RESULT colour-rgb-limited-XR24    FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=21.00 max_err_G=21.00 max_err_B=21.00 out_of_limit=6156000; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-XR24-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.603 max 16.730)
+RESULT colour-rgb-limited-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT colour-rgb-limited-note    SKIP (report only, not gating)
+  it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 147911 kHz HDMI dc 0 avi 00 40 a8 84 10 00 bus single SDR
+  splitter: avi 0d 02 f3 40 a8 84 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+  input: power 1 signal 1 locked 1 period 0x196dae fpga 0x3 0x780 0x438 colour 2 vic 16 full_range 0 enc 0 dvi 0 dual 0 ddr 0
+RESULT colour-ycbcr444-avi        PASS (splitter AVI PB1 40 PB3 84 PB5 00: colour 2 full_range 0; published: colour 2 full_range 0)
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0068 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.659 min=16.325 max=16.812 ch0_bytes=4147200 ch0_top_word=80ea80ea(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.611 max=16.739 ch0_bytes=4147200 ch0_top_word=ea80ea80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.611 max=16.774 ch0_bytes=2073600 ch0_top_word=eaeaeaea(6.2%) ch1_bytes=1036800 ch1_top_word=80808181(48.8%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.616 max=16.709 ch0_bytes=2073600 ch0_top_word=eaeaeaea(6.2%) ch1_bytes=518400 ch1_top_word=80818081(51.3%) ch2_bytes=518400 ch2_top_word=80818081(51.2%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.588 max=16.748 ch0_bytes=6220800 ch0_top_word=fdfdfdfd(1.0%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.589 max=16.738 ch0_bytes=8294400 ch0_top_word=00fdfdfd(8.1%) distinct_frames=1
+RESULT colour-ycbcr444-timings    PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+    INFO compare YUYV Y n=2073600 min=-2 max=1 max_abs=1.44 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-2 max=2 max_abs=2.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=2 max_abs=1.19 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6590 ms, expected 16.6648, -0.0347 %, min 16.325 max 16.812
+RESULT colour-ycbcr444-YUYV       PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-YUYV-cadence PASS (mean 16.6590 ms, expected 16.6648, -0.0347 %, min 16.325 max 16.812)
+    INFO compare UYVY Y n=2073600 min=-2 max=1 max_abs=1.44 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-2 max=2 max_abs=2.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=2 max_abs=1.19 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.611 max 16.739
+RESULT colour-ycbcr444-UYVY       PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-UYVY-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.611 max 16.739)
+    INFO compare NV12 Y n=2073600 min=-2 max=1 max_abs=1.44 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-2 max=2 max_abs=2.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=2 max_abs=1.19 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 16.6648, +0.0133 %, min 16.611 max 16.774
+RESULT colour-ycbcr444-NV12       PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-NV12-cadence PASS (mean 16.6670 ms, expected 16.6648, +0.0133 %, min 16.611 max 16.774)
+    INFO compare YV12 Y n=2073600 min=-2 max=1 max_abs=1.44 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-2 max=2 max_abs=2.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=2 max_abs=1.19 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.616 max 16.709
+RESULT colour-ycbcr444-YV12       PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-YV12-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.616 max 16.709)
+    INFO compare BGR3 R n=2073600 min=-3 max=3 max_abs=3.00 out_of_limit=1101568 hist=-3:77856,-2:388736,-1:246240,0:725760,1:246272,2:220320,3:168416
+    INFO compare BGR3 G n=2073600 min=-2 max=0 max_abs=2.00 out_of_limit=1308896 hist=-2:375776,-1:933120,0:764704
+    INFO compare BGR3 B n=2073600 min=-4 max=3 max_abs=4.00 out_of_limit=1308960 hist=-4:77760,-3:155520,-2:285056,-1:220320,0:699840,1:64800,2:337056,3:233248
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.588 max 16.748
+RESULT colour-ycbcr444-BGR3       FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-BGR3-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.588 max 16.748)
+    INFO compare XR24 R n=2073600 min=-3 max=3 max_abs=3.00 out_of_limit=1101568 hist=-3:77856,-2:388736,-1:246240,0:725760,1:246272,2:220320,3:168416
+    INFO compare XR24 G n=2073600 min=-2 max=0 max_abs=2.00 out_of_limit=1308896 hist=-2:375776,-1:933120,0:764704
+    INFO compare XR24 B n=2073600 min=-4 max=3 max_abs=4.00 out_of_limit=1308960 hist=-4:77760,-3:155520,-2:285056,-1:220320,0:699840,1:64800,2:337056,3:233248
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.589 max 16.738
+RESULT colour-ycbcr444-XR24       FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-XR24-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.589 max 16.738)
+RESULT colour-ycbcr444-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT colour-ycbcr444-note       SKIP (report only, not gating)
+  it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 147911 kHz HDMI dc 0 avi 00 40 a8 84 10 00 bus single SDR
+  splitter: avi 0d 02 f3 40 a8 84 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+  input: power 1 signal 1 locked 1 period 0x196dae fpga 0x3 0x780 0x438 colour 2 vic 16 full_range 0 enc 0 dvi 0 dual 0 ddr 0
+RESULT colour-ycbcr422-avi        PASS (splitter AVI PB1 40 PB3 84 PB5 00: colour 2 full_range 0; published: colour 2 full_range 0)
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0068 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.590 max=16.774 ch0_bytes=4147200 ch0_top_word=80ea80ea(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.581 max=16.779 ch0_bytes=4147200 ch0_top_word=ea80ea80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.514 max=16.806 ch0_bytes=2073600 ch0_top_word=eaeaeaea(6.2%) ch1_bytes=1036800 ch1_top_word=80808181(48.8%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.547 max=16.783 ch0_bytes=2073600 ch0_top_word=eaeaeaea(6.2%) ch1_bytes=518400 ch1_top_word=80818081(51.3%) ch2_bytes=518400 ch2_top_word=80818081(51.2%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.456 max=16.901 ch0_bytes=6220800 ch0_top_word=fdfdfdfd(1.0%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.525 max=16.838 ch0_bytes=8294400 ch0_top_word=00fdfdfd(8.1%) distinct_frames=1
+RESULT colour-ycbcr422-timings    PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+    INFO compare YUYV Y n=2073600 min=-2 max=1 max_abs=1.44 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-2 max=2 max_abs=2.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=2 max_abs=1.19 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.590 max 16.774
+RESULT colour-ycbcr422-YUYV       PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-YUYV-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.590 max 16.774)
+    INFO compare UYVY Y n=2073600 min=-2 max=1 max_abs=1.44 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-2 max=2 max_abs=2.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=2 max_abs=1.19 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 16.6648, +0.0133 %, min 16.581 max 16.779
+RESULT colour-ycbcr422-UYVY       PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-UYVY-cadence PASS (mean 16.6670 ms, expected 16.6648, +0.0133 %, min 16.581 max 16.779)
+    INFO compare NV12 Y n=2073600 min=-2 max=1 max_abs=1.44 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-2 max=2 max_abs=2.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=2 max_abs=1.19 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.514 max 16.806
+RESULT colour-ycbcr422-NV12       PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-NV12-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.514 max 16.806)
+    INFO compare YV12 Y n=2073600 min=-2 max=1 max_abs=1.44 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-2 max=2 max_abs=2.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=2 max_abs=1.19 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19 out_of_limit=0
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6650 ms, expected 16.6648, +0.0013 %, min 16.547 max 16.783
+RESULT colour-ycbcr422-YV12       PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-YV12-cadence PASS (mean 16.6650 ms, expected 16.6648, +0.0013 %, min 16.547 max 16.783)
+    INFO compare BGR3 R n=2073600 min=-3 max=3 max_abs=3.00 out_of_limit=1101568 hist=-3:77856,-2:388736,-1:246240,0:725760,1:246272,2:220320,3:168416
+    INFO compare BGR3 G n=2073600 min=-2 max=0 max_abs=2.00 out_of_limit=1308896 hist=-2:375776,-1:933120,0:764704
+    INFO compare BGR3 B n=2073600 min=-4 max=3 max_abs=4.00 out_of_limit=1308960 hist=-4:77760,-3:155520,-2:285056,-1:220320,0:699840,1:64800,2:337056,3:233248
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6670 ms, expected 16.6648, +0.0133 %, min 16.456 max 16.901
+RESULT colour-ycbcr422-BGR3       FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-BGR3-cadence PASS (mean 16.6670 ms, expected 16.6648, +0.0133 %, min 16.456 max 16.901)
+    INFO compare XR24 R n=2073600 min=-3 max=3 max_abs=3.00 out_of_limit=1101568 hist=-3:77856,-2:388736,-1:246240,0:725760,1:246272,2:220320,3:168416
+    INFO compare XR24 G n=2073600 min=-2 max=0 max_abs=2.00 out_of_limit=1308896 hist=-2:375776,-1:933120,0:764704
+    INFO compare XR24 B n=2073600 min=-4 max=3 max_abs=4.00 out_of_limit=1308960 hist=-4:77760,-3:155520,-2:285056,-1:220320,0:699840,1:64800,2:337056,3:233248
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424
+    frames 60 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.525 max 16.838
+RESULT colour-ycbcr422-XR24       FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-XR24-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.525 max 16.838)
+RESULT colour-ycbcr422-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT colour-ycbcr422-note       SKIP (report only, not gating)
+
+## unload
+RESULT unload-rmmod-in-use        PASS (rmmod: ERROR: Module gc573 is in use; stream frames 171 -> frames 235)
+  capture tool: FAIL capture fmt=NV12: no frame after 237: No such device 
+RESULT unload-unbind-streaming    PASS (unbind 245 ms, application exited)
+RESULT unload-rebind-lock         PASS (locked 1929 ms after the bind returned)
+RESULT unload-rmmod               PASS 
+
+## reload
+RESULT reload                     PASS (50 of 50 locked, host output lost 0, no lock 0, slowest lock 1051 ms after the output came back)
+
+## compliance
+  Total for gc573 device /dev/video0: 55, Succeeded: 55, Failed: 0, Warnings: 0
+RESULT compliance                 PASS (Total for gc573 device /dev/video0: 55, Succeeded: 55, Failed: 0, Warnings: 0)
+
+## kernel log
+  kernel log: 889 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT bringup-connected          PASS (DVI-D-0 connected)
+RESULT bringup-edid-host          PASS (256 bytes on the host, 256 from G_EDID)
+RESULT bringup-edid-decode        PASS (EDID conformity: PASS)
+RESULT lock-1080p60               PASS (1451 ms from output on)
+RESULT lock-1080p59.94            PASS (1646 ms from the mode switch)
+RESULT lock-power-present         PASS (power_present: 1)
+RESULT lock-event-mode-change     PASS (10806.580626: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-loss            PASS (10809.568609: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-lock            PASS (10812.457162: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT relock                     PASS (50 of 50 switches locked within 3 s, slowest 1794 ms; fpga_rejects 120 level_changes 1 )
+RESULT cap-1080p60-timings        PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+RESULT cap-1080p60-YUYV           PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-YUYV-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.524 max 16.820)
+RESULT cap-1080p60-UYVY           PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-UYVY-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.517 max 16.817)
+RESULT cap-1080p60-NV12           PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-NV12-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.480 max 16.824)
+RESULT cap-1080p60-YV12           PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-YV12-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.564 max 16.796)
+RESULT cap-1080p60-BGR3           PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-BGR3-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.548 max 16.785)
+RESULT cap-1080p60-XR24           PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-XR24-cadence   PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.560 max 16.772)
+RESULT cap-1080p60-first-frame    PASS (skipped 1 in 6 of 6 streams)
+RESULT cap-1080p59.94-timings     PASS (1920x1080 at 59.9462 Hz, expected 1920x1080 at 59.94)
+RESULT cap-1080p59.94-YUYV        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-YUYV-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.555 max 16.787)
+RESULT cap-1080p59.94-UYVY        PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-UYVY-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.558 max 16.802)
+RESULT cap-1080p59.94-NV12        PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-NV12-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.601 max 16.791)
+RESULT cap-1080p59.94-YV12        PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-YV12-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.511 max 16.839)
+RESULT cap-1080p59.94-BGR3        PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-BGR3-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.593 max 16.793)
+RESULT cap-1080p59.94-XR24        PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-XR24-cadence PASS (mean 16.6830 ms, expected 16.6816, +0.0082 %, min 16.553 max 16.796)
+RESULT cap-1080p59.94-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT mode-1920x1080@50.00-timings PASS (1920x1080 at 50.0057 Hz, expected 1920x1080 at 50.00)
+RESULT mode-1920x1080@50.00-YUYV  PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-YUYV-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.623 max 16.707)
+RESULT mode-1920x1080@50.00-UYVY  PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-UYVY-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.564 max 16.773)
+RESULT mode-1920x1080@50.00-NV12  PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-NV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.571 max 16.793)
+RESULT mode-1920x1080@50.00-YV12  PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-YV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.552 max 16.773)
+RESULT mode-1920x1080@50.00-BGR3  PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-BGR3-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.608 max 16.745)
+RESULT mode-1920x1080@50.00-XR24  PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@50.00-XR24-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.602 max 16.738)
+RESULT mode-1920x1080@50.00-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT mode-1920x1080@29.97-timings PASS (1920x1080 at 29.9751 Hz, expected 1920x1080 at 29.97)
+RESULT mode-1920x1080@29.97-YUYV  PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-YUYV-cadence FAIL (mean 16.6660 ms, expected 33.3610, -50.0435 %, min 16.560 max 16.741)
+RESULT mode-1920x1080@29.97-UYVY  PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-UYVY-cadence FAIL (mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.589 max 16.733)
+RESULT mode-1920x1080@29.97-NV12  PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-NV12-cadence FAIL (mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.617 max 16.765)
+RESULT mode-1920x1080@29.97-YV12  PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-YV12-cadence FAIL (mean 16.6660 ms, expected 33.3610, -50.0435 %, min 16.615 max 16.748)
+RESULT mode-1920x1080@29.97-BGR3  PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-BGR3-cadence FAIL (mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.619 max 16.717)
+RESULT mode-1920x1080@29.97-XR24  PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@29.97-XR24-cadence FAIL (mean 16.6670 ms, expected 33.3610, -50.0405 %, min 16.571 max 16.765)
+RESULT mode-1920x1080@29.97-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT mode-1920x1080@25.00-timings PASS (1920x1080 at 25.0028 Hz, expected 1920x1080 at 25.00)
+RESULT mode-1920x1080@25.00-YUYV  PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-YUYV-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.564 max 16.774)
+RESULT mode-1920x1080@25.00-UYVY  PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-UYVY-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.504 max 16.755)
+RESULT mode-1920x1080@25.00-NV12  PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-NV12-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.550 max 16.794)
+RESULT mode-1920x1080@25.00-YV12  PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-YV12-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.579 max 16.754)
+RESULT mode-1920x1080@25.00-BGR3  PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-BGR3-cadence FAIL (mean 16.6670 ms, expected 39.9955, -58.3278 %, min 16.583 max 16.760)
+RESULT mode-1920x1080@25.00-XR24  PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@25.00-XR24-cadence FAIL (mean 16.6660 ms, expected 39.9955, -58.3303 %, min 16.555 max 16.801)
+RESULT mode-1920x1080@25.00-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT mode-1920x1080@23.98-timings PASS (1920x1080 at 23.9801 Hz, expected 1920x1080 at 23.98)
+RESULT mode-1920x1080@23.98-YUYV  PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-YUYV-cadence FAIL (mean 16.6680 ms, expected 41.7012, -60.0300 %, min 16.452 max 16.843)
+RESULT mode-1920x1080@23.98-UYVY  PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-UYVY-cadence FAIL (mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.564 max 16.794)
+RESULT mode-1920x1080@23.98-NV12  PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-NV12-cadence FAIL (mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.456 max 16.866)
+RESULT mode-1920x1080@23.98-YV12  PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-YV12-cadence FAIL (mean 16.6660 ms, expected 41.7012, -60.0348 %, min 16.527 max 16.792)
+RESULT mode-1920x1080@23.98-BGR3  PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-BGR3-cadence FAIL (mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.520 max 16.823)
+RESULT mode-1920x1080@23.98-XR24  PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1920x1080@23.98-XR24-cadence FAIL (mean 16.6670 ms, expected 41.7012, -60.0324 %, min 16.463 max 16.804)
+RESULT mode-1920x1080@23.98-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT mode-1280x720@59.94-timings PASS (1280x720 at 59.9502 Hz, expected 1280x720 at 59.94)
+RESULT mode-1280x720@59.94-YUYV   PASS (fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-YUYV-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.553 max 16.809)
+RESULT mode-1280x720@59.94-UYVY   PASS (fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-UYVY-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.583 max 16.786)
+RESULT mode-1280x720@59.94-NV12   PASS (fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-NV12-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.582 max 16.794)
+RESULT mode-1280x720@59.94-YV12   PASS (fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-YV12-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.565 max 16.759)
+RESULT mode-1280x720@59.94-BGR3   PASS (fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-BGR3-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.631 max 16.738)
+RESULT mode-1280x720@59.94-XR24   PASS (fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@59.94-XR24-cadence PASS (mean 16.6820 ms, expected 16.6805, +0.0089 %, min 16.591 max 16.780)
+RESULT mode-1280x720@59.94-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT mode-1280x720@50.00-timings PASS (1280x720 at 50.0057 Hz, expected 1280x720 at 50.00)
+RESULT mode-1280x720@50.00-YUYV   PASS (fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-YUYV-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.595 max 16.756)
+RESULT mode-1280x720@50.00-UYVY   PASS (fmt=UYVY 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-UYVY-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.572 max 16.745)
+RESULT mode-1280x720@50.00-NV12   PASS (fmt=NV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-NV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.579 max 16.718)
+RESULT mode-1280x720@50.00-YV12   PASS (fmt=YV12 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-YV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.595 max 16.771)
+RESULT mode-1280x720@50.00-BGR3   PASS (fmt=BGR3 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-BGR3-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.568 max 16.761)
+RESULT mode-1280x720@50.00-XR24   PASS (fmt=XR24 1280x720 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-1280x720@50.00-XR24-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.565 max 16.763)
+RESULT mode-1280x720@50.00-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT mode-720x576@50.00-timings PASS (720x576 at 50.0057 Hz, expected 720x576 at 50.00)
+RESULT mode-720x576@50.00-YUYV    PASS (fmt=YUYV 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-YUYV-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.603 max 16.721)
+RESULT mode-720x576@50.00-UYVY    PASS (fmt=UYVY 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-UYVY-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.592 max 16.764)
+RESULT mode-720x576@50.00-NV12    PASS (fmt=NV12 720x576 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-NV12-cadence FAIL (mean 16.6670 ms, expected 19.9977, -16.6555 %, min 16.611 max 16.770)
+RESULT mode-720x576@50.00-YV12    SKIP (not offered at 720x576)
+RESULT mode-720x576@50.00-BGR3    PASS (fmt=BGR3 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-BGR3-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.567 max 16.772)
+RESULT mode-720x576@50.00-XR24    PASS (fmt=XR24 720x576 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x576@50.00-XR24-cadence FAIL (mean 16.6660 ms, expected 19.9977, -16.6605 %, min 16.606 max 16.711)
+RESULT mode-720x576@50.00-first-frame PASS (skipped 1 in 5 of 5 streams)
+RESULT mode-720x480@59.94-timings PASS (720x480 at 59.9469 Hz, expected 720x480 at 59.94)
+RESULT mode-720x480@59.94-YUYV    PASS (fmt=YUYV 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-YUYV-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.576 max 16.770)
+RESULT mode-720x480@59.94-UYVY    PASS (fmt=UYVY 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-UYVY-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.613 max 16.734)
+RESULT mode-720x480@59.94-NV12    PASS (fmt=NV12 720x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-NV12-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.622 max 16.738)
+RESULT mode-720x480@59.94-YV12    SKIP (not offered at 720x480)
+RESULT mode-720x480@59.94-BGR3    PASS (fmt=BGR3 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-BGR3-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.620 max 16.782)
+RESULT mode-720x480@59.94-XR24    PASS (fmt=XR24 720x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-720x480@59.94-XR24-cadence PASS (mean 16.6830 ms, expected 16.6814, +0.0094 %, min 16.583 max 16.802)
+RESULT mode-720x480@59.94-first-frame PASS (skipped 1 in 5 of 5 streams)
+RESULT mode-640x480@59.94-timings PASS (640x480 at 59.9472 Hz, expected 640x480 at 59.94)
+RESULT mode-640x480@59.94-YUYV    PASS (fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-YUYV-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.642 max 16.720)
+RESULT mode-640x480@59.94-UYVY    PASS (fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-UYVY-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.604 max 16.741)
+RESULT mode-640x480@59.94-NV12    PASS (fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-NV12-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.575 max 16.791)
+RESULT mode-640x480@59.94-YV12    PASS (fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-YV12-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.641 max 16.730)
+RESULT mode-640x480@59.94-BGR3    PASS (fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-BGR3-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.632 max 16.729)
+RESULT mode-640x480@59.94-XR24    PASS (fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.94-XR24-cadence PASS (mean 16.6830 ms, expected 16.6813, +0.0099 %, min 16.564 max 16.829)
+RESULT mode-640x480@59.94-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT mode-640x480@59.93-timings PASS (640x480 at 59.9354 Hz, expected 640x480 at 59.93)
+RESULT mode-640x480@59.93-YUYV    PASS (fmt=YUYV 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-YUYV-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.589 max 16.791)
+RESULT mode-640x480@59.93-UYVY    PASS (fmt=UYVY 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-UYVY-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.653 max 16.744)
+RESULT mode-640x480@59.93-NV12    PASS (fmt=NV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-NV12-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.634 max 16.755)
+RESULT mode-640x480@59.93-YV12    PASS (fmt=YV12 640x480 enc=601 max_err_Y=0.83 max_err_Cb=1.00 max_err_Cr=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-YV12-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.643 max 16.784)
+RESULT mode-640x480@59.93-BGR3    PASS (fmt=BGR3 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-BGR3-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.587 max 16.805)
+RESULT mode-640x480@59.93-XR24    PASS (fmt=XR24 640x480 enc=601 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 120 gaps 0 err 0 distinct 1)
+RESULT mode-640x480@59.93-XR24-cadence PASS (mean 16.6860 ms, expected 16.6846, +0.0082 %, min 16.634 max 16.733)
+RESULT mode-640x480@59.93-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT change-1080p60-to-720p60   PASS (fmt=YUYV 1920x1080 frames=244 event_ms=4353 dqbuf_error_ms=4353 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1280x720 frames=60)
+RESULT change-720p60-to-1080p60   PASS (fmt=YUYV 1280x720 frames=244 event_ms=4383 dqbuf_error_ms=4383 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+RESULT change-1080p60-to-p59.94   PASS (fmt=YUYV 1920x1080 frames=243 event_ms=4314 dqbuf_error_ms=4314 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+RESULT loss-idle-event            PASS (11258.774497: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (11263.138988: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (28 ms)
+RESULT loss-streaming             PASS (fmt=YUYV 1920x1080 frames=233 event_ms=4136 dqbuf_error_ms=4136 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-return-streaming      PASS (fmt=YUYV 1920x1080 frames=282 event_ms=5469 dqbuf_error_ms=5469 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+RESULT colour-rgb-limited-avi     PASS (splitter AVI PB1 00 PB3 84 PB5 00: colour 0 full_range 0; published: colour 0 full_range 0)
+RESULT colour-rgb-limited-timings PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+RESULT colour-rgb-limited-YUYV    PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-YUYV-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.562 max 16.792)
+RESULT colour-rgb-limited-UYVY    PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-UYVY-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.552 max 16.774)
+RESULT colour-rgb-limited-NV12    PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-NV12-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.589 max 16.750)
+RESULT colour-rgb-limited-YV12    PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=1.60 max_err_Cb=1.00 max_err_Cr=1.00; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-YV12-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.554 max 16.764)
+RESULT colour-rgb-limited-BGR3    FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=21.00 max_err_G=21.00 max_err_B=21.00 out_of_limit=6156000; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-BGR3-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.569 max 16.769)
+RESULT colour-rgb-limited-XR24    FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=21.00 max_err_G=21.00 max_err_B=21.00 out_of_limit=6156000; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-rgb-limited-XR24-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.603 max 16.730)
+RESULT colour-rgb-limited-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT colour-rgb-limited-note    SKIP (report only, not gating)
+RESULT colour-ycbcr444-avi        PASS (splitter AVI PB1 40 PB3 84 PB5 00: colour 2 full_range 0; published: colour 2 full_range 0)
+RESULT colour-ycbcr444-timings    PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+RESULT colour-ycbcr444-YUYV       PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-YUYV-cadence PASS (mean 16.6590 ms, expected 16.6648, -0.0347 %, min 16.325 max 16.812)
+RESULT colour-ycbcr444-UYVY       PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-UYVY-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.611 max 16.739)
+RESULT colour-ycbcr444-NV12       PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-NV12-cadence PASS (mean 16.6670 ms, expected 16.6648, +0.0133 %, min 16.611 max 16.774)
+RESULT colour-ycbcr444-YV12       PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-YV12-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.616 max 16.709)
+RESULT colour-ycbcr444-BGR3       FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-BGR3-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.588 max 16.748)
+RESULT colour-ycbcr444-XR24       FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr444-XR24-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.589 max 16.738)
+RESULT colour-ycbcr444-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT colour-ycbcr444-note       SKIP (report only, not gating)
+RESULT colour-ycbcr422-avi        PASS (splitter AVI PB1 40 PB3 84 PB5 00: colour 2 full_range 0; published: colour 2 full_range 0)
+RESULT colour-ycbcr422-timings    PASS (1920x1080 at 60.0068 Hz, expected 1920x1080 at 60)
+RESULT colour-ycbcr422-YUYV       PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-YUYV-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.590 max 16.774)
+RESULT colour-ycbcr422-UYVY       PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-UYVY-cadence PASS (mean 16.6670 ms, expected 16.6648, +0.0133 %, min 16.581 max 16.779)
+RESULT colour-ycbcr422-NV12       PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-NV12-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.514 max 16.806)
+RESULT colour-ycbcr422-YV12       PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=1.44 max_err_Cb=2.00 max_err_Cr=1.19; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-YV12-cadence PASS (mean 16.6650 ms, expected 16.6648, +0.0013 %, min 16.547 max 16.783)
+RESULT colour-ycbcr422-BGR3       FAIL (fmt=BGR3 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-BGR3-cadence PASS (mean 16.6670 ms, expected 16.6648, +0.0133 %, min 16.456 max 16.901)
+RESULT colour-ycbcr422-XR24       FAIL (fmt=XR24 1920x1080 enc=709 max_err_R=3.00 max_err_G=2.00 max_err_B=4.00 out_of_limit=3719424; frames 60 gaps 0 err 0 distinct 1)
+RESULT colour-ycbcr422-XR24-cadence PASS (mean 16.6660 ms, expected 16.6648, +0.0073 %, min 16.525 max 16.838)
+RESULT colour-ycbcr422-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT colour-ycbcr422-note       SKIP (report only, not gating)
+RESULT unload-rmmod-in-use        PASS (rmmod: ERROR: Module gc573 is in use; stream frames 171 -> frames 235)
+RESULT unload-unbind-streaming    PASS (unbind 245 ms, application exited)
+RESULT unload-rebind-lock         PASS (locked 1929 ms after the bind returned)
+RESULT unload-rmmod               PASS 
+RESULT reload                     PASS (50 of 50 locked, host output lost 0, no lock 0, slowest lock 1051 ms after the output came back)
+RESULT compliance                 PASS (Total for gc573 device /dev/video0: 55, Succeeded: 55, Failed: 0, Warnings: 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=195 fail=41 skip=6
