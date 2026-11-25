@@ -1,0 +1,26 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 02:15:22 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     08c984954bec-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   unload compliance
+module:  B08EBEC410496855CA3837F, /dev/video0
+
+## unload
+RESULT unload-rmmod-in-use        PASS (rmmod: ERROR: Module gc573 is in use; stream frames 171 -> frames 234)
+  capture tool: FAIL capture fmt=NV12: no frame after 235: No such device 
+RESULT unload-unbind-streaming    PASS (unbind 226 ms, application exited)
+RESULT unload-rebind-lock         PASS (locked 1988 ms after the bind returned)
+RESULT unload-rmmod               PASS 
+
+## compliance
+  Total for gc573 device /dev/video0: 55, Succeeded: 55, Failed: 0, Warnings: 0
+RESULT compliance                 PASS (Total for gc573 device /dev/video0: 55, Succeeded: 55, Failed: 0, Warnings: 0)
+
+## summary
+RESULT unload-rmmod-in-use        PASS (rmmod: ERROR: Module gc573 is in use; stream frames 171 -> frames 234)
+RESULT unload-unbind-streaming    PASS (unbind 226 ms, application exited)
+RESULT unload-rebind-lock         PASS (locked 1988 ms after the bind returned)
+RESULT unload-rmmod               PASS 
+RESULT compliance                 PASS (Total for gc573 device /dev/video0: 55, Succeeded: 55, Failed: 0, Warnings: 0)
+SUMMARY pass=5 fail=0 skip=0

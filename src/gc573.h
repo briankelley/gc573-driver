@@ -323,6 +323,7 @@ void gc573_hdmi_shutdown(struct gc573 *gc);
 void gc573_hdmi_input(struct gc573 *gc, struct gc573_input *in);
 bool gc573_hdmi_edid_offers(struct gc573 *gc, const struct v4l2_dv_timings *t);
 int gc573_hdmi_get_edid(struct gc573 *gc, struct v4l2_edid *e);
+int gc573_hdmi_set_edid(struct gc573 *gc, struct v4l2_edid *e);
 void gc573_hdmi_debugfs(struct gc573 *gc);
 
 extern const struct vb2_mem_ops gc573_vb2_mem_ops;

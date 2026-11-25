@@ -48,7 +48,7 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `03-chip-id` | M1 | bus 1 chip IDs: 0x90 `54 49 05 68`, 0x58 `54 49 63 66`; 3 adapters; bus 0/2 transfers off |
 | `04-i2c-reads` | M1 | 2 parallel readers x 2000 read-only ID transfers via i2c-dev (`i2c-id-reads.py`), every byte checked, one IRQ per transfer; plain read refused before hardware |
 | `06-hdmi-bringup` | M3 | probe log: both chip IDs, the IT6805 factory trim, the splitter reference clock; EDID in both RAMs; `GC573_POLL_SECS` (default 5) of polling at >= 10 polls/s without I2C errors, retries, resyncs or poll errors (debugfs `hdmi`); with or without a source |
-| `07-hdmi-edid` | M3 | `VIDIOC_G_EDID`: 256 bytes, LNX 0x5730 "GC573 Linux"; `edid-decode --check`: PASS, no warnings; SKIP without edid-decode |
+| `07-hdmi-edid` | M3 | `VIDIOC_G_EDID`: 256 bytes, LNX 0x5730 "GC573 Linux"; `edid-decode --check`: PASS, no warnings; `VIDIOC_S_EDID`: another serial number reads back, 3 blocks give E2BIG, the default restores, 0 blocks leave no EDID; SKIP without edid-decode |
 | `05-dkms-build` | M0 | `dkms add` + `build` (never install) of a copy under a throwaway package name, for the running kernel |
 | `10-video-capture` | M2 | no input, 6 formats x 120 frames at the default 1080p60, then 6 formats x 30 frames at every enumerated DV timing (`gc573-cap -T all`): every 32-byte block of every plane overwritten after a per-queueing pattern fill (`gc573-cap -p`); no sequence gaps; cadence mean 16.6-16.75 ms, every interval within half a period (8.4-25 ms: a lost or doubled frame fails); logs FPGA input registers 0x1004-0x1010 |
 | `11-v4l2-compliance` | M2 | `v4l2-compliance -s`: 0 failures; SKIP if not installed |

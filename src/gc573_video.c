@@ -1235,6 +1235,16 @@ static int gc573_g_edid(struct file *file, void *priv, struct v4l2_edid *e)
 	return gc573_hdmi_get_edid(gc, e);
 }
 
+static int gc573_s_edid(struct file *file, void *priv, struct v4l2_edid *e)
+{
+	struct gc573 *gc = video_drvdata(file);
+
+	memset(e->reserved, 0, sizeof(e->reserved));
+	if (e->pad)
+		return -EINVAL;
+	return gc573_hdmi_set_edid(gc, e);
+}
+
 static int gc573_dv_timings_cap(struct file *file, void *priv,
 				struct v4l2_dv_timings_cap *cap)
 {
@@ -1302,6 +1312,7 @@ static const struct v4l2_ioctl_ops gc573_ioctl_ops = {
 	.vidioc_enum_dv_timings		= gc573_enum_dv_timings,
 	.vidioc_dv_timings_cap		= gc573_dv_timings_cap,
 	.vidioc_g_edid			= gc573_g_edid,
+	.vidioc_s_edid			= gc573_s_edid,
 	.vidioc_reqbufs			= vb2_ioctl_reqbufs,
 	.vidioc_create_bufs		= vb2_ioctl_create_bufs,
 	.vidioc_prepare_buf		= vb2_ioctl_prepare_buf,

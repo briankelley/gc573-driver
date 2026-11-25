@@ -208,6 +208,55 @@ int gc573_hdmi_get_edid(struct gc573 *gc, struct v4l2_edid *e)
 	return ret;
 }
 
+/*
+ * VIDIOC_S_EDID (hdmi-chips.md EDID policy; e->pad checked): at most two
+ * blocks. On a change the source HPD goes low, both RAMs are reloaded
+ * (IT6805: hdmi-it6805.md section 4 with its HPD low; splitter:
+ * hdmi-splitter.md 8.3 with RD's change toggle, 500 ms low), and both
+ * HPDs return high with 5 V present (port 1: once the IT6805 is out of
+ * SAVING, hdmi-it6805.md section 5). The same image again is a no-op, so
+ * the source sees no hot-plug. 0 blocks: no EDID, both HPDs stay low.
+ * The checksums the chips serve are their own (registers c9/ca).
+ */
+int gc573_hdmi_set_edid(struct gc573 *gc, struct v4l2_edid *e)
+{
+	struct gc573_hdmi *h = &gc->hdmi;
+	unsigned int n = e->blocks;
+	int ret = 0;
+
+	if (e->start_block)
+		return -EINVAL;
+	if (n > GC573_EDID_SIZE / 128) {
+		e->blocks = GC573_EDID_SIZE / 128;
+		return -E2BIG;
+	}
+	mutex_lock(&h->lock);
+	if (n == h->edid_blocks && !memcmp(h->edid, e->edid, n * 128))
+		goto out;
+	memset(h->edid, 0, sizeof(h->edid));
+	memcpy(h->edid, e->edid, n * 128);
+	h->edid_blocks = n;
+	gc573_hdmi_edid_parse(h);
+
+	gc573_chip_begin(h);
+	ret = gc573_sp_hpd_low(h);
+	gc573_hdmi_hpd(h, false);
+	if (!ret && n)
+		ret = gc573_seq_run(h, &gc573_seq_it_edid, 0);
+	if (!ret)
+		ret = gc573_sp_edid(h, true);
+	gc573_chip_end(h);
+	if (!ret && n && h->it.power != GC573_IT_SAVING)
+		gc573_hdmi_hpd(h, true);
+	if (ret)
+		dev_err(&gc->pdev->dev, "HDMI: EDID update failed: %d\n", ret);
+	else
+		dev_info(&gc->pdev->dev, "HDMI: EDID set, %u blocks\n", n);
+out:
+	mutex_unlock(&h->lock);
+	return ret;
+}
+
 /* ---- published input ---- */
 
 static bool gc573_period_valid(u32 period)

@@ -450,7 +450,7 @@ static int gc573_it_5v(struct gc573_hdmi *h, bool on)
 	}
 	it->normal_armed = true;
 	ret = gc573_it_wait_sync(h);
-	gc573_hdmi_hpd(h, true);
+	gc573_hdmi_hpd(h, h->edid_blocks > 0);
 	return ret;
 }
 
