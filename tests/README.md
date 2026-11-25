@@ -26,7 +26,9 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
 - `run.sh` marks the kernel log before each case and fails the case if its log
   holds a kernel warning, oops, KASAN/UBSAN, lockdep, atomic-sleep or DMA-API
   report, or a driver error/timeout/MISMATCH message (`KMSG_BAD`,
-  `KMSG_DRV_BAD` in `lib.sh`).
+  `KMSG_DRV_BAD` in `lib.sh`). A case that provokes such a message on
+  purpose appends a regex for it to the file `$GC573_KMSG_ALLOW`; matching
+  lines are logged as expected instead.
 - `run.sh` pauses kmemleak's automatic scan, reports and clears old leaks,
   and checks once after the last case: any unreferenced object fails the
   `kmemleak` result. kmemleak only reports an object after two consecutive
