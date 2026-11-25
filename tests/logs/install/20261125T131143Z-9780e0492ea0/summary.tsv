@@ -1,0 +1,14 @@
+gc573-dev	prepare	PASS	override 0000:07:00.0 -> vfio-pci saved, card not bound to gc573, nothing installed
+gc573-dev	install-notty	PASS	exit 0; installed (dkms: gc573/0.1, 6.8.0-151-generic); the card left alone, gc573 not loaded, autoload off; the options printed
+gc573-dev	permanent-refused	PASS	exit 1 in 1 s, before the build; the override still saved
+gc573-dev	install-3	PASS	asked; 3: the card left alone, autoload off
+gc573-dev	boot-race	PASS	without the entry gc573 probed the card at boot ([    3.145267] gc573 0000:07:00.0: using MSI, irq 60); driverctl's unit then set the saved override
+gc573-dev	install-1	PASS	asked; Enter (1): gc573 has the card for this boot, the override still saved, recorded; the card is up: video /dev/video0, ALSA card GC573
+gc573-dev	reboot-this-boot	PASS	after the reboot gc573 is not loaded and never probed (no kernel log line); the saved override holds the card (driver_override vfio-pci)
+gc573-dev	install-this-boot	PASS	no terminal, --this-boot: gc573 has the card; input locked at 1920x1080; 30 frames streamed
+gc573-dev	uninstall-this-boot	PASS	no terminal: the saved override loaded again (driver_override vfio-pci), gc573 unloaded, nothing left
+gc573-dev	install-permanent	PASS	--permanent --yes: the override removed and recorded, gc573 has the card, autoload on after the first probe
+gc573-dev	reboot-permanent	PASS	gc573 loaded by its alias and bound after the boot; input locked at 1920x1080; 30 frames streamed
+gc573-dev	uninstall-permanent	PASS	asked; Enter (yes): the override back as it was, gc573 unloaded, nothing left in DKMS, /lib/modules, /usr/src
+gc573-dev	no-override	PASS	no override: gc573 took the card at once, autoload on after that first probe; uninstall --yes left nothing
+gc573-dev	cleanup	PASS	no override, driverctl purged, rebooted

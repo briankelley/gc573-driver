@@ -8,25 +8,57 @@
 # whenever the card is present (its PCI ID, 1461:0054, is in the module's
 # alias list).
 #
-# Before that it checks for root, dkms and the running kernel's headers,
-# and looks at what holds the card now. A driverctl override that binds the
-# card to another driver (vfio-pci, for passing it to a virtual machine) is
-# removed only if you answer yes on a terminal; the script prints how to put
-# it back, and uninstall.sh offers to. Other ways of reserving the card
-# (vfio-pci.ids on the kernel command line or in modprobe.d) are reported,
-# not changed.
+# A reboot is the way back from any trouble, so a crash while gc573 takes
+# the card must never repeat at boot. gc573 loads by itself only once it
+# has taken the card on this system: until then, and while a driverctl
+# override keeps the card for another driver, a modprobe.d entry
+# (/etc/modprobe.d/gc573-no-autoload.conf) keeps it from loading by its
+# alias. "modprobe gc573" and driverctl still load it.
 #
-# Usage: sudo tools/install.sh
-# Undo:  sudo tools/uninstall.sh
+# A persistent driverctl override that gives the card to another driver
+# (vfio-pci, to pass it to a virtual machine) leaves three choices:
+#   --this-boot  gc573 takes the card for this boot only (driverctl
+#                --nosave). The override stays saved, and a reboot gives
+#                the card back. The default when you answer on a terminal.
+#   --permanent  remove the override, so gc573 takes the card at every
+#                boot. Asks first; --yes skips that (needed without a
+#                terminal).
+#   --no-bind    install only and leave the card alone.
+# Without a terminal and without one of these, the card is left alone. A
+# virtual machine that is using the card stops the script before it
+# touches the card. Other ways of reserving the card (vfio-pci.ids on the
+# kernel command line or in modprobe.d) are reported, not changed.
+#
+# Usage: sudo tools/install.sh [--this-boot | --permanent | --no-bind] [--yes]
+# Undo:  sudo tools/uninstall.sh [--yes]
 set -euo pipefail
 
 NAME=gc573
 PCI_ID=1461:0054
 STATE_DIR=/var/lib/gc573-install
 STATE=$STATE_DIR/state
+NOLOAD=/etc/modprobe.d/gc573-no-autoload.conf
 
 say() { printf '%s\n' "$*"; }
 die() { printf 'install.sh: %s\n' "$*" >&2; exit 1; }
+
+mode= yes=0
+for a in "$@"; do
+	case $a in
+	--this-boot) m=this-boot ;;
+	--permanent) m=permanent ;;
+	--no-bind) m=no-bind ;;
+	--yes|-y) yes=1; continue ;;
+	-h|--help) sed -n '3,/^set -euo/{/^set -euo/d; s/^# \{0,1\}//; p}' "$0"; exit 0 ;;
+	*) die "unknown option $a (see --help)" ;;
+	esac
+	[ -z "$mode" ] || [ "$mode" = "$m" ] || die "--$mode and --$m exclude each other"
+	mode=$m
+done
+tty=0
+[ -t 0 ] && [ -t 1 ] && tty=1
+[ "$mode" != permanent ] || [ "$yes" = 1 ] || [ "$tty" = 1 ] ||
+	die "--permanent removes the driverctl override for good: without a terminal to ask on, add --yes"
 
 [ "$(id -u)" = 0 ] || exec sudo -- "$0" "$@"
 
@@ -172,81 +204,173 @@ if [ "$drv" = vfio-pci ] && [ -e "$dev/iommu_group" ]; then
 		break
 	done
 fi
-if [ -n "$user" ]; then
-	say "the card is in use by a virtual machine through vfio-pci: $user. Shut that virtual machine down (or move the card out of it), then run this again; nothing about the card was changed"
-	exit 1
-fi
+vm_busy() {
+	[ -n "$user" ] || return 1
+	say "the card is in use by a virtual machine through vfio-pci: $user. Shut that virtual machine down (or move the card out of it), then run this again; the card was not touched"
+}
+
+bound() { if [ -L "$dev/driver" ]; then basename "$(readlink "$dev/driver")"; fi; }
+
+# gc573 kept from loading by its alias (so at boot); $1: why
+noload_on() {
+	[ -f "$NOLOAD" ] && return 0
+	cat > "$NOLOAD" <<- EOF
+	# Written by the gc573 driver's tools/install.sh: gc573 does not load by
+	# itself (by its PCI alias), so it does not take the card at boot ($1).
+	# "modprobe gc573" and driverctl still load it. install.sh removes this
+	# file once gc573 is to take the card at every boot; uninstall.sh too.
+	blacklist $NAME
+	EOF
+}
+noload_off() { rm -f "$NOLOAD"; }
+
+# Load the new module. An older copy loaded without the card (a failed
+# probe, or the card elsewhere) goes first, so that the new one is what
+# takes it
+load_module() {
+	local out key
+	if [ -d "/sys/module/$NAME" ] && [ "$(bound)" != "$NAME" ]; then
+		modprobe -r "$NAME" 2>/dev/null ||
+			say "warning: an older $NAME is loaded and cannot be unloaded; it is the one that takes the card until a reboot"
+	fi
+	if ! out=$(modprobe "$NAME" 2>&1); then
+		say "modprobe $NAME failed: $out"
+		if [ "$sb" = on ]; then
+			key=
+			for k in /var/lib/shim-signed/mok/MOK.der /var/lib/dkms/mok.pub; do [ -f "$k" ] && { key=$k; break; }; done
+			say "Secure Boot is on, and the kernel loads only modules signed with an enrolled key. Enroll the key DKMS signs with: sudo mokutil --import ${key:-<the DKMS signing key>}, reboot, and confirm the key in the blue MOK manager screen"
+		fi
+		return 1
+	fi
+}
+
+# Wait for gc573 on the card and its nodes (udev and the driver need a
+# moment), then name them
+card_up() {
+	local v a
+	for _ in $(seq 50); do
+		[ -e "/sys/bus/pci/drivers/$NAME/$bdf" ] && [ -n "$(ls "$dev"/video4linux 2>/dev/null)" ] && break
+		sleep 0.1
+	done
+	[ -e "/sys/bus/pci/drivers/$NAME/$bdf" ] || return 1
+	v=$(ls "$dev/video4linux" 2>/dev/null | head -1)
+	a=$(cat "$dev"/sound/card*/id 2>/dev/null | head -1)
+	say "the card is up: video /dev/${v:-?}, ALSA card ${a:-?}"
+}
+
+record() { mkdir -p "$STATE_DIR"; printf 'bind %s %s %s\n' "$1" "$bdf" "$persistent" > "$STATE"; }
 
 if [ -n "$persistent" ] && [ "$persistent" != "$NAME" ]; then
 	say ""
-	say "A persistent driverctl override binds the card ($bdf) to $persistent."
-	say "This is how the card is given to a virtual machine (VFIO passthrough)."
-	say "While it stays, $NAME cannot use the card on this system."
-	ans=n
-	if [ -t 0 ] && [ -t 1 ]; then
-		read -r -p "Remove the override now, so that $NAME drives the card? [y/N] " ans || ans=n
-	else
-		say "(not asking: no terminal)"
+	say "A persistent driverctl override gives the card ($bdf) to $persistent."
+	say "This is how the card is passed to a virtual machine (VFIO)."
+	if [ -z "$mode" ] && [ "$tty" = 1 ]; then
+		say "  1) $NAME takes the card for this boot only. The override stays saved,"
+		say "     and a reboot gives the card back to $persistent."
+		say "  2) $NAME takes the card for good: the override is removed."
+		say "  3) Leave the card alone for now."
+		read -r -p "Choose 1, 2 or 3 [1]: " ans || ans=3
+		case $ans in
+		""|1) mode=this-boot ;;
+		2) mode=permanent ;;
+		*) mode=no-bind ;;
+		esac
+	elif [ -z "$mode" ]; then
+		say "(no terminal, and none of --this-boot, --permanent or --no-bind given: the card is left alone)"
+		mode=no-bind
 	fi
-	case $ans in
-	y|Y|yes|YES)
+	case $mode in
+	no-bind)
+		noload_on "a driverctl override keeps the card for $persistent"
+		say "the card stays with $persistent. $NAME is installed, and does not load by itself while the override is saved. To use the card with $NAME:"
+		say "  for this boot (a reboot undoes it): sudo tools/install.sh --this-boot"
+		say "  for good: sudo tools/install.sh --permanent"
+		exit 0
+		;;
+	this-boot)
+		! vm_busy || exit 1
+		noload_on "a driverctl override keeps the card for $persistent"
+		record this-boot
+		# an older gc573 with the card already (an earlier --this-boot):
+		# the new one takes over if that one is not in use
+		if [ "$drv" = "$NAME" ] && ! modprobe -r "$NAME" 2>/dev/null; then
+			say "an older $NAME has the card and is in use (by an application, or by PipeWire for its audio). Close what uses it and run this again, or reboot (the card goes back to $persistent) and run this again"
+			exit 0
+		fi
+		load_module || exit 1
+		# --nosave: driver_override for this boot; the saved override is
+		# untouched. Judged by the result, not driverctl's exit status
+		driverctl --nosave set-override "$bdf" "$NAME" > /dev/null 2>&1 || true
+		if ! card_up; then
+			say "warning: $NAME did not take the card; see: sudo dmesg | grep $NAME. A reboot gives the card back to $persistent"
+			exit 1
+		fi
+		say "$NAME has the card for this boot. A reboot gives it back to $persistent: the override stays saved."
+		say "To switch for good: sudo tools/install.sh --permanent. uninstall.sh gives the card back at once."
+		exit 0
+		;;
+	permanent)
+		! vm_busy || exit 1
+		if [ "$yes" != 1 ]; then
+			say "$NAME will then take the card at every boot. If it ever hangs the system while starting, boot once with module_blacklist=$NAME on the kernel command line (in GRUB: press e and add it to the line that starts with linux), then run uninstall.sh."
+			read -r -p "Remove the override for good? [y/N] " ans || ans=n
+			case $ans in
+			y|Y|yes|YES) ;;
+			*)
+				noload_on "a driverctl override keeps the card for $persistent"
+				say "nothing changed: the card stays with $persistent (sudo tools/install.sh --this-boot to try $NAME until the next reboot)"
+				exit 0 ;;
+			esac
+		fi
+		# recorded first: a crash at the first probe must not lose the
+		# override for uninstall.sh. Autoload stays off until that probe
+		# has worked
+		record permanent
+		noload_on "until $NAME has taken the card once"
 		# --noprobe: without it driverctl stops with an error, before it
 		# deletes the persistent override, when no driver takes the card at
-		# once (gc573 is not loaded yet); gc573 binds below
+		# once (gc573 binds below)
 		driverctl --noprobe unset-override "$bdf" > /dev/null 2>&1 || true
 		ovr=$(cat "$dev/driver_override" 2>/dev/null || true)
 		[ "$ovr" = "(null)" ] && ovr=
 		if [ -f "/etc/driverctl.d/pci-$bdf" ] || [ -n "$ovr" ]; then
 			die "driverctl unset-override $bdf failed; the override may still be in place (driverctl list-persisted)"
 		fi
-		mkdir -p "$STATE_DIR"
-		printf 'override %s %s\n' "$bdf" "$persistent" > "$STATE"
 		say "override removed. To give the card back to $persistent (and virtual machines): sudo driverctl set-override $bdf $persistent"
 		say "uninstall.sh offers to put it back."
-		drv=
-		[ -e "$dev/driver" ] && drv=$(basename "$(readlink -f "$dev/driver")")
-		;;
-	*)
-		say "override left in place. To use the card with $NAME later: sudo driverctl unset-override $bdf (to put it back: sudo driverctl set-override $bdf $persistent)"
-		exit 0
+		drv=$(bound)
 		;;
 	esac
 elif [ -n "$ovr" ] && [ "$ovr" != "$NAME" ]; then
 	say "warning: the card's driver_override is '$ovr' (set by hand or a script, not by driverctl): $NAME cannot bind until it is cleared: echo > $dev/driver_override as root, or reboot"
 	exit 0
+elif [ "$mode" = no-bind ]; then
+	say "the card is left alone (--no-bind). $NAME loads by itself at the next boot, or now with: sudo modprobe $NAME"
+	exit 0
+elif [ -n "$mode" ]; then
+	say "note: no driverctl override holds the card, so --$mode changes nothing: installing as usual"
 fi
 
-# bind: load the new module (reload an older one if it is not in use)
+# bind: no override (any more). Reload an older gc573 if it is not in use
 if [ "$drv" = "$NAME" ]; then
 	if modprobe -r "$NAME" 2>/dev/null; then
 		say "reloading $NAME"
 	else
 		say "an older $NAME is loaded and in use: the new one takes over after a reboot (or close the applications using the card and run: sudo modprobe -r $NAME && sudo modprobe $NAME)"
+		noload_off
 		exit 0
 	fi
 elif [ -n "$drv" ]; then
 	say "warning: the card is bound to $drv, not $NAME. Unbind it (echo $bdf > /sys/bus/pci/drivers/$drv/unbind as root) or remove that driver, then: sudo modprobe $NAME"
 	exit 0
 fi
-if ! out=$(modprobe "$NAME" 2>&1); then
-	say "modprobe $NAME failed: $out"
-	if [ "$sb" = on ]; then
-		key=
-		for k in /var/lib/shim-signed/mok/MOK.der /var/lib/dkms/mok.pub; do [ -f "$k" ] && { key=$k; break; }; done
-		say "Secure Boot is on, and the kernel loads only modules signed with an enrolled key. Enroll the key DKMS signs with: sudo mokutil --import ${key:-<the DKMS signing key>}, reboot, and confirm the key in the blue MOK manager screen"
-	fi
+# the first probe on this system with autoload off: if it brings the
+# system down, the next boot does not try again
+noload_on "until $NAME has taken the card once"
+if ! load_module || ! card_up; then
+	[ -d "/sys/module/$NAME" ] && say "warning: $NAME loaded but did not bind $bdf; see: sudo dmesg | grep $NAME"
+	say "$NAME does not load by itself until it has taken the card once: run this script again after fixing that ($NOLOAD)"
 	exit 1
 fi
-# udev and the driver need a moment to create the nodes
-for _ in $(seq 50); do
-	[ -e "/sys/bus/pci/drivers/$NAME/$bdf" ] && [ -n "$(ls "$dev"/video4linux 2>/dev/null)" ] && break
-	sleep 0.1
-done
-if [ -e "/sys/bus/pci/drivers/$NAME/$bdf" ]; then
-	v=$(ls "$dev/video4linux" 2>/dev/null | head -1)
-	a=$(cat "$dev"/sound/card*/id 2>/dev/null | head -1)
-	say "the card is up: video /dev/${v:-?}, ALSA card ${a:-?}"
-else
-	say "warning: $NAME loaded but did not bind $bdf; see: sudo dmesg | grep $NAME"
-	exit 1
-fi
+noload_off
+say "$NAME loads by itself from now on whenever the card is present"

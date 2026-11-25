@@ -30,14 +30,24 @@ sudo tools/install.sh
 
 `install.sh` does the following:
 - Builds the module with DKMS and installs it for the running kernel and every other installed kernel that has headers. DKMS rebuilds it for kernels you install later.
-- The module then loads by itself whenever the card is present. The script also loads it right away and reports the devices: a video device named "AVerMedia Live Gamer 4K (GC573)" and an ALSA card `GC573`.
+- Loads it right away and reports the devices: a video device named "AVerMedia Live Gamer 4K (GC573)" and an ALSA card `GC573`. From then on the module loads by itself whenever the card is present.
 - If headers or `dkms` are missing, it stops and names the package to install.
 - With Secure Boot on, the kernel loads only signed modules. If loading fails, the script tells you how to enroll the key DKMS signs with.
-- Card passthrough to a virtual machine (VFIO):
-  - If a `driverctl` override gives the card to `vfio-pci`, the script asks before removing it and prints how to put it back.
-  - If a running virtual machine holds the card, the script stops and changes nothing.
+- A reboot always gets you out of trouble. The module loads by itself at boot only after it has taken the card once without trouble. Until then, `/etc/modprobe.d/gc573-no-autoload.conf` keeps it from loading by itself. If the driver ever hangs the system at boot anyway, add `module_blacklist=gc573` to the kernel command line once (in GRUB, press *e* and add it to the line that starts with `linux`), then run `uninstall.sh`.
 
-To remove the driver, run `sudo tools/uninstall.sh`. It unloads the module, removes it from DKMS for every kernel, and offers to restore a `driverctl` override that `install.sh` removed. While an application or PipeWire holds the card, the module stays loaded until the next reboot. PipeWire keeps the control device of every sound card it manages open.
+**Card passthrough to a virtual machine (VFIO).** If a `driverctl` override gives the card to `vfio-pci`, `install.sh` offers three choices:
+1. *This boot only* (the default): `gc573` takes the card now, and the override stays saved. A reboot gives the card back to `vfio-pci`, and `gc573` then does not even load.
+2. *Permanently*: the override is removed after you confirm, and `gc573` takes the card at every boot.
+3. *Leave the card alone*: install only.
+
+Options choose without asking: `--this-boot`, `--permanent` (add `--yes` to skip the confirmation, needed without a terminal) and `--no-bind`. Without a terminal and without an option, the card is left alone. If a running virtual machine holds the card, the script stops before it changes anything.
+
+To remove the driver, run `sudo tools/uninstall.sh`. It undoes what `install.sh` did to the card:
+- After a this-boot install it loads the saved override again (`driverctl load-override`).
+- After a permanent install it puts the override back as it was. It asks first; `--yes` skips that.
+- It unloads the module, removes it from DKMS for every kernel, and removes the `modprobe.d` entry.
+
+While an application or PipeWire holds the card, the module stays loaded until the next reboot. PipeWire keeps the control device of every sound card it manages open.
 
 ## Use with OBS
 
