@@ -10,8 +10,8 @@ Audience: AI agents. Humans → README.md.
 - Fully adapted = the whole card supported (M7–M9): every hardware function a Linux capture driver should expose works, or is documented as unsupported with the reason. The user wants this; "Done" is a waypoint, not the end.
 
 ## Contribution policy
-- Agent-driven only. Agent writes code, runs tests, writes commit msg. Human directs/verifies.
-- Agent-assisted (human-authored code w/ AI help) → rejected.
+- Agent-driven preferred (README): agent writes code, runs tests, writes commit msg; human directs/verifies.
+- Contributions are welcome; the owner prefers agent-driven ones over agent-assisted (human-authored code w/ AI help).
 - Commit trailer: `Co-Authored-By: <model> <addr>` naming the agent model.
 
 ## Clean room — hard rules
