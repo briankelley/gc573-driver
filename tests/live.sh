@@ -54,6 +54,11 @@
 #             other timings); after the recording the source reopened as a
 #             user would (obs-check.py reopen) at 720p, and after a change to
 #             1080p: the pattern at the new size
+#   obspw     OBS with the card's audio through PipeWire, as on a desktop
+#             ("Audio Input Capture (PulseAudio)"): the VM's udev rule that
+#             keeps PipeWire off the card is lifted for the step and put
+#             back; GC573_PW_SECS (120) recorded as in obsav (not in the
+#             default steps)
 #   soak      GC573_SOAK_SECS (7200) of audio and video (1080p60 YUYV)
 #             together with avsync.sh, as avsync, and every minute the
 #             kernel's memory (MemAvailable, Slab, SUnreclaim) and the CPU
@@ -76,6 +81,11 @@ RELOCKS=${GC573_RELOCKS:-25}
 AV_SECS=${GC573_AV_SECS:-600}
 OBS_SECS=${GC573_OBS_SECS:-600}
 SOAK_SECS=${GC573_SOAK_SECS:-7200}
+PW_SECS=${GC573_PW_SECS:-120}
+# tools/devvm: keeps PipeWire (ACP_IGNORE) and PulseAudio off the card
+PW_RULE=/etc/udev/rules.d/90-gc573-pulse-ignore.rules
+# obspw's WirePlumber rule (the desktop user's config, removed after it)
+PW_WP=.config/wireplumber/main.lua.d/51-gc573-obspw.lua
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=/tmp/gc573-live		# work directory in the VM
 SSHCTL=/tmp/gc573-live-ssh-$$
@@ -853,6 +863,80 @@ step_obschange() {
 	obs_down
 }
 
+# PipeWire on the card or off it again (the VM's udev rule lifted: $1 = on;
+# put back: off). WirePlumber reads the rule's ACP_IGNORE when it starts.
+# In a virtual machine WirePlumber gives every ALSA node 8192 frames of
+# headroom (vm.node.defaults in its 50-alsa-config.lua), which PipeWire
+# keeps in the capture buffer: 170 ms more latency than on bare metal,
+# and OBS's PulseAudio source ignores latency. While on, a rule
+# (tests/obspw.lua) takes that headroom off the card's node, as on a desktop
+pw_card() {
+	if [ "$1" = on ]; then
+		vm "[ ! -e $PW_RULE ] || sudo mv $PW_RULE $PW_RULE.off; mkdir -p \$(dirname ~/$PW_WP)"
+		scp -q -o ControlPath="$SSHCTL" "$ROOT/tests/obspw.lua" "$VM:$PW_WP"
+	else
+		vm "rm -f ~/$PW_WP; [ ! -e $PW_RULE.off ] || sudo mv $PW_RULE.off $PW_RULE"
+	fi
+	vm "sudo udevadm control --reload && sudo udevadm trigger -s sound -c change &&
+		sudo udevadm settle && systemctl --user restart wireplumber"
+}
+
+# OBS with the card's audio through PipeWire, as on a desktop: obsav's
+# recording and analysis with a PulseAudio source on the card's PipeWire
+# source instead of the ALSA source. Afterwards PipeWire lets go of the
+# card again: nothing holds the module (refcnt 0; while PipeWire manages
+# a card it keeps the card's control device open)
+step_obspw() {
+	local bdf node out f m lg i rc
+	bdf=${dbgdir##*/gc573-}
+	av_on || { result obspw-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
+	sleep 3
+	pw_card on
+	for i in $(seq 40); do
+		node=$(vm "pactl list short sources" | awk -v d="pci-${bdf//:/_}" \
+			'index($2, d) && $2 !~ /\.monitor$/ { print $2; exit }')
+		[ -n "$node" ] && break
+		sleep 0.5
+	done
+	vm "pactl list cards" | grep -A3 -E "Name: .*${bdf//:/_}" | sed 's/^/  pw: /'
+	check obspw-pipewire "$([ -n "$node" ]; echo $?)" "(PipeWire source: ${node:-none})"
+	if [ -n "$node" ]; then
+		if obs_up && obsc "pulse $node" | sed 's/^/  /'; then
+			m=$(obs_log_mark)
+			obsc start > /dev/null
+			sleep $((PW_SECS / 2))
+			# frames captured that PipeWire has not read yet
+			echo "  ALSA, half-way: $(vm "grep -E 'period_size|buffer_size' /proc/asound/GC573/pcm0c/sub0/hw_params;
+				grep -E '^delay' /proc/asound/GC573/pcm0c/sub0/status" | tr -s ' \n' ' ')"
+			sleep $((PW_SECS - PW_SECS / 2))
+			out=$(obsc stop)
+			f=$(sed -n 's/^RECORDING //p' <<< "$out")
+			check obspw-record "$([ -n "$f" ]; echo $?)" "($(grep '^STATS' <<< "$out"))"
+			lg=$(vm "tail -n +$((m + 1)) \"\$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)\"" |
+				grep -E 'pulse-input|v4l2-input|Recording (Start|Stop)')
+			sed 's/^/  obs: /' <<< "$lg" | head -20
+			if [ -n "$f" ]; then
+				out=$(vm "python3 $W/obs-av.py '$f' --min-secs $((PW_SECS * 9 / 10))")
+				av_results obspw "$out"
+				vm "rm -f '$f'"
+			fi
+			obsc "pulse off" > /dev/null
+		else
+			result obspw-start FAIL "(OBS with obs-websocket and the PipeWire source)"
+		fi
+		obs_down
+	fi
+	av_off
+	pw_card off
+	for i in $(seq 40); do
+		rc=$(vm "cat /sys/module/gc573/refcnt")
+		[ "$rc" = 0 ] && break
+		sleep 0.5
+	done
+	check obspw-released "$([ "$rc" = 0 ]; echo $?)" \
+		"(rule back; gc573 refcnt $rc$(vm "pactl list short sources" | grep -q "${bdf//:/_}" && echo ', PipeWire still lists the card'))"
+}
+
 # M5: GC573_SOAK_SECS of continuous audio and video capture (gate: 2 h on
 # the generic kernel, 30 min on the debug kernel). The capture runs
 # detached in the VM (an ssh session need not last the run); a sampler
@@ -1044,7 +1128,9 @@ krel=$(vm uname -r) || exit 2
 stamp=$(date -u +%Y%m%d-%H%M%S)
 log=$ROOT/tests/logs/${stamp}_${krel}_live.log
 mkdir -p "$ROOT/tests/logs"
-trap '"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off
+trap 'vm "[ ! -e $PW_RULE.off ] || { rm -f ~/$PW_WP; sudo mv $PW_RULE.off $PW_RULE; sudo udevadm control --reload;
+		sudo udevadm trigger -s sound -c change; systemctl --user restart wireplumber; }"
+	"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off
 	ssh -O exit -o ControlPath="$SSHCTL" "$VM" 2>/dev/null' EXIT
 {
 	echo "# GC573 live-input suite (PC loopback)"

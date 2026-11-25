@@ -1,0 +1,56 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 10:47:18 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     839012397df0-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   obspw
+module:  srcversion 292FD1A2D4D0C4210A150E8 loaded, 292FD1A2D4D0C4210A150E8 in ~/gc573-driver, /dev/video0
+
+## obspw
+  pw: 	Name: alsa_card.pci-0000_07_00.0
+  pw: 	Driver: alsa
+  pw: 	Owner Module: n/a
+  pw: 	Properties:
+  pw: api.alsa.headroom of the ALSA nodes (count): 
+RESULT obspw-pipewire             PASS (PipeWire source: alsa_input.pci-0000_07_00.0.stereo-fallback)
+  OBS started
+  OBS 32.2.0
+  video device /dev/video0 | audio device __custom__ hw:CARD=GC573,DEV=0
+  pixelformat: YUYV 4:2:2=1448695129, UYVY 4:2:2=1498831189, Y/UV 4:2:0=842094158, Planar YVU 4:2:0=842094169, 24-bit BGR 8-8-8=861030210, 32-bit BGRX 8-8-8-8=875713112, YU12 (Emulated)=842093913
+  resolution: 
+  framerate: Leave Unchanged=-1, 60.00=4294967356, 50.00=4294967346, 30.00=4294967326, 25.00=4294967321, 20.00=4294967316, 15.00=4294967311, 10.00=4294967306, 5.00=4294967301
+  settings {"buffering": true, "color_range": 0, "device_id": "/dev/video0", "pixelformat": 1448695129}
+  pulse devices: Default=default, GC573 HDMI capture Stereo=alsa_input.pci-0000_07_00.0.stereo-fallback, Built-in Audio Analog Stereo=alsa_input.pci-0000_00_1b.0.analog-stereo
+  settings {"device_id": "alsa_input.pci-0000_07_00.0.stereo-fallback"}
+  ALSA, half-way: period_size: 480 buffer_size: 33120 delay : 1408 
+RESULT obspw-record               PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 7209, "outputSkippedFrames": 0, "outputTotalFrames": 7207} cpu 68.2% fps 60.00)
+  obs: 10:47:33.846: ==== Recording Start ===============================================
+RESULT obspw-duration             PASS (120.1 s of video, 120.1 s of audio)
+RESULT obspw-video                PASS (7207 frames, period 17.000 ms, largest interval 17.0 ms, 0 over 1.5 periods)
+RESULT obspw-flashes              FAIL (115 flash frames, 116 burst onsets, 111 paired within 0.5 s)
+RESULT obspw-offset               PASS (burst onset - flash frame: mean +12.70 ms, std 5.52, min -20.71, max +13.96 over 111 flashes (positive: audio late))
+RESULT obspw-drift                PASS (+0.208 ms/min = +0.40 ms over 1.9 min (one frame period: 17.0 ms); means per minute +12.4 +13.0)
+    offset in frame periods (count): -1: 3, +1: 108
+RESULT obspw-released             PASS (rule back; gc573 refcnt 0)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 0 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT obspw-pipewire             PASS (PipeWire source: alsa_input.pci-0000_07_00.0.stereo-fallback)
+RESULT obspw-record               PASS (STATS {"renderSkippedFrames": 0, "renderTotalFrames": 7209, "outputSkippedFrames": 0, "outputTotalFrames": 7207} cpu 68.2% fps 60.00)
+RESULT obspw-duration             PASS (120.1 s of video, 120.1 s of audio)
+RESULT obspw-video                PASS (7207 frames, period 17.000 ms, largest interval 17.0 ms, 0 over 1.5 periods)
+RESULT obspw-flashes              FAIL (115 flash frames, 116 burst onsets, 111 paired within 0.5 s)
+RESULT obspw-offset               PASS (burst onset - flash frame: mean +12.70 ms, std 5.52, min -20.71, max +13.96 over 111 flashes (positive: audio late))
+RESULT obspw-drift                PASS (+0.208 ms/min = +0.40 ms over 1.9 min (one frame period: 17.0 ms); means per minute +12.4 +13.0)
+RESULT obspw-released             PASS (rule back; gc573 refcnt 0)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=9 fail=1 skip=1

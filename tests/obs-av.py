@@ -11,7 +11,8 @@ audio the decoded frame's presentation time plus the sample's place in it
 (so AAC priming and any gap the muxer recorded count as they play).
 Prints RESULT lines:
   flashes   flash frames found (luma) and how many have a burst within
-            100 ms (PASS: all but the first and last)
+            0.5 s, half the flash interval, so an offset of any size shows
+            in "offset" (PASS: all but the first and last)
   video     frame intervals: count and largest gap (PASS: no interval over
             1.5 frame periods)
   offset    burst onset - flash frame: mean, std, min, max (PASS: |mean| <=
@@ -115,10 +116,12 @@ def main():
     for t in ft:
         if len(bt):
             j = int(np.argmin(np.abs(bt - t)))
-            if abs(bt[j] - t) < 0.1:
+            if abs(bt[j] - t) < 0.5:
                 pairs.append((t, bt[j] - t))
+    lone = [t - vt[0] for t in ft if not any(p[0] == t for p in pairs)]
     result('flashes', len(pairs) >= max(1, len(ft) - 2),
-           f'{len(ft)} flash frames, {len(bt)} burst onsets, {len(pairs)} paired within 100 ms')
+           f'{len(ft)} flash frames, {len(bt)} burst onsets, {len(pairs)} paired within 0.5 s' +
+           (f"; unpaired at {', '.join(f'{x:.1f}' for x in lone[:10])} s" if lone else ''))
     if a.segments:
         end = vt[-1] - vt[0]
         edges = [0.0] + [float(x) for x in a.segments.split(',')] + [end]

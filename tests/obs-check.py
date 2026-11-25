@@ -39,6 +39,11 @@ Run in the VM, as the desktop user, with OBS running (tests/live.sh starts it).
       to another value and back (OBS reopens the device on a change of
       device, input, video format, standard, DV timing, resolution, frame
       rate or colour range)
+  obs-check.py pulse NODE | pulse off
+      the card's audio through PipeWire, as on a desktop: an "Audio Input
+      Capture (PulseAudio)" source "GC573 audio (PipeWire)" on source NODE
+      in place of the ALSA source (which would hold the device); "off"
+      removes it ("setup" adds the ALSA source again)
 """
 import base64
 import io
@@ -50,7 +55,7 @@ import time
 
 from obsws import OBS
 
-VSRC, ASRC = 'GC573 video', 'GC573 audio'
+VSRC, ASRC, PSRC = 'GC573 video', 'GC573 audio', 'GC573 audio (PipeWire)'
 YUYV = 0x56595559
 
 
@@ -231,6 +236,29 @@ def shots(obs, secs, every):
         time.sleep(every)
 
 
+def pulse(obs, node):
+    names = {i['inputName'] for i in obs.call('GetInputList')['inputs']}
+    if node == 'off':
+        if PSRC in names:
+            obs.call('RemoveInput', inputName=PSRC)
+        return
+    if ASRC in names:
+        obs.call('RemoveInput', inputName=ASRC)
+        # OBS closes the ALSA device after the call returns: before that
+        # PipeWire's node cannot start (EBUSY)
+        time.sleep(2)
+    if PSRC not in names:
+        obs.call('CreateInput', sceneName=scene(obs), inputName=PSRC,
+                 inputKind='pulse_input_capture', inputSettings={'device_id': node},
+                 sceneItemEnabled=True)
+    else:
+        obs.call('SetInputSettings', inputName=PSRC, inputSettings={'device_id': node})
+    time.sleep(2)
+    print('pulse devices:', ', '.join(f"{i['itemName']}={i['itemValue']}"
+                                      for i in items(obs, PSRC, 'device_id')))
+    print('settings', json.dumps(obs.call('GetInputSettings', inputName=PSRC)['inputSettings']))
+
+
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
@@ -257,6 +285,8 @@ def main():
         obs.call('SetInputSettings', inputName=VSRC, inputSettings={'color_range': 1 if cr != 1 else 2})
         time.sleep(1)
         obs.call('SetInputSettings', inputName=VSRC, inputSettings={'color_range': cr})
+    elif cmd == 'pulse':
+        pulse(obs, sys.argv[2])
     elif cmd == 'set':
         kv = dict(a.split('=', 1) for a in sys.argv[2:])
         kv = {k: (int(v) if v.lstrip('-').isdigit() else v) for k, v in kv.items()}
