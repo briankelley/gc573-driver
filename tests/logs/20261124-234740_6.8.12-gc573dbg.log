@@ -1,0 +1,63 @@
+# GC573 regression suite
+date:    2026-11-24 23:47:40 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #4 SMP PREEMPT_DYNAMIC Tue Nov 24 16:09:22 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion C3FA612ED96361884B7A26C
+rev:     a24e7f188aa1-dirty
+input:   none
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+gc573 already loaded: unloading
+
+## 14-exp-slot-bits
+  mode 1 NV12: exit 0
+    RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.568 max=16.784 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+  mode 1 YV12: exit 0
+    RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.578 max=16.710 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=518400 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_bytes=518400 ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+  mode 2 NV12: exit 0
+    RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.582 max=16.768 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+  mode 2 YV12: exit 0
+    RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.561 max=16.794 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=518400 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_bytes=518400 ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+  mode 4 NV12: exit 0
+    RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.583 max=16.844 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+  mode 4 YV12: exit 0
+    RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.524 max=16.790 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=518400 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_bytes=518400 ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+  mode 5 NV12: exit 0
+    RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.538 max=16.779 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+  mode 5 YV12: exit 0
+    RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.589 max=16.787 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=518400 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_bytes=518400 ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+  mode 3 NV12:
+      | stats: irqs 0 frames 0 skipped 0 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+    RESULT wait fmt=NV12 ms=500 b0_ch0_untouched=64800/64800 b0_ch1_untouched=32400/32400 b1_ch0_untouched=64800/64800 b1_ch1_untouched=32400/32400 b2_ch0_untouched=64800/64800 b2_ch1_untouched=32400/32400 b3_ch0_untouched=64800/64800 b3_ch1_untouched=32400/32400
+  mode 3 YV12:
+      | stats: irqs 0 frames 0 skipped 0 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+    RESULT wait fmt=YV12 ms=500 b0_ch0_untouched=64800/64800 b0_ch1_untouched=16200/16200 b0_ch2_untouched=16200/16200 b1_ch0_untouched=64800/64800 b1_ch1_untouched=16200/16200 b1_ch2_untouched=16200/16200 b2_ch0_untouched=64800/64800 b2_ch1_untouched=16200/16200 b2_ch2_untouched=16200/16200 b3_ch0_untouched=64800/64800 b3_ch1_untouched=16200/16200 b3_ch2_untouched=16200/16200
+  ch0 CH_CTRL (run, slot-valid bits) gates every channel; ch1/ch2 CH_CTRL had no visible effect
+  -- kernel log (6 lines)
+  | [  412.006238] gc573 0000:07:00.0: using MSI, irq 60
+  | [  412.107209] gc573 0000:07:00.0: FPGA version 20200811
+  | [  412.250591] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  412.252310] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  412.252722] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  412.253099] gc573 0000:07:00.0: video device video0
+RESULT 14-exp-slot-bits     PASS (13s)
+
+## kmemleak (whole suite)
+  no new unreferenced objects
+RESULT kmemleak             PASS 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 14-exp-slot-bits     PASS (13s)
+RESULT kmemleak             PASS 
+RESULT debug-checkers       PASS 
+SUMMARY pass=3 fail=0 skip=0

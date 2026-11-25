@@ -15,7 +15,6 @@
  */
 
 #include <linux/completion.h>
-#include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/i2c.h>
 #include <linux/interrupt.h>
@@ -393,9 +392,7 @@ void gc573_i2c_check_ids(struct gc573 *gc)
 	unsigned int i;
 	int ret;
 
-	/* T1/S01: RD waits 2 x 10 ms after the chip resets before bus 1 use */
-	msleep(20);
-
+	/* the chip-reset settle time (spec/init.md step 11) is in hw init */
 	for (i = 0; i < ARRAY_SIZE(gc573_chip_ids); i++) {
 		const struct gc573_chip_id *chip = &gc573_chip_ids[i];
 

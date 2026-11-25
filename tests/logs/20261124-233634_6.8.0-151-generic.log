@@ -1,0 +1,164 @@
+# GC573 regression suite
+date:    2026-11-24 23:36:35 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 74B621295A147364C615D30
+rev:     6c5d4f0cfd39-dirty
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 10-video-capture
+  device: /dev/video0
+  FPGA input registers before streaming:
+    input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+  FPGA input registers after streaming:
+    input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+  == default timings
+    INFO start_to_first_frame_ms=142.4
+    RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.525 max=16.763 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=142.8
+    RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.552 max=16.773 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=142.4
+    RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.527 max=16.761 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=142.4
+    RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.551 max=16.735 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=518400 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_bytes=518400 ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=143.3
+    RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.612 max=16.756 frames_not_overwritten=0 ch0_bytes=6220800 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=144.2
+    RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.545 max=16.750 frames_not_overwritten=0 ch0_bytes=8294400 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+  == every enumerated DV timing
+    TIMINGS index=0 640x480p 59.94
+    RESULT capture fmt=YUYV 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.620 max=16.709 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.583 max=16.799 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.669 min=16.644 max=16.748 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.633 max=16.695 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.600 max=16.762 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.653 max=16.680 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=1 1280x720p 24.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.660 max=16.673 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.570 max=16.817 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.633 max=16.705 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.627 max=16.700 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.542 max=16.755 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.653 max=16.686 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=2 1280x720p 25.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.502 max=16.936 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.600 max=16.723 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.661 min=16.539 max=16.733 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.560 max=16.785 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.532 max=16.783 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.641 max=16.696 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=3 1280x720p 30.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.631 max=16.750 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.637 max=16.714 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.596 max=16.738 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.669 min=16.591 max=16.762 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.598 max=16.732 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.599 max=16.722 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=4 1280x720p 50.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.646 max=16.695 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.589 max=16.734 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.559 max=16.792 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.624 max=16.706 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.664 min=16.568 max=16.788 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.670 min=16.619 max=16.763 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=5 1280x720p 60.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.659 max=16.675 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.619 max=16.741 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.593 max=16.748 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.600 max=16.737 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.573 max=16.753 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.631 max=16.694 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=6 1920x1080p 24.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.645 max=16.689 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.564 max=16.745 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.613 max=16.715 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.615 max=16.711 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.603 max=16.812 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.619 max=16.704 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=7 1920x1080p 25.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.580 max=16.794 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.669 min=16.605 max=16.786 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.629 max=16.697 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.639 max=16.692 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.630 max=16.692 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.360 max=16.978 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=8 1920x1080p 30.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.587 max=16.810 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.634 max=16.695 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.472 max=16.861 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.552 max=16.786 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.638 max=16.699 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.663 min=16.578 max=16.738 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=9 1920x1080p 50.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.663 min=16.556 max=16.691 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.662 min=16.549 max=16.782 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.595 max=16.748 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.642 max=16.694 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.269 max=17.061 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.604 max=16.766 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=10 1920x1080p 60.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.640 max=16.706 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.638 max=16.716 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.600 max=16.743 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.624 max=16.703 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.559 max=16.846 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.613 max=16.750 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+  pattern: every plane of every frame overwritten, 6 formats x 11 timings
+  cadence: mean 16.6-16.75 ms, all intervals 15-18.4 ms
+  -- kernel log (6 lines)
+  | [  438.000375] gc573 0000:07:00.0: using MSI, irq 60
+  | [  438.101819] gc573 0000:07:00.0: FPGA version 20200811
+  | [  438.233747] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  438.234617] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  438.235177] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  438.236354] gc573 0000:07:00.0: video device video0
+RESULT 10-video-capture     PASS (63s)
+
+## 11-v4l2-compliance
+  v4l2-compliance 1.26.1, 64 bits, 64-bit time_t
+    		warn: v4l2-test-controls.cpp(1139): V4L2_CID_DV_RX_POWER_PRESENT not found for input 0
+    Total for gc573 device /dev/video0: 55, Succeeded: 55, Failed: 0, Warnings: 1
+  exit status 0
+  -- kernel log (18 lines)
+  | [  500.846966] gc573 0000:07:00.0: using MSI, irq 60
+  | [  500.948499] gc573 0000:07:00.0: FPGA version 20200811
+  | [  501.077496] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  501.078917] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  501.079349] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  501.079393] gc573 0000:07:00.0: video device video0
+  | [  501.082629] gc573 0000:07:00.0: =================  START STATUS  =================
+  | [  501.082631] gc573 0000:07:00.0: timings: 1920x1080p60.00 (2200x1125)
+  | [  501.082633] gc573 0000:07:00.0: horizontal: fp = 88, +sync = 44, bp = 148
+  | [  501.082633] gc573 0000:07:00.0: vertical: fp = 4, +sync = 5, bp = 36
+  | [  501.082634] gc573 0000:07:00.0: pixelclock: 148500000
+  | [  501.082635] gc573 0000:07:00.0: flags (0x92): CAN_REDUCE_FPS CE_VIDEO HAS_CEA861_VIC
+  | [  501.082636] gc573 0000:07:00.0: standards (0x3): CEA DMT
+  | [  501.082637] gc573 0000:07:00.0: CEA-861 VIC: 16
+  | [  501.082637] gc573 0000:07:00.0: format: YUYV little-endian (0x56595559) 1920x1080, 4147200 bytes
+  | [  501.082651] gc573 0000:07:00.0: input registers: 1004 0x2 1008 0x0 100c 0x0 1010 0xffffffff
+  | [  501.082652] gc573 0000:07:00.0: stream: off, frames 0, skipped 0
+  | [  501.082653] gc573 0000:07:00.0: ==================  END STATUS  ==================
+RESULT 11-v4l2-compliance   PASS (8s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 10-video-capture     PASS (63s)
+RESULT 11-v4l2-compliance   PASS (8s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=2 fail=0 skip=2

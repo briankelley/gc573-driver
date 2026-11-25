@@ -1,0 +1,753 @@
+# GC573 regression suite
+date:    2026-11-24 23:42:06 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #4 SMP PREEMPT_DYNAMIC Tue Nov 24 16:09:22 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 74B621295A147364C615D30
+rev:     a24e7f188aa1
+input:   none
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+
+## 00-kmemleak-selftest
+  kmemleak reported 8 object(s), 8 with the canary's 0xa5 fill (8 leaked)
+  -- kernel log (2 lines)
+  | [   87.557753] gc573_kmemleak_canary: loading out-of-tree module taints kernel.
+  | [  101.074967] kmemleak: 8 new suspected memory leaks (see /sys/kernel/debug/kmemleak)
+RESULT 00-kmemleak-selftest PASS (31s)
+
+## 01-probe
+  video node: /dev/video0
+  debugfs: /sys/kernel/debug/gc573-0000:07:00.0/video
+    core: INT_STATUS 0x00000000 INT_ENABLE 0x00000b33 RESET 0x00000309 TLP_ALIGN 0x00000000 INT seen 0x00000800
+    input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+  FPGA version 20200811 (spec/regmap.md: 20200811)
+  MSI in use
+  quiesce: INT_ENABLE reads 0 after remove
+  -- kernel log (19 lines)
+  | [  108.877576] gc573-test: 1795563766105580454-9094 probe
+  | [  108.899395] mc: Linux media interface: v0.10
+  | [  108.912891] videodev: Linux video capture interface: v2.00
+  | [  108.943593] gc573 0000:07:00.0: using MSI, irq 60
+  | [  108.943633] gc573 0000:07:00.0: state at probe: RESET=0x00000001 INT_ENABLE=0x00000000 INT_STATUS=0x00000000 GPIO=0x0001f850
+  | [  108.945063] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000009
+  | [  108.979178] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000109
+  | [  109.013466] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [  109.045316] gc573 0000:07:00.0: DDR_STATUS=0x3
+  | [  109.045354] gc573 0000:07:00.0: FPGA version 20200811
+  | [  109.179291] gc573 0000:07:00.0: init done: GPIO=0x0001f970
+  | [  109.195340] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  109.196066] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  109.196510] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  109.199241] gc573 0000:07:00.0: video device video0
+  | [  109.244971] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [  109.279109] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [  109.313121] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [  109.345053] gc573 0000:07:00.0: quiesced: INT_ENABLE=0x00000000 INT_STATUS=0x00000000 RESET=0x00000309
+RESULT 01-probe             PASS (0s)
+
+## 02-load-unload
+  50 load/unload cycles in 31 s
+  -- kernel log (350 lines)
+  | [  109.705038] gc573-test: 1795563766932594252-5766 iteration 1
+  | [  109.746535] gc573 0000:07:00.0: using MSI, irq 60
+  | [  109.848185] gc573 0000:07:00.0: FPGA version 20200811
+  | [  109.992973] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  109.993979] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  109.994443] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  109.994990] gc573 0000:07:00.0: video device video0
+  | [  110.303325] gc573-test: 1795563767530462577-24710 iteration 2
+  | [  110.349113] gc573 0000:07:00.0: using MSI, irq 60
+  | [  110.451030] gc573 0000:07:00.0: FPGA version 20200811
+  | [  110.598219] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  110.600421] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  110.601072] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  110.603918] gc573 0000:07:00.0: video device video0
+  | [  110.910158] gc573-test: 1795563768138403858-32548 iteration 3
+  | [  110.955051] gc573 0000:07:00.0: using MSI, irq 60
+  | [  111.056929] gc573 0000:07:00.0: FPGA version 20200811
+  | [  111.200881] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  111.201855] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  111.202253] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  111.202968] gc573 0000:07:00.0: video device video0
+  | [  111.528997] gc573-test: 1795563768757326254-9664 iteration 4
+  | [  111.577131] gc573 0000:07:00.0: using MSI, irq 60
+  | [  111.678825] gc573 0000:07:00.0: FPGA version 20200811
+  | [  111.818755] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  111.819705] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  111.820254] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  111.820841] gc573 0000:07:00.0: video device video0
+  | [  112.131637] gc573-test: 1795563769360238312-3954 iteration 5
+  | [  112.173500] gc573 0000:07:00.0: using MSI, irq 60
+  | [  112.275730] gc573 0000:07:00.0: FPGA version 20200811
+  | [  112.418477] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  112.419425] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  112.421385] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  112.422555] gc573 0000:07:00.0: video device video0
+  | [  112.746214] gc573-test: 1795563769974481570-23697 iteration 6
+  | [  112.792501] gc573 0000:07:00.0: using MSI, irq 60
+  | [  112.894555] gc573 0000:07:00.0: FPGA version 20200811
+  | [  113.029256] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  113.030561] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  113.031029] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  113.032696] gc573 0000:07:00.0: video device video0
+  | [  113.327925] gc573-test: 1795563770556672626-14122 iteration 7
+  | [  113.370326] gc573 0000:07:00.0: using MSI, irq 60
+  | [  113.472450] gc573 0000:07:00.0: FPGA version 20200811
+  | [  113.609387] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  113.610331] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  113.610718] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  113.611439] gc573 0000:07:00.0: video device video0
+  | [  113.920780] gc573-test: 1795563771149301066-1724 iteration 8
+  | [  113.973537] gc573 0000:07:00.0: using MSI, irq 60
+  | [  114.075533] gc573 0000:07:00.0: FPGA version 20200811
+  | [  114.220564] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  114.225182] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  114.225677] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  114.226319] gc573 0000:07:00.0: video device video0
+  | [  114.564536] gc573-test: 1795563771792622048-29270 iteration 9
+  | [  114.626023] gc573 0000:07:00.0: using MSI, irq 60
+  | [  114.727313] gc573 0000:07:00.0: FPGA version 20200811
+  | [  114.877209] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  114.880960] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  114.881394] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  114.881740] gc573 0000:07:00.0: video device video0
+  | [  115.177712] gc573-test: 1795563772405838252-10799 iteration 10
+  | [  115.227709] gc573 0000:07:00.0: using MSI, irq 60
+  | [  115.329257] gc573 0000:07:00.0: FPGA version 20200811
+  | [  115.477421] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  115.481106] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  115.481864] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  115.484518] gc573 0000:07:00.0: video device video0
+  | [  115.819413] gc573-test: 1795563773048389971-31178 iteration 11
+  | [  115.868734] gc573 0000:07:00.0: using MSI, irq 60
+  | [  115.970262] gc573 0000:07:00.0: FPGA version 20200811
+  | [  116.115671] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  116.118380] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  116.118854] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  116.120647] gc573 0000:07:00.0: video device video0
+  | [  116.440739] gc573-test: 1795563773669862620-4843 iteration 12
+  | [  116.489544] gc573 0000:07:00.0: using MSI, irq 60
+  | [  116.591114] gc573 0000:07:00.0: FPGA version 20200811
+  | [  116.731700] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  116.733368] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  116.733772] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  116.737353] gc573 0000:07:00.0: video device video0
+  | [  117.059076] gc573-test: 1795563774288043651-9990 iteration 13
+  | [  117.102035] gc573 0000:07:00.0: using MSI, irq 60
+  | [  117.204019] gc573 0000:07:00.0: FPGA version 20200811
+  | [  117.348944] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  117.349915] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  117.350301] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  117.350663] gc573 0000:07:00.0: video device video0
+  | [  117.684639] gc573-test: 1795563774914030191-23323 iteration 14
+  | [  117.724052] gc573 0000:07:00.0: using MSI, irq 60
+  | [  117.825888] gc573 0000:07:00.0: FPGA version 20200811
+  | [  117.973128] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  117.974334] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  117.974864] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  117.975877] gc573 0000:07:00.0: video device video0
+  | [  118.283850] gc573-test: 1795563775512730152-22923 iteration 15
+  | [  118.321548] gc573 0000:07:00.0: using MSI, irq 60
+  | [  118.423822] gc573 0000:07:00.0: FPGA version 20200811
+  | [  118.570659] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  118.573002] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  118.573661] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  118.577769] gc573 0000:07:00.0: video device video0
+  | [  118.895089] gc573-test: 1795563776124460142-10433 iteration 16
+  | [  118.938322] gc573 0000:07:00.0: using MSI, irq 60
+  | [  119.039732] gc573 0000:07:00.0: FPGA version 20200811
+  | [  119.190851] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  119.193136] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  119.193642] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  119.196682] gc573 0000:07:00.0: video device video0
+  | [  119.512182] gc573-test: 1795563776741698631-26650 iteration 17
+  | [  119.555997] gc573 0000:07:00.0: using MSI, irq 60
+  | [  119.657648] gc573 0000:07:00.0: FPGA version 20200811
+  | [  119.797928] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  119.798998] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  119.799516] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  119.801544] gc573 0000:07:00.0: video device video0
+  | [  120.113003] gc573-test: 1795563777342539484-10185 iteration 18
+  | [  120.153734] gc573 0000:07:00.0: using MSI, irq 60
+  | [  120.255491] gc573 0000:07:00.0: FPGA version 20200811
+  | [  120.398425] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  120.399405] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  120.399816] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  120.401543] gc573 0000:07:00.0: video device video0
+  | [  120.734875] gc573-test: 1795563777964719297-24625 iteration 19
+  | [  120.772557] gc573 0000:07:00.0: using MSI, irq 60
+  | [  120.875483] gc573 0000:07:00.0: FPGA version 20200811
+  | [  121.023510] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  121.026238] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  121.026750] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  121.028264] gc573 0000:07:00.0: video device video0
+  | [  121.348111] gc573-test: 1795563778577426825-5740 iteration 20
+  | [  121.395127] gc573 0000:07:00.0: using MSI, irq 60
+  | [  121.497397] gc573 0000:07:00.0: FPGA version 20200811
+  | [  121.642311] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  121.645514] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  121.646062] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  121.647363] gc573 0000:07:00.0: video device video0
+  | [  121.947925] gc573-test: 1795563779177821142-23746 iteration 21
+  | [  121.987853] gc573 0000:07:00.0: using MSI, irq 60
+  | [  122.089267] gc573 0000:07:00.0: FPGA version 20200811
+  | [  122.236815] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  122.240813] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  122.243159] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  122.243884] gc573 0000:07:00.0: video device video0
+  | [  122.572869] gc573-test: 1795563779802366075-22427 iteration 22
+  | [  122.616030] gc573 0000:07:00.0: using MSI, irq 60
+  | [  122.718249] gc573 0000:07:00.0: FPGA version 20200811
+  | [  122.864698] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  122.865822] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  122.866199] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  122.866570] gc573 0000:07:00.0: video device video0
+  | [  123.133064] gc573-test: 1795563780363158160-25637 iteration 23
+  | [  123.190858] gc573 0000:07:00.0: using MSI, irq 60
+  | [  123.292038] gc573 0000:07:00.0: FPGA version 20200811
+  | [  123.429300] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  123.430289] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  123.430677] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  123.431994] gc573 0000:07:00.0: video device video0
+  | [  123.741913] gc573-test: 1795563780972129359-29757 iteration 24
+  | [  123.783180] gc573 0000:07:00.0: using MSI, irq 60
+  | [  123.886101] gc573 0000:07:00.0: FPGA version 20200811
+  | [  124.028059] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  124.028980] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  124.029424] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  124.029843] gc573 0000:07:00.0: video device video0
+  | [  124.358087] gc573-test: 1795563781588351846-30541 iteration 25
+  | [  124.403441] gc573 0000:07:00.0: using MSI, irq 60
+  | [  124.505020] gc573 0000:07:00.0: FPGA version 20200811
+  | [  124.645551] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  124.646766] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  124.647196] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  124.648744] gc573 0000:07:00.0: video device video0
+  | [  124.972532] gc573-test: 1795563782201830402-17965 iteration 26
+  | [  125.025398] gc573 0000:07:00.0: using MSI, irq 60
+  | [  125.126969] gc573 0000:07:00.0: FPGA version 20200811
+  | [  125.267357] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  125.271311] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  125.271741] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  125.273307] gc573 0000:07:00.0: video device video0
+  | [  125.561446] gc573-test: 1795563782791843987-12167 iteration 27
+  | [  125.602622] gc573 0000:07:00.0: using MSI, irq 60
+  | [  125.704894] gc573 0000:07:00.0: FPGA version 20200811
+  | [  125.848760] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  125.849746] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  125.850193] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  125.852705] gc573 0000:07:00.0: video device video0
+  | [  126.197112] gc573-test: 1795563783426955383-31073 iteration 28
+  | [  126.244292] gc573 0000:07:00.0: using MSI, irq 60
+  | [  126.345875] gc573 0000:07:00.0: FPGA version 20200811
+  | [  126.490918] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  126.493879] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  126.494256] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  126.494690] gc573 0000:07:00.0: video device video0
+  | [  126.831698] gc573-test: 1795563784061417073-13261 iteration 29
+  | [  126.879091] gc573 0000:07:00.0: using MSI, irq 60
+  | [  126.980775] gc573 0000:07:00.0: FPGA version 20200811
+  | [  127.124294] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  127.125733] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  127.126248] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  127.127127] gc573 0000:07:00.0: video device video0
+  | [  127.459649] gc573-test: 1795563784689859293-9924 iteration 30
+  | [  127.503707] gc573 0000:07:00.0: using MSI, irq 60
+  | [  127.605644] gc573 0000:07:00.0: FPGA version 20200811
+  | [  127.749376] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  127.750379] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  127.750763] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  127.752527] gc573 0000:07:00.0: video device video0
+  | [  128.099024] gc573-test: 1795563785329448841-21190 iteration 31
+  | [  128.138562] gc573 0000:07:00.0: using MSI, irq 60
+  | [  128.240559] gc573 0000:07:00.0: FPGA version 20200811
+  | [  128.389385] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  128.391137] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  128.391641] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  128.392400] gc573 0000:07:00.0: video device video0
+  | [  128.721541] gc573-test: 1795563785952241623-25232 iteration 32
+  | [  128.766169] gc573 0000:07:00.0: using MSI, irq 60
+  | [  128.867358] gc573 0000:07:00.0: FPGA version 20200811
+  | [  129.017888] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  129.022187] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  129.022932] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  129.024945] gc573 0000:07:00.0: video device video0
+  | [  129.370596] gc573-test: 1795563786601168126-7281 iteration 33
+  | [  129.410610] gc573 0000:07:00.0: using MSI, irq 60
+  | [  129.512408] gc573 0000:07:00.0: FPGA version 20200811
+  | [  129.652508] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  129.653564] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  129.653986] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  129.654372] gc573 0000:07:00.0: video device video0
+  | [  129.958644] gc573-test: 1795563787189431802-22393 iteration 34
+  | [  129.997278] gc573 0000:07:00.0: using MSI, irq 60
+  | [  130.099240] gc573 0000:07:00.0: FPGA version 20200811
+  | [  130.248369] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  130.252633] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  130.253189] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  130.254242] gc573 0000:07:00.0: video device video0
+  | [  130.566137] gc573-test: 1795563787796804524-22760 iteration 35
+  | [  130.610769] gc573 0000:07:00.0: using MSI, irq 60
+  | [  130.712259] gc573 0000:07:00.0: FPGA version 20200811
+  | [  130.851168] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  130.852431] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  130.852952] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  130.853302] gc573 0000:07:00.0: video device video0
+  | [  131.178569] gc573-test: 1795563788408739848-845 iteration 36
+  | [  131.228887] gc573 0000:07:00.0: using MSI, irq 60
+  | [  131.330187] gc573 0000:07:00.0: FPGA version 20200811
+  | [  131.469941] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  131.471458] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  131.473852] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  131.474463] gc573 0000:07:00.0: video device video0
+  | [  131.798890] gc573-test: 1795563789029627446-27300 iteration 37
+  | [  131.840365] gc573 0000:07:00.0: using MSI, irq 60
+  | [  131.942113] gc573 0000:07:00.0: FPGA version 20200811
+  | [  132.088843] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  132.092099] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  132.092545] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  132.093244] gc573 0000:07:00.0: video device video0
+  | [  132.406008] gc573-test: 1795563789636511067-28790 iteration 38
+  | [  132.452145] gc573 0000:07:00.0: using MSI, irq 60
+  | [  132.554042] gc573 0000:07:00.0: FPGA version 20200811
+  | [  132.709173] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  132.710483] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  132.710953] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  132.711789] gc573 0000:07:00.0: video device video0
+  | [  133.008870] gc573-test: 1795563790240215380-20272 iteration 39
+  | [  133.050670] gc573 0000:07:00.0: using MSI, irq 60
+  | [  133.151800] gc573 0000:07:00.0: FPGA version 20200811
+  | [  133.288527] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  133.289480] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  133.289939] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  133.290317] gc573 0000:07:00.0: video device video0
+  | [  133.555216] gc573-test: 1795563790786383236-2133 iteration 40
+  | [  133.605301] gc573 0000:07:00.0: using MSI, irq 60
+  | [  133.706866] gc573 0000:07:00.0: FPGA version 20200811
+  | [  133.853748] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  133.854831] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  133.855294] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  133.855936] gc573 0000:07:00.0: video device video0
+  | [  134.176744] gc573-test: 1795563791408185662-31421 iteration 41
+  | [  134.218273] gc573 0000:07:00.0: using MSI, irq 60
+  | [  134.319700] gc573 0000:07:00.0: FPGA version 20200811
+  | [  134.460684] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  134.463079] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  134.464317] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  134.464723] gc573 0000:07:00.0: video device video0
+  | [  134.786274] gc573-test: 1795563792017323021-13825 iteration 42
+  | [  134.842303] gc573 0000:07:00.0: using MSI, irq 60
+  | [  134.943805] gc573 0000:07:00.0: FPGA version 20200811
+  | [  135.094610] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  135.098703] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  135.099210] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  135.100648] gc573 0000:07:00.0: video device video0
+  | [  135.444470] gc573-test: 1795563792676093206-24998 iteration 43
+  | [  135.488745] gc573 0000:07:00.0: using MSI, irq 60
+  | [  135.590733] gc573 0000:07:00.0: FPGA version 20200811
+  | [  135.732073] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  135.733056] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  135.733453] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  135.733826] gc573 0000:07:00.0: video device video0
+  | [  136.071453] gc573-test: 1795563793302225273-9293 iteration 44
+  | [  136.125345] gc573 0000:07:00.0: using MSI, irq 60
+  | [  136.226603] gc573 0000:07:00.0: FPGA version 20200811
+  | [  136.359179] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  136.360094] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  136.360451] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  136.362178] gc573 0000:07:00.0: video device video0
+  | [  136.696483] gc573-test: 1795563793927969610-9998 iteration 45
+  | [  136.738730] gc573 0000:07:00.0: using MSI, irq 60
+  | [  136.840428] gc573 0000:07:00.0: FPGA version 20200811
+  | [  136.984609] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  136.985758] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  136.986250] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  136.987552] gc573 0000:07:00.0: video device video0
+  | [  137.311548] gc573-test: 1795563794542684924-17966 iteration 46
+  | [  137.359595] gc573 0000:07:00.0: using MSI, irq 60
+  | [  137.461737] gc573 0000:07:00.0: FPGA version 20200811
+  | [  137.604059] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  137.605167] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  137.608573] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  137.609205] gc573 0000:07:00.0: video device video0
+  | [  137.916414] gc573-test: 1795563795147311075-5661 iteration 47
+  | [  137.959010] gc573 0000:07:00.0: using MSI, irq 60
+  | [  138.060862] gc573 0000:07:00.0: FPGA version 20200811
+  | [  138.206216] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  138.207957] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  138.208410] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  138.209245] gc573 0000:07:00.0: video device video0
+  | [  138.540647] gc573-test: 1795563795771618147-2224 iteration 48
+  | [  138.584187] gc573 0000:07:00.0: using MSI, irq 60
+  | [  138.685991] gc573 0000:07:00.0: FPGA version 20200811
+  | [  138.826812] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  138.829882] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  138.832318] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  138.835263] gc573 0000:07:00.0: video device video0
+  | [  139.151943] gc573-test: 1795563796383184035-23560 iteration 49
+  | [  139.195460] gc573 0000:07:00.0: using MSI, irq 60
+  | [  139.297109] gc573 0000:07:00.0: FPGA version 20200811
+  | [  139.433902] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  139.434961] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  139.435584] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  139.437297] gc573 0000:07:00.0: video device video0
+  | [  139.797254] gc573-test: 1795563797027715268-21808 iteration 50
+  | [  139.844316] gc573 0000:07:00.0: using MSI, irq 60
+  | [  139.946250] gc573 0000:07:00.0: FPGA version 20200811
+  | [  140.083404] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  140.084674] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  140.085165] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  140.088117] gc573 0000:07:00.0: video device video0
+RESULT 02-load-unload       PASS (31s)
+
+## 03-chip-id
+  adapters:
+    gc573 0000:07:00.0 bus 0
+    gc573 0000:07:00.0 bus 1
+    gc573 0000:07:00.0 bus 2
+  bus 0/2 transfers: off (i2c_bus02=N)
+  interrupts during probe: 6 (6 bus-1 transfers expected)
+  match: 0x90 (IT6805): id 54 49 05 68
+  match: 0x58 (splitter): id 54 49 63 66
+  -- kernel log (7 lines)
+  | [  140.561584] gc573-test: 1795563797792544482-17707 chip-id
+  | [  140.604409] gc573 0000:07:00.0: using MSI, irq 60
+  | [  140.706378] gc573 0000:07:00.0: FPGA version 20200811
+  | [  140.855656] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  140.858171] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  140.858737] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  140.859959] gc573 0000:07:00.0: video device video0
+RESULT 03-chip-id           PASS (1s)
+
+## 04-i2c-reads
+  bus 1: /dev/i2c-2
+  reader 1: 200 rounds, 2000 transfers, 0 mismatches
+  reader 2: 200 rounds, 2000 transfers, 0 mismatches
+  4000 transfers in 591 ms, 4000 interrupts
+  plain read: ENOTSUP
+  plain read refused before the hardware (no interrupt)
+  -- kernel log (6 lines)
+  | [  141.366405] gc573 0000:07:00.0: using MSI, irq 60
+  | [  141.468297] gc573 0000:07:00.0: FPGA version 20200811
+  | [  141.606264] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  141.607187] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  141.607620] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  141.608497] gc573 0000:07:00.0: video device video0
+RESULT 04-i2c-reads         PASS (1s)
+
+## 05-dkms-build
+  dkms-3.0.11: built gc573.ko for 6.8.12-gc573dbg
+  -- kernel log (0 lines)
+  | 
+RESULT 05-dkms-build        PASS (5s)
+
+## 10-video-capture
+  device: /dev/video0
+  FPGA input registers before streaming:
+    input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+  FPGA input registers after streaming:
+    input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+  == default timings
+    INFO start_to_first_frame_ms=142.5
+    RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.663 min=16.545 max=16.790 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=142.4
+    RESULT capture fmt=UYVY 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.488 max=16.739 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=142.7
+    RESULT capture fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.569 max=16.773 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=142.5
+    RESULT capture fmt=YV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.553 max=16.767 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=518400 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_bytes=518400 ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=142.1
+    RESULT capture fmt=BGR3 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.664 min=16.525 max=16.811 frames_not_overwritten=0 ch0_bytes=6220800 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    INFO start_to_first_frame_ms=143.8
+    RESULT capture fmt=XR24 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.537 max=16.819 frames_not_overwritten=0 ch0_bytes=8294400 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+  == every enumerated DV timing
+    TIMINGS index=0 640x480p 59.94
+    RESULT capture fmt=YUYV 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.621 max=16.717 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.558 max=16.781 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.521 max=16.808 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.609 max=16.733 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.653 max=16.680 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 640x480 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.669 min=16.596 max=16.807 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=1 1280x720p 24.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.638 max=16.697 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.543 max=16.769 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.638 max=16.696 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.664 min=16.580 max=16.761 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.635 max=16.700 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.566 max=16.753 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=2 1280x720p 25.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.663 min=16.557 max=16.756 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.568 max=16.760 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.606 max=16.727 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.663 min=16.582 max=16.717 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.546 max=16.763 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.580 max=16.722 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=3 1280x720p 30.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.663 min=16.606 max=16.725 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.652 max=16.681 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.545 max=16.779 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.583 max=16.721 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.548 max=16.732 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.581 max=16.731 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=4 1280x720p 50.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.591 max=16.755 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.566 max=16.772 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.582 max=16.762 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.640 max=16.694 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.664 min=16.574 max=16.751 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.669 min=16.572 max=16.868 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=5 1280x720p 60.00
+    RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.632 max=16.702 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.628 max=16.701 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.572 max=16.793 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.669 min=16.587 max=16.789 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.639 max=16.701 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.586 max=16.783 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=6 1920x1080p 24.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.633 max=16.697 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.589 max=16.701 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.625 max=16.697 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.664 min=16.534 max=16.765 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.601 max=16.708 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.545 max=16.776 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=7 1920x1080p 25.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.672 min=16.586 max=16.800 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.613 max=16.727 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.607 max=16.721 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.508 max=16.782 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.569 max=16.745 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.635 max=16.697 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=8 1920x1080p 30.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.542 max=16.792 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.636 max=16.698 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.552 max=16.778 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.600 max=16.726 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.615 max=16.720 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.578 max=16.778 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=9 1920x1080p 50.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.665 min=16.618 max=16.727 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.664 min=16.554 max=16.776 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.663 min=16.596 max=16.736 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.670 min=16.571 max=16.760 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.591 max=16.730 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.578 max=16.730 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    TIMINGS index=10 1920x1080p 60.00
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.604 max=16.727 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+    RESULT capture fmt=UYVY 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.631 max=16.701 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10801080(100.0%) distinct_frames=1
+    RESULT capture fmt=NV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.563 max=16.737 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=YV12 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.664 min=16.519 max=16.836 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+    RESULT capture fmt=BGR3 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.599 max=16.729 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+    RESULT capture fmt=XR24 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.536 max=16.731 frames_not_overwritten=0 ch0_untouched_blocks_max=0 ch0_top_word=00000000(100.0%) distinct_frames=1
+  pattern: every plane of every frame overwritten, 6 formats x 11 timings
+  cadence: mean 16.6-16.75 ms, all intervals 15-18.4 ms
+  -- kernel log (6 lines)
+  | [  148.120771] gc573 0000:07:00.0: using MSI, irq 60
+  | [  148.221338] gc573 0000:07:00.0: FPGA version 20200811
+  | [  148.348650] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  148.350317] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  148.350739] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  148.351115] gc573 0000:07:00.0: video device video0
+RESULT 10-video-capture     PASS (64s)
+
+## 11-v4l2-compliance
+  v4l2-compliance 1.26.1, 64 bits, 64-bit time_t
+    		warn: v4l2-test-controls.cpp(1139): V4L2_CID_DV_RX_POWER_PRESENT not found for input 0
+    Total for gc573 device /dev/video0: 55, Succeeded: 55, Failed: 0, Warnings: 1
+  exit status 0
+  -- kernel log (18 lines)
+  | [  211.710974] gc573 0000:07:00.0: using MSI, irq 60
+  | [  211.812827] gc573 0000:07:00.0: FPGA version 20200811
+  | [  211.958467] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  211.960679] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  211.961084] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  211.961470] gc573 0000:07:00.0: video device video0
+  | [  211.987590] gc573 0000:07:00.0: =================  START STATUS  =================
+  | [  211.987600] gc573 0000:07:00.0: timings: 1920x1080p60.00 (2200x1125)
+  | [  211.987604] gc573 0000:07:00.0: horizontal: fp = 88, +sync = 44, bp = 148
+  | [  211.987606] gc573 0000:07:00.0: vertical: fp = 4, +sync = 5, bp = 36
+  | [  211.987609] gc573 0000:07:00.0: pixelclock: 148500000
+  | [  211.987611] gc573 0000:07:00.0: flags (0x92): CAN_REDUCE_FPS CE_VIDEO HAS_CEA861_VIC
+  | [  211.987614] gc573 0000:07:00.0: standards (0x3): CEA DMT
+  | [  211.987616] gc573 0000:07:00.0: CEA-861 VIC: 16
+  | [  211.987618] gc573 0000:07:00.0: format: YUYV little-endian (0x56595559) 1920x1080, 4147200 bytes
+  | [  211.987635] gc573 0000:07:00.0: input registers: 1004 0x2 1008 0x0 100c 0x0 1010 0xffffffff
+  | [  211.987637] gc573 0000:07:00.0: stream: off, frames 0, skipped 0
+  | [  211.987640] gc573 0000:07:00.0: ==================  END STATUS  ==================
+RESULT 11-v4l2-compliance   PASS (9s)
+
+## 12-video-stress
+  == start/stop cycles
+    RESULT cycles=100 frames=300 start_to_first_frame_ms_mean=143.0 max=145.1 streamoff_ms_mean=103.4 max=104.2
+  == underrun
+    INFO underrun: frame seq=0 buf=1 t=250607.021
+    INFO underrun: frame seq=1 buf=2 t=250623.669
+    INFO underrun: frame seq=2 buf=3 t=250640.336
+    INFO underrun: frame seq=3 buf=0 t=250656.998
+    debugfs (all buffers dequeued, 500 ms later):
+      | core: INT_STATUS 0x00000000 INT_ENABLE 0x00000b33 RESET 0x00000309 TLP_ALIGN 0x00000000 INT seen 0x00000803
+      | input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+      | vip: VIP_CTRL 0x00000f01 COLOR_CTRL 0x0000000e RATE_CTRL 0x0005000a PIX_MODE 0x00000002 CLIP 0,0 1920x1080
+      | ch0: STATUS 0x00008041 CTRL 0x00000001
+      | stream: running 1 fmt NV12 little-endian (0x3231564e) 1920x1080 sizeimage 3110400 exp_slot_mode 0 next_arm 1 ch_ctrl written: ch1 0x1 ch2 0x0
+      | slots (buffer index): -1 -1 -1 -1
+      | stats: irqs 5 frames 4 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 1
+      | events (oldest first): t_ns status ctrl done armed
+      |   250590328919 0x00009021 0x0000001d 1 4
+      |   250607021588 0x00009022 0x0000001b 1 3
+      |   250623669431 0x00009023 0x00000013 1 2
+      |   250640336079 0x00009024 0x00000003 1 1
+      |   250656998318 0x00008041 0x00000001 1 0
+    RESULT underrun_requeue1 completed=1 latency_ms=4.6 seq=4 untouched_blocks=0 gap_since_last_frame_ms=507.6
+    debugfs (after requeue of 1):
+      | core: INT_STATUS 0x00000000 INT_ENABLE 0x00000b33 RESET 0x00000309 TLP_ALIGN 0x00000000 INT seen 0x00000803
+      | input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+      | vip: VIP_CTRL 0x00000f01 COLOR_CTRL 0x0000000e RATE_CTRL 0x0005000a PIX_MODE 0x00000002 CLIP 0,0 1920x1080
+      | ch0: STATUS 0x00008042 CTRL 0x00000001
+      | stream: running 1 fmt NV12 little-endian (0x3231564e) 1920x1080 sizeimage 3110400 exp_slot_mode 0 next_arm 2 ch_ctrl written: ch1 0x1 ch2 0x0
+      | slots (buffer index): -1 -1 -1 -1
+      | stats: irqs 6 frames 5 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 2
+      | events (oldest first): t_ns status ctrl done armed
+      |   250590328919 0x00009021 0x0000001d 1 4
+      |   250607021588 0x00009022 0x0000001b 1 3
+      |   250623669431 0x00009023 0x00000013 1 2
+      |   250640336079 0x00009024 0x00000003 1 1
+      |   250656998318 0x00008041 0x00000001 1 0
+      |   251164556148 0x00008042 0x00000001 1 0
+    RESULT underrun_requeue2 frame=0 buf=2 seq=5 latency_ms=2.0 ivl_ms=7.482
+    RESULT underrun_requeue2 frame=1 buf=3 seq=6 latency_ms=12.8 ivl_ms=12.768
+    debugfs (recovered):
+      | core: INT_STATUS 0x00000000 INT_ENABLE 0x00000b33 RESET 0x00000309 TLP_ALIGN 0x00000000 INT seen 0x00000803
+      | input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+      | vip: VIP_CTRL 0x00000f01 COLOR_CTRL 0x0000000e RATE_CTRL 0x0005000a PIX_MODE 0x00000002 CLIP 0,0 1920x1080
+      | ch0: STATUS 0x00009024 CTRL 0x0000001f
+      | stream: running 1 fmt NV12 little-endian (0x3231564e) 1920x1080 sizeimage 3110400 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x1f ch2 0x0
+      | slots (buffer index): 0 1 2 3
+      | stats: irqs 128 frames 127 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 3
+      | events (oldest first): t_ns status ctrl done armed
+      |   252668268720 0x00009021 0x0000001d 1 3
+      |   252684938891 0x00009022 0x0000001b 1 3
+      |   252701602384 0x00009023 0x00000017 1 3
+      |   252718284506 0x00009024 0x0000000f 1 3
+      |   252734939402 0x00009021 0x0000001d 1 3
+      |   252751601133 0x00009022 0x0000001b 1 3
+      |   252768251376 0x00009023 0x00000017 1 3
+      |   252784918495 0x00009024 0x0000000f 1 3
+      |   252801584481 0x00009021 0x0000001d 1 3
+      |   252818251349 0x00009022 0x0000001b 1 3
+      |   252834947837 0x00009023 0x00000017 1 3
+      |   252851607475 0x00009024 0x0000000f 1 3
+      |   252868277652 0x00009021 0x0000001d 1 3
+      |   252884942108 0x00009022 0x0000001b 1 3
+      |   252901609908 0x00009023 0x00000017 1 3
+      |   252918196199 0x00009024 0x0000000f 1 3
+      |   252934921278 0x00009021 0x0000001d 1 3
+      |   252951679397 0x00009022 0x0000001b 1 3
+      |   252968333420 0x00009023 0x00000017 1 3
+      |   252984947568 0x00009024 0x0000000f 1 3
+      |   253001615881 0x00009021 0x0000001d 1 3
+      |   253018282080 0x00009022 0x0000001b 1 3
+      |   253034943847 0x00009023 0x00000017 1 3
+      |   253051544148 0x00009024 0x0000000f 1 3
+      |   253068203063 0x00009021 0x0000001d 1 3
+      |   253084938209 0x00009022 0x0000001b 1 3
+      |   253101582655 0x00009023 0x00000017 1 3
+      |   253118278561 0x00009024 0x0000000f 1 3
+      |   253134891969 0x00009021 0x0000001d 1 3
+      |   253151560596 0x00009022 0x0000001b 1 3
+      |   253168189606 0x00009023 0x00000017 1 3
+      |   253184848883 0x00009024 0x0000000f 1 3
+    RESULT underrun_recovery fmt=NV12 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.562 max=16.805 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+  == one buffer
+    INFO start_to_first_frame_ms=142.7
+    RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.669 min=16.573 max=16.751 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+  == I2C bus 1 after the stops
+    20 rounds, 200 transfers, 0 mismatches
+  -- kernel log (6 lines)
+  | [  220.537608] gc573 0000:07:00.0: using MSI, irq 60
+  | [  220.639297] gc573 0000:07:00.0: FPGA version 20200811
+  | [  220.782205] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  220.783232] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  220.783622] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  220.783981] gc573 0000:07:00.0: video device video0
+RESULT 12-video-stress      PASS (34s)
+
+## 13-video-unbind
+  unbind while streaming: exit 0 after 273 ms
+  capture exited with status 2 (expected nonzero: device gone)
+    FAIL capture fmt=NV12: no frame after 54: No such device
+    gc573-cap: STREAMOFF: No such device
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.604 max=16.716 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+  rebind: probe and capture OK
+  -- kernel log (12 lines)
+  | [  255.197380] gc573 0000:07:00.0: using MSI, irq 60
+  | [  255.299619] gc573 0000:07:00.0: FPGA version 20200811
+  | [  255.441011] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  255.443974] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  255.444414] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  255.444796] gc573 0000:07:00.0: video device video0
+  | [  256.798266] gc573 0000:07:00.0: using MSI, irq 60
+  | [  256.900491] gc573 0000:07:00.0: FPGA version 20200811
+  | [  257.043115] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  257.045895] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  257.046334] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  257.047427] gc573 0000:07:00.0: video device video0
+RESULT 13-video-unbind      PASS (3s)
+
+## 14-exp-slot-bits
+  mode 1 NV12: exit 0
+    RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.527 max=16.850 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+  mode 1 YV12: exit 0
+    RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.668 min=16.535 max=16.845 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=518400 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_bytes=518400 ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+  mode 2 NV12: exit 0
+    RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.614 max=16.720 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+  mode 2 YV12: exit 0
+    RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.537 max=16.870 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=518400 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_bytes=518400 ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+  mode 4 NV12: exit 0
+    RESULT capture fmt=NV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.576 max=16.744 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=1036800 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) distinct_frames=1
+  mode 4 YV12: exit 0
+    RESULT capture fmt=YV12 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.551 max=16.788 frames_not_overwritten=0 ch0_bytes=2073600 ch0_untouched_blocks_max=0 ch0_top_word=10101010(100.0%) ch1_bytes=518400 ch1_untouched_blocks_max=0 ch1_top_word=80808080(100.0%) ch2_bytes=518400 ch2_untouched_blocks_max=0 ch2_top_word=80808080(100.0%) distinct_frames=1
+  mode 3 NV12:
+      | stats: irqs 0 frames 0 skipped 0 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+    RESULT wait fmt=NV12 ms=500 b0_ch0_untouched=64800/64800 b0_ch1_untouched=32400/32400 b1_ch0_untouched=64800/64800 b1_ch1_untouched=32400/32400 b2_ch0_untouched=64800/64800 b2_ch1_untouched=32400/32400 b3_ch0_untouched=64800/64800 b3_ch1_untouched=32400/32400
+  mode 3 YV12:
+      | stats: irqs 0 frames 0 skipped 0 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+    RESULT wait fmt=YV12 ms=500 b0_ch0_untouched=64800/64800 b0_ch1_untouched=16200/16200 b0_ch2_untouched=16200/16200 b1_ch0_untouched=64800/64800 b1_ch1_untouched=16200/16200 b1_ch2_untouched=16200/16200 b2_ch0_untouched=64800/64800 b2_ch1_untouched=16200/16200 b2_ch2_untouched=16200/16200 b3_ch0_untouched=64800/64800 b3_ch1_untouched=16200/16200 b3_ch2_untouched=16200/16200
+  ch0 slot-valid bits gate the frame for all channels; ch1/ch2 CH_CTRL had no visible effect
+  -- kernel log (6 lines)
+  | [  258.605235] gc573 0000:07:00.0: using MSI, irq 60
+  | [  258.707425] gc573 0000:07:00.0: FPGA version 20200811
+  | [  258.852104] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [  258.854722] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 OK
+  | [  258.855451] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 OK
+  | [  258.857373] gc573 0000:07:00.0: video device video0
+RESULT 14-exp-slot-bits     PASS (10s)
+
+## kmemleak (whole suite)
+  no new unreferenced objects
+RESULT kmemleak             PASS 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 00-kmemleak-selftest PASS (31s)
+RESULT 01-probe             PASS (0s)
+RESULT 02-load-unload       PASS (31s)
+RESULT 03-chip-id           PASS (1s)
+RESULT 04-i2c-reads         PASS (1s)
+RESULT 05-dkms-build        PASS (5s)
+RESULT 10-video-capture     PASS (64s)
+RESULT 11-v4l2-compliance   PASS (9s)
+RESULT 12-video-stress      PASS (34s)
+RESULT 13-video-unbind      PASS (3s)
+RESULT 14-exp-slot-bits     PASS (10s)
+RESULT kmemleak             PASS 
+RESULT debug-checkers       PASS 
+SUMMARY pass=13 fail=0 skip=0

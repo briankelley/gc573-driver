@@ -12,19 +12,28 @@
 #include <linux/atomic.h>
 #include <linux/bits.h>
 #include <linux/completion.h>
+#include <linux/dma-mapping.h>
 #include <linux/i2c.h>
 #include <linux/io.h>
+#include <linux/list.h>
 #include <linux/mutex.h>
+#include <linux/sizes.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
+#include <media/v4l2-dev.h>
+#include <media/v4l2-device.h>
+#include <media/videobuf2-v4l2.h>
 
+struct dentry;
 struct pci_dev;
+struct sg_table;
 
 /* spec/pci.md */
 #define GC573_BAR0_SIZE			0x80000		/* 512 KiB */
 
 /* Core block, spec/regmap.md */
 #define GC573_VERSION			0x000		/* FPGA build date, BCD YYYYMMDD */
+#define GC573_TLP_ALIGN			0x004		/* read only (debugfs) */
 #define GC573_RESET			0x00c
 #define GC573_INT_STATUS		0x010		/* write 1 to clear */
 #define GC573_INT_ENABLE		0x01c
@@ -93,11 +102,81 @@ struct pci_dev;
 #define GC573_I2C1_STATUS_WR_OK		BIT(0)
 #define GC573_I2C1_STATUS_RD_OK		BIT(2)
 
-/* Video input processing block, spec/regmap.md */
+/*
+ * Video DMA channels, spec/regmap.md and spec/video-dma.md. One channel
+ * per image plane, four buffer slots per channel. ch1/ch2 CH_CTRL read
+ * back 0xeeeeeeee: software keeps what it last wrote.
+ */
+#define GC573_VCH_NUM			3
+#define GC573_VCH_SLOTS			4
+#define GC573_VCH0_BASE			0x300
+#define GC573_VCH1_BASE			0x500
+#define GC573_VCH2_BASE			0x600
+#define GC573_VCH_STATUS		0x00		/* ch0: [2:0] = done slot + 1 */
+#define GC573_VCH_STATUS_SLOT		GENMASK(2, 0)
+#define GC573_VCH_CTRL			0x04
+#define GC573_VCH_CTRL_RUN		BIT(0)
+#define GC573_VCH_CTRL_SLOT(n)		BIT((n) + 1)	/* slot n valid */
+#define GC573_VCH_CTRL_SLOTS		GENMASK(4, 1)
+#define GC573_VCH_LIST_LO(n)		(0x08 + 12 * (n))
+#define GC573_VCH_LIST_HI(n)		(0x0c + 12 * (n))
+#define GC573_VCH_COUNT(n)		(0x10 + 12 * (n))
+
+/*
+ * Longest contiguous chunk one descriptor describes, and the DMA max
+ * segment size the driver declares. RD's traced lists used chunks of 4 MB
+ * and more (T3/S22: 2 descriptors for an 8294400-byte plane); the hardware
+ * limit is unknown.
+ */
+#define GC573_DMA_SEG_MAX		SZ_2M
+
+/* Video DMA descriptor, 4 little-endian words, spec/video-dma.md */
+#define GC573_DESC_WORDS		4
+#define GC573_DESC_SIZE			16
+#define GC573_DESC_CTRL			0x80008000	/* on every descriptor RD used */
+#define GC573_DESC_LEN_ALIGN		32		/* chunk length granularity */
+#define GC573_DESC_ADDR_ALIGN		256		/* chunk start alignment */
+
+/* Video input processing block, spec/regmap.md, spec/video-pipeline.md */
+#define GC573_VIP_CTRL			0x1000
+#define GC573_VIP_CTRL_OUT_EN		BIT(0)		/* gates frames into DMA */
+#define GC573_VIP_CTRL_SCALER		BIT(7)		/* 1 = scalers in path */
+#define GC573_VIP_CTRL_FMT		GENMASK(15, 8)	/* pixel format code */
+#define GC573_IN_STATUS			0x1004		/* [1:0] timing stable */
+#define GC573_IN_WIDTH			0x1008		/* bus clocks per line */
+#define GC573_IN_HEIGHT			0x100c		/* active lines */
+#define GC573_IN_FRAME_PERIOD		0x1010		/* 100 MHz ticks, ~0 = none */
+#define GC573_CLIP_LEFT			0x1020
+#define GC573_CLIP_WIDTH		0x1024
+#define GC573_CLIP_TOP			0x1028
+#define GC573_CLIP_HEIGHT		0x102c
+#define GC573_COLOR_CTRL		0x1040
+#define GC573_COLOR_CTRL_R2Y		BIT(1)		/* RGB->YUV CSC */
+#define GC573_COLOR_CTRL_ADJUST		BIT(2)		/* brightness etc. */
+#define GC573_COLOR_CTRL_Y2R		BIT(3)		/* YUV->RGB CSC */
+#define GC573_CONTRAST			0x105c
+#define GC573_BRIGHTNESS		0x1060
+#define GC573_HUE			0x1064
+#define GC573_SATURATION		0x1068
+#define GC573_CONTRAST_DEF		0x100
+#define GC573_BRIGHTNESS_DEF		0x200
+#define GC573_HUE_DEF			0
+#define GC573_SATURATION_DEF		0x80
 #define GC573_DDR_STATUS		0x107c
 #define GC573_DDR_READY			BIT(0)
 #define GC573_DDR_RECOVER_1		0x8		/* recovery writes: 8, then 1 */
 #define GC573_DDR_RECOVER_2		0x1
+#define GC573_RATE_CTRL			0x1080
+#define GC573_RATE_CTRL_FPS		GENMASK(31, 16)	/* rate limit, fps */
+#define GC573_RATE_CTRL_CSC		GENMASK(2, 1)
+#define GC573_RATE_CTRL_CSC_YUV		0x1		/* [2:1] for YUV output */
+#define GC573_RATE_CTRL_CSC_RGB		0x3		/* [2:1] for RGB output */
+#define GC573_RATE_FPS_NO_INPUT		5		/* RD's value with no input */
+#define GC573_PIX_MODE			0x1088
+#define GC573_PIX_MODE_NO_INPUT		0x2		/* RD's value with no input */
+#define GC573_CSC_R2Y			0x10c0		/* 7 words */
+#define GC573_CSC_Y2R			0x10e0		/* 7 words */
+#define GC573_CSC_WORDS			7
 
 /* Scalers, spec/regmap.md */
 #define GC573_SCALER_RESET		0x50000
@@ -110,14 +189,95 @@ struct gc573_ocbus {
 	u32 base;			/* GC573_I2C0_BASE or GC573_I2C2_BASE */
 };
 
+/* Output pixel format, spec/video-pipeline.md "Pixel format code" */
+struct gc573_fmt {
+	u32 fourcc;
+	u8 code;			/* VIP_CTRL[15:8] */
+	u8 bpp;				/* bytes per pixel, packed or luma plane */
+	u8 nch;				/* DMA channels = planes */
+	bool rgb;			/* RGB output (CSC setup differs) */
+};
+
+/* Descriptor list of one buffer on one channel (coherent memory) */
+struct gc573_dlist {
+	__le32 *desc;
+	dma_addr_t dma;
+	size_t size;			/* bytes allocated */
+	u32 count;			/* descriptors: SLOTn_COUNT */
+};
+
+struct gc573_vbuf {
+	struct vb2_v4l2_buffer vb;	/* first: vb2 allocates this struct */
+	struct list_head list;		/* on gc573_video.queued */
+	struct sg_table *sgt;		/* pages, DMA-mapped from buf_init on */
+	struct gc573_dlist dl[GC573_VCH_NUM];
+	u64 armed;			/* gc573_video.arm_seq when armed */
+};
+
+/* Last few slot completions, for debugfs (experiments, bring-up) */
+#define GC573_VEV_NUM			32
+struct gc573_vev {
+	u64 ns;				/* INT bit 1 time (hard handler) */
+	u32 status;			/* ch0 CH_STATUS */
+	u32 ctrl;			/* ch0 CH_CTRL when serviced */
+	u8 done;			/* buffers completed by this event */
+	u8 armed;			/* slots armed afterwards */
+};
+
+/* Statistics since the last stream start, for debugfs */
+struct gc573_vstats {
+	u32 irqs;			/* INT bit 1 serviced while running */
+	u32 frames;			/* buffers delivered */
+	u32 skipped;			/* frames dropped after the start */
+	u32 multi;			/* INT bit 1 that completed > 1 slot */
+	u32 unarmed;			/* INT bit 1 for a slot not armed */
+	u32 order;			/* earlier-armed slot still valid */
+	u32 bad_status;			/* CH_STATUS slot field not 1..4 */
+	u32 stale;			/* INT bit 1 while not running */
+	u32 terms;			/* INT bit 0 */
+	u32 term_missing;		/* stop without INT bit 0 */
+	u32 underruns;			/* no slot armed after a frame */
+	struct gc573_vev ev[GC573_VEV_NUM];
+	unsigned int ev_head;
+};
+
+struct gc573_video {
+	struct video_device vdev;
+	struct vb2_queue queue;
+	struct mutex lock;		/* ioctls, vb2 queue, hardware start/stop */
+	struct v4l2_dv_timings timings;
+	struct v4l2_pix_format pix;
+	const struct gc573_fmt *fmt;
+	bool dead;			/* quiesced: never start again */
+	struct completion term;		/* INT bit 0: stream terminated */
+	u64 irq_ns;			/* time of the last INT bit 1 */
+
+	/* stream state shared with the IRQ thread */
+	spinlock_t slock;
+	bool running;			/* frames are being serviced */
+	struct list_head queued;	/* buffers waiting for a slot */
+	struct gc573_vbuf *slot[GC573_VCH_SLOTS];
+	unsigned int next_arm;		/* slots are armed round-robin */
+	u64 arm_seq;
+	u32 ch_ctrl[GC573_VCH_NUM];	/* CH_CTRL values written (ch1, ch2) */
+	u32 vip_ctrl;			/* VIP_CTRL while streaming, w/o OUT_EN */
+	u32 sequence;
+	unsigned int skip;		/* completions still to drop */
+	int exp_mode;			/* exp_slot_mode for this stream */
+	struct gc573_vstats st;
+};
+
 struct gc573 {
 	struct pci_dev *pdev;
 	void __iomem *mmio;
 	int irq;
 	u32 fw_version;
+	struct v4l2_device v4l2_dev;	/* refcount owner of this struct */
+	struct dentry *debugfs;
 
 	/* INT_STATUS bits acked by the hard handler, serviced by the thread */
 	atomic_t irq_pending;
+	atomic_t irq_seen;		/* OR of every INT_STATUS read, debugfs */
 
 	/* serialises read-modify-write of GPIO (0x040) */
 	spinlock_t gpio_lock;
@@ -129,11 +289,24 @@ struct gc573 {
 	u8 i2c1_status;			/* GC573_I2C1_STATUS latched at INT bit 11 */
 	struct gc573_ocbus i2c0;	/* byte master, devices unknown */
 	struct gc573_ocbus i2c2;	/* byte master, devices unknown */
+
+	struct gc573_video vid;
 };
+
+int gc573_reset_domains(struct gc573 *gc);
 
 int gc573_i2c_init(struct gc573 *gc);
 void gc573_i2c1_irq(struct gc573 *gc);
 void gc573_i2c_check_ids(struct gc573 *gc);
+
+extern const struct vb2_mem_ops gc573_vb2_mem_ops;
+
+void gc573_video_early_init(struct gc573 *gc);
+int gc573_video_init(struct gc573 *gc);
+void gc573_video_hw_stop(struct gc573 *gc);
+void gc573_video_irq_done(struct gc573 *gc);
+void gc573_video_irq_term(struct gc573 *gc);
+void gc573_video_debugfs(struct gc573 *gc);
 
 static inline u32 gc573_rd(struct gc573 *gc, u32 off)
 {

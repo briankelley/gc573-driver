@@ -8,16 +8,22 @@
  * probe runs the full sequence every time and never assumes reset values.
  *
  * Teardown is entirely devres-managed. Release order is the reverse of
- * probe: quiesce (interrupts off, reset domains), free IRQ, free vectors,
- * unmap BAR0, disable the device.
+ * probe: debugfs, video device (stops a running stream), I2C adapters,
+ * quiesce (video stopped, interrupts off, reset domains), free IRQ, free
+ * vectors, unmap BAR0, disable the device, and last the v4l2_device
+ * reference. struct gc573 is freed when the last reference goes, which
+ * can be after remove while a file handle is still open.
  */
 
+#include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/dma-mapping.h>
 #include <linux/interrupt.h>
+#include <linux/ktime.h>
 #include <linux/module.h>
 #include <linux/pci.h>
+#include <linux/slab.h>
 
 #include "compat.h"
 #include "gc573.h"
@@ -40,6 +46,12 @@
 #define GC573_GPIO_EN_WAIT_US		5000
 #define GC573_GPIO_EN_TRIES		21
 
+/*
+ * spec/init.md step 11: at least 50 ms from the last chip-reset release to
+ * the first bus-1 transfer (RD: 52.3-52.5 ms; the minimum is unverified)
+ */
+#define GC573_CHIP_RESET_SETTLE_MS	50
+
 static void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val)
 {
 	u32 v;
@@ -51,10 +63,11 @@ static void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val)
 }
 
 /*
- * spec/init.md step 2, also the last quiesce step: reset each domain in
- * turn. A domain's bit reads back 1 once its reset is done.
+ * spec/init.md step 2, also the last step of a video stop and of the
+ * quiesce: reset each domain in turn. A domain's bit reads back 1 once
+ * its reset is done.
  */
-static int gc573_reset_domains(struct gc573 *gc)
+int gc573_reset_domains(struct gc573 *gc)
 {
 	static const u32 domains[] = {
 		GC573_RESET_DOMAIN_0, GC573_RESET_DOMAIN_8, GC573_RESET_DOMAIN_9,
@@ -209,6 +222,7 @@ static int gc573_hw_init(struct gc573 *gc)
 	/* 10, 11: on-board chip resets */
 	gc573_gpio_reset_pulse(gc, GC573_GPIO_RST5_N, 5000, 10000, 5000);
 	gc573_gpio_reset_pulse(gc, GC573_GPIO_RST8_N, 2000, 2000, 2000);
+	msleep(GC573_CHIP_RESET_SETTLE_MS);
 
 	dev_dbg(dev, "init done: GPIO=%#010x\n", gc573_rd(gc, GC573_GPIO));
 	return 0;
@@ -222,7 +236,12 @@ static void gc573_quiesce(void *data)
 {
 	struct gc573 *gc = data;
 
-	/* 1: stop video and audio: nothing starts them before M2/M4 */
+	/* 1: stop video, and never start it again; nothing starts audio yet */
+	mutex_lock(&gc->vid.lock);
+	gc->vid.dead = true;
+	if (gc573_rd(gc, GC573_VIP_CTRL) & GC573_VIP_CTRL_OUT_EN)
+		gc573_video_hw_stop(gc);
+	mutex_unlock(&gc->vid.lock);
 
 	/* 2: interrupts off, status cleared */
 	gc573_irq_hw_disable(gc);
@@ -250,10 +269,15 @@ static irqreturn_t gc573_irq(int irq, void *data)
 	status = gc573_rd(gc, GC573_INT_STATUS);
 	if (status == U32_MAX)		/* device not responding */
 		return IRQ_NONE;
+	atomic_or(status, &gc->irq_seen);
 
 	pending = status & GC573_INT_ENABLE_MASK;
 	if (!pending)
 		return IRQ_NONE;
+
+	/* frame timestamp as close to the event as the driver gets */
+	if (pending & GC573_INT_VID_DONE)
+		WRITE_ONCE(gc->vid.irq_ns, ktime_get_ns());
 
 	/* write 1 to clear exactly the bits taken for service */
 	gc573_wr(gc, GC573_INT_STATUS, pending);
@@ -275,14 +299,51 @@ static irqreturn_t gc573_irq_thread(int irq, void *data)
 	if (pending & GC573_INT_I2C1)
 		gc573_i2c1_irq(gc);
 
-	/* nothing starts video or audio yet */
-	unexpected = pending & (GC573_INT_VID_TERM | GC573_INT_VID_DONE |
-				GC573_INT_AUD_STOP | GC573_INT_AUD_DONE);
+	if (pending & GC573_INT_VID_DONE)
+		gc573_video_irq_done(gc);
+	if (pending & GC573_INT_VID_TERM)
+		gc573_video_irq_term(gc);
+
+	/* nothing starts audio yet */
+	unexpected = pending & (GC573_INT_AUD_STOP | GC573_INT_AUD_DONE);
 	if (unexpected)
 		dev_warn_ratelimited(&gc->pdev->dev, "unexpected interrupt %#x\n",
 				     unexpected);
 
 	return IRQ_HANDLED;
+}
+
+static void gc573_release(struct v4l2_device *v4l2_dev)
+{
+	kfree(container_of(v4l2_dev, struct gc573, v4l2_dev));
+}
+
+static void gc573_v4l2_put(void *data)
+{
+	struct gc573 *gc = data;
+
+	v4l2_device_unregister(&gc->v4l2_dev);
+	v4l2_device_put(&gc->v4l2_dev);
+}
+
+static void gc573_debugfs_remove(void *data)
+{
+	struct gc573 *gc = data;
+
+	debugfs_remove_recursive(gc->debugfs);
+}
+
+/* Bring-up and experiment state; removed before anything it reads */
+static int gc573_debugfs_init(struct gc573 *gc)
+{
+	char name[32];
+
+	snprintf(name, sizeof(name), "%s-%s", KBUILD_MODNAME,
+		 pci_name(gc->pdev));
+	gc->debugfs = debugfs_create_dir(name, NULL);
+	gc573_video_debugfs(gc);
+	return devm_add_action_or_reset(&gc->pdev->dev, gc573_debugfs_remove,
+					gc);
 }
 
 static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
@@ -291,14 +352,26 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	struct gc573 *gc;
 	int ret;
 
-	gc = devm_kzalloc(dev, sizeof(*gc), GFP_KERNEL);
+	/* refcounted through v4l2_dev: open file handles can outlive remove */
+	gc = kzalloc(sizeof(*gc), GFP_KERNEL);
 	if (!gc)
 		return -ENOMEM;
 	gc->pdev = pdev;
 	spin_lock_init(&gc->gpio_lock);
 	mutex_init(&gc->i2c_lock);
 	init_completion(&gc->i2c1_done);
+	gc573_video_early_init(gc);
 	pci_set_drvdata(pdev, gc);
+
+	gc->v4l2_dev.release = gc573_release;
+	ret = v4l2_device_register(dev, &gc->v4l2_dev);
+	if (ret) {
+		kfree(gc);
+		return dev_err_probe(dev, ret, "cannot register v4l2 device\n");
+	}
+	ret = devm_add_action_or_reset(dev, gc573_v4l2_put, gc);
+	if (ret)
+		return ret;
 
 	/* 1: PCI enable, bus master, BAR0, MSI (spec/pci.md) */
 	ret = pcim_enable_device(pdev);
@@ -309,15 +382,16 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return dev_err_probe(dev, -ENODEV, "BAR0 too small: %pR\n",
 				     &pdev->resource[0]);
 
-	ret = pcim_iomap_regions(pdev, BIT(0), KBUILD_MODNAME);
-	if (ret)
-		return dev_err_probe(dev, ret, "cannot map BAR0\n");
-	gc->mmio = pcim_iomap_table(pdev)[0];
+	gc->mmio = gc573_pcim_iomap_region(pdev, 0, KBUILD_MODNAME);
+	if (IS_ERR(gc->mmio))
+		return dev_err_probe(dev, PTR_ERR(gc->mmio), "cannot map BAR0\n");
 
 	/* 64-bit DMA is untested (spec/pci.md) */
 	ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32));
 	if (ret)
 		return dev_err_probe(dev, ret, "no 32-bit DMA\n");
+	/* one descriptor per segment: tell the DMA layer how long they get */
+	dma_set_max_seg_size(dev, GC573_DMA_SEG_MAX);
 
 	pci_set_master(pdev);
 
@@ -350,7 +424,19 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return ret;
 
 	gc573_i2c_check_ids(gc);
-	return 0;
+
+	ret = gc573_video_init(gc);
+	if (ret)
+		return dev_err_probe(dev, ret, "cannot register video device\n");
+
+	return gc573_debugfs_init(gc);
+}
+
+/* Reboot, kexec: no DMA or interrupts may outlive this kernel */
+static void gc573_shutdown(struct pci_dev *pdev)
+{
+	gc573_quiesce(pci_get_drvdata(pdev));
+	pci_clear_master(pdev);
 }
 
 static const struct pci_device_id gc573_pci_ids[] = {
@@ -364,6 +450,7 @@ static struct pci_driver gc573_pci_driver = {
 	.name		= KBUILD_MODNAME,
 	.id_table	= gc573_pci_ids,
 	.probe		= gc573_probe,
+	.shutdown	= gc573_shutdown,
 };
 module_pci_driver(gc573_pci_driver);
 

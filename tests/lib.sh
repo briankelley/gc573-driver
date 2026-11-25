@@ -24,7 +24,7 @@ KMSG_BAD+='|blocked for more than|rcu.*stall|sysfs: cannot create'
 
 # Driver messages that fail any case: the driver's error and warning wording.
 # "refused": something tried a bus 0/2 I2C transfer, which nothing should do.
-KMSG_DRV_BAD="$GC573_MOD [^ ]+: .*(error|timeout|not ready|unexpected|failed|MISMATCH|refused)"
+KMSG_DRV_BAD="$GC573_MOD [^ ]+: .*(error|timeout|not ready|unexpected|failed|cannot|MISMATCH|refused)"
 
 # kmemleak reports an object only after two consecutive scans found it
 # unreferenced with unchanged contents: a scan that sees a changed checksum
@@ -77,4 +77,40 @@ gc573_load() {
 	insmod "$GC573_KO" "$@"
 }
 
-gc573_unload() { rmmod "$GC573_MOD"; }
+# Unload the module. A new video node is opened briefly by udev (v4l_id) and
+# desktop media daemons (wireplumber), which holds a module reference: wait
+# for udev, retry for up to 5 s, then report the last error.
+gc573_unload() {
+	local i
+	udevadm settle 2>/dev/null
+	for i in $(seq 50); do
+		rmmod "$GC573_MOD" 2>/dev/null && return 0
+		gc573_loaded || return 0
+		sleep 0.1
+	done
+	rmmod "$GC573_MOD"
+}
+
+# The card's V4L2 capture node (/dev/videoN) while the driver is bound.
+gc573_video_dev() {
+	local d
+	for d in /sys/bus/pci/devices/"$GC573_BDF"/video4linux/video*; do
+		[ -e "$d" ] || continue
+		echo "/dev/${d##*/}"
+		return 0
+	done
+	return 1
+}
+
+# The driver's debugfs state: registers, slots, counters, last completions.
+gc573_debugfs() { echo "/sys/kernel/debug/$GC573_MOD-$GC573_BDF/video"; }
+
+# FPGA input measurement registers (0x1004-0x1010), from debugfs. With no
+# input, 1010 (frame period) reads 0xffffffff.
+gc573_input_regs() { grep '^input:' "$(gc573_debugfs)"; }
+
+# Build the capture test tool into directory $1; print the binary's path.
+gc573_cap_build() {
+	gcc -O2 -Wall -Wextra -o "$1/gc573-cap" "$GC573_TESTS/gc573-cap.c" >&2 &&
+		echo "$1/gc573-cap"
+}

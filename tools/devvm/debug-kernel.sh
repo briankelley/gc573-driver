@@ -32,7 +32,11 @@ ssh "$VM" 'sudo modprobe -a videodev videobuf2_dma_sg videobuf2_vmalloc videobuf
 ssh "$VM" 'cat /boot/config-$(uname -r)' > "$src/.config"
 cd "$src"
 make -s LSMOD=../lsmod.vm localmodconfig < <(yes '') >/dev/null   # pipefail-safe
+# localmodconfig keeps loaded modules' own options, but VIDEOBUF2_* are hidden
+# symbols that only drivers select, so they went with the unloaded drivers:
+# vivid selects the vb2 stack gc573 needs (and is a v4l2-compliance reference).
 scripts/config \
+  -m VIDEO_VIVID \
   -e DEBUG_KMEMLEAK -d DEBUG_KMEMLEAK_DEFAULT_OFF --set-val DEBUG_KMEMLEAK_MEM_POOL_SIZE 16000 \
   -e PROVE_LOCKING -e DEBUG_ATOMIC_SLEEP -e DEBUG_LIST -e DEBUG_SG \
   -e DMA_API_DEBUG -e DMA_API_DEBUG_SG \
@@ -45,6 +49,9 @@ scripts/config \
 make -s olddefconfig
 for o in DEBUG_KMEMLEAK PROVE_LOCKING DEBUG_ATOMIC_SLEEP KASAN DMA_API_DEBUG; do
   grep -q "^CONFIG_$o=y" .config || { echo "config: $o not enabled" >&2; exit 1; }
+done
+for o in VIDEO_DEV VIDEOBUF2_CORE VIDEOBUF2_V4L2 VIDEOBUF2_MEMOPS; do
+  grep -q "^CONFIG_$o=[ym]" .config || { echo "config: $o not enabled" >&2; exit 1; }
 done
 make -s -j"$(nproc)" bindeb-pkg LOCALVERSION="-$SUFFIX" >/dev/null
 cd ..
