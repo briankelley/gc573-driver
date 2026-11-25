@@ -7,6 +7,7 @@
 # points of the frame. Guards the arming rule of gc573_buf_queue(): a ch0
 # CH_CTRL read-modify-write that straddles a slot completion would arm the
 # completed slot again. Also no completion for an unarmed slot (debugfs).
+# No input (gc573_input_off): a lock would end the stream.
 # A 200000-QBUF run of the code before the rule did not reproduce the race:
 # tests/logs/20261125-001400_6.8.0-151-generic_rbtest.log.
 # shellcheck source=tests/lib.sh
@@ -18,6 +19,7 @@ cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 
 gc573_load || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
+gc573_input_off "$dev"
 "$cap" -d "$dev" -f NV12 -b 3 -R "${GC573_RB_QBUFS:-6000}" \
 	-D "$(gc573_debugfs)" > "$tmp/out" 2>&1
 rc=$?

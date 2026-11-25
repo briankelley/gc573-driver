@@ -109,19 +109,25 @@ gc573_debugfs() { echo "/sys/kernel/debug/$GC573_MOD-$GC573_BDF/video"; }
 # input, 1010 (frame period) reads 0xffffffff.
 gc573_input_regs() { grep '^input:' "$(gc573_debugfs)"; }
 
-# Cases written for the free-running FPGA (no input, M2) cannot capture
-# while an input is locked at other timings: skip them then (the source has
-# to be off, e.g. xrandr --output DVI-D-0 --off on the PC loopback host).
-# Waits up to 4 s for a lock to settle first. $1: video node.
-gc573_skip_if_locked() {
-	local i
-	for i in $(seq 40); do
+# Take the HDMI input away for a case that needs none: clear the EDID
+# (VIDIOC_S_EDID, 0 blocks: both HPDs go low and the source stops), then
+# wait until QUERY_DV_TIMINGS has failed for 1 s in a row. Unloads and
+# fails if the input stays locked for 10 s.
+gc573_input_off() {
+	local i n=0
+	v4l2-ctl -d "$1" --clear-edid=0 >/dev/null 2>&1 ||
+		{ gc573_unload; fail "S_EDID with 0 blocks failed"; }
+	for i in $(seq 100); do
 		if v4l2-ctl -d "$1" --query-dv-timings >/dev/null 2>&1; then
-			gc573_unload
-			skip "HDMI input locked: this case needs no input (source off)"
+			n=0
+		else
+			n=$((n + 1))
+			[ "$n" -ge 10 ] && return 0
 		fi
 		sleep 0.1
 	done
+	gc573_unload
+	fail "HDMI input still locked 10 s after the EDID was cleared"
 }
 
 # The HDMI front-end's debugfs state (chips, poll statistics, input).

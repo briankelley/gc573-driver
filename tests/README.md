@@ -12,8 +12,9 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
 - Env: `GC573_ITER` (load/unload cycles, default 50), `GC573_I2C_ROUNDS`
   (`04-i2c-reads` rounds per reader, default 200), `GC573_INPUT` (HDMI input
   source and mode for the log, default `none`), `GC573_KO` (module path).
-- The suite runs with the HDMI source off: the no-input cases (`10`, `12`,
-  `13`, `14`) SKIP when the input locks within 4 s of the load. Live-input
+- The no-input cases (`10`, `12`, `13`, `14`, `15`) take the HDMI input
+  away first (`gc573_input_off`: `VIDIOC_S_EDID` with 0 blocks, then no lock
+  for 1 s), so the suite runs with the loopback source on or off. Live-input
   checks are in `live.sh` (below).
 - Leak, lockdep, KASAN and DMA-API gates need the debug kernel
   (`6.8.12-gc573dbg`); on other kernels the kmemleak result is SKIP.

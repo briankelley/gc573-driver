@@ -7,6 +7,8 @@
 #    every plane, one DMA channel per plane, must have been overwritten.
 # 2. Every DV timing the driver enumerates x six formats, GC573_SWEEP_FRAMES
 #    (default 30) frames each, same checks: each offered mode must work.
+#    Since M3 the list follows the EDID, and gc573_input_off clears it: the
+#    list is saved with the default EDID first (gc573-cap -t).
 # No sequence gaps or error flags. Cadence (no input: 60 Hz whatever the
 # timings): mean interval 16.6-16.75 ms; every interval within half a period
 # of 16.67 ms (8.4-25 ms), so a lost or doubled frame, which moves an
@@ -24,14 +26,16 @@ cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 
 gc573_load || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
-gc573_skip_if_locked "$dev"
+"$cap" -d "$dev" -t "$tmp/timings" > "$tmp/saved" 2>&1 ||
+	{ cat "$tmp/saved"; gc573_unload; fail "cannot save the timings"; }
+gc573_input_off "$dev"
 echo "device: $dev"
 echo "FPGA input registers before streaming:"
 gc573_input_regs | sed 's/^/  /'
 "$cap" -d "$dev" -f all -b 4 -n "${GC573_FRAMES:-120}" -p > "$tmp/gate" 2>&1
 rc1=$?
-"$cap" -d "$dev" -f all -b 4 -n "${GC573_SWEEP_FRAMES:-30}" -p -T all \
-	> "$tmp/sweep" 2>&1
+"$cap" -d "$dev" -f all -b 4 -n "${GC573_SWEEP_FRAMES:-30}" -p \
+	-T "@$tmp/timings" > "$tmp/sweep" 2>&1
 rc2=$?
 echo "FPGA input registers after streaming:"
 gc573_input_regs | sed 's/^/  /'
@@ -39,7 +43,7 @@ gc573_unload || fail "rmmod failed"
 
 echo "== default timings"
 sed 's/^/  /' "$tmp/gate"
-echo "== every enumerated DV timing"
+echo "== every enumerated DV timing ($(sed -n 's/^SAVED //p' "$tmp/saved"))"
 grep -E '^(TIMINGS|RESULT|FAIL|SKIP)' "$tmp/sweep" |
 	sed -E 's/ ch[0-9]_bytes=[0-9]+//g; s/^/  /'
 [ "$rc1" = 0 ] || fail "default timings: gc573-cap exit $rc1"

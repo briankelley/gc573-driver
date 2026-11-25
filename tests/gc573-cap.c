@@ -3,13 +3,18 @@
  * gc573-cap: V4L2 capture test tool for the GC573 driver (tests/cases).
  *
  * gc573-cap -d /dev/videoN [-f FMT[,FMT..]|all] [-b BUFS] [-n FRAMES]
- *           [-p] [-T IDX|all] [-L SECS] [-o FILE] [-c CYCLES] [-u]
- *           [-w MS] [-X SECS [-r]] [-D DEBUGFS_FILE]
+ *           [-p] [-T IDX|all|@FILE] [-t FILE] [-L SECS] [-o FILE]
+ *           [-c CYCLES] [-u] [-w MS] [-X SECS [-r]] [-D DEBUGFS_FILE]
  *
  *   default  capture -n frames per format (requeue each buffer at once);
  *            formats ENUM_FMT does not offer at the timings are skipped
  *   -T IDX   first S_DV_TIMINGS to ENUM_DV_TIMINGS entry IDX; "all": run
- *            the format list once per enumerated timing (capture mode)
+ *            the format list once per enumerated timing (capture mode);
+ *            "@FILE": the same over the timings -t saved in FILE
+ *   -t FILE  save every enumerated timing to FILE (struct v4l2_dv_timings
+ *            records) and exit. ENUM_DV_TIMINGS follows the EDID, so a
+ *            sweep with the EDID cleared (no input) needs a list saved
+ *            before
  *   -L SECS  first wait up to SECS for QUERY_DV_TIMINGS to succeed, then
  *            S_DV_TIMINGS to the detected timings (live input)
  *   -o FILE  capture mode: write the last frame (sizeimage bytes) to
@@ -228,14 +233,61 @@ static uint64_t plane_sig(const struct buf *b, size_t off, size_t len,
 
 /* ---- buffers ---- */
 
-/* S_DV_TIMINGS to enumerated entry idx; -1 if there is no such entry */
+/* -T @FILE: the saved timings, in place of ENUM_DV_TIMINGS */
+static struct v4l2_dv_timings *saved;
+static unsigned int nsaved;
+
+/* -t FILE: write every enumerated timing to FILE */
+static int save_timings(const char *path)
+{
+	struct v4l2_enum_dv_timings et;
+	FILE *f = fopen(path, "wb");
+
+	if (!f)
+		die(path);
+	memset(&et, 0, sizeof(et));
+	for (; !xioctl(VIDIOC_ENUM_DV_TIMINGS, &et); et.index++)
+		if (fwrite(&et.timings, sizeof(et.timings), 1, f) != 1)
+			die(path);
+	if (errno != EINVAL)
+		die("ENUM_DV_TIMINGS");
+	if (fclose(f))
+		die(path);
+	printf("SAVED timings=%u file=%s\n", et.index, path);
+	return 0;
+}
+
+static void load_timings(const char *path)
+{
+	struct v4l2_dv_timings t;
+	FILE *f = fopen(path, "rb");
+
+	if (!f)
+		die(path);
+	while (fread(&t, sizeof(t), 1, f) == 1) {
+		saved = realloc(saved, (nsaved + 1) * sizeof(*saved));
+		if (!saved)
+			die("realloc");
+		saved[nsaved++] = t;
+	}
+	fclose(f);
+}
+
+/*
+ * S_DV_TIMINGS to entry idx (enumerated, or of the -T @FILE list); -1 if
+ * there is no such entry
+ */
 static int set_timings(unsigned int idx)
 {
 	struct v4l2_enum_dv_timings et = { .index = idx };
 	const struct v4l2_bt_timings *bt = &et.timings.bt;
 	double frame;
 
-	if (xioctl(VIDIOC_ENUM_DV_TIMINGS, &et)) {
+	if (saved) {
+		if (idx >= nsaved)
+			return -1;
+		et.timings = saved[idx];
+	} else if (xioctl(VIDIOC_ENUM_DV_TIMINGS, &et)) {
 		if (errno == EINVAL)
 			return -1;
 		die("ENUM_DV_TIMINGS");
@@ -968,18 +1020,19 @@ static unsigned int parse_fmts(const char *s, uint32_t *list)
 int main(int argc, char **argv)
 {
 	const char *dev = NULL, *fl = "YUYV";
-	const char *tl = NULL;
+	const char *tl = NULL, *tsave = NULL;
 	unsigned int nb = 4, nc = 0, wait_ms = 0, nl, i, t, t_end;
 	unsigned long n = 60, rb = 0;
 	double lock_secs = 0, xsecs = 0;
 	uint32_t list[NFMTS];
 	int opt, pattern = 0, under = 0, restart = 0;
 
-	while ((opt = getopt(argc, argv, "d:f:b:n:pT:L:o:c:uw:R:X:rFD:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:f:b:n:pT:t:L:o:c:uw:R:X:rFD:")) != -1) {
 		switch (opt) {
 		case 'd': dev = optarg; break;
 		case 'f': fl = optarg; break;
 		case 'T': tl = optarg; break;
+		case 't': tsave = optarg; break;
 		case 'b': nb = atoi(optarg); break;
 		case 'n': n = strtoul(optarg, NULL, 0); break;
 		case 'p': pattern = 1; break;
@@ -1010,6 +1063,12 @@ int main(int argc, char **argv)
 		die(dev);
 	setvbuf(stdout, NULL, _IOLBF, 0);
 
+	if (tsave)
+		return save_timings(tsave);
+	if (tl && tl[0] == '@') {
+		load_timings(tl + 1);
+		tl = "all";
+	}
 	if (lock_secs && wait_lock(lock_secs))
 		return 3;
 	if (xsecs) {

@@ -16,7 +16,7 @@ cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 
 gc573_load || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
-gc573_skip_if_locked "$dev"
+gc573_input_off "$dev"
 "$cap" -d "$dev" -f NV12 -b 4 -n 100000 -p > "$tmp/out" 2>&1 &
 pid=$!
 sleep 1
@@ -45,6 +45,7 @@ gc573_bound && { gc573_unload; fail "still bound after unbind"; }
 echo "$GC573_BDF" > "$drv/bind" || { gc573_unload; fail "rebind failed"; }
 gc573_bound || { gc573_unload; fail "not bound after rebind"; }
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node after rebind"; }
+gc573_input_off "$dev"
 "$cap" -d "$dev" -f YUYV -b 4 -n 30 -p 2>&1 | grep -E '^(RESULT|FAIL)' |
 	sed 's/^/  /'
 rc=${PIPESTATUS[0]}
