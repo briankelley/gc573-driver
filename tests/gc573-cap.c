@@ -353,11 +353,13 @@ static int wait_lock(double secs)
 		die("S_DV_TIMINGS");
 	if (xioctl(VIDIOC_G_PARM, &parm))
 		die("G_PARM");
-	printf("LOCK after_ms=%.0f %ux%u%s pixelclock=%llu flags=%#x vic=%u fps=%.4f h=%u/%u/%u v=%u/%u/%u pol=%#x\n",
+	printf("LOCK after_ms=%.0f %ux%u%s pixelclock=%llu flags=%#x vic=%u fps=%.4f tpf=%u/%u h=%u/%u/%u v=%u/%u/%u pol=%#x\n",
 	       now_ms() - t0, bt->width, bt->height, bt->interlaced ? "i" : "p",
 	       (unsigned long long)bt->pixelclock, bt->flags, bt->cea861_vic,
 	       (double)parm.parm.capture.timeperframe.denominator /
-	       parm.parm.capture.timeperframe.numerator, bt->hfrontporch,
+	       parm.parm.capture.timeperframe.numerator,
+	       parm.parm.capture.timeperframe.numerator,
+	       parm.parm.capture.timeperframe.denominator, bt->hfrontporch,
 	       bt->hsync, bt->hbackporch, bt->vfrontporch, bt->vsync,
 	       bt->vbackporch, bt->polarities);
 	return 0;

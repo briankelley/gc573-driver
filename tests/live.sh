@@ -17,8 +17,9 @@
 #             with show.sh: each locks to the new rate within 3 s
 #   capture   1080p60 and 1080p59.94, 6 formats x GC573_LIVE_FRAMES (600):
 #             each format's last frame compared with pattern.py, all frames
-#             identical (full-frame hash), no sequence gaps, mean interval
-#             within 0.1 % of the measured frame period, first frame dropped
+#             identical (full-frame hash), no sequence gaps, G_PARM equal
+#             to the DV timings' nominal interval, mean interval within
+#             0.1 % of the interval G_PARM reports, first frame dropped
 #   modes     every other mode the GPU offers for the output: timings and a
 #             verified capture (GC573_MODE_FRAMES, 120, per format)
 #   change    input change while streaming: SOURCE_CHANGE, DQBUF error, no
@@ -130,6 +131,25 @@ setup() {
 		"$ROOT/tests/live-compare.py" "$VM:$W/"
 }
 
+# The nominal frame interval of the timings in a gc573-cap LOCK line ($1)
+nominal_interval() {
+	python3 - "$1" <<'EOF'
+import math, re, sys
+l = sys.argv[1]
+kv = dict(re.findall(r'(\w+)=(\S+)', l))
+w, h = map(int, re.search(r' (\d+)x(\d+)[pi] ', l).groups())
+hf, hs, hb = map(int, kv['h'].split('/'))
+vf, vs, vb = map(int, kv['v'].split('/'))
+n = (w + hf + hs + hb) * (h + vf + vs + vb)
+d = int(kv['pixelclock'])
+fl = int(kv['flags'], 16)
+if fl & 2 and fl & 4:	# CAN_REDUCE_FPS and REDUCED_FPS
+    n, d = n * 1001, d * 1000
+g = math.gcd(n, d)
+print(f"{n // g}/{d // g}")
+EOF
+}
+
 # Capture fmts x n frames at the current input; compare the last frame of
 # each with pattern.py; check identical frames, gaps, cadence and the
 # dropped first frame. $1: tag, $2: frames, $3: expected WxH, $4: rate
@@ -145,6 +165,13 @@ live_capture() {
 	fps=$(echo "$lock" | sed -E 's/.* fps=([0-9.]+) .*/\1/')
 	check "$tag-timings" "$([ "${w}x$h" = "$size" ]; echo $?)" \
 		"(${w}x$h at $fps Hz, expected $size at $rate)"
+	# G_PARM reports the DV timings' nominal interval as an exact fraction
+	# (frame size over pixel clock, x 1001/1000 with REDUCED_FPS)
+	local tpf nom
+	tpf=$(sed -nE 's/.* tpf=([0-9]+\/[0-9]+) .*/\1/p' <<< "$lock")
+	nom=$(nominal_interval "$lock")
+	check "$tag-interval" "$([ -n "$tpf" ] && [ "$tpf" = "$nom" ]; echo $?)" \
+		"(G_PARM $tpf, nominal $nom)"
 	enc=709
 	[ "$h" -ge 720 ] || enc=601
 	vm "[ -f $W/p-${w}x$h.png ] || python3 $W/pattern.py $W/p-${w}x$h.png $w $h >/dev/null"

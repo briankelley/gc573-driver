@@ -1085,16 +1085,55 @@ static int gc573_enum_framesizes(struct file *file, void *priv,
 }
 
 /*
- * Frame interval: with a matching locked input the rate the FPGA measured
- * (0x1010, spec/hdmi-it6805.md 8.3), else the DV timings' nominal rate.
+ * The DV timings' nominal frame interval as an exact fraction: frame size
+ * over pixel clock, times 1001/1000 with REDUCED_FPS, so 1/60 and
+ * 1001/60000 as applications expect (v4l2_calc_timeperframe() rounds the
+ * rate to 1/100 fps first: 50/2997 for 59.94 Hz). {0, 0} if it does not
+ * fit a v4l2_fract.
+ */
+static struct v4l2_fract gc573_vid_nominal(const struct v4l2_bt_timings *bt)
+{
+	u64 n = (u64)V4L2_DV_BT_FRAME_WIDTH(bt) * V4L2_DV_BT_FRAME_HEIGHT(bt);
+	u64 d = bt->pixelclock;
+	struct v4l2_fract f = { 0, 0 };
+	u64 g;
+
+	if ((bt->flags & V4L2_DV_FL_CAN_REDUCE_FPS) &&
+	    (bt->flags & V4L2_DV_FL_REDUCED_FPS)) {
+		n *= 1001;
+		d *= 1000;
+	}
+	if (!n || !d)
+		return f;
+	g = gcd(n, d);
+	n = div64_u64(n, g);
+	d = div64_u64(d, g);
+	if (n <= U32_MAX && d <= U32_MAX) {
+		f.numerator = n;
+		f.denominator = d;
+	}
+	return f;
+}
+
+/*
+ * Frame interval: with a matching locked input the period the FPGA
+ * measured (0x1010, spec/hdmi-it6805.md 8.3), reported as the nominal
+ * interval when within 0.1 % of it; else the DV timings' nominal one.
  */
 static struct v4l2_fract gc573_vid_interval(struct gc573_video *v)
 {
-	struct v4l2_fract f;
+	struct v4l2_fract nom = gc573_vid_nominal(&v->timings.bt), f;
 	unsigned long g;
+	u64 a, b;
 
+	if (!nom.denominator)
+		nom = v4l2_calc_timeperframe(&v->timings);
 	if (!gc573_vid_input_matches(v) || !v->in.period)
-		return v4l2_calc_timeperframe(&v->timings);
+		return nom;
+	a = (u64)v->in.period * nom.denominator;
+	b = (u64)nom.numerator * GC573_IN_FRAME_PERIOD_HZ;
+	if (abs_diff(a, b) <= div_u64(b, 1000))
+		return nom;
 	g = gcd(v->in.period, GC573_IN_FRAME_PERIOD_HZ);
 	f.numerator = v->in.period / g;
 	f.denominator = GC573_IN_FRAME_PERIOD_HZ / g;
