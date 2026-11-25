@@ -53,10 +53,10 @@ def run(cmd):
 
 
 def video(path, box=None):
-    fr = json.loads(run(['ffprobe', '-v', 'error', '-select_streams', 'v:0',
-                         '-show_entries', 'frame=best_effort_timestamp_time',
-                         '-of', 'json', path]))['frames']
-    t = np.array([float(f['best_effort_timestamp_time']) for f in fr])
+    """Each frame's presentation time and mean luma (of the box). The times
+    come from the packets, sorted (no decode: a second decode of a 2-hour
+    recording would double the time), unless their count differs from the
+    decoded frames'; then from ffprobe's frames"""
     vf = 'scale=32:18,format=gray'
     if box:
         x0, y0, x1, y1 = box
@@ -64,41 +64,56 @@ def video(path, box=None):
     raw = run(['ffmpeg', '-v', 'error', '-i', path, '-map', '0:v:0', '-fps_mode',
                'passthrough', '-vf', vf, '-f', 'rawvideo', '-'])
     y = np.frombuffer(raw, dtype=np.uint8).reshape(-1, 32 * 18).mean(axis=1)
+    t = np.sort(np.array([float(v) for v in run(['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+                                                  '-show_entries', 'packet=pts_time', '-of', 'csv=p=0',
+                                                  path]).split() if v and v != b'N/A']))
+    if len(t) != len(y):
+        fr = json.loads(run(['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+                             '-show_entries', 'frame=best_effort_timestamp_time',
+                             '-of', 'json', path]))['frames']
+        t = np.array([float(f['best_effort_timestamp_time']) for f in fr])
     n = min(len(t), len(y))
     return t[:n], y[:n]
 
 
+def envelopes(path, chunk=48000 * 60):
+    """|left| + |right| of the decoded audio, a minute at a time (a 2-hour
+    recording is 1.4 GB of samples: never all in memory)"""
+    p = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', path, '-map', '0:a:0', '-f', 's16le',
+                          '-ac', '2', '-ar', '48000', '-'], stdout=subprocess.PIPE)
+    while True:
+        b = p.stdout.read(chunk * 4)
+        if not b:
+            break
+        x = np.frombuffer(b[:len(b) // 4 * 4], dtype=np.int16).reshape(-1, 2).astype(np.int32)
+        yield np.abs(x).sum(axis=1)
+    p.wait()
+
+
 def audio(path):
+    """Sample count, burst onsets (sample indices), and each decoded frame's
+    presentation time and first sample"""
     fr = json.loads(run(['ffprobe', '-v', 'error', '-select_streams', 'a:0',
                          '-show_entries', 'frame=pts_time,nb_samples', '-of', 'json',
                          path]))['frames']
     pts = np.array([float(f['pts_time']) for f in fr])
     ns = np.array([int(f['nb_samples']) for f in fr])
-    raw = run(['ffmpeg', '-v', 'error', '-i', path, '-map', '0:a:0', '-f', 's16le',
-               '-ac', '2', '-ar', '48000', '-'])
-    s = np.frombuffer(raw, dtype=np.int16).reshape(-1, 2).astype(np.float32)
     start = np.concatenate([[0], np.cumsum(ns)[:-1]])
-    return s, pts, start
+    peak = max((int(e.max()) for e in envelopes(path) if len(e)), default=0)
+    n, on = 0, []
+    thr, last = max(0.1 * peak, 500), -10 ** 9
+    for e in envelopes(path):
+        for i in np.flatnonzero(e > thr) + n:
+            if i - last > 48000 // 5:
+                on.append(int(i))
+            last = i
+        n += len(e)
+    return n, np.array(on, dtype=np.int64), pts, start
 
 
 def sample_time(i, pts, start, rate=48000):
     k = np.searchsorted(start, i, side='right') - 1
     return pts[k] + (i - start[k]) / rate
-
-
-def onsets(s, rate=48000):
-    """First sample of each burst: |left| + |right| over a threshold after
-    at least 200 ms below it"""
-    e = np.abs(s).sum(axis=1)
-    thr = max(0.1 * e.max(), 500)
-    idx = np.flatnonzero(e > thr)
-    out = []
-    last = -10 ** 9
-    for i in idx:
-        if i - last > rate // 5:
-            out.append(i)
-        last = i
-    return np.array(out, dtype=np.int64)
 
 
 def main():
@@ -117,9 +132,9 @@ def main():
         print(f"RESULT {name} {'PASS' if good else 'FAIL'} ({text})")
 
     vt, vy = video(a.file, [float(x) for x in a.box.split(',')] if a.box else None)
-    s, apts, astart = audio(a.file)
+    nsamp, on, apts, astart = audio(a.file)
     dur = vt[-1] - vt[0] if len(vt) > 1 else 0
-    result('duration', dur >= a.min_secs, f'{dur:.1f} s of video, {len(s) / 48000:.1f} s of audio')
+    result('duration', dur >= a.min_secs, f'{dur:.1f} s of video, {nsamp / 48000:.1f} s of audio')
     d = np.diff(vt)
     per = float(np.median(d)) if len(d) else 0
     big = int(np.sum(d > 1.5 * per)) if per else 0
@@ -130,7 +145,6 @@ def main():
     # one flash per run of bright frames: its first frame
     fl = fl[np.concatenate([[True], np.diff(fl) > 1])] if len(fl) else fl
     ft = vt[fl]
-    on = onsets(s)
     bt = np.array([sample_time(i, apts, astart) for i in on])
     pairs = []
     for t in ft:

@@ -1,0 +1,28 @@
+2026-11-25T15:07:08.628Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-25T15:07:08.640Z guard start: run pid 279472, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*, windows and audio each polled every 50 ms
+2026-11-25T15:07:08.644Z guard audio links: none
+2026-11-25T15:07:08.645Z guard output DVI-D-0: 1920x1080+1920+0
+2026-11-25T15:07:08.645Z guard windows: none
+2026-11-25T15:07:09.042Z live stream stop (exit 0)
+2026-11-25T15:07:09.123Z live driver load
+2026-11-25T15:07:09.434Z show mode DVI-D-0 1920x1080@60
+2026-11-25T15:07:09.983Z guard windows: gc573-pattern 1920x1080+1920+0 IsViewable
+2026-11-25T15:07:10.049Z show player start 1920x1080@60 (pid 279631)
+2026-11-25T15:07:10.088Z show player stop (pid 279631)
+2026-11-25T15:07:10.127Z guard windows: none
+2026-11-25T15:07:10.412Z avsync mode DVI-D-0 1920x1080@60
+2026-11-25T15:07:10.850Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-25T15:07:10.859Z guard windows: gc573-avsync 1920x1080+1920+0 IsViewable
+2026-11-25T15:07:10.937Z avsync player start 1920x1080@60 amplitude 0.5 (pid 280137)
+2026-11-25T15:07:13.964Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=GC573,DEV=0 -t 60 -v -V /dev/video0 -o /tmp/gc573-live/av.raw > /tmp/gc573-liv
+2026-11-25T15:08:08.649Z guard ok: windows 1194 polls, longest interval 100 ms; audio 1198 polls, longest interval 50 ms
+2026-11-25T15:08:14.211Z live stream stop (exit 0)
+2026-11-25T15:08:14.419Z live obs start
+2026-11-25T15:09:08.657Z guard ok: windows 2391 polls, longest interval 100 ms; audio 2395 polls, longest interval 50 ms
+2026-11-25T15:10:08.665Z guard ok: windows 3588 polls, longest interval 100 ms; audio 3592 polls, longest interval 50 ms
+2026-11-25T15:11:08.674Z guard ok: windows 4786 polls, longest interval 100 ms; audio 4790 polls, longest interval 50 ms
+2026-11-25T15:11:37.200Z live obs stop
+2026-11-25T15:11:37.793Z avsync player stop (pid 280137)
+2026-11-25T15:11:37.874Z guard audio links: none
+2026-11-25T15:11:37.946Z guard windows: none
+2026-11-25T15:11:38.678Z guard end: run pid 279472 gone; windows 5372 polls, longest interval 100 ms; audio 5376 polls, longest interval 50 ms; no breach
