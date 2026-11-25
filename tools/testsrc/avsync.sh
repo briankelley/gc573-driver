@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0
 # A/V test source on the PC loopback (host only).
 # Shows a black full-screen clip on OUTPUT that turns white for one frame every
-# N frames (N = the nominal rate, so about once per second), and plays a 1 kHz
-# tone burst of one frame's length at the same instant on the GPU's HDMI audio.
+# N frames (N = the nominal rate, so about once per second), and plays a tone
+# burst of one frame's length at the same instant on the GPU's HDMI audio:
+# 1 kHz on the left channel, 2 kHz on the right (identifies channel order).
 # Captured through the card, the flash frame and the burst onset give the A/V
 # offset and its drift. The source's own offset is not known exactly (player and
 # GPU latency), so compare runs and watch drift rather than trusting absolutes.
@@ -84,7 +85,8 @@ x=$(xrandr --query | sed -n "s/^$out connected [^0-9]*[0-9]*x[0-9]*+\([0-9]*\)+.
 period="($n/($fps))" frame="(1/($fps))"
 graph="color=c=black:s=${w}x$h:r=$fps,format=rgb24,drawbox=x=0:y=0:w=iw:h=ih:color=white:t=fill:enable='eq(mod(n\\,$n)\\,0)'[out0];"
 # aevalsrc gates per sample (a filter's enable= only switches per 1024-sample frame)
-graph+="aevalsrc=exprs='0.5*sin(2*PI*1000*t)*lt(mod(t\\,$period)\\,$frame)':channel_layout=stereo:sample_rate=48000,aformat=sample_fmts=s16[out1]"
+gate="lt(mod(t\\,$period)\\,$frame)"
+graph+="aevalsrc=exprs='0.5*sin(2*PI*1000*t)*$gate|0.5*sin(2*PI*2000*t)*$gate':channel_layout=stereo:sample_rate=48000,aformat=sample_fmts=s16[out1]"
 PULSE_SINK=$sink SDL_AUDIODRIVER=pulseaudio setsid ffplay -loglevel error -noborder -left "$x" -top 0 -x "$w" -y "$h" \
   -window_title gc573-avsync -f lavfi -i "$graph" >/dev/null 2>&1 < /dev/null &
 echo $! > "$pidf"
@@ -92,4 +94,4 @@ setsid bash -c 'while kill -0 "$1" 2>/dev/null; do
   xrandr --current | grep -q "^$2 connected" || { "$3" --off; exit 0; }; sleep 1; done' _ "$(cat "$pidf")" "$out" "$here/avsync.sh" \
   >/dev/null 2>&1 < /dev/null &
 echo $! > "$wdf"
-echo "avsync on $out ($mode@$rate at +$x+0): flash every $n frames, 1 kHz burst on $sink; pid $(cat "$pidf")"
+echo "avsync on $out ($mode@$rate at +$x+0): flash every $n frames, burst L 1 kHz / R 2 kHz on $sink; pid $(cat "$pidf")"
