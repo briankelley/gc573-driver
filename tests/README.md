@@ -74,7 +74,7 @@ Helpers: `gc573-aud.c` (ALSA capture tool, alsa-lib: per-read frame count and ti
 
 ## Live input (`live.sh`, host)
 `tests/live.sh [STEP...]` runs on the host: it drives the loopback output
-(`DVI-D-0`, never the primary) with `tools/testsrc/show.sh` and xrandr, and runs
+(`DVI-D-0`, never the primary) with `tools/testsrc/show.sh`, `avsync.sh` and xrandr, and runs
 the checks in `gc573-dev` over ssh with the module built there
 (`tools/vmbuild.sh`). Log: `tests/logs/<UTC stamp>_<kernel>_live.log`; prints
 `RESULT` lines and a `SUMMARY`; checks the kernel log as `run.sh` does
@@ -91,6 +91,9 @@ the checks in `gc573-dev` over ssh with the module built there
 | `change` | input change while streaming: `SOURCE_CHANGE`, `DQBUF` error, no DMA outside the queued buffers, restart at the new timings |
 | `loss` | output off and on, idle and while streaming |
 | `colour` | RGB limited, YCbCr 4:4:4, YCbCr 4:2:2 (nvidia-settings): the published colour format and range follow the splitter RX's AVI copy; captures reported, not gating |
-| `unload` | `rmmod` while streaming |
+| `audio` | `avsync.sh` (HDMI audio from the GPU, IT6805 audio state ON): 10 s capture; a burst a second; per burst the dominant frequency left 1 kHz and right 2 kHz within 1 %, the other tone >= 30 dB down (channel order and rate); 48 kHz +- 0.05 % against the clock; no gap (per-second medians of the read timestamps within 3 ms of a line); no overrun |
+| `avsync` | `GC573_AV_SECS` (600) of audio and video (1080p60 YUYV) together: no overrun, no gap, no video sequence gap; the driver's counters over the run: no period late, out of order or filled (silent periods reported); A/V offset = burst onset (ALSA timestamps) - flash frame (vb2 timestamp, end of frame), each flash moved by whole frames to the most common offset (ffplay shows a flash a frame or more early or late at times; raw offsets reported): within 1 ms of a line, drift < 10 ms (one audio period) over the run |
+| `audioloss` | one 80 s audio capture across 5 video stream start/stops, an input loss while video streams (the stream stops), relock, video again, an idle loss and relock: no overrun, no stall (reads < 250 ms apart), one DMA restart per video stop, never a stop without INT bit 4, 20 bursts with the right channels in the last 20 s |
+| `unload` | `rmmod` while streaming video and audio (refused, in use), unbind (< 5 s, both applications exit), rebind, lock |
 | `reload` | `GC573_RELOADS` (50) unload/load cycles with the source on: host output back and input locked each time |
 | `compliance` | `v4l2-compliance -s` with the live input |

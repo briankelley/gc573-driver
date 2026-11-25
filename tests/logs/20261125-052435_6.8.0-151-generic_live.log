@@ -1,0 +1,52 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 05:24:35 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     77356a3e383d-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   audioloss
+module:  1F6820792F570C5791DE4C0, /dev/video0
+
+## audioloss
+RESULT audioloss-video            PASS (5 video captures while audio runs)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4161 ms, 234 frames
+  INFO change: DQBUF Input/output error at 4161 ms, 234 frames, last frame at 4029 ms
+    | stream: running 0 live 1 input_stops 1 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 1 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 235 frames 234 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=234 event_ms=4161 dqbuf_error_ms=4161 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT audioloss-video-loss       PASS (fmt=YUYV 1920x1080 frames=234 event_ms=4161 dqbuf_error_ms=4161 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT audioloss-relock           PASS (avsync.sh again, IT6805 audio ON)
+RESULT audioloss-video-after      PASS (video capture after the relock)
+RESULT audioloss-relock-idle      PASS (after an idle loss)
+  last relock 31 s into the 80 s capture
+RESULT audioloss-capture          PASS (RESULT audio frames=3839573 secs=79.999 rate=47989.217 xruns=0 restarts=0)
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 7941 silent 1027 filled 27893 starts 1 restarts 8 stops 1 stop_missing 0
+  order 0 bad_done 0 stale 0 late 2 interval_us 9634..19926
+RESULT audioloss-restarts         PASS (8 DMA restarts for 7 video stops, 27893 frames filled)
+RESULT audioloss-stall            PASS (longest time between reads 86.7 ms)
+RESULT audioloss-xruns            PASS (0 overruns)
+RESULT audioloss-tail             PASS (20 bursts in the last 20 s, 0 with the channels wrong)
+  info: rate       PASS (47989.217 Hz against CLOCK_MONOTONIC, -224.6 ppm)
+  info: gaps       FAIL (per-second medians within 17.42 ms, single reads within 9.70 ms of the line, 7941 reads)
+
+## kernel log
+  kernel log: 6 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT audioloss-video            PASS (5 video captures while audio runs)
+RESULT audioloss-video-loss       PASS (fmt=YUYV 1920x1080 frames=234 event_ms=4161 dqbuf_error_ms=4161 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT audioloss-relock           PASS (avsync.sh again, IT6805 audio ON)
+RESULT audioloss-video-after      PASS (video capture after the relock)
+RESULT audioloss-relock-idle      PASS (after an idle loss)
+RESULT audioloss-capture          PASS (RESULT audio frames=3839573 secs=79.999 rate=47989.217 xruns=0 restarts=0)
+RESULT audioloss-restarts         PASS (8 DMA restarts for 7 video stops, 27893 frames filled)
+RESULT audioloss-stall            PASS (longest time between reads 86.7 ms)
+RESULT audioloss-xruns            PASS (0 overruns)
+RESULT audioloss-tail             PASS (20 bursts in the last 20 s, 0 with the channels wrong)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=11 fail=0 skip=1
