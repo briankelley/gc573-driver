@@ -39,6 +39,23 @@ LOG: gc573-aud -v output (A lines; V lines with -V); RAW: its -o samples
 with the raw offsets of the flashes in it and their mean moved by whole
 frames as for avsync (corr), for captures across source changes (does the
 offset stay where it was?)
+With counters (gc573-aud -V -P: the picture of avsync.sh --pattern or show.sh
+--counter, V lines with c=N and the flash box's luma as y), two INFO lines:
+  counter    the counter's step from each captured frame to the next (1:
+             each source frame captured once; 0: one twice; 2 or more:
+             frames never captured), over frames without a sequence gap,
+             and the frames whose counter was unreadable (torn or blended)
+  flashes    the source's flash frames (every N-th counter value) between
+             the first and the last frame: captured once, twice or more,
+             never (a flash missing from the capture), and the frames whose
+             flash box disagrees with their counter
+They describe the source (the test player's pacing on the host's display)
+as much as the capture: the driver's own losses are the sequence gaps.
+Without counters (plain avsync.sh, the whole frame flashes) one INFO line:
+  flashes    runs of flash frames (mean luma over 128) by length, frames
+             partly white (luma 48 to 208 at a flash: a torn or blended
+             frame), and flashes missing (onsets 1.5 or more intervals
+             apart)
 """
 import re
 import sys
@@ -51,6 +68,66 @@ RATE = 48000
 def result(name, ok, detail):
     print(f"RESULT {name:<10} {'PASS' if ok else 'FAIL'} ({detail})")
     return ok
+
+
+def counters(seq, c, hot):
+    """INFO counter and INFO flashes (see the top) from the frames' sequence
+    numbers, counters (-1: unreadable) and flash boxes"""
+    dseq = np.diff(seq)
+    good = np.flatnonzero(c >= 0)
+    if len(good) < 2:
+        print(f"INFO counter   {len(c)} frames, {len(good)} with a readable counter")
+        return
+    step = (c[good[1:]] - c[good[:-1]]) % 65536
+    adjacent = good[1:] - good[:-1] == 1
+    nogap = np.array([np.all(dseq[a:b] == 1) for a, b in zip(good[:-1], good[1:])])
+    st = step[adjacent & nogap]
+    vals, cnt = np.unique(st, return_counts=True)
+    lost = int(np.sum(st[st > 1] - 1))
+    print(f"INFO counter   {len(c)} frames, {len(c) - len(good)} unreadable; steps from one "
+          f"frame to the next (step: count) " + ', '.join(f'{v}: {n}' for v, n in zip(vals, cnt)) +
+          f"; {int(np.sum(st == 0))} repeated, {lost} source frames never captured")
+    # the counter unwrapped (16 bits), over the readable frames
+    u = np.zeros(len(c), dtype=np.int64) - 1
+    u[good[0]] = c[good[0]]
+    u[good[1:]] = c[good[0]] + np.cumsum(step)
+    hu = np.unique(u[good][hot[good]])
+    d = np.diff(hu)
+    d = d[d > 1]
+    if not len(d):
+        print("INFO flashes   no flash box seen twice")
+        return
+    dv, dc = np.unique(d, return_counts=True)
+    n = int(dv[np.argmax(dc)])
+    lo, hi = u[good[0]], u[good[-1]]
+    want = np.arange((lo + n - 1) // n * n, hi + 1, n)
+    seen = u[good]
+    times = np.array([np.sum(seen == w) for w in want])
+    # a flash frame from the counter's view: its multiples of n; the box
+    # must agree on every readable frame
+    off = int(np.sum((seen % n == 0) != hot[good]))
+    print(f"INFO flashes   every {n} frames, {len(want)} between the first and last frame: "
+          f"{int(np.sum(times == 1))} captured once, {int(np.sum(times == 2))} twice, "
+          f"{int(np.sum(times > 2))} more often, {int(np.sum(times == 0))} never; "
+          f"{off} frames whose flash box disagrees with the counter")
+
+
+def flash_runs(y):
+    """INFO flashes for a capture without counters (see the top)"""
+    hot = y > 128
+    part = (y >= 48) & (y <= 208)
+    edges = np.flatnonzero(np.diff(np.concatenate(([0], hot.astype(int), [0]))))
+    starts, ends = edges[::2], edges[1::2]
+    if len(starts) < 2:
+        print(f"INFO flashes   {len(starts)} flashes")
+        return
+    lens, cnt = np.unique(ends - starts, return_counts=True)
+    gap = np.diff(starts)
+    n = int(np.median(gap))
+    missing = int(np.sum(np.round(gap[gap >= 1.5 * n] / n) - 1))
+    print(f"INFO flashes   {len(starts)} flashes every {n} frames, by length (frames: count) " +
+          ', '.join(f'{v}: {c}' for v, c in zip(lens, cnt)) +
+          f"; {int(np.sum(part))} frames partly white; {missing} missing")
 
 
 def onsets_of(x):
@@ -86,7 +163,7 @@ def main():
         segments = [float(v) for v in args[i + 1].split(',') if v]
         del args[i:i + 2]
     log, raw = args
-    a_hw, a_ts, v_seq, v_ts, v_y = [], [], [], [], []
+    a_hw, a_ts, v_seq, v_ts, v_y, v_c = [], [], [], [], [], []
     xruns = 0
     for line in open(log):
         if line.startswith('A '):
@@ -98,6 +175,9 @@ def main():
             v_seq.append(int(m.group(1)))
             v_ts.append(int(m.group(2)))
             v_y.append(int(m.group(3)))
+            m = re.search(r' c=(-?\d+)', line)
+            if m:
+                v_c.append(int(m.group(1)))
         elif line.startswith('XRUN'):
             xruns += 1
     want_bursts |= bool(v_ts)
@@ -184,6 +264,10 @@ def main():
                  f"{len(v_seq)} frames, {int(np.sum(dseq != 1))} sequence gaps, "
                  f"interval {tf * 1e3:.3f} ms, {vhalf} off by more than half a period, "
                  f"{vbad} by more than 10 %")
+    if len(v_c) == len(v_seq):
+        counters(v_seq, np.array(v_c), v_y > 128)
+    else:
+        flash_runs(v_y)
 
     hot = v_y > 128
     first = np.flatnonzero(hot & ~np.concatenate(([False], hot[:-1])))
