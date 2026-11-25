@@ -12,8 +12,8 @@
 # Audio: the NVIDIA HDMI audio card is switched to the profile of the single HDMI
 # port that has a valid ELD (the capture card, once its EDID with an audio block
 # is loaded and HPD is high). The previous card profile and default sink are
-# saved and restored by --off. Audio goes only to that port, never to the
-# default sink.
+# saved and restored by --off; a start while a session runs keeps what the
+# first start saved. Audio goes only to that port, never to the default sink.
 # A watchdog runs --off when OUTPUT disconnects (driver unload, card reset or move).
 # Usage: tools/testsrc/avsync.sh [OUTPUT [MODE [RATE]]] | --off
 #   RATE: 60, 59.94, 50, 30, 29.97, 25, 24 or 23.976 (default 60)
@@ -24,11 +24,21 @@ run=$XDG_RUNTIME_DIR/gc573-testsrc; mkdir -p "$run"
 pidf=$run/avsync.pid wdf=$run/avsync-watchdog.pid statef=$run/avsync.state
 here=$(cd "$(dirname "$0")" && pwd)
 
-off() {
+# Stop the player and its watchdog. An ffplay stopped within about a second of
+# its start can hang in its exit path: wait up to 2 s each, then SIGKILL (as
+# show.sh does).
+stop_procs() {
+  local f p i
   for f in "$wdf" "$pidf"; do
-    if [ -f "$f" ]; then kill "$(cat "$f")" 2>/dev/null || true; fi
-    rm -f "$f"
+    [ -f "$f" ] || continue
+    p=$(cat "$f"); rm -f "$f"
+    kill "$p" 2>/dev/null || continue
+    for i in $(seq 20); do kill -0 "$p" 2>/dev/null || break; sleep 0.1; done
+    if kill -0 "$p" 2>/dev/null; then kill -KILL "$p" 2>/dev/null || true; fi
   done
+}
+off() {
+  stop_procs
   if [ -f "$statef" ]; then
     local card profile0 sink0
     { read -r card; read -r profile0; read -r sink0; } < "$statef"
@@ -63,8 +73,15 @@ i=${ports#hdmi-output-}
 if [ "$i" = 0 ]; then prof=output:hdmi-stereo; else prof=output:hdmi-stereo-extra$i; fi
 
 "$here/show.sh" --off
-off
-printf '%s\n%s\n%s\n' "$card" "$(cardinfo | sed -n 's/^\tActive Profile: //p')" "$(pactl get-default-sink)" > "$statef"
+if [ -f "$statef" ]; then
+  # A session is running (a restart) or was cut off: keep the profile and
+  # default sink it saved before its first start. Restoring here and reading
+  # the profile back at once can race, and would record our own profile as
+  # the one to restore.
+  stop_procs
+else
+  printf '%s\n%s\n%s\n' "$card" "$(cardinfo | sed -n 's/^\tActive Profile: //p')" "$(pactl get-default-sink)" > "$statef"
+fi
 pactl set-card-profile "$card" "$prof"
 sink=
 for _ in $(seq 1 20); do
