@@ -36,8 +36,9 @@
 #             offset (flash frame vs burst onset) with its drift
 #   audioloss one audio capture across 5 video stream start/stops, an input
 #             loss while video streams, relock, video again, an idle loss
-#             and relock: no overrun, never stalled, bursts with the right
-#             channels after the last relock
+#             and relock: no overrun, never stalled, no gap (the driver
+#             fills the video stops' and the losses' gaps), bursts with the
+#             right channels after the last relock
 #   unload    unload while streaming video and audio
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
@@ -573,12 +574,12 @@ step_avsync() {
 	check avsync-capture $? "($(vm "grep -E '^(PARAMS|RESULT)' $W/av.txt" | tr '\n' ' '))"
 	d1=$(aud_dbg)
 	echo "$d1" | sed 's/^/  /'
-	for n in late order bad_done filled stop_missing; do
+	for n in late order bad_done stop_missing; do
 		[ "$(aud_stat "$d0" $n)" = "$(aud_stat "$d1" $n)" ] ||
 			bad+=" $n +$(( $(aud_stat "$d1" $n) - $(aud_stat "$d0" $n) ))"
 	done
 	check avsync-periods "$([ -z "$bad" ]; echo $?)" \
-		"(driver: $(( $(aud_stat "$d1" periods) - $(aud_stat "$d0" periods) )) periods, $(( $(aud_stat "$d1" silent) - $(aud_stat "$d0" silent) )) silent${bad:-, none late, out of order or filled})"
+		"(driver: $(( $(aud_stat "$d1" periods) - $(aud_stat "$d0" periods) )) periods, $(( $(aud_stat "$d1" silent) - $(aud_stat "$d0" silent) )) silent, $(( $(aud_stat "$d1" pauses) - $(aud_stat "$d0" pauses) )) source pauses filled with $(( $(aud_stat "$d1" filled) - $(aud_stat "$d0" filled) )) frames${bad:-; none late or out of order})"
 	hdmi_dbg | grep -E '^it6805: audio' | sed 's/^/  /'
 	out=$(vm "python3 $W/live-av.py $W/av.txt $W/av.raw --min-secs $((AV_SECS * 9 / 10))")
 	av_results avsync "$out"
@@ -621,14 +622,16 @@ step_audioloss() {
 	echo "$d1" | sed 's/^/  /'
 	check audioloss-restarts "$([ "$(( $(aud_stat "$d1" restarts) - $(aud_stat "$d0" restarts) ))" -ge 7 ] &&
 		[ "$(aud_stat "$d1" stop_missing)" = "$(aud_stat "$d0" stop_missing)" ]; echo $?)" \
-		"($(( $(aud_stat "$d1" restarts) - $(aud_stat "$d0" restarts) )) DMA restarts for 7 video stops, $(( $(aud_stat "$d1" filled) - $(aud_stat "$d0" filled) )) frames filled)"
+		"($(( $(aud_stat "$d1" restarts) - $(aud_stat "$d0" restarts) )) DMA restarts for 7 video stops, $(( $(aud_stat "$d1" pauses) - $(aud_stat "$d0" pauses) )) pauses (input loss), $(( $(aud_stat "$d1" filled) - $(aud_stat "$d0" filled) )) frames filled)"
 	# never stalled: no read more than 250 ms after the one before (a domain
 	# reset, 3 x 30 ms and more, holds the periods up once per video stop)
 	out=$(vm "awk '/^A /{ split(\$4, t, \"=\"); if (p && t[2] - p > m) m = t[2] - p; p = t[2] } END { printf \"%.1f\", m / 1e6 }' $W/aloss.txt")
 	check audioloss-stall "$(awk -v m="$out" 'BEGIN { exit !(m < 250) }'; echo $?)" "(longest time between reads $out ms)"
 	out=$(vm "python3 $W/live-av.py $W/aloss.txt $W/aloss.raw --tail 20")
-	av_results audioloss "$(grep -E '^RESULT (tail|channels|xruns) ' <<< "$out")"
-	grep -E '^RESULT (rate|gaps|bursts) ' <<< "$out" | sed 's/^RESULT/  info:/'
+	# the video stops' gaps and the input losses' pauses are filled: the
+	# stream keeps time through all of them
+	av_results audioloss "$(grep -E '^RESULT (tail|channels|xruns|rate|gaps) ' <<< "$out")"
+	grep -E '^RESULT bursts ' <<< "$out" | sed 's/^RESULT/  info:/'
 	av_off
 }
 

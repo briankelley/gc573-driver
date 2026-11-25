@@ -313,15 +313,16 @@ struct gc573_video {
 struct gc573_astats {
 	u64 periods;			/* periods delivered */
 	u64 silent;			/* of these, delivered as silence */
-	u64 filled;			/* silent frames for domain resets */
+	u64 filled;			/* silent frames for resets and pauses */
 	u32 starts;			/* streams started */
 	u32 restarts;			/* DMA started again after a reset */
+	u32 pauses;			/* the FPGA's pacing paused (filled) */
 	u32 stops;			/* INT bit 4 */
 	u32 stop_missing;		/* stop without INT bit 4 */
 	u32 order;			/* AUDIO_DONE not the buffer expected */
 	u32 bad_done;			/* AUDIO_DONE neither 1 nor 2 */
 	u32 stale;			/* INT bit 5 while not running */
-	u32 late;			/* periods more than 15 ms apart */
+	u32 late;			/* interrupt over 5 ms late, no pause */
 	u32 interval_max_us;		/* longest interval, this stream */
 	u32 interval_min_us;		/* shortest interval, this stream */
 };
@@ -346,6 +347,7 @@ struct gc573_audio {
 	bool stopping;			/* stopped, INT bit 4 not waited for */
 	bool dead;			/* quiesced: never start again */
 	bool resync;			/* restarted: fill the gap first */
+	unsigned int pause_us;		/* a late period: pause or latency? */
 	bool good;			/* the last period carried samples */
 	u8 next;			/* AUDIO_DONE value expected next */
 	u32 sample_period;		/* AUDIO_SAMPLE_PERIOD, last period */

@@ -29,8 +29,18 @@
  * started again right after it, as at a stream start, and the time lost
  * meanwhile (about 90 ms, measured between the interrupts) is filled with
  * silence, which keeps the stream in step with the clock and with video.
- * At an input loss the FPGA completes one period 10 ms late; that pause
- * is not filled (there is no audio then; the stream is 10 ms behind).
+ *
+ * Pauses: at an input loss, and at times while a source plays, the FPGA
+ * completes one period 10 ms late with AUDIO_DONE still in turn: one
+ * period's samples never came (driver M4; its pacing follows the source).
+ * Otherwise its 10 ms grid runs free (the interval after a late interrupt
+ * is short by the latency), so the next period tells the two apart: on
+ * time after a late one means a pause, early means a late interrupt (and
+ * 10 ms or more of latency would merge two periods, out of turn). A pause
+ * is filled with silence of its length, so the stream keeps time through
+ * it. An interrupt more than 5 ms late followed by one nearly as late
+ * (within 3 ms) would read as a pause and add that silence; debugfs
+ * "audio" counts pauses.
  *
  * Locking: aud.lock protects the stream state shared with the hard IRQ
  * handler and the audio DMA registers. DMA_RUN (0x008) changes only by
@@ -73,8 +83,11 @@
  * itself between two updates
  */
 #define GC573_AUD_FILL_MAX		(GC573_AUD_RATE * GC573_AUD_FRAME_BYTES)
-/* a period interval above this counts as late (nominal 10 ms) */
+/* the hardware period; an interval above LATE_US: latency or a pause */
+#define GC573_AUD_HW_US			10000
 #define GC573_AUD_LATE_US		15000
+/* after a late period, an interval of at least this is on time: a pause */
+#define GC573_AUD_ON_TIME_US		7000
 
 static bool exp_audio_raw;
 module_param(exp_audio_raw, bool, 0644);
@@ -211,7 +224,8 @@ void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns)
 {
 	struct gc573_audio *a = &gc->aud;
 	struct snd_pcm_substream *elapsed = NULL;
-	unsigned int buf, us;
+	unsigned int buf, us, lost_us = 0;
+	bool in_turn;
 	u64 lost;
 	u8 *src;
 	u16 fill;
@@ -229,27 +243,6 @@ void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns)
 	}
 
 	us = a->last_ns ? div_u64(ns - a->last_ns, NSEC_PER_USEC) : 0;
-	if (a->resync) {
-		/*
-		 * Restarted after a domain reset: the time from the last
-		 * period to the start of this one, in silence
-		 */
-		lost = 0;
-		if (us > 10 * USEC_PER_MSEC)
-			lost = DIV_ROUND_CLOSEST_ULL((u64)(us - 10 * USEC_PER_MSEC) *
-						     a->rate, USEC_PER_SEC);
-		lost = min_t(u64, lost * GC573_AUD_FRAME_BYTES,
-			     min_t(unsigned int, GC573_AUD_FILL_MAX,
-				   a->buffer_bytes - 2 * GC573_AUD_HW_BYTES));
-		gc573_aud_put(a, NULL, lost);
-		a->st.filled += lost / GC573_AUD_FRAME_BYTES;
-		a->resync = false;
-	} else if (us) {
-		a->st.interval_max_us = max(a->st.interval_max_us, us);
-		a->st.interval_min_us = min(a->st.interval_min_us, us);
-		if (us > GC573_AUD_LATE_US)
-			a->st.late++;
-	}
 	a->last_ns = ns;
 
 	buf = done & GC573_AUDIO_DONE_MASK;
@@ -257,10 +250,46 @@ void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns)
 		a->st.bad_done++;
 		goto out;
 	}
-	if (buf != a->next)
+	in_turn = buf == a->next;
+	if (!in_turn)
 		a->st.order++;
 	a->next = buf == GC573_AUDIO_DONE_BUF0 ? GC573_AUDIO_DONE_BUF1 :
 						 GC573_AUDIO_DONE_BUF0;
+
+	if (a->resync) {
+		/* restarted after a domain reset: the time since the last period */
+		if (us > GC573_AUD_HW_US)
+			lost_us = us - GC573_AUD_HW_US;
+		a->resync = false;
+		a->pause_us = 0;
+	} else if (us) {
+		a->st.interval_max_us = max(a->st.interval_max_us, us);
+		a->st.interval_min_us = min(a->st.interval_min_us, us);
+		if (a->pause_us) {
+			if (us >= GC573_AUD_ON_TIME_US) {
+				lost_us = a->pause_us;
+				a->st.pauses++;
+			} else {
+				a->st.late++;
+			}
+			a->pause_us = 0;
+		}
+		if (us > GC573_AUD_LATE_US) {
+			if (in_turn)
+				a->pause_us = us - GC573_AUD_HW_US;
+			else
+				a->st.late++;
+		}
+	}
+	if (lost_us) {
+		/* silence for the time lost, frame-exact */
+		lost = DIV_ROUND_CLOSEST_ULL((u64)lost_us * a->rate, USEC_PER_SEC);
+		lost = min_t(u64, lost * GC573_AUD_FRAME_BYTES,
+			     min_t(unsigned int, GC573_AUD_FILL_MAX,
+				   a->buffer_bytes - 2 * GC573_AUD_HW_BYTES));
+		gc573_aud_put(a, NULL, lost);
+		a->st.filled += lost / GC573_AUD_FRAME_BYTES;
+	}
 	src = (u8 *)a->buf + (buf - 1) * GC573_AUD_BUF_STRIDE;
 
 	a->sample_period = gc573_rd(gc, GC573_AUDIO_SAMPLE_PERIOD);
@@ -362,6 +391,7 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 		a->last_ns = 0;
 		a->good = false;
 		a->resync = false;
+		a->pause_us = 0;
 		a->st.starts++;
 		a->st.interval_max_us = 0;
 		a->st.interval_min_us = UINT_MAX;
@@ -452,9 +482,9 @@ static int gc573_aud_debugfs_show(struct seq_file *m, void *unused)
 	seq_printf(m, "regs: DMA_RUN %#010x AUDIO_DONE %#010x AUDIO_SAMPLE_PERIOD %#010x (%u Hz)\n",
 		   gc573_rd(gc, GC573_DMA_RUN), gc573_rd(gc, GC573_AUDIO_DONE),
 		   sp, gc573_aud_rate(sp));
-	seq_printf(m, "periods %llu silent %llu filled %llu starts %u restarts %u stops %u stop_missing %u\n",
-		   st.periods, st.silent, st.filled, st.starts, st.restarts,
-		   st.stops, st.stop_missing);
+	seq_printf(m, "periods %llu silent %llu filled %llu pauses %u starts %u restarts %u stops %u stop_missing %u\n",
+		   st.periods, st.silent, st.filled, st.pauses, st.starts,
+		   st.restarts, st.stops, st.stop_missing);
 	seq_printf(m, "order %u bad_done %u stale %u late %u interval_us %u..%u\n",
 		   st.order, st.bad_done, st.stale, st.late,
 		   st.interval_min_us == UINT_MAX ? 0 : st.interval_min_us,

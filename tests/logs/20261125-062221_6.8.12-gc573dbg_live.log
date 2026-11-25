@@ -1,0 +1,80 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 06:22:21 UTC
+vm:      gc573-dev, kernel 6.8.12-gc573dbg
+rev:     a25c0fdaafb4-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   audioloss avsync
+module:  6B5D237B35FF5F4E30096E2, /dev/video0
+
+## audioloss
+RESULT audioloss-video            PASS (5 video captures while audio runs)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4065 ms, 230 frames
+  INFO change: DQBUF Input/output error at 4065 ms, 230 frames, last frame at 3958 ms
+    | stream: running 0 live 1 input_stops 1 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 1 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 231 frames 230 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=230 event_ms=4065 dqbuf_error_ms=4065 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT audioloss-video-loss       PASS (fmt=YUYV 1920x1080 frames=230 event_ms=4065 dqbuf_error_ms=4065 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT audioloss-relock           PASS (avsync.sh again, IT6805 audio ON)
+RESULT audioloss-video-after      PASS (video capture after the relock)
+RESULT audioloss-relock-idle      PASS (after an idle loss)
+  last relock 32 s into the 80 s capture
+RESULT audioloss-capture          PASS (RESULT audio frames=3840046 secs=79.991 rate=47999.840 xruns=0 restarts=0)
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 7941 silent 1014 filled 28366 pauses 2 starts 1 restarts 8 stops 1 stop_missing 0
+  order 0 bad_done 0 stale 0 late 0 interval_us 9686..19876
+RESULT audioloss-restarts         PASS (8 DMA restarts for 7 video stops, 2 pauses (input loss), 28366 frames filled)
+RESULT audioloss-stall            PASS (longest time between reads 87.0 ms)
+RESULT audioloss-xruns            PASS (0 overruns)
+RESULT audioloss-tail             PASS (20 bursts in the last 20 s, 0 with the channels wrong)
+  info: rate       PASS (47999.840 Hz against CLOCK_MONOTONIC, -3.3 ppm)
+  info: gaps       PASS (per-second medians move <= 0.14 ms from one second to the next; within 0.66 ms of one line over the run; single reads within 9.69 ms of it; 7941 reads)
+
+## avsync
+RESULT avsync-capture             PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=28800480 secs=599.992 rate=48000.667 xruns=0 restarts=0 )
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 67942 silent 1014 filled 28366 pauses 2 starts 2 restarts 8 stops 2 stop_missing 0
+  order 0 bad_done 0 stale 0 late 0 interval_us 9091..10900
+RESULT avsync-periods             PASS (driver: 60001 periods, 0 silent, 0 source pauses filled with 0 frames; none late or out of order)
+  it6805: audio errors 0 events 2 (audio logic reset skipped)
+RESULT avsync-duration            PASS (600.0 s, 28800480 frames, minimum 540 s)
+RESULT avsync-xruns               PASS (0 overruns)
+RESULT avsync-rate                PASS (48000.667 Hz against CLOCK_MONOTONIC, +13.9 ppm)
+RESULT avsync-gaps                PASS (per-second medians move <= 0.15 ms from one second to the next; within 5.56 ms of one line over the run; single reads within 3.57 ms of it; 60001 reads)
+RESULT avsync-bursts              PASS (600 in 600.0 s)
+RESULT avsync-channels            PASS (left 999.8 Hz, right 2000.2 Hz over 600 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT avsync-video               PASS (35997 frames, 0 sequence gaps, interval 16.666 ms, 0 off by more than half a period, 2 by more than 10 %)
+RESULT avsync-avsync              PASS (565 flashes over 10.0 min: offset -30.290 ms (std 0.049, min -30.525, max -30.179), drift -0.0026 ms/min = -0.026 ms over the run, residual <= 0.226 ms)
+    raw offsets: mean -23.42 ms, min -63.64, max -13.53, std 9.23; frames from the most common (count): -2: 4, -1: 6, +0: 308, +1: 247
+
+## kernel log
+  kernel log: 18 driver lines
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+
+## summary
+RESULT audioloss-video            PASS (5 video captures while audio runs)
+RESULT audioloss-video-loss       PASS (fmt=YUYV 1920x1080 frames=230 event_ms=4065 dqbuf_error_ms=4065 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT audioloss-relock           PASS (avsync.sh again, IT6805 audio ON)
+RESULT audioloss-video-after      PASS (video capture after the relock)
+RESULT audioloss-relock-idle      PASS (after an idle loss)
+RESULT audioloss-capture          PASS (RESULT audio frames=3840046 secs=79.991 rate=47999.840 xruns=0 restarts=0)
+RESULT audioloss-restarts         PASS (8 DMA restarts for 7 video stops, 2 pauses (input loss), 28366 frames filled)
+RESULT audioloss-stall            PASS (longest time between reads 87.0 ms)
+RESULT audioloss-xruns            PASS (0 overruns)
+RESULT audioloss-tail             PASS (20 bursts in the last 20 s, 0 with the channels wrong)
+RESULT avsync-capture             PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=28800480 secs=599.992 rate=48000.667 xruns=0 restarts=0 )
+RESULT avsync-periods             PASS (driver: 60001 periods, 0 silent, 0 source pauses filled with 0 frames; none late or out of order)
+RESULT avsync-duration            PASS (600.0 s, 28800480 frames, minimum 540 s)
+RESULT avsync-xruns               PASS (0 overruns)
+RESULT avsync-rate                PASS (48000.667 Hz against CLOCK_MONOTONIC, +13.9 ppm)
+RESULT avsync-gaps                PASS (per-second medians move <= 0.15 ms from one second to the next; within 5.56 ms of one line over the run; single reads within 3.57 ms of it; 60001 reads)
+RESULT avsync-bursts              PASS (600 in 600.0 s)
+RESULT avsync-channels            PASS (left 999.8 Hz, right 2000.2 Hz over 600 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT avsync-video               PASS (35997 frames, 0 sequence gaps, interval 16.666 ms, 0 off by more than half a period, 2 by more than 10 %)
+RESULT avsync-avsync              PASS (565 flashes over 10.0 min: offset -30.290 ms (std 0.049, min -30.525, max -30.179), drift -0.0026 ms/min = -0.026 ms over the run, residual <= 0.226 ms)
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+SUMMARY pass=22 fail=0 skip=0
