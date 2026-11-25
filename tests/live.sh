@@ -35,6 +35,12 @@
 #   audio     avsync.sh on HDMI audio: 10 s capture, a burst a second,
 #             left 1 kHz and right 2 kHz (channel order, rate), 48 kHz
 #             against the clock, no gap, no overrun (live-av.py)
+#   exact     the test source frame-exact: GC573_EXACT_SECS (60) of
+#             gc573-aud -V -P per source, show.sh --counter at 1080p60 and
+#             avsync.sh --pattern at 1080p60, 1080p59.94 and 720p59.94: the
+#             counter steps by one from each captured frame to the next
+#             (each source frame captured once), every flash captured once,
+#             no sequence gap (live-av.py's counter and flashes lines)
 #   avsync    GC573_AV_SECS (600) of audio and video together: no overrun,
 #             no gap, the driver's period counters clean, and the A/V
 #             offset (flash frame vs burst onset) with its drift
@@ -113,6 +119,7 @@ MODE_FRAMES=${GC573_MODE_FRAMES:-120}
 RELOADS=${GC573_RELOADS:-50}
 RELOCKS=${GC573_RELOCKS:-25}
 AV_SECS=${GC573_AV_SECS:-600}
+EXACT_SECS=${GC573_EXACT_SECS:-60}
 OBS_SECS=${GC573_OBS_SECS:-600}
 OBSEV_REPS=${GC573_OBSEV_REPS:-2}
 LOCAL=0
@@ -130,7 +137,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=/tmp/gc573-live		# work directory in the VM (here, in local mode)
 # local mode: the steps that leave the driver's binding, the GPU's colour
 # settings and OBS's configuration alone
-LOCAL_STEPS="bringup lock relock capture modes change loss audio avsync audioloss soak obssoak compliance"
+LOCAL_STEPS="bringup lock relock capture modes change loss audio exact avsync audioloss soak obssoak compliance"
 REC_DIR=${GC573_REC_DIR:-$HOME/gc573-rec}
 OBSSOAK_ROTATION=${GC573_OBSSOAK_ROTATION:-sleep,rate-59.94,edid-same,rate-60,res-720p,edid-new,sleep,res-1080p,edid-default}
 if [ "$LOCAL" = 1 ]; then
@@ -775,6 +782,53 @@ step_audio() {
 	av_results audio "$out"
 	aud_dbg | sed 's/^/  /'
 	av_off
+}
+
+# The test source on the card, frame by frame: every source frame captured
+# once. The counter picture (counter-graph.sh) through the driver: show.sh
+# --counter (ffplay paced by the system clock) and avsync.sh --pattern
+# (paced by the HDMI audio clock, which runs with the GPU's pixel clock).
+# One RESULT per source and mode; the INFO lines say what the capture saw
+step_exact() {
+	local spec kind mode rate name out i d rep lost once flashes vid
+	for spec in "counter 1920x1080 60" "pattern 1920x1080 60" "pattern 1920x1080 59.94" \
+		"pattern 1280x720 59.94"; do
+		read -r kind mode rate <<< "$spec"
+		name=exact-$kind-${mode#*x}p$rate
+		wait_connected 15
+		if [ "$kind" = counter ]; then
+			"$ROOT/tools/testsrc/show.sh" --counter "$OUT" "$mode" "$rate" > /dev/null ||
+				{ result "$name" FAIL "(show.sh --counter)"; continue; }
+		else
+			# the mode first: avsync.sh needs the HDMI audio port's ELD
+			src_on "$mode" "$rate"
+			for i in $(seq 30); do
+				"$ROOT/tools/testsrc/avsync.sh" --pattern "$OUT" "$mode" "$rate" > /dev/null 2>&1 && break
+				sleep 0.5
+			done
+			[ "$i" -lt 30 ] || { result "$name" FAIL "(avsync.sh --pattern)"; continue; }
+			for i in $(seq 40); do
+				d=$(aud_dbg)
+				grep -q 'it6805 audio on' <<< "$d" && grep -q '(48000 Hz)' <<< "$d" && break
+				sleep 0.25
+			done
+		fi
+		sleep 3
+		vm "sudo $W/gc573-aud -D $pcm -t $EXACT_SECS -v -V $vdev -P -o $W/exact.raw > $W/exact.txt 2>&1"
+		out=$(vm "python3 $W/live-av.py $W/exact.txt $W/exact.raw")
+		vm "rm -f $W/exact.raw"
+		# (show.sh --counter plays no audio: live-av.py's audio lines do not apply)
+		grep -E "^INFO|^RESULT +video$([ "$kind" = counter ] || echo '|raw offsets|^RESULT +avsync')" <<< "$out" |
+			sed 's/^/  /'
+		read -r rep lost <<< "$(sed -n 's/^INFO counter .*; \([0-9]*\) repeated, \([0-9]*\) source frames never captured$/\1 \2/p' <<< "$out")"
+		read -r flashes once <<< "$(sed -n 's/^INFO flashes   every [0-9]* frames, \([0-9]*\) between the first and last frame: \([0-9]*\) captured once.*/\1 \2/p' <<< "$out")"
+		vid=$(grep -c '^RESULT video *PASS' <<< "$out")
+		check "$name" "$([ "${rep:-x}" = 0 ] && [ "${lost:-x}" = 0 ] && [ -n "$flashes" ] &&
+			[ "$flashes" -gt 0 ] && [ "$once" = "$flashes" ] && [ "$vid" = 1 ]; echo $?)" \
+			"($EXACT_SECS s: ${rep:-?} source frames captured twice, ${lost:-?} never; ${once:-?} of ${flashes:-?} flashes captured once; video $([ "$vid" = 1 ] && echo 'without a gap' || echo 'NOT clean'))"
+	done
+	"$ROOT/tools/testsrc/avsync.sh" --off
+	src_on 1920x1080 60
 }
 
 # M4: GC573_AV_SECS of audio and video together (gate: 10 min without an
@@ -1570,9 +1624,9 @@ kml() {
 
 # ---- main ----
 
-all="bringup lock relock capture modes change loss colour audio avsync audioloss"
+all="bringup lock relock capture modes change loss colour audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
-[ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change loss audio avsync audioloss compliance"
+[ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change loss audio exact avsync audioloss compliance"
 [ $# -gt 0 ] || set -- $all
 if [ "$LOCAL" = 1 ]; then
 	for s in "$@"; do
