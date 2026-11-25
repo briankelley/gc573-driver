@@ -49,14 +49,15 @@ def result(name, ok, detail):
 
 
 def onsets_of(x):
-    """First sample above 1/8 of full scale after >= 0.5 s of quiet."""
-    env = np.abs(x).max(axis=1)
-    loud = np.flatnonzero(env > 4096)
-    out, last = [], -RATE
-    for k in loud:
-        if k - last > RATE // 2:
-            out.append(int(k))
-        last = k
+    """First sample above 1/8 of full scale after >= 0.5 s of quiet. In
+    chunks: x may be a memory map of hours of samples."""
+    out, last, step = [], -RATE, 1 << 22
+    for c in range(0, len(x), step):
+        env = np.abs(x[c:c + step].astype(np.int32)).max(axis=1)
+        for k in np.flatnonzero(env > 4096) + c:
+            if k - last > RATE // 2:
+                out.append(int(k))
+            last = k
     return out
 
 
@@ -92,7 +93,7 @@ def main():
     want_bursts |= bool(v_ts)
     a_hw = np.array(a_hw, dtype=np.float64)
     a_ts = np.array(a_ts, dtype=np.int64)
-    x = np.fromfile(raw, dtype='<i2').reshape(-1, 2).astype(np.float64)
+    x = np.memmap(raw, dtype='<i2', mode='r').reshape(-1, 2)
     ok = True
 
     t0 = a_ts[0]
@@ -128,7 +129,7 @@ def main():
     f = np.fft.rfftfreq(nfft, 1 / RATE)
     i1, i2 = np.argmin(np.abs(f - 1000)), np.argmin(np.abs(f - 2000))
     for k in onsets:
-        seg = x[k:k + n]
+        seg = x[k:k + n].astype(np.float64)
         if len(seg) < n:
             continue
         w = np.hanning(n)

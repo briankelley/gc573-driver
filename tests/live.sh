@@ -54,6 +54,11 @@
 #             other timings); after the recording the source reopened as a
 #             user would (obs-check.py reopen) at 720p, and after a change to
 #             1080p: the pattern at the new size
+#   soak      GC573_SOAK_SECS (7200) of audio and video (1080p60 YUYV)
+#             together with avsync.sh, as avsync, and every minute the
+#             kernel's memory (MemAvailable, Slab, SUnreclaim) and the CPU
+#             time of the capture and of the driver's IRQ thread: memory
+#             stable, CPU use reported (not in the default steps)
 #   unload    unload while streaming video and audio
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
@@ -70,6 +75,7 @@ RELOADS=${GC573_RELOADS:-50}
 RELOCKS=${GC573_RELOCKS:-25}
 AV_SECS=${GC573_AV_SECS:-600}
 OBS_SECS=${GC573_OBS_SECS:-600}
+SOAK_SECS=${GC573_SOAK_SECS:-7200}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=/tmp/gc573-live		# work directory in the VM
 SSHCTL=/tmp/gc573-live-ssh-$$
@@ -832,6 +838,73 @@ step_obschange() {
 		av_results obschange-reopen "$(obsc "pattern $w $h $W/p-${w}x$h.png")"
 	done
 	obs_down
+}
+
+# M5: GC573_SOAK_SECS of continuous audio and video capture (gate: 2 h on
+# the generic kernel, 30 min on the debug kernel). The capture runs
+# detached in the VM (an ssh session need not last the run); a sampler
+# logs memory and CPU time every minute.
+step_soak() {
+	local out d0 d1 n bad="" i t0 sm
+	av_on || { result soak-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
+	sleep 3
+	d0=$(aud_dbg)
+	vm "rm -f $W/soak.raw $W/soak.txt $W/soak-mem.txt"
+	vm "sudo nohup bash -c 'while :; do
+		irq=\$(ps -eo pid,comm | awk '\''\$2 ~ /^irq\\/[0-9]+-gc573/ { print \$1; exit }'\'')
+		aud=\$(pgrep -x gc573-aud | head -1)
+		printf \"%s %s %s %s %s %s %s\\n\" \$(date +%s) \
+			\$(awk '\''/^(MemAvailable|Slab|SUnreclaim):/ { printf \"%s \", \$2 }'\'' /proc/meminfo) \
+			\$(awk '\''{ print \$14 + \$15 }'\'' /proc/\${aud:-0}/stat 2>/dev/null || echo -) \
+			\$(awk '\''{ print \$14 + \$15 }'\'' /proc/\${irq:-0}/stat 2>/dev/null || echo -) \
+			\$(awk '\''/^cpu / { print \$2 + \$3 + \$4 + \$6 + \$7 + \$8, \$5 }'\'' /proc/stat | tr \" \" :)
+		sleep 60
+	done' > $W/soak-mem.txt 2>&1 < /dev/null & echo \$! > $W/soak-sampler.pid"
+	vm "sudo nohup $W/gc573-aud -D $pcm -t $SOAK_SECS -v -V $vdev -o $W/soak.raw > $W/soak.txt 2>&1 < /dev/null & echo \$! > $W/soak.pid"
+	t0=$(date +%s)
+	echo "  soak: $SOAK_SECS s from $(date -u '+%H:%M:%S UTC')"
+	sleep 5
+	while vm "sudo kill -0 \$(cat $W/soak.pid) 2>/dev/null"; do
+		[ $(( $(date +%s) - t0 )) -lt $((SOAK_SECS + 600)) ] || { vm "sudo kill \$(cat $W/soak.pid)"; break; }
+		sleep 30
+	done
+	vm "sudo kill \$(cat $W/soak-sampler.pid)"
+	check soak-capture "$(vm "grep -q '^RESULT' $W/soak.txt"; echo $?)" \
+		"($(vm "grep -E '^(PARAMS|RESULT)' $W/soak.txt" | tr '\n' ' '))"
+	d1=$(aud_dbg)
+	echo "$d1" | sed 's/^/  /'
+	for n in late order bad_done stop_missing; do
+		[ "$(aud_stat "$d0" $n)" = "$(aud_stat "$d1" $n)" ] ||
+			bad+=" $n +$(( $(aud_stat "$d1" $n) - $(aud_stat "$d0" $n) ))"
+	done
+	check soak-periods "$([ -z "$bad" ]; echo $?)" \
+		"(driver: $(( $(aud_stat "$d1" periods) - $(aud_stat "$d0" periods) )) periods, $(( $(aud_stat "$d1" pauses) - $(aud_stat "$d0" pauses) )) source pauses filled with $(( $(aud_stat "$d1" filled) - $(aud_stat "$d0" filled) )) frames${bad:-; none late or out of order})"
+	vm "sudo cat $dbgdir/video" | grep -E '^(stream|stats):' | sed 's/^/  /'
+	out=$(vm "python3 $W/live-av.py $W/soak.txt $W/soak.raw --min-secs $((SOAK_SECS * 99 / 100))")
+	av_results soak "$out"
+	# memory and CPU over the run: the first sample after 5 min against the
+	# last (allocations settle); kB
+	sm=$(vm "cat $W/soak-mem.txt")
+	echo "$sm" | awk 'NR == 1 || NR % 10 == 0 { print "  mem: " $0 }'
+	out=$(awk -v hz="$(vm getconf CLK_TCK)" '
+		NF >= 7 { n++; t[n] = $1; avail[n] = $2; slab[n] = $3; sunr[n] = $4; aud[n] = $5; irq[n] = $6
+			split($7, c, ":"); busy[n] = c[1]; idle[n] = c[2] }
+		END {
+			a = (n > 6) ? 6 : 1
+			ds = slab[n] - slab[a]; du = sunr[n] - sunr[a]; dm = avail[a] - avail[n]
+			wall = t[n] - t[1]
+			printf "%d samples over %.0f min; from minute 5: Slab %+d kB, SUnreclaim %+d kB, MemAvailable %+d kB", n, wall / 60, ds, du, -dm
+			if (wall > 0 && aud[n] != "-" && aud[1] != "-")
+				printf "; CPU: gc573-aud %.2f %% of one CPU", (aud[n] - aud[1]) / hz / wall * 100
+			if (wall > 0 && irq[n] != "-" && irq[1] != "-")
+				printf ", IRQ thread %.2f %%", (irq[n] - irq[1]) / hz / wall * 100
+			if (busy[n] + idle[n] > busy[1] + idle[1])
+				printf ", VM total %.1f %% of %d CPUs", (busy[n] - busy[1]) * 100 / (busy[n] - busy[1] + idle[n] - idle[1]), cpus
+			exit !(n >= 3 && du < 2048 && ds < 4096)
+		}' cpus="$(vm nproc)" <<< "$sm")
+	check soak-memory $? "($out)"
+	vm "rm -f $W/soak.raw"
+	av_off
 }
 
 # Unload while streaming live video and audio. rmmod is refused while the
