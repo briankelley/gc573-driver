@@ -88,6 +88,9 @@ for c in "$@"; do
 	fi
 	tag=$(kmsg_mark "case $name")
 	start=$(date +%s)
+	# a case lists the kernel messages it provokes on purpose (regexes)
+	GC573_KMSG_ALLOW=$(mktemp)
+	export GC573_KMSG_ALLOW
 	bash "$c" 2>&1 | sed 's/^/  /'
 	rc=${PIPESTATUS[0]}
 	secs=$(($(date +%s) - start))
@@ -102,6 +105,11 @@ for c in "$@"; do
 	v=$(echo "$klog" | sed -n 's/.*: FPGA version \([0-9a-f]*\)$/\1/p' | sort -u | tr '\n' ' ')
 	fw="$fw $v"
 	bad=$(echo "$klog" | grep -E "$KMSG_BAD|$KMSG_DRV_BAD")
+	if [ -n "$bad" ] && [ -s "$GC573_KMSG_ALLOW" ]; then
+		echo "$bad" | grep -Ef "$GC573_KMSG_ALLOW" | sed 's/^/  expected: /'
+		bad=$(echo "$bad" | grep -vEf "$GC573_KMSG_ALLOW")
+	fi
+	rm -f "$GC573_KMSG_ALLOW"
 	if [ -n "$bad" ]; then
 		echo "  -- bad kernel messages"
 		echo "$bad" | sed 's/^/  ! /'

@@ -25,6 +25,7 @@ packages:
   - v4l-utils                # v4l2-ctl, v4l2-compliance
   - edid-decode
   - alsa-utils
+  - libasound2-dev           # alsa-lib headers: tests/gc573-aud.c
   - trace-cmd
   - ffmpeg
   - python3-numpy
@@ -39,8 +40,10 @@ write_files:
       autologin-session=xubuntu
   - path: /etc/udev/rules.d/90-gc573-pulse-ignore.rules
     content: |
-      # keep PulseAudio/PipeWire off the card during module load/unload tests
-      SUBSYSTEM=="sound", ATTRS{vendor}=="0x1461", ATTRS{device}=="0x0054", ENV{PULSE_IGNORE}="1"
+      # keep PulseAudio/PipeWire off the card during module load/unload tests:
+      # PulseAudio honours PULSE_IGNORE, PipeWire ACP_IGNORE (an open control
+      # device pins the module)
+      SUBSYSTEM=="sound", ATTRS{vendor}=="0x1461", ATTRS{device}=="0x0054", ENV{PULSE_IGNORE}="1", ENV{ACP_IGNORE}="1"
 runcmd:
   - echo /usr/sbin/lightdm > /etc/X11/default-display-manager
   - DEBIAN_FRONTEND=noninteractive dpkg-reconfigure lightdm

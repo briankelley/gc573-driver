@@ -1,0 +1,120 @@
+# GC573 regression suite
+date:    2026-11-25 04:08:51 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 12E6474E790575AA69F66E6
+rev:     4cd2ca9af55c-dirty
+input:   PC loopback DVI-D-0 on (desktop, 1080p60)
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 16-probe-fail-hpd
+  bound: GPIO 0x0001fd74, HPD 1
+  unbound: GPIO 0x0001fd70, HPD 0
+  bind with gc573_video_init failing: exit 1 (/home/dev/gc573-driver/tests/cases/16-probe-fail-hpd.sh: line 75: echo: write error: Cannot allocate memory), GPIO 0x0001fd70, HPD 0
+  bpftrace: Attaching 1 probe...
+  failed probe: HPD low
+  -- kernel log (17 lines)
+  | [ 2085.554846] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2085.656387] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2085.790848] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 2085.792388] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2085.905722] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2085.906430] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2086.009081] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2086.151124] gc573 0000:07:00.0: video device video0
+  | [ 2086.177755] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 2087.518115] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2087.619392] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2087.753652] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 2087.754914] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2087.864498] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2087.865217] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2087.966921] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2088.110404] gc573: probe of 0000:07:00.0 failed with error -12
+RESULT 16-probe-fail-hpd    PASS (3s)
+
+## 06-hdmi-bringup
+    | hdmi: polling 1 failed 0 polls 73 poll_errors 0 poll_ms_max 425 xfers 5051 xfer_errors 0 retries 0 resyncs 0 runs 46 lock_polls 20 period_raw 0x196dac fpga_rejects 2 gpio 0x0001f974
+    | it6805: rev 0xb1 factory 37954 kHz trim 0x13 cal_retrigger 0
+    | it6805: state STABLE power NORMAL audio WAIT_READY armed 0 sync 1 debounce 0 wait 0 released 1 polls 73 entries 1 losses 0 releases 1
+    | it6805: 13 bf 14 39 19 be 4f 84 avi_store af 00
+    | it6805: mode 1920x1080p total 2200x1125 hfp 88 hs 44 vfp 4 vs 5 pol ++ rep 1 pclk 147911 kHz HDMI dc 0 avi 00 00 28 88 10 00 bus single SDR
+    | splitter: rev 0x01 rclk 21146 kHz otp_base 0x0b0 edid_loaded 1 src_hpd 1 polls 73
+    | splitter: rx 5v 1 clk 1 lock 1 scdt 1 13 bf 14 3b 19 b0 last events 00 00 40 40 00 02 00 00 link_errors 0 level_changes 0
+    | splitter: eq DONE stored 1 codes be be be result 3e 3e 3e 3f attempts 1 biterr 8000 8000 8000
+    | splitter: tx1 RUNNING 03 9f clk 143638 kHz afe 04 00 03 80 03 repowers 0 output_enable 1 failed 0 pll_recoveries 0 scdc_aborts 0
+    | splitter: avi 0d 02 af 00 28 88 10 00 00 00 00 00 00 00 00 00 00 00 rx timing 98 08 80 07 2c 58 00 65 04 38 04 05 04 00 94 60
+    | input: power 1 signal 1 locked 1 period 0x196dad fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+    | timings: 1920x1080p pixelclock 148500000 flags 0x292 vic 16 h 88/44/148 v 4/5/36 pol 0x3
+  log: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  log: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  log: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  log: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  polls 73 in 5 s, transfers 5051, errors 0, retries 0, resyncs 0, poll errors 0, longest poll 425 ms
+  -- kernel log (12 lines)
+  | [ 2088.474858] gc573-test: 1795579734635495099-22645 hdmi-bringup
+  | [ 2088.495177] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2088.597364] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2088.731641] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 2088.733055] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2088.847831] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2088.848538] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2088.949962] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2089.094738] gc573 0000:07:00.0: video device video0
+  | [ 2089.123641] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 2090.406922] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147911 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [ 2090.579924] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dad (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT 06-hdmi-bringup      PASS (6s)
+
+## 13-video-unbind
+  unbind while streaming: exit 0 after 226 ms
+  capture exited with status 2 (expected nonzero: device gone)
+    FAIL capture fmt=NV12: no frame after 52: No such device
+    gc573-cap: STREAMOFF: No such device
+    RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.513 max=16.841 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80108010(100.0%) distinct_frames=1
+  rebind: probe and capture OK
+  -- kernel log (20 lines)
+  | [ 2094.579163] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2094.681215] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2094.816997] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 2094.818999] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2094.930786] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2094.931558] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2095.031488] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2095.174520] gc573 0000:07:00.0: video device video0
+  | [ 2095.197210] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 2095.735008] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 2097.957962] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2098.059242] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2098.193107] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 2098.199012] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2098.309103] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2098.309804] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2098.412085] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2098.550453] gc573 0000:07:00.0: video device video0
+  | [ 2098.569208] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 2099.111556] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+RESULT 13-video-unbind      PASS (7s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   PC loopback DVI-D-0 on (desktop, 1080p60)
+RESULT 16-probe-fail-hpd    PASS (3s)
+RESULT 06-hdmi-bringup      PASS (6s)
+RESULT 13-video-unbind      PASS (7s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=3 fail=0 skip=2

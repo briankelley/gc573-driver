@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0
-# M3 live-input checks with the PC loopback source (AGENTS.md "Live source").
-# Runs on the HOST: drives the GPU output cabled to HDMI IN (DVI-D-0) with
-# tools/testsrc/show.sh and xrandr, on that output only (the primary output
-# is never touched), and runs the checks in the gc573-dev VM over ssh with
-# tests/gc573-cap.c and tests/live-compare.py. Build the module in the VM
-# first (tools/vmbuild.sh); this script loads it from ~/$VMDIR.
+# M3 and M4 live-input checks with the PC loopback source (AGENTS.md "Live
+# source"). Runs on the HOST: drives the GPU output cabled to HDMI IN
+# (DVI-D-0) with tools/testsrc/show.sh, avsync.sh and xrandr, on that output
+# only (the primary output is never touched), and runs the checks in the
+# gc573-dev VM over ssh with tests/gc573-cap.c, gc573-aud.c (alsa-lib),
+# live-compare.py and live-av.py. Build the module in the VM first
+# (tools/vmbuild.sh); this script loads it from ~/$VMDIR.
 #
 # Usage: tests/live.sh [STEP...]          (default: all steps, in this order)
 #   bringup   load; the output connects; its EDID (xrandr --verbose) equals
@@ -17,15 +18,28 @@
 #             with show.sh: each locks to the new rate within 3 s
 #   capture   1080p60 and 1080p59.94, 6 formats x GC573_LIVE_FRAMES (600):
 #             each format's last frame compared with pattern.py, all frames
-#             identical (full-frame hash), no sequence gaps, mean interval
-#             within 0.1 % of the measured frame period, first frame dropped
+#             identical (full-frame hash), no sequence gaps, G_PARM equal
+#             to the DV timings' nominal interval (1/60 below 59.5 Hz: the
+#             card delivers those at 60 Hz), mean interval within 0.1 % of
+#             the interval G_PARM reports, first frame dropped
 #   modes     every other mode the GPU offers for the output: timings and a
 #             verified capture (GC573_MODE_FRAMES, 120, per format)
 #   change    input change while streaming: SOURCE_CHANGE, DQBUF error, no
 #             DMA outside the queued images, restart at the new timings
 #   loss      output off and on, idle and while streaming
 #   colour    RGB limited range, YCbCr 4:4:4, YCbCr 4:2:2 (report only)
-#   unload    unload while streaming
+#   audio     avsync.sh on HDMI audio: 10 s capture, a burst a second,
+#             left 1 kHz and right 2 kHz (channel order, rate), 48 kHz
+#             against the clock, no gap, no overrun (live-av.py)
+#   avsync    GC573_AV_SECS (600) of audio and video together: no overrun,
+#             no gap, the driver's period counters clean, and the A/V
+#             offset (flash frame vs burst onset) with its drift
+#   audioloss one audio capture across 5 video stream start/stops, an input
+#             loss while video streams, relock, video again, an idle loss
+#             and relock: no overrun, never stalled, no gap (the driver
+#             fills the video stops' and the losses' gaps), bursts with the
+#             right channels after the last relock
+#   unload    unload while streaming video and audio
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
 # Prints RESULT lines and a SUMMARY; log: tests/logs/<UTC>_<kernel>_live.log.
@@ -39,6 +53,7 @@ FRAMES=${GC573_LIVE_FRAMES:-600}
 MODE_FRAMES=${GC573_MODE_FRAMES:-120}
 RELOADS=${GC573_RELOADS:-50}
 RELOCKS=${GC573_RELOCKS:-25}
+AV_SECS=${GC573_AV_SECS:-600}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=/tmp/gc573-live		# work directory in the VM
 SSHCTL=/tmp/gc573-live-ssh-$$
@@ -76,6 +91,9 @@ cap() { vm "sudo $W/gc573-cap -d $vdev -D $dbgdir/video $*"; }
 query() { vm "v4l2-ctl -d $vdev --query-dv-timings" 2>&1; }
 locked() { vm "v4l2-ctl -d $vdev --query-dv-timings >/dev/null 2>&1"; }
 hdmi_dbg() { vm "sudo cat $dbgdir/hdmi"; }
+aud_dbg() { vm "sudo cat $dbgdir/audio"; }
+aud() { vm "sudo $W/gc573-aud -D $pcm $*"; }
+pcm=hw:CARD=GC573,DEV=0
 
 connected() { grep -q "^$OUT connected" <<< "$(xrandr --current)"; }
 wait_connected() {	# seconds
@@ -88,6 +106,58 @@ wait_connected() {	# seconds
 }
 src_on() { "$ROOT/tools/testsrc/show.sh" "$OUT" "$1" "$2" >/dev/null; }
 src_off() { xrandr --output "$OUT" --off; }
+
+# avsync.sh at 1080p60, then the IT6805 audio state ON and the FPGA
+# measuring 48 kHz (AUDIO_SAMPLE_PERIOD reads all ones for another 120-140
+# ms after a fresh start; the samples are zero until then). The output goes
+# on first (show.sh): a disabled output has no valid ELD, and the HDMI audio
+# port needs a moment after a mode change before it shows one.
+av_on() {
+	local i d
+	wait_connected 15 || return 1
+	src_on 1920x1080 60 || return 1
+	for i in $(seq 30); do
+		"$ROOT/tools/testsrc/avsync.sh" "$OUT" 1920x1080 60 >/dev/null 2>&1 &&
+			break
+		sleep 0.5
+	done
+	[ "$i" -lt 30 ] || return 1
+	for i in $(seq 40); do
+		d=$(aud_dbg)
+		grep -q 'it6805 audio on' <<< "$d" && grep -q '(48000 Hz)' <<< "$d" &&
+			return 0
+		sleep 0.25
+	done
+	return 1
+}
+av_off() { "$ROOT/tools/testsrc/avsync.sh" --off; }
+
+# After the steps: both test sources closed, and none of their ffplay
+# processes left running (an ffplay stopped while it starts up can hang in
+# its exit path, and --off would not know)
+testsrc_check() {
+	local i left
+	"$ROOT/tools/testsrc/avsync.sh" --off
+	"$ROOT/tools/testsrc/show.sh" --off
+	for i in $(seq 30); do
+		left=$(pgrep -a -x ffplay | awk '/-window_title gc573-/ { printf "%s ", $1 }')
+		[ -z "$left" ] && break
+		sleep 0.1
+	done
+	check testsrc-closed "$([ -z "$left" ]; echo $?)" "(ffplay of show.sh or avsync.sh still running: ${left:-none})"
+}
+
+# One counter from the driver's debugfs "audio" text $1, e.g. aud_stat "$d" late
+aud_stat() { grep -o "\b$2 [0-9]*" <<< "$1" | head -1 | cut -d' ' -f2; }
+
+# live-av.py's RESULT lines ($2) as RESULT $1-NAME, other lines indented
+av_results() {
+	local name st detail
+	while read -r _ name st detail; do
+		result "$1-$name" "$st" "$detail"
+	done < <(grep '^RESULT' <<< "$2")
+	grep -v '^RESULT' <<< "$2" | sed 's/^/  /'
+}
 
 # Seconds from now until QUERY_DV_TIMINGS succeeds (limit $1), or "none"
 time_to_lock() {
@@ -124,10 +194,34 @@ load() {
 unload() { vm "sudo rmmod gc573"; }
 
 setup() {
-	vm "mkdir -p $W && gcc -O2 -Wall -o $W/gc573-cap $VMDIR/tests/gc573-cap.c" ||
+	vm "mkdir -p $W && gcc -O2 -Wall -o $W/gc573-cap $VMDIR/tests/gc573-cap.c &&
+		gcc -O2 -Wall -o $W/gc573-aud $VMDIR/tests/gc573-aud.c -lasound -lm" ||
 		return 1
 	scp -q -o ControlPath="$SSHCTL" "$ROOT/tools/testsrc/pattern.py" \
-		"$ROOT/tests/live-compare.py" "$VM:$W/"
+		"$ROOT/tests/live-compare.py" "$ROOT/tests/live-av.py" "$VM:$W/"
+}
+
+# The frame interval G_PARM must report for the timings in a gc573-cap
+# LOCK line ($1): their nominal interval; 1/60 below 59.5 Hz, which the
+# card delivers at 60 Hz (spec/video-pipeline.md "Delivery rate")
+nominal_interval() {
+	python3 - "$1" <<'EOF'
+import math, re, sys
+l = sys.argv[1]
+kv = dict(re.findall(r'(\w+)=(\S+)', l))
+w, h = map(int, re.search(r' (\d+)x(\d+)[pi] ', l).groups())
+hf, hs, hb = map(int, kv['h'].split('/'))
+vf, vs, vb = map(int, kv['v'].split('/'))
+n = (w + hf + hs + hb) * (h + vf + vs + vb)
+d = int(kv['pixelclock'])
+fl = int(kv['flags'], 16)
+if fl & 2 and fl & 4:	# CAN_REDUCE_FPS and REDUCED_FPS
+    n, d = n * 1001, d * 1000
+if d < 59.5 * n:
+    n, d = 1, 60
+g = math.gcd(n, d)
+print(f"{n // g}/{d // g}")
+EOF
 }
 
 # Capture fmts x n frames at the current input; compare the last frame of
@@ -145,6 +239,13 @@ live_capture() {
 	fps=$(echo "$lock" | sed -E 's/.* fps=([0-9.]+) .*/\1/')
 	check "$tag-timings" "$([ "${w}x$h" = "$size" ]; echo $?)" \
 		"(${w}x$h at $fps Hz, expected $size at $rate)"
+	# G_PARM reports the DV timings' nominal interval as an exact fraction
+	# (frame size over pixel clock, x 1001/1000 with REDUCED_FPS)
+	local tpf nom
+	tpf=$(sed -nE 's/.* tpf=([0-9]+\/[0-9]+) .*/\1/p' <<< "$lock")
+	nom=$(nominal_interval "$lock")
+	check "$tag-interval" "$([ -n "$tpf" ] && [ "$tpf" = "$nom" ]; echo $?)" \
+		"(G_PARM $tpf, nominal $nom)"
 	enc=709
 	[ "$h" -ge 720 ] || enc=601
 	vm "[ -f $W/p-${w}x$h.png ] || python3 $W/pattern.py $W/p-${w}x$h.png $w $h >/dev/null"
@@ -461,10 +562,98 @@ step_colour() {
 	sleep 3
 }
 
-# Unload while streaming live. rmmod is refused while the device is open
-# (module in use) and the stream keeps running; unbinding the PCI device
-# stops it (the application sees an error and exits) within 5 s; rebinding
-# probes again and the input locks; rmmod then works.
+# M4: avsync.sh's bursts on the HDMI audio, 10 s
+step_audio() {
+	local out
+	av_on || { result audio-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
+	hdmi_dbg | grep -E '^it6805: (state|audio)' | sed 's/^/  /'
+	aud "-t 10 -v -o $W/audio.raw" > /tmp/gc573-live-a.txt 2>&1
+	check audio-capture $? "($(grep -E '^RESULT' /tmp/gc573-live-a.txt))"
+	scp -q -o ControlPath="$SSHCTL" /tmp/gc573-live-a.txt "$VM:$W/audio.txt"
+	out=$(vm "python3 $W/live-av.py $W/audio.txt $W/audio.raw --bursts")
+	av_results audio "$out"
+	aud_dbg | sed 's/^/  /'
+	av_off
+}
+
+# M4: GC573_AV_SECS of audio and video together (gate: 10 min without an
+# overrun or a gap, the A/V offset and drift over at least 5 min)
+step_avsync() {
+	local out d0 d1 n bad=""
+	av_on || { result avsync-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
+	# the GPU's output timing steps once when ffplay goes full screen (see
+	# src_mode); settle() needs 90 identical frames, which avsync never has
+	sleep 3
+	d0=$(aud_dbg)
+	vm "sudo $W/gc573-aud -D $pcm -t $AV_SECS -v -V $vdev -o $W/av.raw > $W/av.txt 2>&1"
+	check avsync-capture $? "($(vm "grep -E '^(PARAMS|RESULT)' $W/av.txt" | tr '\n' ' '))"
+	d1=$(aud_dbg)
+	echo "$d1" | sed 's/^/  /'
+	for n in late order bad_done stop_missing; do
+		[ "$(aud_stat "$d0" $n)" = "$(aud_stat "$d1" $n)" ] ||
+			bad+=" $n +$(( $(aud_stat "$d1" $n) - $(aud_stat "$d0" $n) ))"
+	done
+	check avsync-periods "$([ -z "$bad" ]; echo $?)" \
+		"(driver: $(( $(aud_stat "$d1" periods) - $(aud_stat "$d0" periods) )) periods, $(( $(aud_stat "$d1" silent) - $(aud_stat "$d0" silent) )) silent, $(( $(aud_stat "$d1" pauses) - $(aud_stat "$d0" pauses) )) source pauses filled with $(( $(aud_stat "$d1" filled) - $(aud_stat "$d0" filled) )) frames${bad:-; none late or out of order})"
+	hdmi_dbg | grep -E '^it6805: audio' | sed 's/^/  /'
+	out=$(vm "python3 $W/live-av.py $W/av.txt $W/av.raw --min-secs $((AV_SECS * 9 / 10))")
+	av_results avsync "$out"
+	vm "rm -f $W/av.raw"
+	av_off
+}
+
+# M4: one audio capture across video start/stop and input loss/relock
+step_audioloss() {
+	local p rc out d0 d1 i vrc=0 t0
+	av_on || { result audioloss-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
+	d0=$(aud_dbg)
+	t0=$(date +%s)
+	vm "sudo $W/gc573-aud -D $pcm -t 80 -v -o $W/aloss.raw > $W/aloss.txt 2>&1" &
+	p=$!
+	sleep 3
+	for i in 1 2 3 4 5; do
+		cap "-L 5 -f YUYV -b 4 -n 60" > /dev/null 2>&1 || vrc=1
+		sleep 1
+	done
+	check audioloss-video "$vrc" "(5 video captures while audio runs)"
+	# input loss while video streams (the driver stops the stream), relock
+	change_while_streaming audioloss-video-loss "" src_off
+	sleep 3
+	av_on
+	check audioloss-relock $? "(avsync.sh again, IT6805 audio ON)"
+	cap "-L 10 -f YUYV -b 4 -n 120" > /dev/null 2>&1
+	check audioloss-video-after $? "(video capture after the relock)"
+	# idle loss and relock
+	src_off
+	sleep 4
+	av_on
+	check audioloss-relock-idle $? "(after an idle loss)"
+	echo "  last relock $(( $(date +%s) - t0 )) s into the 80 s capture"
+	wait $p
+	rc=$?
+	out=$(vm "grep -E '^(RESULT|XRUN)' $W/aloss.txt")
+	check audioloss-capture "$rc" "($out)"
+	d1=$(aud_dbg)
+	echo "$d1" | sed 's/^/  /'
+	check audioloss-restarts "$([ "$(( $(aud_stat "$d1" restarts) - $(aud_stat "$d0" restarts) ))" -ge 7 ] &&
+		[ "$(aud_stat "$d1" stop_missing)" = "$(aud_stat "$d0" stop_missing)" ]; echo $?)" \
+		"($(( $(aud_stat "$d1" restarts) - $(aud_stat "$d0" restarts) )) DMA restarts for 7 video stops, $(( $(aud_stat "$d1" pauses) - $(aud_stat "$d0" pauses) )) pauses (input loss), $(( $(aud_stat "$d1" filled) - $(aud_stat "$d0" filled) )) frames filled)"
+	# never stalled: no read more than 250 ms after the one before (a domain
+	# reset, 3 x 30 ms and more, holds the periods up once per video stop)
+	out=$(vm "awk '/^A /{ split(\$4, t, \"=\"); if (p && t[2] - p > m) m = t[2] - p; p = t[2] } END { printf \"%.1f\", m / 1e6 }' $W/aloss.txt")
+	check audioloss-stall "$(awk -v m="$out" 'BEGIN { exit !(m < 250) }'; echo $?)" "(longest time between reads $out ms)"
+	out=$(vm "python3 $W/live-av.py $W/aloss.txt $W/aloss.raw --tail 20")
+	# the video stops' gaps and the input losses' pauses are filled: the
+	# stream keeps time through all of them
+	av_results audioloss "$(grep -E '^RESULT (tail|channels|xruns|rate|gaps) ' <<< "$out")"
+	grep -E '^RESULT bursts ' <<< "$out" | sed 's/^RESULT/  info:/'
+	av_off
+}
+
+# Unload while streaming live video and audio. rmmod is refused while the
+# devices are open (module in use) and the streams keep running; unbinding
+# the PCI device stops them (the applications see an error and exit)
+# within 5 s; rebinding probes again and the input locks; rmmod then works.
 step_unload() {
 	local bdf rc t0 t f0 f1 lt
 	bdf=${dbgdir##*/gc573-}
@@ -472,6 +661,8 @@ step_unload() {
 	vm "sudo $W/gc573-cap -d $vdev -f NV12 -b 4 -n 100000 -D $dbgdir/video" \
 		> /tmp/gc573-live-u.txt 2>&1 &
 	local p=$!
+	aud "-t 100000" > /tmp/gc573-live-ua.txt 2>&1 &
+	local pa=$!
 	sleep 3
 	f0=$(vm "sudo grep -o 'frames [0-9]*' $dbgdir/video" | head -1)
 	vm "sudo rmmod gc573" > /tmp/gc573-live-rm.txt 2>&1
@@ -486,8 +677,10 @@ step_unload() {
 	rc=$?
 	t=$((($(date +%s%N) - t0) / 1000000))
 	wait $p
+	wait $pa
 	echo "  capture tool: $(grep -E '^(FAIL|RESULT)|error|failed' /tmp/gc573-live-u.txt | head -3 | tr '\n' ' ')"
-	check unload-unbind-streaming "$([ $rc = 0 ] && [ $t -lt 5000 ]; echo $?)" "(unbind $t ms, application exited)"
+	echo "  audio tool: $(grep -E '^RESULT|error|failed|read' /tmp/gc573-live-ua.txt | head -3 | tr '\n' ' ')"
+	check unload-unbind-streaming "$([ $rc = 0 ] && [ $t -lt 5000 ]; echo $?)" "(unbind $t ms, both applications exited)"
 	vm "echo $bdf | sudo tee /sys/bus/pci/drivers/gc573/bind >/dev/null"
 	find_vdev
 	lt=$(time_to_lock 15)
@@ -565,13 +758,15 @@ kml() {
 
 # ---- main ----
 
-all="bringup lock relock capture modes change loss colour unload reload compliance"
+all="bringup lock relock capture modes change loss colour audio avsync audioloss"
+all+=" unload reload compliance"
 [ $# -gt 0 ] || set -- $all
 krel=$(vm uname -r) || exit 2
 stamp=$(date -u +%Y%m%d-%H%M%S)
 log=$ROOT/tests/logs/${stamp}_${krel}_live.log
 mkdir -p "$ROOT/tests/logs"
-trap '"$ROOT/tools/testsrc/show.sh" --off; ssh -O exit -o ControlPath="$SSHCTL" "$VM" 2>/dev/null' EXIT
+trap '"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off
+	ssh -O exit -o ControlPath="$SSHCTL" "$VM" 2>/dev/null' EXIT
 {
 	echo "# GC573 live-input suite (PC loopback)"
 	echo "date:    $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -590,6 +785,9 @@ trap '"$ROOT/tools/testsrc/show.sh" --off; ssh -O exit -o ControlPath="$SSHCTL" 
 		echo "## $s"
 		"step_$s"
 	done
+	echo
+	echo "## test source"
+	testsrc_check
 	echo
 	echo "## kernel log"
 	kmsg_check

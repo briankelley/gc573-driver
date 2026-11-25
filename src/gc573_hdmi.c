@@ -142,7 +142,7 @@ static void gc573_edid_add_dtd(struct gc573_hdmi *h, const u8 *d)
 static void gc573_hdmi_edid_parse(struct gc573_hdmi *h)
 {
 	const u8 *e = h->edid, *c = h->edid + 128;
-	unsigned int i, j, d;
+	unsigned int i, j, d, end;
 
 	bitmap_zero(h->edid_vics, 256);
 	h->edid_ndtd = 0;
@@ -152,11 +152,13 @@ static void gc573_hdmi_edid_parse(struct gc573_hdmi *h)
 		gc573_edid_add_dtd(h, e + i);
 	if (h->edid_blocks < 2 || c[0] != 0x02)
 		return;
+	/* data blocks end at the first DTD (byte 2), content at byte 126 */
 	d = c[2];
-	for (i = 4; i < d && i < 127; i += 1 + (c[i] & 0x1f)) {
+	end = min(d, 127U);
+	for (i = 4; i < end; i += 1 + (c[i] & 0x1f)) {
 		if (c[i] >> 5 != 2)	/* video data block */
 			continue;
-		for (j = 1; j <= (c[i] & 0x1f) && i + j < d; j++) {
+		for (j = 1; j <= (c[i] & 0x1f) && i + j < end; j++) {
 			u8 v = c[i + j];
 
 			/* SVD: 129-192 carry the native flag in bit 7 */
@@ -514,6 +516,7 @@ static void gc573_hdmi_poll(struct work_struct *work)
 	r1 = gc573_sp_poll(h);
 	r2 = gc573_it6805_poll(h);
 	gc573_chip_end(h);
+	WRITE_ONCE(h->audio_on, h->it.audio == GC573_AUD_ON);
 	h->polls++;
 	if (r1 || r2)
 		h->poll_errors++;
@@ -552,6 +555,24 @@ static void gc573_hdmi_destroy_wq(void *data)
 	h->wq = NULL;
 }
 
+/*
+ * Remove, or a probe that fails after the chips came up: the source and
+ * port 1 HPD go low so the source sees the capture card leave (a design
+ * choice; RD writes nothing at unload, hdmi-chips.md "Driver notes").
+ * Polling has stopped by then (gc573_hdmi_stop runs first).
+ */
+static void gc573_hdmi_hpd_off(void *data)
+{
+	struct gc573_hdmi *h = data;
+
+	mutex_lock(&h->lock);
+	gc573_chip_begin(h);
+	gc573_sp_hpd_low(h);
+	gc573_chip_end(h);
+	mutex_unlock(&h->lock);
+	gc573_hdmi_hpd(h, false);
+}
+
 int gc573_hdmi_init(struct gc573 *gc)
 {
 	struct gc573_hdmi *h = &gc->hdmi;
@@ -586,6 +607,9 @@ int gc573_hdmi_init(struct gc573 *gc)
 		h->failed = true;
 		return ret;
 	}
+	ret = devm_add_action_or_reset(dev, gc573_hdmi_hpd_off, h);
+	if (ret)
+		return ret;
 
 	gc573_hdmi_hpd(h, true);
 	msleep(GC573_HPD_PULSE_HIGH_MS);
@@ -599,22 +623,10 @@ int gc573_hdmi_init(struct gc573 *gc)
 	return devm_add_action_or_reset(dev, gc573_hdmi_destroy_wq, h);
 }
 
-/*
- * Remove: polling stops, then the source and port 1 HPD go low so the
- * source sees the capture card leave (a design choice; RD writes nothing
- * at unload, hdmi-chips.md "Driver notes").
- */
+/* Remove: polling stops; HPD goes low later (gc573_hdmi_hpd_off) */
 static void gc573_hdmi_stop(void *data)
 {
-	struct gc573_hdmi *h = data;
-
-	gc573_hdmi_stop_polling(h);
-	mutex_lock(&h->lock);
-	gc573_chip_begin(h);
-	gc573_sp_hpd_low(h);
-	gc573_chip_end(h);
-	mutex_unlock(&h->lock);
-	gc573_hdmi_hpd(h, false);
+	gc573_hdmi_stop_polling(data);
 }
 
 /* After the video device exists: start polling, stop it first at remove */

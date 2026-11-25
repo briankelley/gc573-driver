@@ -12,7 +12,7 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
 - Env: `GC573_ITER` (load/unload cycles, default 50), `GC573_I2C_ROUNDS`
   (`04-i2c-reads` rounds per reader, default 200), `GC573_INPUT` (HDMI input
   source and mode for the log, default `none`), `GC573_KO` (module path).
-- The no-input cases (`10`, `12`, `13`, `14`, `15`) take the HDMI input
+- The no-input cases (`10`, `12`, `13`, `14`, `15`, `17`) take the HDMI input
   away first (`gc573_input_off`: `VIDIOC_S_EDID` with 0 blocks, then no lock
   for 1 s), so the suite runs with the loopback source on or off. Live-input
   checks are in `live.sh` (below).
@@ -26,7 +26,9 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
 - `run.sh` marks the kernel log before each case and fails the case if its log
   holds a kernel warning, oops, KASAN/UBSAN, lockdep, atomic-sleep or DMA-API
   report, or a driver error/timeout/MISMATCH message (`KMSG_BAD`,
-  `KMSG_DRV_BAD` in `lib.sh`).
+  `KMSG_DRV_BAD` in `lib.sh`). A case that provokes such a message on
+  purpose appends a regex for it to the file `$GC573_KMSG_ALLOW`; matching
+  lines are logged as expected instead.
 - `run.sh` pauses kmemleak's automatic scan, reports and clears old leaks,
   and checks once after the last case: any unreferenced object fails the
   `kmemleak` result. kmemleak only reports an object after two consecutive
@@ -57,28 +59,42 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `13-video-unbind` | M2 | unbind while streaming with mapped buffers: stream stops, unbind < 5 s, application exits; rebind probes and streams |
 | `14-exp-slot-bits` | exp. | open question 8 result check via `exp_slot_mode` 1-5: ch0 CH_CTRL (run, slot-valid bits) gates all channels; ch1/ch2 CH_CTRL, even 0, has no visible effect |
 | `15-video-returned-buffers` | M2 fix | `gc573-cap -R`: `GC573_RB_QBUFS` (default 6000) QBUFs at random points of the frame (NV12, 3 buffers, each dequeued buffer pattern-filled and held 0-20 ms): no DMA into a dequeued buffer, no completion for an unarmed slot |
+| `16-probe-fail-hpd` | M3 review | a probe that fails after the HDMI chips came up (bpftrace overrides `gc573_video_init()` with -ENOMEM) leaves GPIO bit 2, the IT6805-side HPD, low (read through `resource0`); before that: bit 2 high while bound, low after a normal unbind. SKIP without bpftrace or function error injection |
+| `17-audio` | M4 | no input: ALSA hw params (S16_LE, 2 channels, 48 kHz, periods from 480 frames); 3 s capture at 48 kHz +- 0.1 % against the clock, no overrun, all samples zero, every period silent, AUDIO_DONE in order (debugfs `audio`); 20 stop/start cycles (INT bit 4 each), audio across 3 video stream start/stops (the video stop's domain reset stops the audio DMA; the driver restarts it and fills the gap with silence: rate within 0.1 %), rmmod refused while the PCM is open, unbind while capturing (< 5 s, the application exits), capture after the rebind. SKIP without the alsa-lib headers |
 
-Helpers: `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep (`-T all`, or a list saved with `-t`), stop/start, underrun, wait and returned-buffer modes; live input: lock wait `-L`, frame save `-o`, input-change test `-X` with restart `-r`, per-frame log `-F`; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`, `live-compare.py` (saved frame vs `tools/testsrc/pattern.py`). Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.
+Experiment `exp-delivery.sh RATE [N] [TAG]` (host side like `live.sh`,
+open question 33): a moving source (ffplay `testsrc2`) on the output at RATE,
+then a capture with a hash of every frame and a BAR0 snapshot per completion
+(`gc573-cap -F -M`); `exp-delivery.py` prints the completion rate, the repeat
+pattern and which registers change with it. The driver's `exp_rate_fps` and
+`exp_rate_bits` parameters set RATE_CTRL for such a stream. Result:
+`logs/20261125-041700_6.8.0-151-generic_exp-delivery.log`.
+
+Helpers: `gc573-aud.c` (ALSA capture tool, alsa-lib: per-read frame count and timestamp, raw samples, BAR0 snapshot, a V4L2 capture beside it for A/V timing, stop/start), `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep (`-T all`, or a list saved with `-t`), stop/start, underrun, wait and returned-buffer modes; live input: lock wait `-L`, frame save `-o`, input-change test `-X` with restart `-r`, per-frame log `-F`; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`, `live-compare.py` (saved frame vs `tools/testsrc/pattern.py`), `live-av.py` (a `gc573-aud` capture of `tools/testsrc/avsync.sh`: bursts, channel order and rate by frequency, frames against the clock, gaps, video cadence, A/V offset and drift). Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.
 
 ## Live input (`live.sh`, host)
 `tests/live.sh [STEP...]` runs on the host: it drives the loopback output
-(`DVI-D-0`, never the primary) with `tools/testsrc/show.sh` and xrandr, and runs
+(`DVI-D-0`, never the primary) with `tools/testsrc/show.sh`, `avsync.sh` and xrandr, and runs
 the checks in `gc573-dev` over ssh with the module built there
 (`tools/vmbuild.sh`). Log: `tests/logs/<UTC stamp>_<kernel>_live.log`; prints
 `RESULT` lines and a `SUMMARY`; checks the kernel log as `run.sh` does
 (`kernel-log`) and runs kmemleak over the whole run where the kernel has it
-(`kmemleak`, the debug kernel); leaves the pattern off.
+(`kmemleak`, the debug kernel); leaves the pattern off, and checks that no
+ffplay of `show.sh` or `avsync.sh` is left running (`testsrc-closed`).
 
 | Step | Checks |
 |---|---|
 | `bringup` | load; the host sees the output connected; its EDID (`xrandr --verbose`) equals `VIDIOC_G_EDID` byte for byte; `edid-decode --check` PASS |
 | `lock` | 1080p60 and 1080p59.94 (1000/1001 flag): `QUERY_DV_TIMINGS` = CTA VIC 16 within 3 s of the switch; `power_present` = 1; `SOURCE_CHANGE` on lock, loss and mode change |
 | `relock` | `GC573_RELOCKS` (25) x 2 switches 1080p60 <-> 1080p59.94 through `show.sh`: each locks to the new rate within 3 s |
-| `capture` | after the source has settled (90 identical, evenly spaced frames), 1080p60 and 1080p59.94, 6 formats x `GC573_LIVE_FRAMES` (600): last frame vs `pattern.py` (RGB 0..+1; YUV within 2 code values, chroma at flat sites), every frame identical (full-frame signature), no sequence gaps (`TAG-FMT`); mean interval within 0.1 % of the measured frame period (`TAG-FMT-cadence`); the first frame of every stream dropped |
+| `capture` | after the source has settled (90 identical, evenly spaced frames), 1080p60 and 1080p59.94, 6 formats x `GC573_LIVE_FRAMES` (600): last frame vs `pattern.py` (RGB 0..+1; YUV within 2 code values, chroma at flat sites), every frame identical (full-frame signature), no sequence gaps (`TAG-FMT`); G_PARM equal to the DV timings' nominal interval as an exact fraction, e.g. 1/60 and 1001/60000, and 1/60 for inputs below 59.5 Hz, which the card delivers at 60 Hz with repeated frames (`TAG-interval`; spec/video-pipeline.md "Delivery rate"); mean interval within 0.1 % of the interval G_PARM reports (`TAG-FMT-cadence`); the first frame of every stream dropped |
 | `modes` | every other mode the output offers: timings and the same capture checks (`GC573_MODE_FRAMES`, 120) |
 | `change` | input change while streaming: `SOURCE_CHANGE`, `DQBUF` error, no DMA outside the queued buffers, restart at the new timings |
 | `loss` | output off and on, idle and while streaming |
 | `colour` | RGB limited, YCbCr 4:4:4, YCbCr 4:2:2 (nvidia-settings): the published colour format and range follow the splitter RX's AVI copy; captures reported, not gating |
-| `unload` | `rmmod` while streaming |
+| `audio` | `avsync.sh` (HDMI audio from the GPU, IT6805 audio state ON): 10 s capture; a burst a second; per burst the dominant frequency left 1 kHz and right 2 kHz within 1 %, the other tone >= 30 dB down (channel order and rate); 48 kHz +- 0.05 % against the clock; no gap (the per-second medians of the read timestamps, against a line, move < 3 ms from one second to the next: a lost period is a 10 ms step; the line's bend over the run, the clock's own rate changes, reported); no overrun |
+| `avsync` | `GC573_AV_SECS` (600) of audio and video (1080p60 YUYV) together: no overrun, no gap, no video sequence gap or interval off by half a period; the driver's counters over the run: no interrupt late, no period out of turn (silent periods and source pauses filled reported); A/V offset = burst onset (ALSA timestamps) - flash frame (vb2 timestamp, end of frame), each flash moved by whole frames to the most common offset (ffplay shows a flash a frame or more early or late at times; raw offsets reported): within 1 ms of a line, drift < 10 ms (one audio period) over the run |
+| `audioloss` | one 80 s audio capture across 5 video stream start/stops, an input loss while video streams (the stream stops), relock, video again, an idle loss and relock: no overrun, no stall (reads < 250 ms apart), one DMA restart per video stop, never a stop without INT bit 4, no gap and 48 kHz +- 0.05 % over the run (the driver fills the video stops' and the input losses' gaps with silence), 20 bursts with the right channels in the last 20 s |
+| `unload` | `rmmod` while streaming video and audio (refused, in use), unbind (< 5 s, both applications exit), rebind, lock |
 | `reload` | `GC573_RELOADS` (50) unload/load cycles with the source on: host output back and input locked each time |
 | `compliance` | `v4l2-compliance -s` with the live input |

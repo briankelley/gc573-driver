@@ -1,0 +1,45 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 06:07:35 UTC
+vm:      gc573-dev, kernel 6.8.12-gc573dbg
+rev:     afc79b748696-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   avsync
+module:  1F6820792F570C5791DE4C0, /dev/video0
+
+## avsync
+RESULT avsync-capture             PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=28799520 secs=599.987 rate=47999.409 xruns=0 restarts=0 )
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 59999 silent 0 filled 0 starts 1 restarts 0 stops 1 stop_missing 0
+  order 0 bad_done 0 stale 0 late 1 interval_us 7057..20018
+RESULT avsync-periods             FAIL (driver: 59999 periods, 0 silent late +1)
+  it6805: audio errors 0 events 1 (audio logic reset skipped)
+RESULT avsync-duration            PASS (600.0 s, 28799520 frames, minimum 540 s)
+RESULT avsync-xruns               PASS (0 overruns)
+RESULT avsync-rate                PASS (47999.409 Hz against CLOCK_MONOTONIC, -12.3 ppm)
+RESULT avsync-gaps                FAIL (per-second medians move <= 9.88 ms from one second to the next; within 31.09 ms of one line over the run; single reads within 26.38 ms of it; 59999 reads)
+RESULT avsync-bursts              PASS (600 in 600.0 s)
+RESULT avsync-channels            PASS (left 999.8 Hz, right 2000.2 Hz over 600 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT avsync-video               PASS (35997 frames, 0 sequence gaps, interval 16.667 ms, 0 off by more than half a period, 6 by more than 10 %)
+RESULT avsync-avsync              FAIL (388 flashes over 10.0 min: offset -12.777 ms (std 1.000, min -16.080, max -8.444), drift -0.1701 ms/min = -1.698 ms over the run, residual <= 4.966 ms)
+    raw offsets: mean -35.11 ms, min -95.73, max -12.30, std 19.75; frames from the most common (count): -5: 1, -4: 10, -3: 72, -2: 77, -1: 105, +0: 123
+
+## kernel log
+  kernel log: 0 driver lines
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+
+## summary
+RESULT avsync-capture             PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=28799520 secs=599.987 rate=47999.409 xruns=0 restarts=0 )
+RESULT avsync-periods             FAIL (driver: 59999 periods, 0 silent late +1)
+RESULT avsync-duration            PASS (600.0 s, 28799520 frames, minimum 540 s)
+RESULT avsync-xruns               PASS (0 overruns)
+RESULT avsync-rate                PASS (47999.409 Hz against CLOCK_MONOTONIC, -12.3 ppm)
+RESULT avsync-gaps                FAIL (per-second medians move <= 9.88 ms from one second to the next; within 31.09 ms of one line over the run; single reads within 26.38 ms of it; 59999 reads)
+RESULT avsync-bursts              PASS (600 in 600.0 s)
+RESULT avsync-channels            PASS (left 999.8 Hz, right 2000.2 Hz over 600 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT avsync-video               PASS (35997 frames, 0 sequence gaps, interval 16.667 ms, 0 off by more than half a period, 6 by more than 10 %)
+RESULT avsync-avsync              FAIL (388 flashes over 10.0 min: offset -12.777 ms (std 1.000, min -16.080, max -8.444), drift -0.1701 ms/min = -1.698 ms over the run, residual <= 4.966 ms)
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+SUMMARY pass=9 fail=3 skip=0

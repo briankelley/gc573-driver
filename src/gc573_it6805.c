@@ -599,10 +599,12 @@ static int gc573_it_audio_step(struct gc573_hdmi *h)
 			ret = gc573_chip_rd(h, IT, 0, 0xb1, &st[1]);
 		if (ret)
 			return ret;
-		if (b9 & 0xc0)
+		if (b9 & 0xc0) {
+			it->audio_errors++;
 			dev_dbg_ratelimited(&h->gc->pdev->dev,
 					    "IT6805: 0:b9 = %02x, audio logic reset untraced: skipped\n",
 					    b9);
+		}
 		if (!(s19 & BIT(7)) || !(st[1] & BIT(7)) || (e10 & BIT(7)))
 			return 0;
 		/* 11.2 on */
@@ -719,6 +721,9 @@ int gc573_it6805_poll(struct gc573_hdmi *h)
 			ret = gc573_it_ack(h, 0xd5, 0xff, &v);
 		if (ret)
 			return ret;
+		/* RD: audio logic reset and audio enable; untraced, skipped */
+		if ((e10 & BIT(7)) && it->state == GC573_IT_STABLE)
+			it->audio_events++;
 		if ((e10 & BIT(1)) && it->state != GC573_IT_NO_5V) {
 			ret = gc573_chip_rd(h, IT, 0, 0x19, &it->r19);
 			if (!ret)
@@ -919,6 +924,8 @@ void gc573_it6805_show(struct gc573_hdmi *h, struct seq_file *m)
 	seq_printf(m, "it6805: 13 %02x 14 %02x 19 %02x 4f %02x avi_store %02x %02x\n",
 		   it->r13, it->r14, it->r19, it->r4f, it->avi_store[0],
 		   it->avi_store[1]);
+	seq_printf(m, "it6805: audio errors %u events %u (audio logic reset skipped)\n",
+		   it->audio_errors, it->audio_events);
 	seq_printf(m, "it6805: mode %ux%u%s total %ux%u hfp %u hs %u vfp %u vs %u pol %c%c rep %u pclk %u kHz %s dc %u avi %*ph bus %s%s\n",
 		   md->hactive, md->vactive, md->interlaced ? "i" : "p",
 		   md->htotal, md->vtotal, md->hfp, md->hsync, md->vfp,

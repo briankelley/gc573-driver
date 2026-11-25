@@ -8,10 +8,12 @@
  * probe runs the full sequence every time and never assumes reset values.
  *
  * Teardown is entirely devres-managed. Release order is the reverse of
- * probe: debugfs, HDMI polling (stopped; source HPD low), video device
- * (stops a running stream), the HDMI workqueue, I2C adapters, quiesce
- * (video stopped, interrupts off, reset domains), free IRQ, free vectors,
- * unmap BAR0, disable the device, and last the v4l2_device reference.
+ * probe: debugfs, HDMI polling (stopped), the ALSA card (stops a running
+ * stream; waits until its files are closed), the audio DMA buffers, the
+ * video device (stops a running stream), the HDMI workqueue, source HPD
+ * low, I2C adapters, quiesce (video and audio stopped, interrupts off,
+ * reset domains), free IRQ, free vectors, unmap BAR0, disable the device,
+ * and last the v4l2_device reference.
  * struct gc573 is freed when the last reference goes, which can be after
  * remove while a file handle is still open.
  */
@@ -61,6 +63,22 @@ void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val)
 	v = gc573_rd(gc, GC573_GPIO);
 	gc573_wr(gc, GC573_GPIO, (v & ~mask) | (val & mask));
 	spin_unlock(&gc->gpio_lock);
+}
+
+/*
+ * DMA_RUN (0x008): bit 1 runs the audio DMA, the other bits are unknown;
+ * RD wrote the whole register only with video idle. Every change is a
+ * read-modify-write under this lock (spec/audio.md "Driver notes").
+ */
+void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val)
+{
+	unsigned long flags;
+	u32 v;
+
+	spin_lock_irqsave(&gc->dma_run_lock, flags);
+	v = gc573_rd(gc, GC573_DMA_RUN);
+	gc573_wr(gc, GC573_DMA_RUN, (v & ~mask) | (val & mask));
+	spin_unlock_irqrestore(&gc->dma_run_lock, flags);
 }
 
 /*
@@ -175,9 +193,22 @@ static int gc573_hw_init(struct gc573 *gc)
 	struct device *dev = &gc->pdev->dev;
 	int ret;
 
-	dev_dbg(dev, "state at probe: RESET=%#010x INT_ENABLE=%#010x INT_STATUS=%#010x GPIO=%#010x\n",
+	dev_dbg(dev, "state at probe: RESET=%#010x INT_ENABLE=%#010x INT_STATUS=%#010x GPIO=%#010x DMA_RUN=%#010x\n",
 		gc573_rd(gc, GC573_RESET), gc573_rd(gc, GC573_INT_ENABLE),
-		gc573_rd(gc, GC573_INT_STATUS), gc573_rd(gc, GC573_GPIO));
+		gc573_rd(gc, GC573_INT_STATUS), gc573_rd(gc, GC573_GPIO),
+		gc573_rd(gc, GC573_DMA_RUN));
+
+	/*
+	 * The card keeps its registers across driver loads (spec/pci.md), and
+	 * RD leaves its DMA running when it unloads (spec/init.md "Remove /
+	 * quiesce"): stop audio DMA a previous driver left on, as the spec's
+	 * stop does, before it writes anywhere else.
+	 */
+	if (gc573_rd(gc, GC573_DMA_RUN) & GC573_DMA_RUN_AUDIO) {
+		dev_info(dev, "audio DMA running at probe: stopped\n");
+		gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
+		fsleep(1000);
+	}
 
 	/* 2: reset domains */
 	ret = gc573_reset_domains(gc);
@@ -237,12 +268,13 @@ static void gc573_quiesce(void *data)
 {
 	struct gc573 *gc = data;
 
-	/* 1: stop video, and never start it again; nothing starts audio yet */
+	/* 1: stop video and audio, and never start them again */
 	mutex_lock(&gc->vid.lock);
 	gc->vid.dead = true;
 	if (gc573_rd(gc, GC573_VIP_CTRL) & GC573_VIP_CTRL_OUT_EN)
 		gc573_video_hw_stop(gc);
 	mutex_unlock(&gc->vid.lock);
+	gc573_audio_quiesce(gc);
 
 	/* 2: interrupts off, status cleared */
 	gc573_irq_hw_disable(gc);
@@ -258,14 +290,17 @@ static void gc573_quiesce(void *data)
 }
 
 /*
- * Hard handler: claim and ack the enabled bits that are set, then defer
- * their servicing to the thread. Acking here keeps a shared INTx line
- * from staying asserted while the thread runs. spec/interrupts.md.
+ * Hard handler: claim and ack the enabled bits that are set. Audio is
+ * serviced here: a period has to leave its DMA buffer within 10 ms, and
+ * its timestamp is the interrupt's. The rest is deferred to the thread.
+ * Acking here keeps a shared INTx line from staying asserted while the
+ * thread runs. spec/interrupts.md.
  */
 static irqreturn_t gc573_irq(int irq, void *data)
 {
 	struct gc573 *gc = data;
-	u32 status, pending;
+	u32 status, pending, audio, done = 0;
+	u64 ns = 0;
 
 	status = gc573_rd(gc, GC573_INT_STATUS);
 	if (status == U32_MAX)		/* device not responding */
@@ -276,12 +311,24 @@ static irqreturn_t gc573_irq(int irq, void *data)
 	if (!pending)
 		return IRQ_NONE;
 
-	/* frame timestamp as close to the event as the driver gets */
+	/* frame and period timestamps as close to the event as they get */
+	if (pending & (GC573_INT_VID_DONE | GC573_INT_AUD_DONE))
+		ns = ktime_get_ns();
 	if (pending & GC573_INT_VID_DONE)
-		WRITE_ONCE(gc->vid.irq_ns, ktime_get_ns());
+		WRITE_ONCE(gc->vid.irq_ns, ns);
+	/* RD reads AUDIO_DONE before the ack (spec/audio.md "Running") */
+	if (pending & GC573_INT_AUD_DONE)
+		done = gc573_rd(gc, GC573_AUDIO_DONE);
 
 	/* write 1 to clear exactly the bits taken for service */
 	gc573_wr(gc, GC573_INT_STATUS, pending);
+
+	audio = pending & (GC573_INT_AUD_STOP | GC573_INT_AUD_DONE);
+	if (audio)
+		gc573_audio_irq(gc, audio, done, ns);
+	pending &= ~audio;
+	if (!pending)
+		return IRQ_HANDLED;
 	atomic_or(pending, &gc->irq_pending);
 	return IRQ_WAKE_THREAD;
 }
@@ -290,7 +337,6 @@ static irqreturn_t gc573_irq_thread(int irq, void *data)
 {
 	struct gc573 *gc = data;
 	u32 pending = atomic_xchg(&gc->irq_pending, 0);
-	u32 unexpected;
 
 	/* bits 8, 9: enabled by the spec's sequence, meaning unknown: ack only */
 	if (pending & (GC573_INT_UNK8 | GC573_INT_UNK9))
@@ -304,12 +350,6 @@ static irqreturn_t gc573_irq_thread(int irq, void *data)
 		gc573_video_irq_done(gc);
 	if (pending & GC573_INT_VID_TERM)
 		gc573_video_irq_term(gc);
-
-	/* nothing starts audio yet */
-	unexpected = pending & (GC573_INT_AUD_STOP | GC573_INT_AUD_DONE);
-	if (unexpected)
-		dev_warn_ratelimited(&gc->pdev->dev, "unexpected interrupt %#x\n",
-				     unexpected);
 
 	return IRQ_HANDLED;
 }
@@ -347,6 +387,7 @@ static int gc573_debugfs_init(struct gc573 *gc)
 	gc->debugfs = debugfs_create_dir(name, NULL);
 	gc573_video_debugfs(gc);
 	gc573_hdmi_debugfs(gc);
+	gc573_audio_debugfs(gc);
 	return devm_add_action_or_reset(&gc->pdev->dev, gc573_debugfs_remove,
 					gc);
 }
@@ -363,9 +404,11 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return -ENOMEM;
 	gc->pdev = pdev;
 	spin_lock_init(&gc->gpio_lock);
+	spin_lock_init(&gc->dma_run_lock);
 	mutex_init(&gc->i2c_lock);
 	init_completion(&gc->i2c1_done);
 	gc573_video_early_init(gc);
+	gc573_audio_early_init(gc);
 	pci_set_drvdata(pdev, gc);
 
 	gc->v4l2_dev.release = gc573_release;
@@ -436,6 +479,10 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	ret = gc573_video_init(gc);
 	if (ret)
 		return dev_err_probe(dev, ret, "cannot register video device\n");
+
+	ret = gc573_audio_init(gc);
+	if (ret)
+		return dev_err_probe(dev, ret, "cannot register sound card\n");
 
 	/* polling stops before the video device goes (devres order) */
 	ret = gc573_hdmi_start(gc);

@@ -143,3 +143,27 @@ gc573_cap_build() {
 	gcc -O2 -Wall -Wextra -o "$1/gc573-cap" "$GC573_TESTS/gc573-cap.c" >&2 &&
 		echo "$1/gc573-cap"
 }
+
+# Build the audio test tool into directory $1 (alsa-lib headers:
+# libasound2-dev); print the binary's path.
+gc573_aud_build() {
+	gcc -O2 -Wall -Wextra -o "$1/gc573-aud" "$GC573_TESTS/gc573-aud.c" \
+		-lasound -lm >&2 && echo "$1/gc573-aud"
+}
+
+# The card's ALSA capture PCM (hw:CARD=<id>,DEV=0) while the driver is bound.
+gc573_pcm() {
+	local c
+	for c in /sys/bus/pci/devices/"$GC573_BDF"/sound/card*; do
+		[ -e "$c/id" ] || continue
+		echo "hw:CARD=$(cat "$c/id"),DEV=0"
+		return 0
+	done
+	return 1
+}
+
+# One counter from the driver's debugfs "audio" file, e.g. gc573_aud_stat periods
+gc573_aud_stat() {
+	grep -o "\b$1 [0-9]*" "/sys/kernel/debug/$GC573_MOD-$GC573_BDF/audio" |
+		head -1 | cut -d' ' -f2
+}

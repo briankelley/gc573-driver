@@ -1,0 +1,55 @@
+# GC573 regression suite
+date:    2026-11-25 04:08:29 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 5EEAC5E59AA5BB9A15E4031
+rev:     4cd2ca9af55c-dirty
+input:   PC loopback DVI-D-0 on (desktop, 1080p60)
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 16-probe-fail-hpd
+  bound: GPIO 0x0001fd74, HPD 1
+  unbound: GPIO 0x0001fd70, HPD 0
+  bind with gc573_video_init failing: exit 1 (/home/dev/gc573-driver/tests/cases/16-probe-fail-hpd.sh: line 75: echo: write error: Cannot allocate memory), GPIO 0x0001fd74, HPD 1
+  bpftrace: Attaching 1 probe...
+  FAIL: HPD left high by the failed probe
+  -- kernel log (17 lines)
+  | [ 2063.157414] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2063.258715] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2063.392668] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 2063.394151] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2063.495301] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2063.496008] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2063.597301] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2063.742868] gc573 0000:07:00.0: video device video0
+  | [ 2063.762507] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 2065.741898] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2065.843679] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2065.975377] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 2065.978885] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2066.090819] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2066.091512] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2066.192498] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2066.334675] gc573: probe of 0000:07:00.0 failed with error -12
+RESULT 16-probe-fail-hpd    FAIL (3s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   PC loopback DVI-D-0 on (desktop, 1080p60)
+RESULT 16-probe-fail-hpd    FAIL (3s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=0 fail=1 skip=2

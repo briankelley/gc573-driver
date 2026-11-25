@@ -30,6 +30,8 @@
 struct dentry;
 struct pci_dev;
 struct sg_table;
+struct snd_card;
+struct snd_pcm_substream;
 
 /* spec/pci.md */
 #define GC573_BAR0_SIZE			0x80000		/* 512 KiB */
@@ -37,8 +39,14 @@ struct sg_table;
 /* Core block, spec/regmap.md */
 #define GC573_VERSION			0x000		/* FPGA build date, BCD YYYYMMDD */
 #define GC573_TLP_ALIGN			0x004		/* read only (debugfs) */
+#define GC573_DMA_RUN			0x008		/* read-modify-write only */
+#define GC573_DMA_RUN_AUDIO		BIT(1)		/* audio DMA runs */
 #define GC573_RESET			0x00c
 #define GC573_INT_STATUS		0x010		/* write 1 to clear */
+#define GC573_AUDIO_DONE		0x014		/* [1:0] buffer completed */
+#define GC573_AUDIO_DONE_MASK		GENMASK(1, 0)
+#define GC573_AUDIO_DONE_BUF0		1
+#define GC573_AUDIO_DONE_BUF1		2
 #define GC573_INT_ENABLE		0x01c
 #define GC573_GPIO			0x040
 
@@ -107,6 +115,22 @@ struct sg_table;
 #define GC573_I2C1_STATUS_RD_OK		BIT(2)
 
 /*
+ * Audio DMA, spec/regmap.md "Audio DMA" and spec/audio.md: two buffers
+ * the FPGA fills in turn, one period each. The meaning of CFG0, CFG1 and
+ * the slot map is unknown; the driver writes RD's values.
+ */
+#define GC573_AUD_CFG0			0x200
+#define GC573_AUD_PERIOD_A		0x204		/* period length, dwords */
+#define GC573_AUD_BUF0_LO		0x208
+#define GC573_AUD_BUF0_HI		0x20c
+#define GC573_AUD_BUF1_LO		0x210
+#define GC573_AUD_BUF1_HI		0x214
+#define GC573_AUD_CFG1			0x218
+#define GC573_AUD_PERIOD_B		0x21c		/* same value as PERIOD_A */
+#define GC573_AUD_SLOT(n)		(0x2b4 + 4 * (n))	/* n = 0..3 */
+#define GC573_AUD_SLOTS			4
+
+/*
  * Video DMA channels, spec/regmap.md and spec/video-dma.md. One channel
  * per image plane, four buffer slots per channel. ch1/ch2 CH_CTRL read
  * back 0xeeeeeeee: software keeps what it last wrote.
@@ -151,6 +175,8 @@ struct sg_table;
 #define GC573_IN_HEIGHT			0x100c		/* active lines */
 #define GC573_IN_FRAME_PERIOD		0x1010		/* 100 MHz ticks, ~0 = none */
 #define GC573_IN_FRAME_PERIOD_HZ	100000000U	/* its tick rate */
+#define GC573_AUDIO_SAMPLE_PERIOD	0x10a0		/* ticks per sample, ~0 = none */
+#define GC573_AUDIO_SAMPLE_PERIOD_HZ	100000000U
 #define GC573_CLIP_LEFT			0x1020
 #define GC573_CLIP_WIDTH		0x1024
 #define GC573_CLIP_TOP			0x1028
@@ -179,6 +205,7 @@ struct sg_table;
 #define GC573_RATE_CTRL_CSC		GENMASK(2, 1)
 #define GC573_RATE_CTRL_IN_YUV		BIT(1)		/* input is YUV */
 #define GC573_RATE_CTRL_OUT_RGB		BIT(2)		/* output is RGB */
+#define GC573_RATE_CTRL_EXP		(BIT(0) | BIT(3))	/* unknown; OQ 33 */
 #define GC573_RATE_FPS_NO_INPUT		5		/* RD's value with no input */
 #define GC573_PIX_MODE			0x1088
 #define GC573_PIX_MODE_DUAL		BIT(0)		/* dual-pixel input bus */
@@ -282,6 +309,52 @@ struct gc573_video {
 	struct gc573_vstats st;
 };
 
+/* Audio statistics since the module was loaded, for debugfs */
+struct gc573_astats {
+	u64 periods;			/* periods delivered */
+	u64 silent;			/* of these, delivered as silence */
+	u64 filled;			/* silent frames for resets and pauses */
+	u32 starts;			/* streams started */
+	u32 restarts;			/* DMA started again after a reset */
+	u32 pauses;			/* the FPGA's pacing paused (filled) */
+	u32 stops;			/* INT bit 4 */
+	u32 stop_missing;		/* stop without INT bit 4 */
+	u32 order;			/* AUDIO_DONE not the buffer expected */
+	u32 bad_done;			/* AUDIO_DONE neither 1 nor 2 */
+	u32 stale;			/* INT bit 5 while not running */
+	u32 late;			/* interrupt over 5 ms late, no pause */
+	u32 interval_max_us;		/* longest interval, this stream */
+	u32 interval_min_us;		/* shortest interval, this stream */
+};
+
+/* Audio capture, src/gc573_audio.c */
+struct gc573_audio {
+	struct snd_card *card;
+	void *buf;			/* the two DMA buffers (coherent) */
+	dma_addr_t buf_dma;
+	struct completion stopped;	/* INT bit 4 */
+
+	/* stream state shared with the hard IRQ handler */
+	spinlock_t lock;
+	struct snd_pcm_substream *ss;	/* the stream started last */
+	u8 *area;			/* ALSA ring buffer */
+	unsigned int buffer_bytes;
+	unsigned int period_bytes;	/* ALSA period, a multiple of 10 ms */
+	unsigned int pos;		/* ring write offset, bytes */
+	unsigned int part;		/* bytes into the current ALSA period */
+	unsigned int rate;
+	bool running;			/* periods are being delivered */
+	bool stopping;			/* stopped, INT bit 4 not waited for */
+	bool dead;			/* quiesced: never start again */
+	bool resync;			/* restarted: fill the gap first */
+	unsigned int pause_us;		/* a late period: pause or latency? */
+	bool good;			/* the last period carried samples */
+	u8 next;			/* AUDIO_DONE value expected next */
+	u32 sample_period;		/* AUDIO_SAMPLE_PERIOD, last period */
+	u64 last_ns;			/* INT bit 5 time, last period */
+	struct gc573_astats st;
+};
+
 struct gc573 {
 	struct pci_dev *pdev;
 	void __iomem *mmio;
@@ -296,6 +369,8 @@ struct gc573 {
 
 	/* serialises read-modify-write of GPIO (0x040) */
 	spinlock_t gpio_lock;
+	/* serialises read-modify-write of DMA_RUN (0x008), IRQ-safe */
+	spinlock_t dma_run_lock;
 
 	/* serialises the I2C masters: one transfer on the card at a time */
 	struct mutex i2c_lock;
@@ -307,10 +382,12 @@ struct gc573 {
 
 	struct gc573_video vid;
 	struct gc573_hdmi hdmi;
+	struct gc573_audio aud;
 };
 
 int gc573_reset_domains(struct gc573 *gc);
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val);
+void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val);
 
 int gc573_i2c_init(struct gc573 *gc);
 int gc573_i2c1_transfer(struct gc573 *gc, u8 addr8, u8 reg, u8 *buf, u16 len,
@@ -336,6 +413,13 @@ void gc573_video_irq_term(struct gc573 *gc);
 void gc573_video_debugfs(struct gc573 *gc);
 void gc573_video_input_changed(struct gc573 *gc);
 void gc573_video_release(struct gc573 *gc);
+
+void gc573_audio_early_init(struct gc573 *gc);
+int gc573_audio_init(struct gc573 *gc);
+void gc573_audio_quiesce(struct gc573 *gc);
+void gc573_audio_reset_done(struct gc573 *gc);
+void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns);
+void gc573_audio_debugfs(struct gc573 *gc);
 
 static inline u32 gc573_rd(struct gc573 *gc, u32 off)
 {

@@ -31,6 +31,7 @@
 #include <linux/bitfield.h>
 #include <linux/debugfs.h>
 #include <linux/delay.h>
+#include <linux/error-injection.h>
 #include <linux/gcd.h>
 #include <linux/jiffies.h>
 #include <linux/ktime.h>
@@ -70,6 +71,21 @@ static int exp_slot_mode;
 module_param(exp_slot_mode, int, 0644);
 MODULE_PARM_DESC(exp_slot_mode,
 		 "Experiment, spec/open-questions.md #8; read at stream start. 0: normal, 1: slot-valid bits on ch0 only, 2: ch1/ch2 CH_CTRL written at start only, 3: slot-valid bits on ch1/ch2 only, 4: ch1/ch2 CH_CTRL never written, 5: ch1/ch2 CH_CTRL = 0 at start, never set");
+
+/*
+ * Experiment, spec/open-questions.md #33 (delivery below 59.94 Hz): RATE_CTRL
+ * as the plan there lists it. RATE_CTRL keeps its value across resets and
+ * the driver keeps bit 3, so bits 0 and 3 are set or cleared explicitly.
+ */
+static unsigned int exp_rate_fps;
+module_param(exp_rate_fps, uint, 0644);
+MODULE_PARM_DESC(exp_rate_fps,
+		 "Experiment, spec/open-questions.md #33; read at stream start. RATE_CTRL[31:16] = 1..60 (0: the driver's value)");
+
+static int exp_rate_bits = -1;
+module_param(exp_rate_bits, int, 0644);
+MODULE_PARM_DESC(exp_rate_bits,
+		 "Experiment, spec/open-questions.md #33; read at stream start. RATE_CTRL bits 0 and 3 := this value's bits 0 and 3 (-1: keep them)");
 
 static const u32 gc573_vch_base[GC573_VCH_NUM] = {
 	GC573_VCH0_BASE, GC573_VCH1_BASE, GC573_VCH2_BASE,
@@ -557,12 +573,17 @@ static void gc573_vid_setup(struct gc573 *gc)
 	fsleep(GC573_SCALER_RESET_US);
 
 	/* rate limit and colour-path flags; bit 3 and above 31:16 kept */
+	if (exp_rate_fps >= 1 && exp_rate_fps <= 60)
+		fps = exp_rate_fps;
 	rate = gc573_rd(gc, GC573_RATE_CTRL);
 	rate &= ~(GC573_RATE_CTRL_FPS | GC573_RATE_CTRL_IN_YUV |
 		  GC573_RATE_CTRL_OUT_RGB);
 	rate |= FIELD_PREP(GC573_RATE_CTRL_FPS, fps) |
 		(yuv_in ? GC573_RATE_CTRL_IN_YUV : 0) |
 		(f->rgb ? GC573_RATE_CTRL_OUT_RGB : 0);
+	if (exp_rate_bits >= 0)
+		rate = (rate & ~GC573_RATE_CTRL_EXP) |
+		       (exp_rate_bits & GC573_RATE_CTRL_EXP);
 	gc573_wr(gc, GC573_RATE_CTRL, rate);
 
 	/* R2Y: from Y2R's full-range RGB, or from the RGB input as it is */
@@ -709,6 +730,8 @@ void gc573_video_hw_stop(struct gc573 *gc)
 		}
 	}
 	gc573_reset_domains(gc);
+	/* the reset stops the audio DMA as well */
+	gc573_audio_reset_done(gc);
 	dev_dbg(dev, "video stopped in %u ms\n",
 		jiffies_to_msecs(jiffies - t0));
 }
@@ -1084,16 +1107,68 @@ static int gc573_enum_framesizes(struct file *file, void *priv,
 }
 
 /*
- * Frame interval: with a matching locked input the rate the FPGA measured
- * (0x1010, spec/hdmi-it6805.md 8.3), else the DV timings' nominal rate.
+ * The DV timings' nominal frame interval as an exact fraction: frame size
+ * over pixel clock, times 1001/1000 with REDUCED_FPS, so 1/60 and
+ * 1001/60000 as applications expect (v4l2_calc_timeperframe() rounds the
+ * rate to 1/100 fps first: 50/2997 for 59.94 Hz). {0, 0} if it does not
+ * fit a v4l2_fract.
  */
+static struct v4l2_fract gc573_vid_nominal(const struct v4l2_bt_timings *bt)
+{
+	u64 n = (u64)V4L2_DV_BT_FRAME_WIDTH(bt) * V4L2_DV_BT_FRAME_HEIGHT(bt);
+	u64 d = bt->pixelclock;
+	struct v4l2_fract f = { 0, 0 };
+	u64 g;
+
+	if ((bt->flags & V4L2_DV_FL_CAN_REDUCE_FPS) &&
+	    (bt->flags & V4L2_DV_FL_REDUCED_FPS)) {
+		n *= 1001;
+		d *= 1000;
+	}
+	if (!n || !d)
+		return f;
+	g = gcd(n, d);
+	n = div64_u64(n, g);
+	d = div64_u64(d, g);
+	if (n <= U32_MAX && d <= U32_MAX) {
+		f.numerator = n;
+		f.denominator = d;
+	}
+	return f;
+}
+
+/*
+ * Frame interval: with a matching locked input the period the FPGA
+ * measured (0x1010, spec/hdmi-it6805.md 8.3), reported as the nominal
+ * interval when within 0.1 % of it; else the DV timings' nominal one.
+ *
+ * Delivery (spec/video-pipeline.md "Delivery rate", open question 33):
+ * inputs at 50 Hz and below complete every 16.667 ms, an input frame being
+ * repeated, and no register marks the repeats; 59.93-60 Hz inputs complete
+ * at their own rate. Every completion reaches the application, so below
+ * GC573_VID_LOCK_MIN_DHZ the interval reported is the delivered 1/60. The
+ * boundary between the two regimes is not known; 59.5 Hz keeps every
+ * observed mode right.
+ */
+#define GC573_VID_LOCK_MIN_DHZ		595	/* 59.5 Hz, in 0.1 Hz */
+
 static struct v4l2_fract gc573_vid_interval(struct gc573_video *v)
 {
-	struct v4l2_fract f;
+	struct v4l2_fract nom = gc573_vid_nominal(&v->timings.bt), f;
 	unsigned long g;
+	u64 a, b;
 
+	if (!nom.denominator)
+		nom = v4l2_calc_timeperframe(&v->timings);
 	if (!gc573_vid_input_matches(v) || !v->in.period)
-		return v4l2_calc_timeperframe(&v->timings);
+		return nom;
+	if ((u64)v->in.period * GC573_VID_LOCK_MIN_DHZ >
+	    (u64)GC573_IN_FRAME_PERIOD_HZ * 10)
+		return (struct v4l2_fract){ 1, 60 };
+	a = (u64)v->in.period * nom.denominator;
+	b = (u64)nom.numerator * GC573_IN_FRAME_PERIOD_HZ;
+	if (abs_diff(a, b) <= div_u64(b, 1000))
+		return nom;
 	g = gcd(v->in.period, GC573_IN_FRAME_PERIOD_HZ);
 	f.numerator = v->in.period / g;
 	f.denominator = GC573_IN_FRAME_PERIOD_HZ / g;
@@ -1541,3 +1616,6 @@ int gc573_video_init(struct gc573 *gc)
 	return devm_add_action_or_reset(&gc->pdev->dev, gc573_video_unregister,
 					gc);
 }
+
+/* tests/cases/16-probe-fail-hpd.sh fails it (bpftrace override) */
+ALLOW_ERROR_INJECTION(gc573_video_init, ERRNO);

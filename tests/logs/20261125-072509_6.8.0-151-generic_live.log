@@ -1,0 +1,87 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 07:25:09 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     8c1aba489a21-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   audio audio audio
+module:  6B5D237B35FF5F4E30096E2, /dev/video0
+
+## audio
+  it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 7933 entries 1 losses 0 releases 1
+  it6805: audio errors 0 events 0 (audio logic reset skipped)
+RESULT audio-capture              PASS (RESULT audio frames=480000 secs=9.990 rate=47999.864 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480000 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (47999.864 Hz against CLOCK_MONOTONIC, -2.8 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.07 ms from one second to the next; within 0.07 ms of one line over the run; single reads within 0.23 ms of it; 1000 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 1000 silent 0 filled 0 pauses 0 starts 1 restarts 0 stops 1 stop_missing 0
+  order 0 bad_done 0 stale 0 late 0 interval_us 9770..10205
+
+## audio
+  it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 8128 entries 1 losses 0 releases 1
+  it6805: audio errors 0 events 0 (audio logic reset skipped)
+RESULT audio-capture              PASS (RESULT audio frames=480000 secs=9.990 rate=48000.574 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480000 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (48000.574 Hz against CLOCK_MONOTONIC, +12.0 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.08 ms from one second to the next; within 0.09 ms of one line over the run; single reads within 0.20 ms of it; 1000 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 2000 silent 0 filled 0 pauses 0 starts 2 restarts 0 stops 2 stop_missing 0
+  order 0 bad_done 0 stale 0 late 0 interval_us 9755..10234
+
+## audio
+  it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 8325 entries 1 losses 0 releases 1
+  it6805: audio errors 0 events 1 (audio logic reset skipped)
+RESULT audio-capture              PASS (RESULT audio frames=480000 secs=9.990 rate=48000.351 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480000 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (48000.351 Hz against CLOCK_MONOTONIC, +7.3 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.07 ms from one second to the next; within 0.13 ms of one line over the run; single reads within 0.15 ms of it; 1000 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 3000 silent 0 filled 0 pauses 0 starts 3 restarts 0 stops 3 stop_missing 0
+  order 0 bad_done 0 stale 0 late 0 interval_us 9791..10195
+
+## test source
+RESULT testsrc-closed             FAIL (ffplay of show.sh or avsync.sh still running: 2481586 2481894 2482235 )
+
+## kernel log
+  kernel log: 0 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT audio-capture              PASS (RESULT audio frames=480000 secs=9.990 rate=47999.864 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480000 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (47999.864 Hz against CLOCK_MONOTONIC, -2.8 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.07 ms from one second to the next; within 0.07 ms of one line over the run; single reads within 0.23 ms of it; 1000 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT audio-capture              PASS (RESULT audio frames=480000 secs=9.990 rate=48000.574 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480000 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (48000.574 Hz against CLOCK_MONOTONIC, +12.0 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.08 ms from one second to the next; within 0.09 ms of one line over the run; single reads within 0.20 ms of it; 1000 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT audio-capture              PASS (RESULT audio frames=480000 secs=9.990 rate=48000.351 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480000 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (48000.351 Hz against CLOCK_MONOTONIC, +7.3 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.07 ms from one second to the next; within 0.13 ms of one line over the run; single reads within 0.15 ms of it; 1000 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT testsrc-closed             FAIL (ffplay of show.sh or avsync.sh still running: 2481586 2481894 2482235 )
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=22 fail=1 skip=1

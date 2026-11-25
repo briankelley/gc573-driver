@@ -1,0 +1,78 @@
+# GC573 regression suite
+date:    2026-11-25 06:21:17 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #4 SMP PREEMPT_DYNAMIC Tue Nov 24 16:09:22 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 6B5D237B35FF5F4E30096E2
+rev:     a25c0fdaafb4-dirty
+input:   none
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+gc573 already loaded: unloading
+
+## 17-audio
+  PCM hw:CARD=GC573,DEV=0, video /dev/video0
+    FORMAT:  S16_LE
+    CHANNELS: 2
+    RATE: 48000
+    PERIOD_SIZE: [480 24000]
+    BUFFER_SIZE: [960 96000]
+  ok: hw params: S16_LE, 2 channels, 48000 Hz, periods from 480 frames
+    RESULT audio frames=144000 secs=2.990 rate=47997.786 xruns=0 restarts=0
+  ok: capture ran, no overrun
+  ok: rate 47997.786 Hz (48000 +- 0.1 %), 144000 frames in 2.990 s
+  ok: all samples zero (0 reads with a sample)
+  ok: 300 periods, 300 of them delivered as silence (no input)
+  ok: AUDIO_DONE alternated 1, 2 (order, bad_done unchanged)
+  ok: stop/start: 21 starts, 21 INT bit 4, no overrun, no stop without INT bit 4
+  ok: 3 video captures
+  ok: audio through them: no overrun, 3 DMA restarts after the domain resets, 10761 frames of silence filled
+  ok: 432201 frames in the 9 s run: no stall (>= 8.5 s worth)
+  ok: rate across them 47998.079 Hz (48000 +- 0.1 %: a 90 ms gap left unfilled would be -1 %)
+  ok: rmmod refused while open (rmmod: ERROR: Module gc573 is in use)
+  ok: unbind while capturing: exit 0 after 159 ms; capture exited with 1
+  ok: capture after rebind: 48000 frames
+  audio without input: OK
+  -- kernel log (22 lines)
+  | [ 2156.555837] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2156.657657] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2156.800592] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 2156.802811] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2156.917741] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2156.918583] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2157.025849] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2157.174433] gc573 0000:07:00.0: video device video0
+  | [ 2157.182636] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 2157.207094] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 2157.755197] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 2178.816789] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2178.918163] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2179.045290] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 2179.048998] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2179.159384] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2179.161103] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2179.260275] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2179.402161] gc573 0000:07:00.0: video device video0
+  | [ 2179.407210] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 2179.426521] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 2180.373961] gc573 0000:07:00.0: splitter: EQ search found no valid channel (d0 = 2a), attempt 1
+RESULT 17-audio             PASS (25s)
+
+## kmemleak (whole suite)
+  no new unreferenced objects
+RESULT kmemleak             PASS 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 17-audio             PASS (25s)
+RESULT kmemleak             PASS 
+RESULT debug-checkers       PASS 
+SUMMARY pass=3 fail=0 skip=0
