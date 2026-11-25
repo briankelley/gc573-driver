@@ -20,6 +20,14 @@ Run in the VM, as the desktop user, with OBS running (tests/live.sh starts it).
       device's too (OBS opens it without O_CLOEXEC): while it records, the
       device stays open after OBS closes it, so OBS cannot set the device
       up again (S_FMT: EBUSY). Hybrid MP4 is written in OBS's process
+  obs-check.py verify VIDEODEV PCM
+      changes nothing: the sources "setup" makes must be there as it makes
+      them (the V4L2 source on VIDEODEV, YUYV, buffering as
+      GC573_OBS_BUFFERING says; the ALSA source on PCM at 48 kHz; neither
+      monitored, so the test audio plays nowhere; both in the current
+      scene) and a 1920x1080 canvas. For an OBS set up by hand, such as the
+      host's: "setup" asks OBS for its device lists, and OBS opens every
+      /dev/video* node (cameras too) to make them
   obs-check.py formats PATTERN_PNG
       every pixel format OBS offers for the device in turn: a screenshot of
       the source (GetSourceScreenshot, 1920x1080 PNG) against the pattern
@@ -138,6 +146,40 @@ def setup(obs, vdev, pcm):
     for prop in ('pixelformat', 'resolution', 'framerate'):
         print(f'{prop}:', ', '.join(f"{i['itemName']}={i['itemValue']}" for i in items(obs, VSRC, prop)))
     print('settings', json.dumps(obs.call('GetInputSettings', inputName=VSRC)['inputSettings']))
+
+
+def verify(obs, vdev, pcm):
+    """The sources as setup() makes them, read only (no device lists)"""
+    bad = []
+    buf = os.environ.get('GC573_OBS_BUFFERING', '1') != '0'
+    names = {i['inputName']: i['inputKind'] for i in obs.call('GetInputList')['inputs']}
+    want = {VSRC: ('v4l2_input', {'device_id': vdev, 'pixelformat': YUYV, 'buffering': buf}),
+            ASRC: ('alsa_input_capture', {'custom_pcm': pcm, 'rate': 48000})}
+    for name, (kind, settings) in want.items():
+        if names.get(name) != kind:
+            bad.append(f'{name}: {names.get(name, "missing")}, not {kind}')
+            continue
+        have = obs.call('GetInputSettings', inputName=name)['inputSettings']
+        for k, v in settings.items():
+            if have.get(k) != v:
+                bad.append(f'{name}: {k} {have.get(k)!r}, not {v!r}')
+        if name == ASRC:
+            mon = obs.call('GetInputAudioMonitorType', inputName=name)['monitorType']
+            if mon != 'OBS_MONITORING_TYPE_NONE':
+                bad.append(f'{name}: audio monitoring {mon}')
+    sc = obs.call('GetCurrentProgramScene')['currentProgramSceneName']
+    items = {i['sourceName'] for i in obs.call('GetSceneItemList', sceneName=sc)['sceneItems']}
+    bad += [f'{n}: not in scene {sc!r}' for n in want if n not in items]
+    v = obs.call('GetVideoSettings')
+    if (v['baseWidth'], v['baseHeight']) != (1920, 1080):
+        bad.append(f"canvas {v['baseWidth']}x{v['baseHeight']}, not 1920x1080")
+    others = sorted(n for n in names if n not in want)
+    print(f"OBS sources: {VSRC} on {vdev}, {ASRC} on {pcm}, scene {sc!r}, canvas "
+          f"{v['baseWidth']}x{v['baseHeight']} at {v['fpsNumerator']}/{v['fpsDenominator']} fps"
+          + (f"; other inputs: {', '.join(others)}" if others else '; no other inputs'))
+    for b in bad:
+        print(f'NOT AS EXPECTED: {b}')
+    return not bad
 
 
 def shot(obs, w=1920, h=1080):
@@ -281,6 +323,8 @@ def main():
     cmd = sys.argv[1]
     if cmd == 'setup':
         setup(obs, sys.argv[2], sys.argv[3])
+    elif cmd == 'verify':
+        sys.exit(0 if verify(obs, sys.argv[2], sys.argv[3]) else 1)
     elif cmd == 'formats':
         sys.exit(0 if formats(obs, sys.argv[2]) else 1)
     elif cmd == 'record':

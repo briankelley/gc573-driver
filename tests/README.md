@@ -93,6 +93,17 @@ the checks in `gc573-dev` over ssh with the module built there
 (`kmemleak`, the debug kernel); leaves the pattern off, and checks that no
 ffplay of `show.sh` or `avsync.sh` is left running (`testsrc-closed`).
 
+Host-local mode (`GC573_LOCAL=1`): the driver runs on the host, bound by the
+user (`tools/install.sh`), and the checks run there without ssh. `live.sh` never
+loads, unloads, binds or unbinds the driver then (it refuses such commands),
+leaves the GPU's colour settings and OBS's configuration alone, and runs only
+the steps that allow that (`LOCAL_STEPS`; `obssoak` and `soak` on request).
+sudo goes through `SUDO_ASKPASS`, or cached credentials. OBS is the user's:
+`tests/obs-run.sh --keep-config` starts it minimized to the tray (no preview is
+drawn) without writing its configuration, and `tests/obs-check.py verify`
+checks the sources (setting them up would make OBS open every `/dev/video*`
+node, cameras too). `GC573_OBS_BUFFERING` defaults to 0 there.
+
 | Step | Checks |
 |---|---|
 | `bringup` | load; the host sees the output connected; its EDID (`xrandr --verbose`) equals `VIDIOC_G_EDID` byte for byte; `edid-decode --check` PASS |
@@ -111,6 +122,7 @@ ffplay of `show.sh` or `avsync.sh` is left running (`testsrc-closed`).
 | `obsav` | `GC573_OBS_SECS` (600) of OBS recording `avsync.sh` (V4L2 source with OBS's defaults: buffering on, YUYV; ALSA source; MKV, x264, AAC): `obs-av.py` on the file: video intervals (OBS's 60 Hz canvas, none over 1.5 periods), every flash frame paired with a burst within 0.5 s (half the flash interval), A/V offset = burst onset - flash frame in the file's own times: mean within 45 ms (the ITU-R BT.1359 audio-lead detectability limit), std <= 10 ms (OBS shows a source frame in the next frame of its own canvas, so the offset takes two values a frame apart), drift: a line through the offsets moves less than a frame period over the run; OBS's skipped-frame counters reported; no `select timed out` or `failed to dequeue` in OBS's log. First, in the same `avsync.sh` session: 60 s of `gc573-aud -V` with `live-av.py` (`obsav-driver-*`: the source's own offset, which can move by whole frames between sessions), and the OBS offset minus it is printed |
 | `obschange` | source changes while OBS records `avsync.sh`, the V4L2 source left alone: output off for 8 s and on again (`obschange-live-on`: flash frames in the recording after it, i.e. OBS live again by itself), then a change to 720p (`obschange-stopped-720p`: OBS's source stops, it ignores V4L2 source-change events); after the recording (whose muxer process holds the device too) the source reopened as a user would (`obs-check.py reopen`: Color Range changed and back) at 720p and again after a change to 1080p: the source at its new size against `pattern.py` |
 | `soak` | not in the default steps: `GC573_SOAK_SECS` (7200) of audio and video (1080p60 YUYV) together with `avsync.sh`, the capture detached in the VM (`gc573-aud -V`): the `avsync` checks over the run (no overrun, no gap, no video sequence gap or interval off by half a period, channels, A/V drift) and the driver's period counters; every minute `/proc/meminfo` (MemAvailable, Slab, SUnreclaim) and the CPU time of the capture, of the driver's IRQ thread and of the VM: from minute 5 to the end SUnreclaim grows < 2 MB and Slab < 4 MB (`soak-memory`), CPU use reported |
+| `obssoak` | not in the default steps: the event soak with OBS, `GC573_OBSSOAK_SECS` (7200) recorded, a change every `GC573_OBSSOAK_EVERY` (180) s (`obs-events.py soak`), a screenshot every 2 s; the recording (pattern, counter steps, A/V offset per segment between changes), memory and CPU. Host form (local mode): the rotation `GC573_OBSSOAK_ROTATION` (output off/on, 60 <-> 59.94 Hz, 1080p <-> 720p with OBS's reopen, EDID re-sets), the recording in `GC573_REC_DIR` (`~/gc573-rec`, deleted after the analysis), OBS minimized, a sample a minute (memory, CPU, the driver's debugfs counters, kernel log lines), and 60 s of `gc573-aud -V -P` in the source sessions of the first and last segments: OBS's own part of the A/V offset at both ends (`obs-own`: within a frame period of each other) |
 | `unload` | `rmmod` while streaming video and audio (refused, in use), unbind (< 5 s, both applications exit), rebind, lock |
 | `reload` | `GC573_RELOADS` (50) unload/load cycles with the source on: host output back and input locked each time |
 | `compliance` | `v4l2-compliance -s` with the live input |

@@ -31,12 +31,21 @@ the screenshot after it must be good too.
       each source change in turn, N times (default 2); one EVENT line each
       and a RESULT line per kind (below). --record: OBS records across the
       changes (in the format OBS was started with: tests/obs-run.sh)
-  obs-events.py [--host H] soak SECS [--every S] [--shot S]
+  obs-events.py [--host H] soak SECS [--every S] [--shot S] [--rotation A,B,..]
+                [--keep-source] [--no-restore] [--rec-dir DIR]
       the event soak: a recording across SECS seconds, a screenshot every
       --shot seconds (default 2), and every --every seconds (default 180)
-      the next change from a rotation of all kinds; one EVENT line per
-      change, SHOT lines for every screenshot that is not good, and RESULT
-      lines at the end. Prints RECORDING <file> (the recording, in the VM)
+      the next change from a rotation (default: of all kinds; --rotation
+      gives it); one EVENT line per change, SHOT lines for every screenshot
+      that is not good, and RESULT lines at the end. Prints RECORDING
+      <file> (the recording, where OBS runs). --keep-source: the test
+      source that runs (avsync.sh --pattern at 1080p60) is not restarted
+      before the recording, and --no-restore leaves the last one running
+      after it, so that the driver's A/V offset can be measured in the
+      same source sessions as the recording's first and last segments.
+      --rec-dir: OBS records to DIR (SetRecordDirectory), and gets its
+      directory back after the recording. The V4L2 source's color_range
+      is put back as it was (the reopens toggle it)
   obs-events.py recheck FILE [--every S] [--across]
       in the VM, on a recording of the counter pattern: a frame every S
       seconds (default 10) against the pattern, and the counter's steps
@@ -72,6 +81,14 @@ reopen: SetInputSettings toggling color_range between 0 (Default) and 1
 (Partial), the same for YUV formats. OBS 32 sets its V4L2 source up again
 (closes and reopens the device) only when a setting it compares changes;
 the device then has the new timings.
+
+Host-local mode (GC573_VM=local): the driver runs on this machine, and OBS
+too (--host defaults to 127.0.0.1; tests/obsws.py takes the websocket
+password from OBS's own settings). The driver's side then runs here and
+not over ssh: v4l2-ctl for the EDID, and the debugfs reads through sudo -A
+(SUDO_ASKPASS) or sudo -n. Changes that only work with the driver in the
+VM have no host-local form; leave the colour changes out of --rotation
+where the GPU's settings must stay as they are.
 """
 import argparse
 import base64
@@ -92,6 +109,7 @@ SHOW = os.path.join(ROOT, 'tools', 'testsrc', 'show.sh')
 VSRC, ASRC = 'GC573 video', 'GC573 audio'
 OUT = os.environ.get('GC573_OUT', 'DVI-D-0')
 VM = os.environ.get('GC573_VM', 'gc573-dev')
+LOCAL = VM == 'local'
 VDEV = os.environ.get('GC573_VDEV', '/dev/v4l/by-path/pci-0000:07:00.0-video-index0')
 TOL = 8
 WAIT_SELF = 12
@@ -266,6 +284,13 @@ def sh(*cmd, timeout=60):
 
 
 def vm(cmd, timeout=60):
+    """CMD where the driver runs: gc573-dev over ssh, or here (GC573_VM=local),
+    where sudo asks SUDO_ASKPASS or uses cached credentials, never a tty"""
+    if LOCAL:
+        how = '-A' if os.environ.get('SUDO_ASKPASS') else '-n'
+        return subprocess.run(['bash', '-c', f'sudo() {{ command sudo {how} "$@"; }}; {cmd}'],
+                              stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                              timeout=timeout)
     return subprocess.run(['ssh', '-n', '-o', 'BatchMode=yes', VM, cmd],
                           capture_output=True, text=True, timeout=timeout)
 
@@ -375,11 +400,12 @@ class Runner:
     measures that alone. audio: the soak's source, avsync.sh --pattern with
     the bursts, started once the picture is back"""
 
-    def __init__(self, obs, audio=False, out=print):
+    def __init__(self, obs, audio=False, out=print, colours=True):
         self.src = Source(obs)
         self.obs = obs
         self.audio = audio
         self.out = out
+        self.colours = colours	# False: the GPU's colour settings are left alone
         self.mode = ('1920x1080', '60')
         self.edid = 'default'
         self.results = {}
@@ -527,7 +553,8 @@ class Runner:
         }[name]()
 
     def restore(self):
-        colour(0, 0)
+        if self.colours:
+            colour(0, 0)
         if self.edid != 'default':
             src_stop()
             edid_set('default')
@@ -642,8 +669,14 @@ def record_start(obs):
 
 
 def record_stop(obs):
+    """StopRecord, and the output's end: the file is complete, and the
+    profile's output settings can change (OBS refuses while it stops)"""
     out = obs.call('StopRecord')
     ev('recording stop (StopRecord)')
+    for _ in range(300):
+        if not obs.call('GetRecordStatus').get('outputActive'):
+            break
+        time.sleep(0.1)
     print(f"RECORDING {out.get('outputPath', '')}", flush=True)
 
 
@@ -669,37 +702,59 @@ def cmd_events(obs, reps, only, record=False):
     return summary(r.results)
 
 
-def cmd_soak(obs, secs, every, shot_every):
-    r = Runner(obs, audio=True)
-    r.restore()
+SOAK_ROT = ['sleep', 'rate-59.94', 'colour-ycbcr444', 'edid-same', 'rate-60', 'colour-rgb-limited',
+            'res-720p', 'colour-rgb-full', 'edid-new', 'sleep', 'res-1080p', 'colour-ycbcr422',
+            'edid-default', 'colour-rgb-full']
+
+
+def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=True,
+             rec_dir=None):
+    rot = rot or SOAK_ROT
+    r = Runner(obs, audio=True, colours=any(k.startswith('colour-') for k in rot))
+    if not keep_source:
+        r.restore()
     edid_prepare()
-    rot = ['sleep', 'rate-59.94', 'colour-ycbcr444', 'edid-same', 'rate-60', 'colour-rgb-limited',
-           'res-720p', 'colour-rgb-full', 'edid-new', 'sleep', 'res-1080p', 'colour-ycbcr422',
-           'edid-default', 'colour-rgb-full']
     ok, base = r.baseline()
     print(f'BASELINE {"good" if ok else "NOT GOOD"} ({base})')
-    t_start = record_start(obs)
-    next_ev = t_start + every
-    k = 0
+    cr0 = obs.call('GetInputSettings', inputName=VSRC)['inputSettings'].get('color_range', 0)
+    old_dir = None
+    if rec_dir:
+        old_dir = obs.call('GetRecordDirectory')['recordDirectory']
+        obs.call('SetRecordDirectory', recordDirectory=rec_dir)
+        print(f'RECDIR {rec_dir} (OBS had {old_dir})', flush=True)
     counts = {}
-    while time.monotonic() - t_start < secs:
-        now = time.monotonic()
-        if now >= next_ev:
-            print(f'MARK {now - t_start:.1f}', flush=True)
-            ev(f'event {rot[k % len(rot)]}')
-            r.run(rot[k % len(rot)])
-            k += 1
-            next_ev += every
-            continue
-        t, state, err, counter, size = r.src.sample()
-        counts[state] = counts.get(state, 0) + 1
-        if state != 'good':
-            print(f'SHOT {t - t_start:.1f} {state} err={err} counter={counter} size={size[0]}x{size[1]}',
-                  flush=True)
-        time.sleep(max(0, shot_every - (time.monotonic() - now)))
-    record_stop(obs)
+    try:
+        t_start = record_start(obs)
+        try:
+            next_ev = t_start + every
+            k = 0
+            while time.monotonic() - t_start < secs:
+                now = time.monotonic()
+                if now >= next_ev:
+                    print(f'MARK {now - t_start:.1f}', flush=True)
+                    ev(f'event {rot[k % len(rot)]}')
+                    r.run(rot[k % len(rot)])
+                    k += 1
+                    next_ev += every
+                    continue
+                t, state, err, counter, size = r.src.sample()
+                counts[state] = counts.get(state, 0) + 1
+                if state != 'good':
+                    print(f'SHOT {t - t_start:.1f} {state} err={err} counter={counter} '
+                          f'size={size[0]}x{size[1]}', flush=True)
+                time.sleep(max(0, shot_every - (time.monotonic() - now)))
+        finally:
+            record_stop(obs)
+    finally:
+        if old_dir is not None:
+            obs.call('SetRecordDirectory', recordDirectory=old_dir)
     print(f'SHOTS {counts}')
-    r.restore()
+    cr = obs.call('GetInputSettings', inputName=VSRC)['inputSettings'].get('color_range', 0)
+    if cr != cr0:
+        ev(f'obs: SetInputSettings color_range {cr0} (as before the soak; OBS reopens the device)')
+        obs.call('SetInputSettings', inputName=VSRC, inputSettings={'color_range': cr0})
+    if restore:
+        r.restore()
     return summary(r.results)
 
 
@@ -830,7 +885,8 @@ HOST = '127.0.0.1'
 def main():
     global HOST
     ap = argparse.ArgumentParser()
-    ap.add_argument('--host', default=os.environ.get('OBS_HOST', '192.168.122.40'))
+    ap.add_argument('--host', default=os.environ.get('OBS_HOST',
+                                                     '127.0.0.1' if LOCAL else '192.168.122.40'))
     ap.add_argument('--events-log', default=os.environ.get('GC573_EVENT_LOG'),
                     help='the event log (UTC, ms); also the guard\'s log (events, soak)')
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -846,6 +902,11 @@ def main():
     p.add_argument('secs', type=int)
     p.add_argument('--every', type=int, default=180)
     p.add_argument('--shot', type=float, default=2)
+    p.add_argument('--rotation', default='', help='the changes, in order (default: all kinds)')
+    p.add_argument('--keep-source', action='store_true',
+                   help='record the test source that runs; do not restart it first')
+    p.add_argument('--no-restore', action='store_true', help='leave the last source running')
+    p.add_argument('--rec-dir', default='', help='OBS records here, for this soak only')
     sub.add_parser('selftest')
     p = sub.add_parser('recheck')
     p.add_argument('file')
@@ -874,7 +935,12 @@ def main():
         elif a.cmd == 'events':
             ok = cmd_events(obs, a.reps, [x for x in a.only.split(',') if x], a.record)
         else:
-            ok = cmd_soak(obs, a.secs, a.every, a.shot)
+            rot = [x for x in a.rotation.split(',') if x]
+            bad = [x for x in rot if x not in ORDER]
+            if bad:
+                sys.exit(f'unknown changes in --rotation: {bad} (known: {ORDER})')
+            ok = cmd_soak(obs, a.secs, a.every, a.shot, rot, a.keep_source, not a.no_restore,
+                          a.rec_dir or None)
     finally:
         obs.close()
         if guard:

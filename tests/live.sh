@@ -81,6 +81,22 @@
 #   unload    unload while streaming video and audio
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
+# Host-local mode (GC573_LOCAL=1, or VM=local): the driver runs on this
+# machine, bound by the user (tools/install.sh), and the checks run here
+# with no ssh. live.sh then never loads, unloads, binds or unbinds the
+# driver (vm() refuses such commands, and the module must be bound already),
+# never changes the GPU's colour settings, and leaves OBS's configuration as
+# the user has it: only the steps in LOCAL_STEPS run (default: those up to
+# audioloss without colour, and compliance; obssoak and soak on request).
+# obssoak, host form: GC573_OBSSOAK_ROTATION (default: output off/on, 60 <->
+# 59.94 Hz, 1080p <-> 720p with OBS's reopen, EDID re-sets), the recording
+# in GC573_REC_DIR (default ~/gc573-rec, deleted after the analysis), OBS
+# started minimized (tests/obs-run.sh --keep-config) with the sources
+# checked, not set up (tests/obs-check.py verify: setting them up would make
+# OBS open every /dev/video* node, cameras too), and the driver's own A/V
+# offset (gc573-aud -V -P) in the source sessions of the first and last
+# segments. sudo: SUDO_ASKPASS (sudo -A), else cached credentials (sudo -n).
+# GC573_OBS_BUFFERING defaults to 0 here, the README's recommendation.
 # Prints RESULT lines and a SUMMARY; log: tests/logs/<UTC>_<kernel>_live.log.
 # Event log: tests/logs/<UTC>_<kernel>_live-events.log, every action that
 # changes the card's input or its streams (UTC, ms), and the lines of
@@ -99,7 +115,9 @@ RELOCKS=${GC573_RELOCKS:-25}
 AV_SECS=${GC573_AV_SECS:-600}
 OBS_SECS=${GC573_OBS_SECS:-600}
 OBSEV_REPS=${GC573_OBSEV_REPS:-2}
-OBS_BUFFERING=${GC573_OBS_BUFFERING:-1}
+LOCAL=0
+{ [ "${GC573_LOCAL:-0}" = 1 ] || [ "$VM" = local ]; } && LOCAL=1
+OBS_BUFFERING=${GC573_OBS_BUFFERING:-$((1 - LOCAL))}
 OBSSOAK_SECS=${GC573_OBSSOAK_SECS:-7200}
 OBSSOAK_EVERY=${GC573_OBSSOAK_EVERY:-180}
 SOAK_SECS=${GC573_SOAK_SECS:-7200}
@@ -109,7 +127,19 @@ PW_RULE=/etc/udev/rules.d/90-gc573-pulse-ignore.rules
 # obspw's WirePlumber rule (the desktop user's config, removed after it)
 PW_WP=.config/wireplumber/main.lua.d/51-gc573-obspw.lua
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-W=/tmp/gc573-live		# work directory in the VM
+W=/tmp/gc573-live		# work directory in the VM (here, in local mode)
+# local mode: the steps that leave the driver's binding, the GPU's colour
+# settings and OBS's configuration alone
+LOCAL_STEPS="bringup lock relock capture modes change loss audio avsync audioloss soak obssoak compliance"
+REC_DIR=${GC573_REC_DIR:-$HOME/gc573-rec}
+OBSSOAK_ROTATION=${GC573_OBSSOAK_ROTATION:-sleep,rate-59.94,edid-same,rate-60,res-720p,edid-new,sleep,res-1080p,edid-default}
+if [ "$LOCAL" = 1 ]; then
+	VM=local
+	VMDIR=$ROOT
+	export GC573_VM=local	# tests/obs-events.py: the driver's side here too
+	if [ -n "${SUDO_ASKPASS:-}" ]; then LOCAL_SUDO='sudo() { command sudo -A "$@"; }; '
+	else LOCAL_SUDO='sudo() { command sudo -n "$@"; }; '; fi
+fi
 SSHCTL=/tmp/gc573-live-ssh-$$
 export DISPLAY=${DISPLAY:-:0} XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
 
@@ -137,6 +167,14 @@ check() {	# name, condition result (0 = pass), detail
 ev() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) live $*" >> "$GC573_EVENT_LOG"; }
 vm() {
 	local what="" rc
+	if [ "$LOCAL" = 1 ]; then
+		case "$*" in
+		*rmmod*|*insmod*|*modprobe*|*/unbind*|*/bind*|*drivers_probe*|*driverctl*|*install.sh*)
+			echo "live.sh: not on this host (the driver's binding is the user's): $*" >&2
+			ev "refused on the host: $(head -c 120 <<< "$*" | tr '\n\t' '  ')"
+			return 1 ;;
+		esac
+	fi
 	case "$*" in
 	*gc573-cap\ *|*gc573-aud\ *) what="stream" ;;
 	*rmmod\ gc573*) what="driver unload" ;;
@@ -157,11 +195,23 @@ vm() {
 		ev "$what" ;;
 	?*) ev "$what" ;;
 	esac
-	ssh -n -o BatchMode=yes -o ControlMaster=auto -o ControlPath="$SSHCTL" \
-		-o ControlPersist=120 "$VM" "$@"
+	if [ "$LOCAL" = 1 ]; then
+		bash -c "$LOCAL_SUDO$*" < /dev/null
+	else
+		ssh -n -o BatchMode=yes -o ControlMaster=auto -o ControlPath="$SSHCTL" \
+			-o ControlPersist=120 "$VM" "$@"
+	fi
 	rc=$?
 	[ "$what" != stream ] || ev "stream stop (exit $rc)"
 	return $rc
+}
+# put FILE... DIR: copy files to DIR in the VM (here, in local mode)
+put() {
+	if [ "$LOCAL" = 1 ]; then
+		cp "${@:1:$#-1}" "${!#}"
+	else
+		scp -q -o ControlPath="$SSHCTL" "${@:1:$#-1}" "$VM:${!#}"
+	fi
 }
 vdev="" dbgdir=""
 find_vdev() {
@@ -279,6 +329,11 @@ wait_unlocked() {
 # the in-tree modules it depends on first, as tests/lib.sh gc573_load does
 # (after a boot nothing has loaded videodev and videobuf2 yet)
 load() {
+	if [ "$LOCAL" = 1 ]; then
+		grep -q '^gc573 ' /proc/modules && find_vdev && return 0
+		echo "gc573 is not bound on this host: live.sh does not load it here (tools/install.sh)"
+		return 1
+	fi
 	vm "cd $VMDIR && { lsmod | grep -q '^gc573 ' || {
 		deps=\$(modinfo -F depends ./gc573.ko | tr , ' ') &&
 		{ [ -z \"\$deps\" ] || sudo modprobe -a \$deps; } &&
@@ -291,10 +346,10 @@ setup() {
 	vm "mkdir -p $W && gcc -O2 -Wall -o $W/gc573-cap $VMDIR/tests/gc573-cap.c &&
 		gcc -O2 -Wall -o $W/gc573-aud $VMDIR/tests/gc573-aud.c -lasound -lm" ||
 		return 1
-	scp -q -o ControlPath="$SSHCTL" "$ROOT/tools/testsrc/pattern.py" \
+	put "$ROOT/tools/testsrc/pattern.py" \
 		"$ROOT/tests/live-compare.py" "$ROOT/tests/live-av.py" \
 		"$ROOT/tests/obsws.py" "$ROOT/tests/obs-check.py" \
-		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" "$VM:$W/"
+		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" "$W/"
 }
 
 # The frame interval G_PARM must report for the timings in a gc573-cap
@@ -715,7 +770,7 @@ step_audio() {
 	hdmi_dbg | grep -E '^it6805: (state|audio)' | sed 's/^/  /'
 	aud "-t 10 -v -o $W/audio.raw" > /tmp/gc573-live-a.txt 2>&1
 	check audio-capture $? "($(grep -E '^RESULT' /tmp/gc573-live-a.txt))"
-	scp -q -o ControlPath="$SSHCTL" /tmp/gc573-live-a.txt "$VM:$W/audio.txt"
+	put /tmp/gc573-live-a.txt "$W/audio.txt"
 	out=$(vm "python3 $W/live-av.py $W/audio.txt $W/audio.raw --bursts")
 	av_results audio "$out"
 	aud_dbg | sed 's/^/  /'
@@ -808,12 +863,18 @@ obsc() { vm "cd $W && GC573_OBS_BUFFERING=$OBS_BUFFERING python3 obs-check.py $*
 # ALSA PCM by the card's id
 # obs_up [FORMAT]: the recording format (tests/obs-run.sh), default hybrid_mp4
 obs_up() {
+	if [ "$LOCAL" = 1 ]; then
+		# the user's OBS: started minimized, its sources checked, not set up
+		vm "GC573_OBS_RECFORMAT=${1:-hybrid_mp4} bash $W/obs-run.sh start --keep-config" | sed 's/^/  /' &&
+			obsc "verify /dev/v4l/by-path/pci-${dbgdir#*/gc573-}-video-index0 $pcm" | sed 's/^/  /'
+		return
+	fi
 	vm "GC573_OBS_RECFORMAT=${1:-hybrid_mp4} bash $W/obs-run.sh start" | sed 's/^/  /' &&
 		obsc "setup /dev/v4l/by-path/pci-${dbgdir#*/gc573-}-video-index0 $pcm" | sed 's/^/  /'
 }
 
 # OBS holds the device while it runs: each OBS step stops it at the end
-obs_down() { vm "bash $W/obs-run.sh stop" > /dev/null; }
+obs_down() { vm "bash $W/obs-run.sh stop$([ "$LOCAL" = 0 ] || echo ' --keep-config')" > /dev/null; }
 
 # Lines in OBS's current log, and OBS's capture-source lines after line $1
 obs_log_mark() { vm 'wc -l < "$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)"'; }
@@ -940,7 +1001,7 @@ step_obschange() {
 pw_card() {
 	if [ "$1" = on ]; then
 		vm "[ ! -e $PW_RULE ] || sudo mv $PW_RULE $PW_RULE.off; mkdir -p \$(dirname ~/$PW_WP)"
-		scp -q -o ControlPath="$SSHCTL" "$ROOT/tests/obspw.lua" "$VM:$PW_WP"
+		put "$ROOT/tests/obspw.lua" "$PW_WP"
 	else
 		vm "rm -f ~/$PW_WP; [ ! -e $PW_RULE.off ] || sudo mv $PW_RULE.off $PW_RULE"
 	fi
@@ -1195,6 +1256,7 @@ step_obsevents() {
 # each sample, as in step soak), CPU, and OBS's log. The guard watches it all.
 step_obssoak() {
 	local out f m lg sm marks
+	[ "$LOCAL" = 0 ] || { obssoak_local; return; }
 	obs_up || { result obssoak-start FAIL "(OBS with obs-websocket)"; obs_down; return; }
 	m=$(obs_log_mark)
 	vm "rm -f $W/obssoak-mem.txt"
@@ -1242,6 +1304,162 @@ step_obssoak() {
 	lg=$(obs_log_since "$m")
 	echo "  obs: $(grep -c 'select timed out' <<< "$lg") select timeouts, $(grep -c 'failed to dequeue' <<< "$lg") dequeue failures, $(grep -c 'Start capture' <<< "$lg") device opens"
 	obs_down
+}
+
+# ---- obssoak on the host (local mode) ----
+
+# The driver's A/V offset in the avsync.sh --pattern session that runs, from
+# its own timestamps: gc573-aud -V -P for $2 s (the flash box, and the
+# counter, which shows the test source's pacing), checked as in step avsync.
+# Results as RESULT $1-NAME; sets ref, the raw mean offset in ms (burst onset
+# - flash frame, as obs-av.py measures it in a recording)
+driver_ref() {
+	local out
+	vm "sudo $W/gc573-aud -D $pcm -t $2 -v -V $vdev -P -o $W/ref.raw > $W/ref.txt 2>&1"
+	check "$1-capture" $? "($(vm "grep -E '^(PARAMS|RESULT)' $W/ref.txt" | tr '\n' ' '))"
+	out=$(vm "python3 $W/live-av.py $W/ref.txt $W/ref.raw --min-secs $(($2 * 9 / 10))")
+	vm "rm -f $W/ref.raw"
+	av_results "$1" "$(grep -E '^RESULT +(duration|xruns|gaps|video|avsync)|raw offsets|^INFO' <<< "$out")"
+	ref=$(sed -n 's/^  raw offsets: mean \([-+0-9.]*\) ms.*/\1/p' <<< "$out")
+}
+
+# One line a minute while the host soak runs: UTC seconds; MemAvailable,
+# Slab, SUnreclaim, VmallocUsed, Percpu (kB); OBS's RSS (kB) and CPU ticks;
+# the IRQ thread's CPU ticks; the machine's busy:idle CPU ticks; kernel log
+# lines since the run's mark: all, the driver's, bad ones (tests/lib.sh);
+# then the driver's counters from debugfs as v_ (video), a_ (audio), h_,
+# it_, sp_ (HDMI poll loop, IT6805, splitter) NAME=N
+host_sample() {
+	local irq obs k
+	irq=$(ps -eo pid,comm | awk '$2 ~ /^irq\/[0-9]+-gc573/ { print $1; exit }')
+	obs=$(pgrep -x obs | head -1)
+	k=$(vm "sudo dmesg" | awk -v m="gc573-live: $kmark" 'f; index($0, m) { f = 1 }')
+	printf '%s %s%s %s %s %s %s %s %s | ' "$(date +%s)" \
+		"$(awk '/^(MemAvailable|Slab|SUnreclaim|VmallocUsed|Percpu):/ { printf "%s ", $2 }' /proc/meminfo)" \
+		"$(awk '/^VmRSS:/ { print $2 }' "/proc/${obs:-0}/status" 2>/dev/null || echo -)" \
+		"$(awk '{ print $14 + $15 }' "/proc/${obs:-0}/stat" 2>/dev/null || echo -)" \
+		"$(awk '{ print $14 + $15 }' "/proc/${irq:-0}/stat" 2>/dev/null || echo -)" \
+		"$(awk '/^cpu / { print $2 + $3 + $4 + $6 + $7 + $8 ":" $5 }' /proc/stat)" \
+		"$(grep -c . <<< "$k")" "$(grep -c gc573 <<< "$k")" \
+		"$( { grep -E "$KMSG_BAD" <<< "$k"; grep -E "$KMSG_DRV_BAD" <<< "$k"; } | grep -c .)"
+	{
+		vm "sudo grep -E '^(stream|stats):' $dbgdir/video" | sed 's/^/v_ /'
+		vm "sudo grep -E '^(periods|order) ' $dbgdir/audio" | sed 's/^/a_ /'
+		vm "sudo grep -E '^hdmi:' $dbgdir/hdmi" | sed 's/^/h_ /'
+		vm "sudo grep -E '^it6805: state' $dbgdir/hdmi" | sed 's/^/it_ /'
+		vm "sudo grep -E '^splitter: (rx|tx1)' $dbgdir/hdmi" | sed 's/^/sp_ /'
+	} | awk '{ for (i = 2; i < NF; i++) if ($i ~ /^[a-z_]+$/ && $(i + 1) ~ /^[0-9]+$/) printf "%s%s=%s ", $1, $i, $(i + 1) }'
+	echo
+}
+
+# The host form of obssoak: the driver's A/V offset for 60 s in the first
+# source session; OBS started minimized, its sources checked; the event soak
+# (tests/obs-events.py soak, the rotation GC573_OBSSOAK_ROTATION) recording
+# to GC573_REC_DIR, with the source of the first segment kept and that of
+# the last one left running; a sample a minute (host_sample); OBS stopped;
+# the driver's offset in the last session. Then the recording (pattern,
+# counter steps, the A/V offset per segment, OBS's own part at the first
+# and last segments against the driver's), memory, CPU, the driver's
+# counters, OBS's log; the recording is deleted.
+obssoak_local() {
+	local out f m lg sm marks refa="" refc="" seg sp avail first last
+	# shellcheck source=tests/lib.sh
+	. "$ROOT/tests/lib.sh"	# KMSG_BAD, KMSG_DRV_BAD for host_sample
+	mkdir -p "$REC_DIR" || { result obssoak-recdir FAIL "(cannot make $REC_DIR)"; return; }
+	# OBS's Simple output: about 6.2 Mb/s; room for three times that
+	avail=$(df -k --output=avail "$REC_DIR" | tail -1)
+	[ "$avail" -gt $((OBSSOAK_SECS * 6200 / 8 * 3)) ] ||
+		{ result obssoak-recdir FAIL "($REC_DIR: $((avail / 1024)) MB free)"; return; }
+	echo "  recording to $REC_DIR ($((avail / 1048576)) GB free); rotation $OBSSOAK_ROTATION"
+	av_on --pattern || { result obssoak-source FAIL "(avsync.sh --pattern or the IT6805 audio state ON)"; av_off; return; }
+	sleep 3
+	driver_ref obssoak-driver-first 60
+	refa=$ref
+	obs_up || { result obssoak-start FAIL "(OBS minimized, with the sources expected)"; obs_down; av_off; return; }
+	m=$(obs_log_mark)
+	sp=${log%.log}-obssoak-samples.txt
+	( while :; do host_sample; sleep 60; done ) > "$sp" 2>&1 &
+	local sampler=$!
+	echo "  obssoak: $OBSSOAK_SECS s from $(date -u '+%H:%M:%S UTC'), a change every $OBSSOAK_EVERY s"
+	out=$(python3 "$ROOT/tests/obs-events.py" soak "$OBSSOAK_SECS" --every "$OBSSOAK_EVERY" \
+		--rotation "$OBSSOAK_ROTATION" --keep-source --no-restore --rec-dir "$REC_DIR" 2>&1)
+	host_sample >> "$sp" 2>&1
+	kill "$sampler" 2>/dev/null
+	wait "$sampler" 2>/dev/null
+	av_results obssoak "$(grep -v '^SHOT ' <<< "$out")"
+	echo "  screenshots that were not good: $(grep -c '^SHOT ' <<< "$out") (SHOT lines in the event log's run)"
+	grep '^SHOT ' <<< "$out" > "${log%.log}-obssoak-shots.txt"
+	obs_down
+	# OBS's log of this run, complete now that OBS has stopped
+	lg=$(vm "tail -n +$((m + 1)) \"\$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)\"")
+	sleep 2
+	# the last segment's source session runs on: the driver's offset in it
+	driver_ref obssoak-driver-last 60
+	refc=$ref
+	f=$(sed -n 's/^RECORDING //p' <<< "$out")
+	marks=$(sed -n 's/^MARK //p' <<< "$out" | paste -sd,)
+	if [ -n "$f" ] && [ -f "$f" ]; then
+		echo "  recording: $(du -h "$f" | cut -f1) $f"
+		av_results obssoak "$(python3 "$ROOT/tests/obs-events.py" recheck "$f" --every 30 --across 2>&1)"
+		seg=$(python3 "$ROOT/tests/obs-av.py" "$f" --box 0.70,0.88,0.92,0.92 ${marks:+--segments $marks} 2>&1)
+		av_results obssoak-rec "$seg"
+		# OBS's own part of the offset where the driver's is known: the
+		# first and the last segment, each in the session gc573-aud measured
+		first=$(sed -n 's/^SEGMENT 0 .* offset=\([-+0-9.]*\) .*/\1/p' <<< "$seg")
+		last=$(grep '^SEGMENT ' <<< "$seg" | tail -1 | sed -n 's/.* offset=\([-+0-9.]*\) .*/\1/p')
+		if [ -n "$first" ] && [ -n "$last" ] && [ -n "$refa" ] && [ -n "$refc" ]; then
+			out=$(awk -v f="$first" -v a="$refa" -v l="$last" -v c="$refc" 'BEGIN {
+				d1 = f - a; d2 = l - c; dd = d2 - d1; if (dd < 0) dd = -dd
+				printf "RESULT obs-own %s (OBS - driver in the same source session: first segment %+.1f ms (OBS %+.1f, driver %+.2f), last %+.1f ms (OBS %+.1f, driver %+.2f); the two within one frame period, 16.7 ms)\n",
+					dd <= 16.7 ? "PASS" : "FAIL", d1, f, a, d2, l, c }')
+			av_results obssoak "$out"
+		else
+			result obssoak-obs-own FAIL "(offsets missing: first segment ${first:--}, last ${last:--}, driver ${refa:--} and ${refc:--})"
+		fi
+		rm -f "$f"
+	else
+		result obssoak-recording FAIL "(no recording: ${f:-none})"
+	fi
+	rmdir "$REC_DIR" 2>/dev/null
+	# memory, CPU and the driver's counters over the soak (host_sample)
+	sm=$(cat "$sp")
+	awk 'NR == 1 || NR % 10 == 0 { print "  mem: " $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 }' <<< "$sm"
+	out=$(awk -v hz="$(getconf CLK_TCK)" '
+		$14 == "|" { n++; t[n] = $1; avail[n] = $2; slab[n] = $3; sunr[n] = $4; vm[n] = $5; rss[n] = $7
+			obs[n] = $8; irq[n] = $9; split($10, c, ":"); busy[n] = c[1]; idle[n] = c[2] }
+		END {
+			if (n < 7) { print "RESULT memory SKIP (" n " samples: fewer than 7)"; exit }
+			s = 6
+			du = sunr[n] - sunr[s]
+			printf "RESULT memory %s (from minute 5 to the end: SUnreclaim %+d kB (limit 2048), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB; a desktop host: other programs count too)\n",
+				du <= 2048 ? "PASS" : "FAIL", du, slab[n] - slab[s], vm[n] - vm[s], avail[n] - avail[s], rss[n] - rss[s]
+			wall = t[n] - t[1]
+			printf "RESULT cpu PASS (report only: OBS %.1f %% of one CPU, the IRQ thread %.2f %%, the host %.1f %% of its CPUs, over %d s)\n",
+				(obs[n] - obs[1]) / hz / wall * 100, (irq[n] - irq[1]) / hz / wall * 100,
+				(busy[n] - busy[1]) / ((busy[n] - busy[1]) + (idle[n] - idle[1])) * 100, wall
+		}' <<< "$sm")
+	av_results obssoak "$out"
+	out=$(awk '
+		$14 == "|" { n++; for (i = 15; i <= NF; i++) { split($i, kv, "="); v[n, kv[1]] = kv[2]; names[kv[1]] = 1 }
+			kall[n] = $11; kdrv[n] = $12; kbad[n] = $13 }
+		END {
+			split("v_bad_status v_unarmed v_order a_bad_done a_order h_poll_errors h_xfer_errors", errs, " ")
+			for (i in errs) iserr[errs[i]] = 1
+			for (k in names) {
+				d = v[n, k] - v[1, k]
+				if (k ~ /^(v_(skipped|multi|stale|terms|term_missing|underruns|input_restarts|input_stops|bad_status|unarmed|order)|a_(silent|pauses|starts|restarts|stops|stop_missing|stale|late|bad_done|order)|h_(failed|poll_errors|xfer_errors|retries|resyncs|runs|fpga_rejects)|it_(entries|losses|releases)|sp_(link_errors|level_changes|repowers|failed|pll_recoveries|scdc_aborts))$/ && d)
+					info = info sprintf(" %s %+d", k, d)
+				if (k in iserr && d) bad = bad sprintf(" %s %+d", k, d)
+			}
+			printf "RESULT driver-counters %s (over the soak, %d samples:%s%s; kernel log: %d lines, %d of the driver, %d bad)\n",
+				bad == "" ? "PASS" : "FAIL", n, info == "" ? " no event counter moved" : info,
+				bad == "" ? "" : "; errors:" bad, kall[n], kdrv[n], kbad[n]
+		}' <<< "$sm")
+	av_results obssoak "$out"
+	echo "  obs: $(grep -c 'select timed out' <<< "$lg") select timeouts, $(grep -c 'failed to dequeue' <<< "$lg") dequeue failures, $(grep -c 'Start capture' <<< "$lg") device opens"
+	grep -E 'skipped frames|lagged frames|Total (frames output|drawn frames)|Recording (Start|Stop)' <<< "$lg" |
+		sed 's/^/  obs log: /' | head -12
+	av_off
 }
 
 # Unload while streaming live video and audio. rmmod is refused while the
@@ -1354,7 +1572,16 @@ kml() {
 
 all="bringup lock relock capture modes change loss colour audio avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
+[ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change loss audio avsync audioloss compliance"
 [ $# -gt 0 ] || set -- $all
+if [ "$LOCAL" = 1 ]; then
+	for s in "$@"; do
+		grep -qw -- "$s" <<< "$LOCAL_STEPS" ||
+			{ echo "step $s does not run on the host (local mode runs: $LOCAL_STEPS)"; exit 2; }
+	done
+	[ -n "${SUDO_ASKPASS:-}" ] || sudo -n true 2>/dev/null ||
+		{ echo "local mode needs sudo without a terminal: SUDO_ASKPASS, or cached credentials"; exit 2; }
+fi
 krel=$(vm uname -r) || exit 2
 stamp=$(date -u +%Y%m%d-%H%M%S)
 log=$ROOT/tests/logs/${stamp}_${krel}_live.log
@@ -1364,14 +1591,22 @@ mkdir -p "$ROOT/tests/logs"
 # stops the run
 export GC573_EVENT_LOG=${log%.log}-events.log GC573_GUARDED=1
 python3 "$ROOT/tools/testsrc/guard.py" --pid $$ --log "$GC573_EVENT_LOG" --output "$OUT" &
-trap 'vm "[ ! -e $PW_RULE.off ] || { rm -f ~/$PW_WP; sudo mv $PW_RULE.off $PW_RULE; sudo udevadm control --reload;
-		sudo udevadm trigger -s sound -c change; systemctl --user restart wireplumber; }"
-	"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off
-	ssh -O exit -o ControlPath="$SSHCTL" "$VM" 2>/dev/null' EXIT
+if [ "$LOCAL" = 1 ]; then
+	trap '"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off' EXIT
+else
+	trap 'vm "[ ! -e $PW_RULE.off ] || { rm -f ~/$PW_WP; sudo mv $PW_RULE.off $PW_RULE; sudo udevadm control --reload;
+			sudo udevadm trigger -s sound -c change; systemctl --user restart wireplumber; }"
+		"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off
+		ssh -O exit -o ControlPath="$SSHCTL" "$VM" 2>/dev/null' EXIT
+fi
 {
 	echo "# GC573 live-input suite (PC loopback)"
 	echo "date:    $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-	echo "vm:      $VM, kernel $krel"
+	if [ "$LOCAL" = 1 ]; then
+		echo "driver:  this host (local mode), kernel $krel"
+	else
+		echo "vm:      $VM, kernel $krel"
+	fi
 	echo "rev:     $(git -C "$ROOT" describe --always --dirty --abbrev=12)"
 	echo "source:  host $(hostname) $OUT, $(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader 2>/dev/null)"
 	echo "steps:   $*"
@@ -1380,7 +1615,11 @@ trap 'vm "[ ! -e $PW_RULE.off ] || { rm -f ~/$PW_WP; sudo mv $PW_RULE.off $PW_RU
 	vm "echo 'gc573-live: $kmark' | sudo tee /dev/kmsg >/dev/null"
 	kml reset
 	load || { echo "cannot load the module"; exit 2; }
-	echo "module:  srcversion $(vm "cat /sys/module/gc573/srcversion") loaded, $(vm "modinfo -F srcversion $VMDIR/gc573.ko") in ~/$VMDIR, $vdev"
+	if [ "$LOCAL" = 1 ]; then
+		echo "module:  srcversion $(cat /sys/module/gc573/srcversion) loaded, $(modinfo -F filename gc573) $(modinfo -F srcversion gc573), $vdev"
+	else
+		echo "module:  srcversion $(vm "cat /sys/module/gc573/srcversion") loaded, $(vm "modinfo -F srcversion $VMDIR/gc573.ko") in ~/$VMDIR, $vdev"
+	fi
 	for s in "$@"; do
 		echo
 		echo "## $s"
