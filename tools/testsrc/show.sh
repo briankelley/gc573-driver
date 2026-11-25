@@ -20,11 +20,16 @@
 # - A watchdog (watchdog.sh) closes it within 0.2 s once OUTPUT no longer shows the
 #   player's geometry: output off, unplugged (driver unload, card reset or move), another
 #   mode. --off closes it explicitly.
+# - The players close before any check can exit, so a failed start leaves none behind.
+#   tools/testsrc/guard.py watches the windows for a whole test run.
+# The player has no audio (-an).
+# GC573_EVENT_LOG=FILE: append a line per action (UTC, milliseconds) to FILE.
 set -euo pipefail
 export DISPLAY=${DISPLAY:-:0} XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
 run=${XDG_RUNTIME_DIR:-/tmp}/gc573-testsrc; mkdir -p "$run"; pidf=$run/ffplay.pid
 wdf=$run/watchdog.pid
 here=$(cd "$(dirname "$0")" && pwd)
+evlog() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) show $*" >> "$GC573_EVENT_LOG"; }
 # An ffplay stopped within about a second of its start can hang for good in its
 # SIGTERM exit path (main and SDL timer threads in futex wait): wait up to 2 s for
 # each process to go, then SIGKILL.
@@ -34,6 +39,7 @@ stop() {
     [ -f "$f" ] || continue
     p=$(cat "$f"); rm -f "$f"
     kill "$p" 2>/dev/null || continue
+    [ "$f" = "$pidf" ] && evlog "player stop (pid $p)"
     for i in $(seq 20); do kill -0 "$p" 2>/dev/null || break; sleep 0.1; done
     if kill -0 "$p" 2>/dev/null; then kill -KILL "$p" 2>/dev/null || true; fi
   done
@@ -50,12 +56,13 @@ case $rate in
   23.976) fps=24000/1001 n=24 ;;
   *) fps=$rate n=${rate%%.*} ;;
 esac
-xrandr --query | grep -q "^$out connected" || { echo "$out is not connected (HPD low?)" >&2; exit 1; }
-# no test window while the mode changes
+# no test player may outlive a failed check below, nor exist while the mode changes
 "$here/avsync.sh" --off
 stop
+xrandr --query | grep -q "^$out connected" || { echo "$out is not connected (HPD low?)" >&2; exit 1; }
 primary=$(xrandr --query | awk '/ connected primary/{print $1; exit}')
 [ -n "$primary" ] && [ "$primary" != "$out" ] || { echo "no primary output other than $out" >&2; exit 1; }
+evlog "mode $out $mode@$rate"
 xrandr --output "$out" --mode "$mode" --rate "$rate" --right-of "$primary"
 command -v nvidia-settings >/dev/null && nvidia-settings --no-write-config -a "[DPY:$out]/Dithering=2" >/dev/null 2>&1 || true
 x=$(xrandr --query | sed -n "s/^$out connected \(primary \)\?${w}x$h+\([0-9]*\)+0 .*/\2/p")
@@ -63,11 +70,11 @@ x=$(xrandr --query | sed -n "s/^$out connected \(primary \)\?${w}x$h+\([0-9]*\)+
 png=$run/pattern-${w}x$h.png
 [ -f "$png" ] || "$here/pattern.py" "$png" "$w" "$h" >/dev/null
 if [ "$counter" = 1 ]; then
-  SDL_X11_FORCE_OVERRIDE_REDIRECT=1 ffplay -loglevel error -noborder -left "$x" -top 0 -x "$w" -y "$h" \
+  SDL_X11_FORCE_OVERRIDE_REDIRECT=1 ffplay -loglevel error -an -noborder -left "$x" -top 0 -x "$w" -y "$h" \
     -window_title gc573-pattern -f lavfi -i "$("$here/counter-graph.sh" "$png" "$w" "$h" "$fps" "$n")" \
     >/dev/null 2>&1 < /dev/null &
 else
-  SDL_X11_FORCE_OVERRIDE_REDIRECT=1 ffplay -loglevel error -noborder -left "$x" -top 0 -x "$w" -y "$h" -loop 0 \
+  SDL_X11_FORCE_OVERRIDE_REDIRECT=1 ffplay -loglevel error -an -noborder -left "$x" -top 0 -x "$w" -y "$h" -loop 0 \
     -window_title gc573-pattern "$png" >/dev/null 2>&1 < /dev/null &
 fi
 echo $! > "$pidf"
@@ -78,4 +85,5 @@ if ! chk=$("$here/window-check.sh" gc573-pattern "$w" "$h" "$x"); then
   echo "test window not as required, closed: $chk" >&2
   exit 1
 fi
+evlog "player start $mode@$rate$([ "$counter" = 0 ] || echo " counter") (pid $(cat "$pidf"))"
 echo "pattern $png$([ "$counter" = 0 ] || echo " with counter") on $out ($mode@$rate at +$x+0), pid $(cat "$pidf"); $chk"
