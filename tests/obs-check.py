@@ -93,9 +93,11 @@ def setup(obs, vdev, pcm):
                 os.path.realpath(vdev)), None)
     if dev is None:
         sys.exit(f'OBS does not list {vdev}: {devs}')
-    # YUYV: native (an "(Emulated)" format is libv4l2 converting on the CPU)
+    # YUYV: native (an "(Emulated)" format is libv4l2 converting on the
+    # CPU). Buffering on is OBS's default; a scene collection keeps what an
+    # earlier run set
     obs.call('SetInputSettings', inputName=VSRC,
-             inputSettings={'device_id': dev, 'pixelformat': YUYV})
+             inputSettings={'device_id': dev, 'pixelformat': YUYV, 'buffering': True})
     if ASRC not in names:
         obs.call('CreateInput', sceneName=sc, inputName=ASRC, inputKind='alsa_input_capture',
                  inputSettings={}, sceneItemEnabled=True)
