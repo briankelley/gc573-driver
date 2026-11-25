@@ -543,14 +543,14 @@ static int gc573_it_release(struct gc573_hdmi *h)
 static int gc573_it_recheck(struct gc573_hdmi *h, bool *changed)
 {
 	struct gc573_it_mode *m = &h->it.mode;
-	u8 r[0xa6 - 0x98], pb1;
+	u8 r[0xa6 - 0x98], pb[5];
 	unsigned int i;
 	int ret = 0;
 
 	for (i = 0; i < sizeof(r) && !ret; i++)
 		ret = gc573_chip_rd(h, IT, 0, 0x98 + i, &r[i]);
-	if (!ret)
-		ret = gc573_chip_rd(h, IT, 2, 0x15, &pb1);
+	for (i = 0; i < sizeof(pb) && !ret; i++)
+		ret = gc573_chip_rd(h, IT, 2, 0x15 + i, &pb[i]);
 	if (ret)
 		return ret;
 	*changed = m->htotal != r[0x9b - 0x98] + 256 * (r[0x9c - 0x98] & 0x3f) ||
@@ -558,7 +558,18 @@ static int gc573_it_recheck(struct gc573_hdmi *h, bool *changed)
 		   m->vtotal != r[0xa2 - 0x98] + 256 * (r[0xa3 - 0x98] & 0x3f) ||
 		   m->vactive != r[0xa4 - 0x98] + 256 * (r[0xa5 - 0x98] & 0x3f) ||
 		   m->interlaced != !!(r[0] & BIT(1)) ||
-		   (m->hdmi && ((pb1 ^ m->avi[1]) & 0x60));
+		   (m->hdmi && ((pb[0] ^ m->avi[1]) & 0x60));
+	/*
+	 * Same timing and colour format: keep the entry, take the new range,
+	 * colorimetry and VIC (PB1-PB5), which the published input carries
+	 * (a source change for the video device).
+	 */
+	if (!*changed && m->hdmi && memcmp(&m->avi[1], pb, sizeof(pb))) {
+		dev_info(&h->gc->pdev->dev,
+			 "IT6805: AVI changed while stable: %*ph -> %*ph\n",
+			 (int)sizeof(pb), &m->avi[1], (int)sizeof(pb), pb);
+		memcpy(&m->avi[1], pb, sizeof(pb));
+	}
 	return 0;
 }
 

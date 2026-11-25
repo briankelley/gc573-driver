@@ -416,6 +416,26 @@ step_loss() {
 	change_while_streaming loss-return-streaming -r src_on 1920x1080 60
 }
 
+# The published colour format and range ($1: tag) follow the AVI InfoFrame
+# as the splitter RX holds it (its own copy, RX bank 2 0x12-0x23): Y from
+# PB1, RGB range from PB3 Q (0: full below VIC 2), YCbCr range from PB5 YQ
+avi_check() {
+	local d line pb1 pb3 vic pb5 y full got
+	d=$(hdmi_dbg)
+	line=$(grep '^splitter: avi ' <<< "$d")
+	read -r _ _ _ _ _ pb1 _ pb3 vic pb5 _ <<< "$line"
+	y=$(((0x$pb1 >> 5) & 3))
+	if [ "$y" = 0 ]; then
+		full=$(( ((0x$pb3 >> 2) & 3) == 2 || (((0x$pb3 >> 2) & 3) == 0 && 0x$vic < 2) ))
+	else
+		full=$(( (0x$pb5 >> 6) == 1 ))
+	fi
+	got=$(grep -oE 'colour [0-9] vic [0-9]+ full_range [01]' <<< "$d" |
+		sed -E 's/ vic [0-9]+//')
+	check "$1-avi" "$([ "$got" = "colour $y full_range $full" ]; echo $?)" \
+		"(splitter AVI PB1 $pb1 PB3 $pb3 PB5 $pb5: colour $y full_range $full; published: $got)"
+}
+
 step_colour() {
 	local cs cr name
 	src_mode 1920x1080 60
@@ -427,6 +447,7 @@ step_colour() {
 		sleep 2
 		settle
 		hdmi_dbg | grep -E '^(it6805: mode|splitter: avi|input:)' | sed 's/^/  /'
+		avi_check "colour-$name"
 		live_capture "colour-$name" 60 1920x1080 60
 		result "colour-$name-note" SKIP "(report only, not gating)"
 	done
