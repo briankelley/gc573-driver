@@ -1,0 +1,45 @@
+vm: gc573-ubuntu2604  ref: 6f92700a98e1  date: 2026-11-25T08:18:07Z
+distro: Ubuntu 26.04.1 LTS
+running: 7.0.0-44-generic
+kernels with headers: 7.0.0-43-generic 7.0.0-44-generic
+=== headers-missing
+install.sh: no headers for the running kernel 7.0.0-44-generic (/lib/modules/7.0.0-44-generic/build). Install them with: sudo apt install linux-headers-7.0.0-44-generic, then run this again
+RESULT	headers-missing	PASS	exit 1; Install them with: sudo apt install linux-headers-7.0.0-44-generic; nothing installed
+=== dkms-missing
+install.sh: dkms is not installed. Install it with: sudo apt install dkms
+RESULT	dkms-missing	PASS	exit 1; Install it with: sudo apt install dkms
+=== install
+building gc573 0.1 for 7.0.0-44-generic with DKMS (this takes a minute)
+installed: /lib/modules/7.0.0-44-generic/updates/dkms/gc573.ko.zst
+also installed for kernel 7.0.0-43-generic
+no GC573 card found: the driver loads by itself once the card is present
+gc573/0.1, 7.0.0-43-generic, x86_64: installed
+gc573/0.1, 7.0.0-44-generic, x86_64: installed
+RESULT	install	PASS	installed for 2 of 2 kernels with headers: /lib/modules/7.0.0-44-generic/updates/dkms/gc573.ko.zst
+RESULT	install-noload	PASS	not loaded: no card
+RESULT	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/7.0.0-44-generic/updates/dkms/gc573.ko.zst
+=== autoinstall
+Signing module /var/lib/dkms/gc573/0.1/build/gc573.ko
+Installing /lib/modules/7.0.0-43-generic/updates/dkms/gc573.ko.zst
+Running depmod... done.
+
+Autoinstall on 7.0.0-43-generic succeeded for module(s) gc573.
+before: gc573/0.1: added
+after: gc573/0.1, 7.0.0-43-generic, x86_64: installed
+RESULT	autoinstall	PASS	removed for 7.0.0-43-generic, then the kernel hook built and installed it: gc573/0.1, 7.0.0-43-generic, x86_64: installed
+running: 7.0.0-44-generic
+=== reboot
+RESULT	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+=== modprobe
+gc573                 176128  0
+v4l2_dv_timings        45056  1 gc573
+videobuf2_v4l2         36864  1 gc573
+videobuf2_common       90112  2 videobuf2_v4l2,gc573
+snd_pcm               212992  1 gc573
+snd                   147456  3 snd_timer,gc573,snd_pcm
+videodev              376832  2 videobuf2_v4l2,gc573
+RESULT	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+=== uninstall
+removing gc573 0.1 from DKMS (all kernels)
+done
+RESULT	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing

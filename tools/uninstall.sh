@@ -40,6 +40,16 @@ if [ -d "/var/lib/dkms/$NAME" ]; then
 	rmdir "/var/lib/dkms/$NAME" 2>/dev/null || true
 fi
 [ "$found" = 1 ] || say "no $NAME in DKMS"
+# RHEL family: weak-modules links the module into the other installed
+# kernels (weak-updates/); dkms remove leaves those links behind
+for l in /lib/modules/*/weak-updates/"$NAME".ko*; do
+	{ [ -L "$l" ] || [ -e "$l" ]; } || continue
+	k=${l#/lib/modules/}
+	k=${k%%/*}
+	rm -f "$l"
+	depmod -a "$k" 2>/dev/null || true
+	say "removed the weak-modules link $l"
+done
 left=$(find /lib/modules -name "$NAME.ko*" -path '*dkms*' 2>/dev/null || true)
 [ -z "$left" ] || say "warning: module files left behind: $left"
 depmod -a 2>/dev/null || true
