@@ -142,7 +142,7 @@ static void gc573_edid_add_dtd(struct gc573_hdmi *h, const u8 *d)
 static void gc573_hdmi_edid_parse(struct gc573_hdmi *h)
 {
 	const u8 *e = h->edid, *c = h->edid + 128;
-	unsigned int i, j, d;
+	unsigned int i, j, d, end;
 
 	bitmap_zero(h->edid_vics, 256);
 	h->edid_ndtd = 0;
@@ -152,11 +152,13 @@ static void gc573_hdmi_edid_parse(struct gc573_hdmi *h)
 		gc573_edid_add_dtd(h, e + i);
 	if (h->edid_blocks < 2 || c[0] != 0x02)
 		return;
+	/* data blocks end at the first DTD (byte 2), content at byte 126 */
 	d = c[2];
-	for (i = 4; i < d && i < 127; i += 1 + (c[i] & 0x1f)) {
+	end = min(d, 127U);
+	for (i = 4; i < end; i += 1 + (c[i] & 0x1f)) {
 		if (c[i] >> 5 != 2)	/* video data block */
 			continue;
-		for (j = 1; j <= (c[i] & 0x1f) && i + j < d; j++) {
+		for (j = 1; j <= (c[i] & 0x1f) && i + j < end; j++) {
 			u8 v = c[i + j];
 
 			/* SVD: 129-192 carry the native flag in bit 7 */

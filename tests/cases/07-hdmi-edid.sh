@@ -5,7 +5,11 @@
 # edid-decode --check reports no errors and no warnings. VIDIOC_S_EDID: an
 # image with another serial number reads back as set, 3 blocks give E2BIG
 # (2 blocks max), the default image restores, and 0 blocks leave no EDID
-# (G_EDID reports 0 blocks). SKIP without edid-decode.
+# (G_EDID reports 0 blocks). The parser stays inside the CTA block: with
+# byte 2 (first DTD offset) = 0xff and a 31-byte video data block whose
+# header is the block's last content byte (126), ENUM_DV_TIMINGS lists the
+# same timings as for the image with that header zeroed (the checksum
+# byte, 127, would read as VIC 4, 720p60). SKIP without edid-decode.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
@@ -31,6 +35,30 @@ EOF
 	set1=$?
 	v4l2-ctl -d "$dev" --get-edid=file="$tmp/edid1r.bin",format=raw > /dev/null 2>&1
 	v4l2-ctl -d "$dev" --set-edid=file="$tmp/edid3.bin",format=raw > "$tmp/set3" 2>&1
+	# block 0 of the default; CTA: byte 2 = 0xff, video data blocks of
+	# VIC 16 up to byte 125, then a 31-byte block header (or 0) at 126;
+	# byte 3 makes the checksum (127) come out as 4
+	python3 - "$tmp/edid.bin" "$tmp/svd.bin" "$tmp/svd0.bin" <<'EOF'
+import sys
+d = bytearray(open(sys.argv[1], 'rb').read())
+for out, last in ((sys.argv[2], 0x5f), (sys.argv[3], 0x00)):
+    c = bytearray(128)
+    c[0:3] = b'\x02\x03\xff'
+    i = 4
+    for n in (31, 31, 31, 25):
+        c[i] = 0x40 | n
+        c[i + 1:i + 1 + n] = bytes([16]) * n
+        i += 1 + n
+    c[126] = last
+    c[127] = 4
+    c[3] = -sum(c) & 0xff
+    open(out, 'wb').write(d[:128] + c)
+EOF
+	v4l2-ctl -d "$dev" --set-edid=file="$tmp/svd0.bin",format=raw > /dev/null 2>&1
+	v4l2-ctl -d "$dev" --list-dv-timings > "$tmp/enum0" 2>&1
+	v4l2-ctl -d "$dev" --set-edid=file="$tmp/svd.bin",format=raw > "$tmp/setsvd" 2>&1
+	setsvd=$?
+	v4l2-ctl -d "$dev" --list-dv-timings > "$tmp/enum1" 2>&1
 	v4l2-ctl -d "$dev" --set-edid=file="$tmp/edid.bin",format=raw > "$tmp/set0" 2>&1
 	set0=$?
 	v4l2-ctl -d "$dev" --get-edid=file="$tmp/edid0r.bin",format=raw > /dev/null 2>&1
@@ -64,6 +92,12 @@ echo "S_EDID serial 1: reads back"
 grep -qi 'too big\|E2BIG\|argument list' "$tmp/set3" ||
 	{ cat "$tmp/set3"; fail "3 blocks: no E2BIG"; }
 echo "S_EDID 3 blocks: $(head -1 "$tmp/set3")"
+[ "$setsvd" = 0 ] || { cat "$tmp/setsvd"; fail "S_EDID with CTA byte 2 = 0xff failed"; }
+e0=$(grep -E 'Active (width|height)|Pixelclock' "$tmp/enum0")
+e1=$(grep -E 'Active (width|height)|Pixelclock' "$tmp/enum1")
+echo "CTA byte 2 = 0xff, 31-byte video data block at byte 126: $(grep -c 'Active width' "$tmp/enum1") timings enumerated, $(grep -c 'Active width' "$tmp/enum0") with the header zeroed"
+[ -n "$e0" ] && [ "$e1" = "$e0" ] ||
+	{ diff <(echo "$e0") <(echo "$e1") | sed 's/^/  /'; fail "SVDs read past the CTA block"; }
 [ "$set0" = 0 ] && cmp -s "$tmp/edid.bin" "$tmp/edid0r.bin" ||
 	fail "default EDID not restored"
 echo "S_EDID default: restored"
