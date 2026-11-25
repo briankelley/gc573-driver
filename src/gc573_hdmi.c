@@ -231,10 +231,12 @@ int gc573_hdmi_set_edid(struct gc573 *gc, struct v4l2_edid *e)
 		return -E2BIG;
 	}
 	mutex_lock(&h->lock);
-	if (n == h->edid_blocks && !memcmp(h->edid, e->edid, n * 128))
+	/* with 0 blocks e->edid is the caller's pointer, unchecked: unused */
+	if (n == h->edid_blocks && (!n || !memcmp(h->edid, e->edid, n * 128)))
 		goto out;
 	memset(h->edid, 0, sizeof(h->edid));
-	memcpy(h->edid, e->edid, n * 128);
+	if (n)
+		memcpy(h->edid, e->edid, n * 128);
 	h->edid_blocks = n;
 	gc573_hdmi_edid_parse(h);
 
