@@ -70,8 +70,16 @@ if [ -f "$STATE" ]; then
 		fi
 		case $ans in
 		""|y|Y|yes|YES)
-			if command -v driverctl > /dev/null && driverctl set-override "$bdf" "$drv"; then
-				say "override restored: $bdf -> $drv"
+			# --noprobe: without it driverctl does not save the override
+			# when the driver cannot take the card at once; probe after
+			if command -v driverctl > /dev/null &&
+			   driverctl --noprobe set-override "$bdf" "$drv" > /dev/null 2>&1 &&
+			   [ "$(cat "/etc/driverctl.d/pci-$bdf" 2>/dev/null)" = "$drv" ]; then
+				echo "$bdf" > /sys/bus/pci/drivers_probe 2>/dev/null || true
+				now=
+				[ -L "/sys/bus/pci/devices/$bdf/driver" ] &&
+					now=$(basename "$(readlink "/sys/bus/pci/devices/$bdf/driver")")
+				say "override restored: $bdf -> $drv (the card is bound to ${now:-no driver now; $drv takes it at the next boot or when a virtual machine starts with it})"
 			else
 				say "warning: could not restore it; run: sudo driverctl set-override $bdf $drv"
 			fi ;;

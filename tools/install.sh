@@ -153,9 +153,11 @@ if grep -qsi "ids=[^ ]*$PCI_ID" /etc/modprobe.d/*.conf; then
 	say "warning: a file in /etc/modprobe.d gives vfio-pci the card ($(grep -lsi "ids=[^ ]*$PCI_ID" /etc/modprobe.d/*.conf | tr '\n' ' ')). Remove $PCI_ID there (and rebuild the initramfs) to use the card with $NAME"
 fi
 
+# driverctl keeps a persistent override in /etc/driverctl.d/pci-<device>,
+# holding the driver's name (its list-overrides shows the driver bound now)
 persistent=
-if command -v driverctl > /dev/null && driverctl list-overrides 2>/dev/null | grep -q "^$bdf "; then
-	persistent=$(driverctl list-overrides | awk -v b="$bdf" '$1 == b { print $2 }')
+if command -v driverctl > /dev/null && [ -f "/etc/driverctl.d/pci-$bdf" ]; then
+	persistent=$(cat "/etc/driverctl.d/pci-$bdf")
 fi
 # A virtual machine using the card through vfio-pci holds its group device
 # open; taking the card from under it would stall it or the unbind
@@ -188,12 +190,20 @@ if [ -n "$persistent" ] && [ "$persistent" != "$NAME" ]; then
 	fi
 	case $ans in
 	y|Y|yes|YES)
-		driverctl unset-override "$bdf" || die "driverctl unset-override $bdf failed; the override may still be in place (driverctl list-overrides)"
+		# --noprobe: without it driverctl stops with an error, before it
+		# deletes the persistent override, when no driver takes the card at
+		# once (gc573 is not loaded yet); gc573 binds below
+		driverctl --noprobe unset-override "$bdf" > /dev/null 2>&1 || true
+		ovr=$(cat "$dev/driver_override" 2>/dev/null || true)
+		[ "$ovr" = "(null)" ] && ovr=
+		if [ -f "/etc/driverctl.d/pci-$bdf" ] || [ -n "$ovr" ]; then
+			die "driverctl unset-override $bdf failed; the override may still be in place (driverctl list-persisted)"
+		fi
 		mkdir -p "$STATE_DIR"
 		printf 'override %s %s\n' "$bdf" "$persistent" > "$STATE"
 		say "override removed. To give the card back to $persistent (and virtual machines): sudo driverctl set-override $bdf $persistent"
 		say "uninstall.sh offers to put it back."
-		ovr= drv=
+		drv=
 		[ -e "$dev/driver" ] && drv=$(basename "$(readlink -f "$dev/driver")")
 		;;
 	*)
