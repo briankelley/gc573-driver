@@ -1,0 +1,37 @@
+vm: gc573-alma10  ref: dc3a8fbef099  date: 2026-11-25T08:22:06Z
+distro: AlmaLinux 10.3 (Mauve Lion)
+running: 6.12.0-264.20.1.el10_3.x86_64
+kernels with headers: 6.12.0-264.20.1.el10_3.x86_64
+=== headers-missing
+install.sh: no headers for the running kernel 6.12.0-264.20.1.el10_3.x86_64 (/lib/modules/6.12.0-264.20.1.el10_3.x86_64/build). Install them with: sudo dnf install kernel-devel-6.12.0-264.20.1.el10_3.x86_64, then run this again
+RESULT	headers-missing	PASS	exit 1; Install them with: sudo dnf install kernel-devel-6.12.0-264.20.1.el10_3.x86_64; nothing installed
+=== dkms-missing
+install.sh: dkms is not installed. Install it with: sudo dnf install dkms (RHEL, AlmaLinux, Rocky: enable EPEL first: sudo dnf install epel-release)
+RESULT	dkms-missing	PASS	exit 1; Install it with: sudo dnf install dkms 
+=== install
+building gc573 0.1 for 6.12.0-264.20.1.el10_3.x86_64 with DKMS (this takes a minute)
+installed: /lib/modules/6.12.0-264.20.1.el10_3.x86_64/extra/gc573.ko.xz
+no GC573 card found: the driver loads by itself once the card is present
+gc573/0.1, 6.12.0-264.20.1.el10_3.x86_64, x86_64: installed
+RESULT	install	PASS	installed for 1 of 1 kernels with headers: /lib/modules/6.12.0-264.20.1.el10_3.x86_64/extra/gc573.ko.xz
+RESULT	install-noload	PASS	not loaded: no card
+RESULT	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/6.12.0-264.20.1.el10_3.x86_64/extra/gc573.ko.xz
+=== autoinstall
+RESULT	autoinstall	SKIP	no second kernel with headers, or no Debian-style kernel hook
+running: 6.12.0-264.20.1.el10_3.x86_64
+=== reboot
+RESULT	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+=== modprobe
+gc573                 176128  0
+v4l2_dv_timings        45056  1 gc573
+videobuf2_v4l2         45056  1 gc573
+videobuf2_common       98304  2 videobuf2_v4l2,gc573
+videodev              421888  2 videobuf2_v4l2,gc573
+snd_pcm               200704  1 gc573
+snd                   155648  5 snd_seq,snd_seq_device,snd_timer,gc573,snd_pcm
+RESULT	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+=== uninstall
+removing gc573 0.1 from DKMS (all kernels)
+removed the weak-modules link /lib/modules/6.12.0-264.16.1.el10_3.x86_64/weak-updates/gc573.ko.xz
+done
+RESULT	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing

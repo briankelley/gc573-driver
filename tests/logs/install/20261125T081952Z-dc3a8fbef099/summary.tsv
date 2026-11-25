@@ -1,0 +1,19 @@
+vm	distro	step	result	detail
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	headers-missing	PASS	exit 1; Install them with: sudo dnf install kernel-devel-5.14.0-741.26.1.el9_9.x86_64; nothing installed
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	dkms-missing	PASS	exit 1; Install it with: sudo dnf install dkms 
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	install	PASS	installed for 1 of 1 kernels with headers: /lib/modules/5.14.0-741.26.1.el9_9.x86_64/extra/gc573.ko.xz
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	install-noload	PASS	not loaded: no card
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/5.14.0-741.26.1.el9_9.x86_64/extra/gc573.ko.xz
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	autoinstall	SKIP	no second kernel with headers, or no Debian-style kernel hook
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	headers-missing	PASS	exit 1; Install them with: sudo dnf install kernel-devel-6.12.0-264.20.1.el10_3.x86_64; nothing installed
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	dkms-missing	PASS	exit 1; Install it with: sudo dnf install dkms 
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	install	PASS	installed for 1 of 1 kernels with headers: /lib/modules/6.12.0-264.20.1.el10_3.x86_64/extra/gc573.ko.xz
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	install-noload	PASS	not loaded: no card
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/6.12.0-264.20.1.el10_3.x86_64/extra/gc573.ko.xz
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	autoinstall	SKIP	no second kernel with headers, or no Debian-style kernel hook
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing
