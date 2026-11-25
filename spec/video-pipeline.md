@@ -88,7 +88,7 @@ Sequence used by RD before every stream start:
 4. Start each: AP_CTRL = 0x80 (auto-restart), then 0x81 (start). V before H.
 5. VIP_CTRL[7] = 1 if scaling (in ≠ out), 0 to bypass.
 Observed AP_CTRL read before start: 0x84 (idle). Colour mode 0 = RGB in Xilinx numbering → scalers run on RGB data. (`T1/S02`,`P:XV-*`; L)
-With no input, RD sets in = out (scaler bypassed). (`T2/S12`; C)
+With no input RD programs in = out and still runs both scalers at 1:1 (VIP_CTRL[7] = 1, scalers programmed and started; `T2/S11`,`S12`; C). True bypass (VIP_CTRL[7] = 0, scalers untouched) also works at every size and format our driver offers (`E`: driver M2, `tests/logs/20261124-235252_6.8.12-gc573dbg.log`; C).
 Live downscale 1920×1080 → 1280×720 (`T3/S33`; C, image clean): V: HEIGHT_IN 0x438, WIDTH 0x780, HEIGHT_OUT 0x2d0, LINE_RATE 0x18000 · H: HEIGHT 0x2d0, WIDTH_IN 0x780, WIDTH_OUT 0x500, COLOR_MODE 0, PIXEL_RATE 0x18000 · VIP_CTRL 0x80 → 0x81.
 
 ## Observed configurations with live input (`T3`)

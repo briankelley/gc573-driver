@@ -8,17 +8,16 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 | 14 | **2160p60 YUV 4:2:0 input → exact-black frames under RD** (COLOR_CTRL[19]+[5], PIX_MODE=1). HDCP, AV mute, lock, depth ruled out; reproduced with a PC source without HDCP; 2160p30 RGB (dual DDR) works; FPGA input detector identical for both (`video-pipeline.md`, `T4`) | during 4:2:0 streaming vary PIX_MODE {0,1,3}, COLOR_CTRL[19], clip width 1920 vs 3840; compare IT6805 4:2:0 output settings | yes (PC loopback) |
 | 19 | EDID seen by the source: composed by the splitter from its outputs and the IT6805. Which EDID makes the source pick a mode we can capture? | decode RD's EDID writes (`T1/S01`); design our own EDID; verify the source's chosen mode | yes |
 | 5 | Audio PCM layout, channel order, multichannel | capture a known tone; vary rates if source allows | yes |
-| 6 | INT bits 2, 3, 8, 9, 31 meanings | provoke: DMA underrun (no buffers queued), stop/start races; log status | no |
+| 6 | INT bits 2, 3, 8, 9, 31 meanings | underrun and stop/start stress raise none of them (`video-dma.md`, `interrupts.md`); next: descriptor errors (zero COUNT, short lengths) | no |
 | 7 | CH0 STATUS (0x300) upper bits | log per frame with/without input, different sizes | partly |
-| 8 | ch1/ch2 CH_CTRL slot semantics (write-only) | driver experiment: arm ch1 slot only vs ch0 only; observe completion and data | no |
 | 9 | 64-bit DMA | allocate buffers above 4 GiB (VM with >4 GiB RAM, high mapping), stream, verify | no |
 | 10 | GPIO roles: bit1, bit5 vs bit8 (which chip), bit2 HPD polarity, bits 11–16 | toggle individually with no stream; watch I2C ID reads fail/succeed, source behaviour, LEDs | partly |
 | 11 | Front LEDs (stay red under RD) | GPIO bits 11–16 experiments; scan I2C bus 0 and bus 2 for devices | no |
 | 12 | Devices on I2C bus 0 / bus 2 (auth chip expected on one) | address scan with OpenCores master (read-only probe) | no |
 | 13 | Reset domain contents (0x00c bits 0/8/9), 0x00c bit 3 | reset one at a time; observe which blocks return to defaults | no |
 | 15 | HDCP state source | IT6805/splitter registers during protected content | yes |
-| 16 | Descriptor limits: max COUNT, min address alignment, ctrl bits | driver experiment with crafted lists | no |
-| 17 | TLP_ALIGN (0x004) need | sizes whose dword count is not a multiple of 32; check corruption with/without | no |
+| 16 | Descriptor limits: max COUNT, max length, min address alignment, ctrl bits. Up to 2 MiB per descriptor works (driver M2); RD used single descriptors of ≈4 MB (`T3`) | driver experiment with crafted lists | no |
+| 17 | TLP_ALIGN (0x004) need. Our driver never writes it; every frame size it offers is a multiple of 32 dwords | sizes whose dword count is not a multiple of 32; check corruption with/without | no |
 | 18 | FPGA part / firmware variants | board markings photo; VERSION register on other cards | — |
 | 21 | GPIO bit 10 (input): interrupt output of the splitter or the IT6805? Samples fit "high while chip events are pending" (`regmap.md`). If yes, that chip needs I2C polling only when the bit is set | our driver: sample 0x040 at every poll together with splitter 0x58 reg 0x05 and the IT6805 event registers, while hot-plugging and changing modes | yes |
 | 20 | Input pixel clock: RD's estimate reads ~13 % low (129 MHz at 1080p60, 257 MHz at 2160p60 4:2:0) | find the IT6805 clock-measurement registers and reference clock; cross-check with FPGA IN_FRAME_PERIOD | yes |
@@ -28,12 +27,14 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 | 25 | Encrypting source without the external HDCP stripper: splitter RX and IT6805 behaviour | M5: Roku direct; the driver must report no signal, not hang | yes |
 | 26 | Bus-1 engine on NACK or absent device: STATUS value, INT behaviour; does reading STATUS have side effects? | read IT6805 reg 0x4b; if bit 0 is clear (EDID RAM slave off), read 0xa8 reg 0x00, where nothing answers, and record STATUS and INT | no |
 | 28 | Card frame store: size, which frames are held, can it be cleared; how many frames after a start can carry stale content (`video-dma.md`) | with the loopback: capture pattern A, stop, show pattern B, start; check the first frames | yes (PC loopback) |
+| 30 | Line-length rule of the pixel packer: 720-wide YV12 (chroma lines of 360 bytes) fails, NV12 and packed formats work at 720 (`video-dma.md`) | sweep widths 704–736 in steps of 8 per format; compare the failing line lengths against multiples of 16/32/64 bytes; trace RD at 720×576 YV12 | no |
 | 29 | RGB input → BGR24: +1 on one pixel in four (`video-pipeline.md`). Which stage adds it? | with our driver and the loopback: toggle the splitter, IT6805 and FPGA colour settings one at a time | yes (PC loopback) |
-| 27 | RESET (0x00c): what clears bits 0/3/8/9 besides a device reset; what bit 3 means; can a later domain reset be confirmed at all? | after a VM reboot, write the domains one at a time and read RESET plus the DMA/VIP registers each domain covers | no |
+| 27 | RESET (0x00c): what clears bits 0/3/8/9 besides a device reset; what bit 3 means. A later domain reset can be confirmed indirectly: it returns CLIP to 0, 0, 1920, 1080 (`video-dma.md` Stop) | after a VM reboot, write the domains one at a time and read RESET plus the DMA/VIP registers each domain covers | no |
 
 ## Resolved
 | # | Question | Answer | Ev |
 |---|---|---|---|
+| 8 | ch1/ch2 CH_CTRL slot semantics | ch0's CH_CTRL gates every channel; ch1/ch2 slot and run bits are not needed (`video-dma.md` Slots) | `E` (driver M2 case 14) |
 | 1 | HW writes pixel data on all channels? | yes: ch0, ch1, ch2 carry real image data | `T3/S32-NV12`,`S32-YV12` |
 | 3 | Real scaling | 1920×1080 → 1280×720 clean; programming values in `video-pipeline.md` | `T3/S33` |
 | 4 | YV12 chroma order; RGB byte order | YV12 ch1 = Cr, ch2 = Cb. Code 0x02 = B,G,R. Code 0x06 = B,G,R,X (X = 0) → V4L2 XBGR32 | `T3/S32-*` |

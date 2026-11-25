@@ -28,3 +28,6 @@ Single source: INT_STATUS (0x010), write-1-to-clear. Enable mask: INT_ENABLE (0x
 - Ack exactly the bits being serviced: write `(1 << bit)` to INT_STATUS. Do not read-modify-write INT_STATUS (that acks bits not yet serviced).
 - Return IRQ_NONE when INT_STATUS reads 0 (INTx may be shared).
 - Bit 11 completion must wake a sleeping I2C caller; no spinlock may be held across the wait.
+
+## Observed with our driver
+Across all M2 runs (no input; stop/start ×100, underrun, single-buffer streaming, unbind while streaming) only INT bits 0, 1 and 11 were ever set. Bits 2, 3, 8, 9 and 31 never appeared, and an underrun raises no bit at all (`video-dma.md`). (`E`: driver M2, `tests/logs/20261124-235252_6.8.12-gc573dbg.log`; C)
