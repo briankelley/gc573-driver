@@ -2707,6 +2707,8 @@ step_apps() {
 ECP=$ROOT/tools/roku/ecp.py
 ROKU_DIR=${GC573_ROKU_DIR:-$HOME/gc573-roku}
 ROKU_SECS=${GC573_ROKU_SECS:-60}
+# rokumodes: seconds of gc573-aud -V after each EDID set
+ROKU_DRV_SECS=${GC573_ROKU_DRV_SECS:-10}
 # the pattern video's frame rate: the Roku's output, 59.94 Hz (a 60 fps
 # file makes its player drop frames); GC573_ROKU_FPS as ffmpeg takes it
 ROKU_FPS=${GC573_ROKU_FPS:-60000/1001}
@@ -2886,6 +2888,19 @@ roku_drv() {
 	check "$1-capture" $? "($(grep -E '^(PARAMS|RESULT)' "$W/drv.txt" | tr '\n' ' '))"
 	out=$(python3 "$W/live-av.py" "$W/drv.txt" "$W/drv.raw" --min-secs $(($2 * 9 / 10)) 2>&1)
 	av_results "$1" "$(grep -E '^RESULT +(duration|xruns|rate|gaps|video) ' <<< "$out")"
+	# the frame intervals more than 10 % off their median: when, where, how
+	# long, and the sequence step (numbers only)
+	grep -q '^RESULT video .* 0 by more than 10 %' <<< "$out" ||
+		awk '/^V / { n++; split($2, q, "="); split($3, t, "="); s[n] = q[2]; ts[n] = t[2] }
+			END {
+				for (i = 2; i <= n; i++) { d[i] = (ts[i] - ts[i - 1]) / 1e6; x[i - 1] = d[i] }
+				m = n - 1
+				for (i = 2; i <= m; i++) { v = x[i]; for (j = i - 1; j >= 1 && x[j] > v; j--) x[j + 1] = x[j]; x[j + 1] = v }
+				med = x[int((m + 1) / 2)]
+				for (i = 2; i <= n; i++) if (d[i] > med * 1.1 || d[i] < med * 0.9)
+					printf "  interval off: frame %d of %d (%.3f s in), seq %d -> %d, %.3f ms (median %.3f), neighbours %.3f and %.3f ms\n",
+						i, n, (ts[i] - ts[1]) / 1e9, s[i - 1], s[i], d[i], med, (i > 2 ? d[i - 1] : 0), (i < n ? d[i + 1] : 0)
+			}' "$W/drv.txt"
 	echo "  INFO $1-picture $(awk '/^V / { y = substr($4, 3) + 0; n++; if (n > 1 && y != p) c++; p = y; v[y] = 1 }
 		END { k = 0; for (i in v) k++; printf "%d frames; their grid luma took %d values and changed between %d of %d frame pairs", n, k, c, n - 1 }' "$W/drv.txt")"
 	vm "rm -f $W/drv.raw $W/drv.txt"
@@ -3232,7 +3247,7 @@ step_rokumodes() {
 			echo "  INFO roku-edid-720p the Roku did not follow the 720p-only EDID within 20 s: $(roku_timings)"
 		check "roku-edid-$name-lock" "$([ "$t" != none ] && [ "$t2" != none ]; echo $?)" \
 			"(locked $t ms after the EDID set; locked 20 s on at $(roku_timings), $(roku_rate) Hz)"
-		roku_drv "roku-edid-$name" 10
+		roku_drv "roku-edid-$name" "$ROKU_DRV_SECS"
 	done
 	vm "rm -rf $e"
 }
@@ -3246,7 +3261,7 @@ step_rokumodes() {
 # error counters. Without our pattern there is no counter to follow and no
 # A/V offset to measure
 step_rokuobsany() {
-	local out f r st0 st1 err
+	local out f r st0 st1 err rs
 	time_to_lock 30 > /dev/null || { result roku-obsany SKIP "(no input: $(roku_card))"; return; }
 	mkdir -p "$REC_DIR" || { result roku-obsany-recdir FAIL "(cannot make $REC_DIR)"; return; }
 	obs_up || { result roku-obsany-start FAIL "(OBS minimized, with the sources expected)"; obs_down; return; }
@@ -3260,9 +3275,11 @@ step_rokuobsany() {
 		sleep 60
 		r=$(roku_ring)
 		out=$(obsany record-stop 2>&1)
+		rs=$?
 		f=$(sed -n 's/^RECORDING //p' <<< "$out")
 		grep -v '^RECORDING' <<< "$out" | sed 's/^/  /'
-		check roku-obsany-record "$([ -n "$f" ] && [ -s "$f" ]; echo $?)" "($(grep '^STATS' <<< "$out"))"
+		check roku-obsany-record "$([ "$rs" = 0 ] && [ -n "$f" ] && [ -s "$f" ]; echo $?)" \
+			"(record-stop exit $rs; $(grep -E '^(STATS|INFO)' <<< "$out" | paste -sd';' -))"
 		[ -z "$f" ] || rm -f "$f"
 	else
 		r=$(roku_ring)
@@ -3374,7 +3391,7 @@ soak_change() {
 	return 0
 }
 step_rokusoakany() {
-	local sp sampler m lg out f mem0 mem1 drv0 drv1 kinds kind t0 t_end now ended="" avail obs0 err
+	local sp sampler m lg out f mem0 mem1 drv0 drv1 kinds kind t0 t_end now ended="" avail obs0 err rs
 	roku_go || { roku_skip roku-soak "puts the Roku to sleep and wakes it during the soak"; return; }
 	# shellcheck source=tests/lib.sh
 	. "$ROOT/tests/lib.sh"	# KMSG_BAD, KMSG_DRV_BAD for host_sample
@@ -3419,9 +3436,11 @@ step_rokusoakany() {
 	echo "  OBS at the start: $obs0"
 	echo "  OBS at the end:   $(obsany stats 2>&1)"
 	out=$(obsany record-stop 2>&1)
+	rs=$?
 	f=$(sed -n 's/^RECORDING //p' <<< "$out")
 	grep -v '^RECORDING' <<< "$out" | sed 's/^/  /'
-	check roku-soak-record "$([ -n "$f" ] && [ -s "$f" ]; echo $?)" "(OBS over the recording: $(grep '^STATS' <<< "$out"))"
+	check roku-soak-record "$([ "$rs" = 0 ] && [ -n "$f" ] && [ -s "$f" ]; echo $?)" \
+		"(record-stop exit $rs; OBS over the recording: $(grep -E '^(STATS|INFO)' <<< "$out" | paste -sd';' -))"
 	[ -z "$f" ] || rm -f "$f"
 	host_sample >> "$sp" 2>&1
 	kill "$sampler" 2>/dev/null

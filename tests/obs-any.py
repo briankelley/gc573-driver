@@ -16,10 +16,15 @@ cannot play our pattern). No picture leaves memory, and nothing is kept.
                        names of the same PCM)
   record-start [--dir D]  OBS starts recording (to D, SetRecordDirectory;
                        its own directory is put back at record-stop); its
-                       GetStats then, in a 0600 file for record-stop
-  record-stop          OBS stops recording: the file (RECORDING), OBS's
-                       render and output frames and skipped frames over
-                       the recording (STATS), and the recording's length,
+                       GetStats then, in a 0600 file for record-stop. A
+                       directory an earlier stop could not put back stays
+                       the one to put back
+  record-restore       that directory put back (after a failed stop)
+  record-stop          OBS stops recording: the file (RECORDING, printed
+                       first), OBS's render and output frames and skipped
+                       frames over the recording (STATS), its own record
+                       directory put back once the output has stopped
+                       (OBS refuses it before), and the recording's length,
                        frame count and frame rate from ffprobe (INFO). The
                        caller deletes the file: it shows what the source
                        showed
@@ -121,6 +126,12 @@ def cmd_record_start(obs, rec_dir):
     old = None
     if rec_dir:
         old = obs.call('GetRecordDirectory')['recordDirectory']
+        # a directory an earlier record-stop could not put back is OBS's own
+        try:
+            with open(REC_STATE) as f:
+                old = json.load(f).get('dir') or old
+        except (FileNotFoundError, ValueError):
+            pass
         obs.call('SetRecordDirectory', recordDirectory=rec_dir)
     fd = os.open(REC_STATE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, 'w') as f:
@@ -163,20 +174,58 @@ def cmd_record_stop(obs):
         st = {'dir': None, 'stats': None}
     oe.ev('obs record stop')
     path = obs.call('StopRecord')['outputPath']
+    # first, so that the caller deletes the file whatever happens next
+    print('RECORDING', path, flush=True)
     s1 = obs.call('GetStats')
-    if st['dir']:
-        obs.call('SetRecordDirectory', recordDirectory=st['dir'])
-    if os.path.exists(REC_STATE):
-        os.remove(REC_STATE)
-    print('RECORDING', path)
     if st['stats']:
         print('STATS ' + ' '.join(f'{k}={s1[k] - st["stats"][k]}' for k in STAT_KEYS))
+    # OBS refuses SetRecordDirectory (code 500) while the output still
+    # stops: wait for it to end
+    for _ in range(100):
+        if not obs.call('GetRecordStatus')['outputActive']:
+            break
+        time.sleep(0.1)
+    ok = restore_dir(obs, st)
     for _ in range(20):
         if os.path.exists(path) and os.path.getsize(path):
             break
         time.sleep(0.5)
     print(f'INFO recording: {probe(path)}')
+    return ok
+
+
+def restore_dir(obs, st):
+    """OBS's own record directory back (from record-start); the state file
+    kept for record-restore if OBS refuses"""
+    if st.get('dir'):
+        for i in range(10):
+            try:
+                obs.call('SetRecordDirectory', recordDirectory=st['dir'])
+                break
+            except RuntimeError as e:
+                err = e
+                time.sleep(0.5)
+        else:
+            print(f"OBS's record directory not put back ({err}): run record-restore", file=sys.stderr)
+            return False
+    if os.path.exists(REC_STATE):
+        os.remove(REC_STATE)
     return True
+
+
+def cmd_record_restore(obs):
+    try:
+        with open(REC_STATE) as f:
+            st = json.load(f)
+    except FileNotFoundError:
+        print('no record directory to put back')
+        return True
+    if obs.call('GetRecordStatus')['outputActive']:
+        print('OBS is recording: not now', file=sys.stderr)
+        return False
+    ok = restore_dir(obs, st)
+    print("OBS's record directory put back" if ok else 'not put back')
+    return ok
 
 
 def main():
@@ -188,7 +237,7 @@ def main():
     p.add_argument('n', type=int)
     p.add_argument('--every', type=float, default=1.0)
     sub.add_parser('meters').add_argument('secs', type=int)
-    for name in ('stats', 'reopen-video', 'reopen-audio', 'record-stop'):
+    for name in ('stats', 'reopen-video', 'reopen-audio', 'record-stop', 'record-restore'):
         sub.add_parser(name)
     sub.add_parser('record-start').add_argument('--dir', default='')
     a = ap.parse_args()
@@ -204,6 +253,8 @@ def main():
             ok = cmd_record_start(obs, a.dir)
         elif a.cmd == 'record-stop':
             ok = cmd_record_stop(obs)
+        elif a.cmd == 'record-restore':
+            ok = cmd_record_restore(obs)
         elif a.cmd == 'reopen-video':
             oe.Source(obs).reopen()
             ok = True
