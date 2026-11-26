@@ -48,6 +48,13 @@
 #                      loaded (files removed) and unloads once sleep ends
 #   pw-uninstall       install.sh, then uninstall.sh (no --yes): gc573
 #                      unloads although WirePlumber held the card
+#   pw-stream-refused  install.sh, then pw-record from the GC573's PipeWire
+#                      node: PipeWire holds the card's PCM node (a stream).
+#                      install.sh (an update) and uninstall.sh without --yes
+#                      refuse, name it as PipeWire streaming, and change
+#                      nothing (the stream runs on); with --yes the update
+#                      goes through, and so does uninstall.sh --yes on a
+#                      new recording, leaving nothing
 #   pw-this-boot       the override saved again: --this-boot, then
 #                      --this-boot again (an update) while WirePlumber holds
 #                      the card
@@ -67,7 +74,7 @@ while [ $# -gt 0 ]; do
 	case $1 in
 	-r) REF=$2; shift 2 ;;
 	--pw-only) pw_only=1; shift ;;
-	-h|--help) sed -n '3,62p' "$0"; exit 0 ;;
+	-h|--help) sed -n '3,69p' "$0"; exit 0 ;;
 	*) echo "unknown argument $1" >&2; exit 2 ;;
 	esac
 done
@@ -153,6 +160,49 @@ wait_pw_hold() {	# up to 15 s for WirePlumber to open the card
 	echo "$h"
 }
 not_left() { vm "sudo dkms status 2>/dev/null | grep gc573; find /lib/modules /usr/src -name 'gc573*' 2>/dev/null; lsmod | grep -w gc573" | tr '\n' ' '; }
+# the GC573's PipeWire source node (pw-dump can print more than one array)
+pw_node() {
+	vm "pw-dump 2>/dev/null | python3 -c '
+import json, sys
+s = sys.stdin.read(); d = json.JSONDecoder(); i = 0; objs = []
+while True:
+    while i < len(s) and s[i].isspace():
+        i += 1
+    if i >= len(s):
+        break
+    v, i = d.raw_decode(s, i)
+    objs += v if isinstance(v, list) else [v]
+for o in objs:
+    p = (o.get(\"info\") or {}).get(\"props\") or {}
+    if p.get(\"media.class\") == \"Audio/Source\" and p.get(\"node.name\", \"\").startswith(\"alsa_input.pci-$(tr : _ <<< "$bdf")\"):
+        print(p[\"node.name\"])
+        break
+'"
+}
+# pw-record from PipeWire node $1 into a scratch file, in the background
+# (no move to another source when the card goes); prints its pid
+pw_rec() {
+	vm "nohup pw-record --target '$1' -P '{ node.dont-reconnect = true node.name = gc573-install-test }' /tmp/gc573-pw-stream.wav > /dev/null 2>&1 & echo \$!"
+}
+# the card's capture PCM state (/proc/asound): RUNNING while a stream runs
+pcm_state() {
+	vm "c=\$(ls -d /sys/bus/pci/devices/$bdf/sound/card[0-9]* 2>/dev/null | head -1); s=;
+		[ -n \"\$c\" ] && s=\$(sed -n 's/^state: //p' /proc/asound/card\${c##*card}/pcm0c/sub0/status 2>/dev/null); echo \${s:-closed}"
+}
+# the pids holding the card's capture PCM node open, by fuser
+pcm_holders() {
+	vm "c=\$(ls -d /sys/bus/pci/devices/$bdf/sound/card[0-9]* 2>/dev/null | head -1);
+		[ -n \"\$c\" ] && sudo fuser /dev/snd/pcmC\${c##*card}D0c 2>/dev/null | tr -cs '0-9' ' '"
+}
+wait_running() {	# up to 10 s for the card's PCM to run
+	local st=closed
+	for _ in $(seq 20); do
+		st=$(pcm_state)
+		[ "$st" = RUNNING ] && break
+		sleep 0.5
+	done
+	echo "$st"
+}
 
 {
 echo "# install.sh / uninstall.sh with the card, $VM"
@@ -407,6 +457,51 @@ if [ $rc = 0 ] && has wireplumber "$h" && [ $rc2 = 0 ] && has 'taking the card f
 	res pw-uninstall PASS "uninstall.sh without --yes while WirePlumber held the card: the card taken from gc573, gc573 unloaded, nothing left"
 else
 	res pw-uninstall FAIL "exit $rc/$rc2; holders '$h'; left '$left'; $s2"
+fi
+
+echo "=== pw-stream-refused"
+o=$(vm "$I" 2>&1); rc0=$?
+echo "$o" | sed 's/^/  /'
+h=$(wait_pw_hold); echo "  holders: $h"
+node=$(pw_node); echo "  the GC573's PipeWire node: ${node:-none}"
+pr=$(pw_rec "$node")
+st=$(wait_running)
+pp=$(pcm_holders | awk '{ print $1 }')
+h=$(holders); echo "  pw-record pid $pr; the card's PCM $st, open by pid ${pp:-none}; holders: $h"
+o=$(vm "$I" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+s=$(state); st1=$(pcm_state); echo "  $s; PCM $st1"
+o2=$(vm "$U" 2>&1); rc2=$?
+echo "$o2" | sed 's/^/  /'
+s2=$(state); st2=$(pcm_state); echo "  $s2; PCM $st2"
+refused=no
+pwn="the card is in use by PipeWire, streaming the card's audio (pid $pp)"
+if [ $rc0 = 0 ] && [ -n "$node" ] && [ "$st" = RUNNING ] && [ -n "$pp" ] &&
+	[ $rc = 1 ] && has "$pwn" "$o" && has 'driver: gc573' "$s" && [ "$st1" = RUNNING ] &&
+	[ $rc2 = 1 ] && has "$pwn" "$o2" && has 'nothing was changed' "$o2" && has 'driver: gc573' "$s2" &&
+	has 'dkms: gc573/' "$s2" && [ "$st2" = RUNNING ]; then
+	refused=yes
+fi
+o3=$(vm "$I --yes" 2>&1); rc3=$?
+echo "$o3" | sed 's/^/  /'
+s3=$(state); h3=$(wait_pw_hold); echo "  $s3; holders: $h3"
+vm "kill $pr 2>/dev/null"
+node=$(pw_node)
+pr=$(pw_rec "$node")
+st4=$(wait_running)
+pp4=$(pcm_holders | awk '{ print $1 }')
+echo "  a new pw-record (pid $pr) from ${node:-none}: the card's PCM $st4, open by pid ${pp4:-none}"
+o4=$(vm "$U --yes" 2>&1); rc4=$?
+echo "$o4" | sed 's/^/  /'
+s4=$(state); left=$(not_left); echo "  $s4; left: '$left'"
+vm "kill $pr 2>/dev/null; rm -f /tmp/gc573-pw-stream.wav"
+if [ $refused = yes ] && [ $rc3 = 0 ] && has "$pwn: --yes, so it loses the card now" "$o3" &&
+	has 'the card is up' "$o3" && has 'driver: gc573' "$s3" && [ "$st4" = RUNNING ] && [ $rc4 = 0 ] &&
+	has "the card is in use by PipeWire, streaming the card's audio (pid $pp4): --yes, so it loses the card now" "$o4" &&
+	has 'unloaded gc573' "$o4" && has 'loaded: no' "$s4" && [ -z "$left" ]; then
+	res pw-stream-refused PASS "pw-record from $node: PipeWire held the card's PCM (pid $pp); install.sh and uninstall.sh without --yes exit 1, name it as PipeWire streaming the card's audio, and the stream runs on; with --yes the update went through, and uninstall.sh --yes on a new recording left nothing"
+else
+	res pw-stream-refused FAIL "refused without --yes: $refused (exit $rc/$rc2, PCM $st/$st1/$st2, pid ${pp:-none}); --yes: exit $rc3/$rc4, PCM $st4; left '$left'; $s3 / $s4"
 fi
 
 echo "=== pw-this-boot"

@@ -8,7 +8,9 @@
 # away and PipeWire lets go of them, about 0.2 s later; then gc573 unloads.
 # Anything else holding one of the card's nodes (OBS, a capture) would lose
 # the card: then the scripts name it and leave the card alone, unless
-# --yes.
+# --yes. So does PipeWire while it holds one of the card's PCM nodes: a
+# stream runs through it then (OBS's PipeWire source, pw-record), and
+# PipeWire closes an idle node's PCM after its suspend timeout.
 #
 # Uses NAME and say() from the script that sources it.
 
@@ -31,33 +33,52 @@ gc573_card_nodes() {
 	return 0
 }
 
-# "pid comm" of every process holding one of the card's nodes open
+# "pid node comm" for each of the card's nodes a process holds open
 # (/proc/*/fd), sorted by pid. $1: the PCI device's sysfs dir
 gc573_holders() {
-	local nodes p
+	local nodes p f
 	nodes=$(gc573_card_nodes "$1" | tr '\n' ' ')
 	[ -n "$nodes" ] || return 0
 	find /proc/[0-9]*/fd -maxdepth 1 -type l -printf '%h %l\n' 2>/dev/null |
-		awk -v n=" $nodes" 'index(n, " " $2 " ") { split($1, p, "/"); print p[3] }' |
-		sort -u -n |
-		while read -r p; do
-			printf '%s %s\n' "$p" "$(cat "/proc/$p/comm" 2>/dev/null || echo '?')"
+		awk -v n=" $nodes" 'index(n, " " $2 " ") { split($1, p, "/"); print p[3], $2 }' |
+		sort -u -k1,1n -k2,2 |
+		while read -r p f; do
+			printf '%s %s %s\n' "$p" "$f" "$(cat "/proc/$p/comm" 2>/dev/null || echo '?')"
 		done
 	return 0
 }
 
-# the holders that are not PipeWire's own processes; $1: gc573_holders output
-gc573_others() {
-	local p c
-	while read -r p c; do
-		[ -n "$p" ] || continue
-		case $GC573_PW_COMMS in *" $c "*) ;; *) printf '%s %s\n' "$p" "$c" ;; esac
-	done <<< "$1"
+# "pid comm", one line per process; $1: gc573_holders output
+gc573_procs() {
+	local p f c
+	while read -r p f c; do
+		[ -n "$p" ] && printf '%s %s\n' "$p" "$c"
+	done <<< "$1" | sort -u -k1,1n
 	return 0
 }
 
-# "comm (pid P), ..." for messages; $1: holders
-gc573_names() { awk 'NF { printf "%s%s (pid %s)", (n++ ? ", " : ""), $2, $1 }' <<< "$1"; }
+# The holders that would lose the card, "pid name", one per process: every
+# process but PipeWire's own, and PipeWire's too while it holds a PCM node
+# (a stream). $1: gc573_holders output
+gc573_others() {
+	local p f c
+	while read -r p f c; do
+		[ -n "$p" ] || continue
+		case $GC573_PW_COMMS in
+		*" $c "*)
+			case $f in
+			/dev/snd/pcmC*) printf '%s %s\n' "$p" "PipeWire, streaming the card's audio" ;;
+			esac ;;
+		*) printf '%s %s\n' "$p" "$c" ;;
+		esac
+	done <<< "$1" | sort -u -k1,1n
+	return 0
+}
+
+# "name (pid P), ..." for messages; $1: "pid name" lines
+gc573_names() {
+	awk 'NF { p = $1; sub(/^[^ ]+ /, ""); printf "%s%s (pid %s)", (n++ ? ", " : ""), $0, p }' <<< "$1"
+}
 
 # gc573 unloaded once nothing holds it any more: up to 5 s for its users
 # (PipeWire, after an unbind) to let go
@@ -77,7 +98,7 @@ gc573_unload_wait() {
 # be unloaded within 5 s (a holder did not let go); then the cards are
 # bound to gc573 again, so that they stay usable.
 gc573_release() {
-	local yes=$1 d h o all="" others="" bdfs=""
+	local yes=$1 d h o all="" others="" bdfs="" hint=""
 	for d in /sys/bus/pci/drivers/"$NAME"/0000:*; do
 		[ -e "$d" ] || continue
 		d=$(readlink -f "$d")
@@ -89,13 +110,16 @@ gc573_release() {
 	done
 	if [ -n "${others//$'\n'/}" ]; then
 		if [ "$yes" != 1 ]; then
-			say "the card is in use by $(gc573_names "$others"): close it and run this again, or run this with --yes, and it loses the card"
+			case $others in
+			*"PipeWire, streaming"*) hint=" (for PipeWire: stop what records the card's audio through it)" ;;
+			esac
+			say "the card is in use by $(gc573_names "$others"): close it$hint and run this again, or run this with --yes, and it loses the card"
 			return 1
 		fi
 		say "the card is in use by $(gc573_names "$others"): --yes, so it loses the card now"
 	fi
 	if [ -n "${all//$'\n'/}" ]; then
-		say "taking the card from $NAME (open now by $(gc573_names "$all"))"
+		say "taking the card from $NAME (open now by $(gc573_names "$(gc573_procs "$all")"))"
 	fi
 	for d in $bdfs; do
 		echo "$d" > "/sys/bus/pci/drivers/$NAME/unbind" 2>/dev/null ||

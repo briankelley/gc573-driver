@@ -50,6 +50,7 @@ To remove the driver, run `sudo tools/uninstall.sh`. It undoes what `install.sh`
 
 An update (`install.sh` again) or `uninstall.sh` first takes the card away from the loaded module, so that it can be unloaded:
 - PipeWire keeps the control device of every sound card it manages open. It lets go by itself once the card is taken away, so neither script needs you to stop it.
+- While something records the card's audio through PipeWire (OBS's PulseAudio or PipeWire source, `pw-record`), PipeWire holds the card's sound device itself. The scripts then name it as *PipeWire, streaming the card's audio* and change nothing, as for any other program (below).
 - If another program has the card open (OBS, a capture), the scripts name it and change nothing on the card. Close it and run the script again, or add `--yes`: the program then loses the card. If it keeps the device open anyway, the old module stays loaded until it lets go, at the latest until a reboot.
 
 ## Use with OBS
