@@ -114,7 +114,12 @@ sudo goes through `SUDO_ASKPASS`, or cached credentials. OBS is the user's:
 `tests/obs-run.sh --keep-config` starts it minimized to the tray (no preview is
 drawn) without writing its configuration, and `tests/obs-check.py verify`
 checks the sources (setting them up would make OBS open every `/dev/video*`
-node, cameras too). `GC573_OBS_BUFFERING` defaults to 0 there.
+node, cameras too). `GC573_OBS_BUFFERING` defaults to 0 there. The reopens
+(`color_range` and `custom_pcm` toggled) change the user's sources, and OBS
+saves them at exit. So OBS's start saves those settings
+(`tests/obs-any.py settings-save`) and its stop puts them back
+(`settings-restore`, RESULT `obs-settings` FAIL if they differ).
+`tests/obs-any-check.py` checks that offline.
 
 Roku mode (`GC573_SOURCE=roku GC573_LOCAL=1`, M6): the source is the Roku
 through the HDCP filter. `tools/roku/ecp.py` drives it, and it plays

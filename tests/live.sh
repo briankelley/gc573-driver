@@ -1687,17 +1687,31 @@ obsc() { vm "cd $W && GC573_OBS_BUFFERING=$OBS_BUFFERING python3 obs-check.py $*
 # obs_up [FORMAT]: the recording format (tests/obs-run.sh), default hybrid_mp4
 obs_up() {
 	if [ "$LOCAL" = 1 ]; then
-		# the user's OBS: started minimized, its sources checked, not set up
+		# the user's OBS: started minimized, its sources checked, not set
+		# up; the settings the reopens change saved for obs_down
 		vm "GC573_OBS_RECFORMAT=${1:-hybrid_mp4} bash $W/obs-run.sh start --keep-config" | sed 's/^/  /' &&
-			obsc "verify /dev/v4l/by-path/pci-${dbgdir#*/gc573-}-video-index0 $pcm" | sed 's/^/  /'
+			obsc "verify /dev/v4l/by-path/pci-${dbgdir#*/gc573-}-video-index0 $pcm" | sed 's/^/  /' &&
+			obsany settings-save | sed 's/^/  /'
 		return
 	fi
 	vm "GC573_OBS_RECFORMAT=${1:-hybrid_mp4} bash $W/obs-run.sh start" | sed 's/^/  /' &&
 		obsc "setup /dev/v4l/by-path/pci-${dbgdir#*/gc573-}-video-index0 $pcm" | sed 's/^/  /'
 }
 
-# OBS holds the device while it runs: each OBS step stops it at the end
-obs_down() { vm "bash $W/obs-run.sh stop$([ "$LOCAL" = 0 ] || echo ' --keep-config')" > /dev/null; }
+# OBS holds the device while it runs: each OBS step stops it at the end.
+# The user's OBS (local mode) first gets back the source settings that
+# obs_up saved: OBS saves its sources at exit, and a reopen (color_range,
+# custom_pcm toggled) would stay in the user's scene collection
+OBS_SETTINGS=${XDG_RUNTIME_DIR:-/tmp}/gc573-obs-any-settings.json
+obs_down() {
+	local out
+	if [ "$LOCAL" = 1 ] && [ -e "$OBS_SETTINGS" ]; then
+		out=$(obsany settings-restore 2>&1) ||
+			result obs-settings FAIL "(the user's OBS sources not as obs_up found them: $(tr '\n' ' ' <<< "$out"))"
+		sed 's/^/  /' <<< "$out"
+	fi
+	vm "bash $W/obs-run.sh stop$([ "$LOCAL" = 0 ] || echo ' --keep-config')" > /dev/null
+}
 
 # Lines in OBS's current log, and OBS's capture-source lines after line $1
 obs_log_mark() { vm 'wc -l < "$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)"'; }
