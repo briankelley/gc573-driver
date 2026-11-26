@@ -76,7 +76,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
   - any GStreamer use that can load its v4l2 plugin: `v4l2src`, `gst-inspect-1.0` on it, a registry rebuild. Its plugin_init runs the M2M probe ("Probing devices"), which opens every /dev/video* and issues QUERYCAP. `GST_REGISTRY_UPDATE=no` does not stop that probe. GStreamer is tested in gc573-dev only (the same 1.24.2 and the same card);
   - OBS `GetInputPropertiesListPropertyItems` on a V4L2 or ALSA source's property;
   - `arecord -l`/`-L`, `aplay -l`/`-L`;
-  - VLC help or listings (`-p`, `-H`): its ALSA choices enumerate every card;
+  - VLC help or listings (`-p`, `-H`, `--list`), also as a probe. To fill in its ALSA choices, the help enumerates every card: `vlc -p alsa --advanced` opened the C920's control node on 2026-11-26. `--list` is a listing too. Check for VLC by its plugin files. A `v4l2://` location is cut at its first `:` (the device before it, options after: ParseMRL, VLC 3.0.20). So the by-path name, which has colons, gives VLC a device that does not exist (`.../pci-0000`), and a location that starts with `:` gives it none: VLC then opens its default `/dev/video0`, the C920 here. Give VLC the `/dev/videoN` the by-path link resolves to, in the location and as `--v4l2-dev` (`tests/live.sh` apps);
   - `ffmpeg -sources`, `-list_devices`;
   - `v4l2-ctl` or `v4l2-compliance` without `-d <by-path>`, and `--list-devices`;
   - qv4l2, cheese, guvcview;
