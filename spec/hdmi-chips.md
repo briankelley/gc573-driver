@@ -138,7 +138,7 @@ A host GPU output (GT 710, DVI-D, through a DVI-to-HDMI cable) feeds HDMI IN. Fa
 ## Driver notes
 - One polling work item per chip (or one combined), every 50 ms. Event registers are write-1-to-clear: read, then write back the value read (exceptions per chip chapter).
 - All observed I2C timeouts were on the IT6805 bank register; retry and bank-resync rules in `i2c.md`.
-- On unload RD writes nothing to the chips or the GPIO register: the chips keep running and HPD stays as it was. (`T3/S36`; C) Whether a driver should drop HPD or enter power saving on remove is a design choice; untested.
+- On unload RD writes nothing to the chips or the GPIO register: the chips keep running and HPD stays as it was. (`T3/S36`; C) Whether a driver should drop HPD or enter power saving on remove is a design choice. With this driver's M5 build (2026-11-25), the source saw nothing of an unload or a load: with the PC loopback at 1080p60, the PC's ELD (polled every 10 ms) and its connector state (xrandr, every 100 ms) did not change at the unload or at the load, and the receiver locked again 1.5 s after the load returned (`tests/logs/20261125T172311Z-hpd-unload.log`).
 - Report lock and unlock as `V4L2_EVENT_SOURCE_CHANGE`. Report DV timings from the IT6805 timing registers plus FPGA 0x1010. What a running stream does is driver policy (below).
 - The chips are separate I2C devices on the bus-1 adapter. Implement them as v4l2 subdevices or internal helpers. All their I2C goes through the bus-1 adapter.
 
