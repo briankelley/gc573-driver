@@ -807,7 +807,7 @@ src_bare() {
 heal_times() {
 	sed -nE 's/^\[ *([0-9.]+)\].*HDMI: self-heal ([0-9] of|gave up).*/\1/p' <<< "$1" | paste -sd' ' -
 }
-heal_attempts() { grep -oE 'self-heal [0-9] of [0-9], [a-z -]+' <<< "$1" | paste -sd, - | sed 's/,/, /g'; }
+heal_attempts() { grep -oE 'self-heal [0-9] of [0-9], [a-z -]+' <<< "$1" | paste -sd';' - | sed 's/;/; /g'; }
 # Through a case, in the VM as root: every 50 ms the splitter's 5 V state
 # (debugfs hdmi "rx 5v" and the published power, RX 0x13 bit 0), each
 # change logged: does the source drop 5 V at a hot-plug's HPD low (the
