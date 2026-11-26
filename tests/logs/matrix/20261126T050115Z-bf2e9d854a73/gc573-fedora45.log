@@ -1,0 +1,44 @@
+vm: gc573-fedora45  ref: bf2e9d854a73  date: 2026-11-26T05:03:06Z
+distro: Fedora Linux 45 (Cloud Edition)
+running: 7.3.4-300.fc45.x86_64
+cc: gcc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)
+=== build 7.3.4-300.fc45.x86_64
+make -C /lib/modules/7.3.4-300.fc45.x86_64/build M=/home/dev/gc573-matrix/gc573 CC=gcc modules
+make[1]: Entering directory '/usr/src/kernels/7.3.4-300.fc45.x86_64'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/kernels/7.3.4-300.fc45.x86_64'
+RESULT	7.3.4-300.fc45.x86_64	build	PASS	7.3.4-300.fc45.x86_64
+=== load 7.3.4-300.fc45.x86_64
+gc573                 192512  0
+v4l2_dv_timings        49152  1 gc573
+videobuf2_v4l2         45056  1 gc573
+snd_pcm               221184  1 gc573
+snd                   159744  5 snd_seq,snd_seq_device,snd_timer,gc573,snd_pcm
+videodev              450560  2 videobuf2_v4l2,gc573
+videobuf2_common      106496  2 videobuf2_v4l2,gc573
+RESULT	7.3.4-300.fc45.x86_64	load	PASS	init/exit (no card)
+=== dkms gc573/0.1
+Signing key: /var/lib/dkms/mok.key
+Public certificate (MOK): /var/lib/dkms/mok.pub
+
+Building module(s)... done.
+Signing module /var/lib/dkms/gc573/0.1/build/gc573.ko
+RESULT	7.3.4-300.fc45.x86_64	dkms	PASS	build
