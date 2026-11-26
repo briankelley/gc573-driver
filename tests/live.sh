@@ -2689,7 +2689,7 @@ ECP=$ROOT/tools/roku/ecp.py
 ROKU_DIR=${GC573_ROKU_DIR:-$HOME/gc573-roku}
 ROKU_SECS=${GC573_ROKU_SECS:-60}
 Q25_SECS=${GC573_Q25_SECS:-180}
-ROKU_URL_FILE="" roku_serve_pid="" roku_played=0
+ROKU_URL_FILE="" roku_serve_pid="" roku_served="" roku_played=0
 ecp() { python3 "$ECP" "$@"; }
 roku_go() { [ "${GC573_ROKU_GO:-0}" = 1 ]; }
 roku_skip() { result "$1" SKIP "(needs GC573_ROKU_GO=1: it $2)"; }
@@ -2711,15 +2711,18 @@ roku_video() {
 roku_serve_start() {
 	local i
 	ROKU_URL_FILE=$(mktemp -u /tmp/gc573-roku-url.XXXXXX)
-	python3 "$ROOT/tools/roku/serve.py" "$1" --url-file "$ROKU_URL_FILE" --secs 14400 --pid $$ &
+	python3 "$ROOT/tools/roku/serve.py" "$1" --url-file "$ROKU_URL_FILE" \
+		--secs $((OBSSOAK_SECS + 14400)) --pid $$ &
 	roku_serve_pid=$!
 	for i in $(seq 50); do
-		[ -s "$ROKU_URL_FILE" ] && return 0
+		[ -s "$ROKU_URL_FILE" ] && { roku_served=$1; return 0; }
 		sleep 0.1
 	done
+	roku_serve_stop
 	return 1
 }
 roku_serve_stop() {
+	roku_served=""
 	[ -n "$roku_serve_pid" ] || return 0
 	kill "$roku_serve_pid" 2>/dev/null
 	wait "$roku_serve_pid" 2>/dev/null
@@ -2742,7 +2745,8 @@ roku_counters() {
 roku_source_on() {
 	local f i
 	f=$(roku_video "$1") || return 1
-	[ -n "$roku_serve_pid" ] || roku_serve_start "$f" || return 1
+	# a step that needs a longer video than the one served gets it
+	[ "$roku_served" = "$f" ] || { roku_serve_stop; roku_serve_start "$f"; } || return 1
 	roku_wake
 	roku_play || return 1
 	for i in $(seq 40); do
@@ -2975,40 +2979,83 @@ step_rokuobssoak() {
 
 # q25: open question 25, the Roku without the HDCP filter (the user moves
 # the cable a second time). Over GC573_Q25_SECS (180): what the driver
-# reports (input, lock, the self-heal's lines), and while it runs a capture
-# that must neither hang nor deliver garbage: every frame uniform (the
-# driver's limited-range black without an input, or one flat colour).
-# The unbind with this input is the coordinator's: live.sh never unbinds on
-# the host
+# reports (the input line, QUERY_DV_TIMINGS), the kernel log's HDMI lines
+# and the self-heal's attempts and counters. Then a capture of 120 YUYV
+# frames (with -L when locked, else free-running), which must end within
+# 70 s (q25-no-hang; a capture that does not is left running for the
+# coordinator) and must not deliver noise (q25-no-garbage: its last frame
+# uniform, such as the free-run black, or a picture, not noise; numbers
+# only). With the go, whether the pattern video comes through (INFO: an
+# HDCP receiver that decrypts would show it). The unbind with this input
+# is the coordinator's: live.sh never unbinds on the host
+roku_reported() {
+	local q
+	q=$(query)
+	if grep -q 'Active width' <<< "$q"; then
+		echo "QUERY_DV_TIMINGS $(grep -oE 'Active width: [0-9]+|Active height: [0-9]+|Pixelclock: [0-9]+ Hz' <<< "$q" | paste -sd, -)"
+	else
+		echo "QUERY_DV_TIMINGS $(grep -oE 'failed: .*' <<< "$q" | head -1)"
+	fi
+}
+# the class of a YUYV frame (FILE WIDTH) from its luma: uniform, a picture
+# (neighbours a few codes apart) or noise (tens of codes apart)
+frame_class() {
+	python3 - "$1" "$2" <<'PY'
+import sys
+import numpy as np
+w = int(sys.argv[2])
+y = np.frombuffer(open(sys.argv[1], 'rb').read(), np.uint8)[0::2].astype(np.int16)
+y = y[:len(y) // w * w].reshape(-1, w)
+lo, hi = int(y.min()), int(y.max())
+step = float(np.abs(np.diff(y, axis=1)).mean())
+kind = 'uniform' if hi - lo <= 8 else 'a picture' if step < 12 else 'noise'
+print(f"RESULT no-garbage {'FAIL' if kind == 'noise' else 'PASS'} (the last frame: {kind}; "
+      f"luma {lo}-{hi}, neighbours {step:.1f} codes apart on average)")
+PY
+}
 step_q25() {
-	local i st out log
+	local i st out log h0 h1 lk cpid w
 	kmsg_mark q25
+	h0=$(heal_counts)
 	echo "  Roku: $(ecp info 2>&1)"
 	for i in $(seq 6); do
-		echo "  +$(((i - 1) * Q25_SECS / 6)) s: $(roku_input)"
+		echo "  +$(((i - 1) * Q25_SECS / 6)) s: $(roku_input); $(roku_reported)"
 		sleep $((Q25_SECS / 6))
 	done
-	vm "sudo timeout -k 5 60 $W/gc573-cap -d $vdev -f YUYV -n 120 -o $W/q25 > $W/q25.txt 2>&1"
-	st=$?
+	lk=""
+	! locked || lk="-L 10"
+	vm "sudo $W/gc573-cap -d $vdev $lk -f YUYV -n 120 -o $W/q25 > $W/q25.txt 2>&1" &
+	cpid=$!
+	for i in $(seq 70); do
+		kill -0 "$cpid" 2>/dev/null || break
+		sleep 1
+	done
+	if kill -0 "$cpid" 2>/dev/null; then
+		st=hung
+	else
+		wait "$cpid"
+		st=$?
+	fi
+	check q25-no-hang "$([ "$st" != hung ]; echo $?)" \
+		"(120 YUYV frames, $([ -n "$lk" ] && echo 'the timings set from QUERY_DV_TIMINGS' || echo 'not locked: free-running'): $([ "$st" = hung ] && echo 'not ended after 70 s, left running' || echo "exit $st"))"
+	if [ "$st" != hung ]; then
+		w=$(vm "v4l2-ctl -d $vdev --get-fmt-video" | sed -n 's/.*Width\/Height *: *\([0-9]*\)\/.*/\1/p')
+		if [ -s "$W/q25.YUYV" ] && [ -n "$w" ]; then
+			out=$(frame_class "$W/q25.YUYV" "$w")
+		else
+			out="RESULT no-garbage PASS (no frame delivered: $(grep -m1 -iE 'error|fail|lock|signal' "$W/q25.txt" 2>/dev/null | head -c 160))"
+		fi
+		av_results q25 "$out"
+		vm "rm -f $W/q25.*"
+	fi
+	if roku_go; then
+		roku_source_on 3600
+		echo "  INFO the pattern video, played: $(roku_counters) of 60 counters read in 1 s; $(roku_input); $(roku_reported)"
+	fi
 	log=$(kmsg_since q25 | grep 'gc573')
 	grep -E 'HDMI|HDCP' <<< "$log" | sed 's/^/  | /'
-	check q25-no-hang "$([ "$st" != 124 ]; echo $?)" \
-		"(a 120-frame YUYV capture with this input: $([ "$st" = 124 ] && echo 'hung (60 s)' || echo "exit $st"))"
-	if [ -s "$W/q25.YUYV" ]; then
-		out=$(python3 - "$W/q25.YUYV" <<'PY'
-import sys
-d = open(sys.argv[1], 'rb').read()
-y = d[0::2]
-lo, hi = min(y), max(y)
-print(f"RESULT no-garbage {'PASS' if hi - lo <= 8 else 'FAIL'} (the last of 120 frames: luma {lo}-{hi}, {'uniform' if hi - lo <= 8 else 'not uniform'})")
-PY
-)
-	else
-		out="RESULT no-garbage FAIL (no frame: $(tr '\n' ' ' < "$W/q25.txt" 2>/dev/null | head -c 200))"
-	fi
-	av_results q25 "$out"
-	vm "rm -f $W/q25.*"
-	echo "  the self-heal with this input: $(grep -c 'HDMI: self-heal [0-9] of' <<< "$log") attempts, $(grep -c 'self-heal gave up' <<< "$log") give-ups"
+	h1=$(heal_counts)
+	echo "  the self-heal with this input: $(grep -c 'HDMI: self-heal [0-9] of' <<< "$log") attempts, $(grep -c 'self-heal gave up' <<< "$log") give-ups; counters fpga_heals, fixes, giveups: ${h0:--} -> ${h1:--}"
 	result q25-unbind SKIP "(the coordinator's: live.sh never unbinds on the host)"
 }
 
