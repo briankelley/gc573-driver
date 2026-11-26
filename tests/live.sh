@@ -179,6 +179,8 @@
 #   rokumodes (any picture) EDID re-sets (720p only, another serial, the
 #             default): the Roku's mode after each hot-plug (INFO when it
 #             does not follow), the lock, 10 s of gc573-aud -V
+#   rokustart (any picture) streams started at a fresh 720p or 1080p lock:
+#             intervals, untouched bytes, band signatures, the ring
 #   rokuobsany  (any picture) OBS: screenshots, meters, a 60 s recording
 #             (deleted), the driver's stream, intervals and counters
 #   rokureboot  the Roku restarted (GC573_ROKU_REBOOT_KEYS: ECP has no
@@ -3575,6 +3577,87 @@ soak_samples() {
 		}' "$1"
 }
 
+# rokustart: streams started at a fresh lock (the 720p stream's phase step,
+# 20261126-183914). GC573_ROKU_TRIALS (6) times: the default EDID, the lock,
+# 5 s; then the 720p-only EDID and at once gc573-cap -L 10 (it starts at the
+# lock, as the loopback's change step restarts): 120 YUYV frames with
+# every buffer pattern-filled before its QBUF (-p: blocks the DMA did not
+# write), per-frame signatures of 18 bands top to bottom (-B), and the
+# driver's frame-interrupt ring read every 0.3 s. Then the same at 1080p
+# (the default EDID set again). Per stream: its frame intervals against the
+# median; for each one more than 10 % off, the phase of the frames around
+# it, their untouched bytes, which bands of the off frame match the frame
+# before (<), the frame after (>), both (=) or neither (x), and the ring of
+# that time. No Roku action but the EDID sets; numbers only
+roku_start_one() {	# TAG EDIDFILE
+	local rp out
+	roku_edid_set "$2"
+	( while :; do
+		vm "sudo cat $dbgdir/video" | awk '/^events/ { f = 1; next } f && $1 ~ /^[0-9]+$/'
+		sleep 0.3
+	done ) > "$W/start-ring.txt" 2> /dev/null &
+	rp=$!
+	vm "sudo $W/gc573-cap -d $vdev -L 10 -f YUYV -b 4 -n 120 -p -F -B > $W/start.txt 2>&1"
+	kill "$rp" 2> /dev/null
+	wait "$rp" 2> /dev/null
+	sort -u "$W/start-ring.txt" > "$W/start-ring.u"
+	# ring times are CLOCK_MONOTONIC ns, the frame lines' ts_ms the same in ms
+	out=$(awk -v tag="$1" 'FNR == NR { nr++; rt[nr] = $1 / 1e6; r[nr] = $0; next }
+		/^LOCK / { lk = $0 }
+		/^FRAME / { n++
+			for (i = 2; i <= NF; i++) { split($i, kv, "="); v[kv[1]] = kv[2] }
+			seq[n] = v["seq"]; ts[n] = v["ts_ms"]; un[n] = v["untouched"]; nb = split(v["bands"], b, ",")
+			for (k = 1; k <= nb; k++) bd[n, k] = b[k]
+			if (v["untouched"] > 0) nun++ }
+		END {
+			if (n < 3) { printf "RESULT %s FAIL (%d frames: %s)\n", tag, n, lk; exit }
+			for (i = 2; i <= n; i++) { d[i] = ts[i] - ts[i - 1]; x[i - 1] = d[i] }
+			m = n - 1
+			for (i = 2; i <= m; i++) { t = x[i]; for (j = i - 1; j >= 1 && x[j] > t; j--) x[j + 1] = x[j]; x[j + 1] = t }
+			med = x[int((m + 1) / 2)]
+			for (i = 2; i <= n; i++) if (d[i] > med * 1.1 || d[i] < med * 0.9) {
+				off++
+				printf "  %s interval off: frame %d of %d (%.3f s in), seq %d -> %d, %.3f ms (median %.3f)\n", tag, i, n, (ts[i] - ts[1]) / 1e3, seq[i - 1], seq[i], d[i], med
+				ph = ""
+				for (k = i - 2; k <= i + 1; k++) ph = ph (k >= 1 && k <= n ? sprintf(" %+.3f", ts[k] - ts[1] - (k - 1) * med) : " -")
+				printf "    phase against the median cadence, frames %d to %d:%s ms; untouched 32-byte blocks%s\n", i - 2, i + 1, ph,
+					sprintf(" %s %s %s %s", un[i - 2], un[i - 1], un[i], un[i + 1])
+				bs = ""
+				for (k = 1; k <= nb; k++) {
+					p = (i > 1 && bd[i, k] == bd[i - 1, k]); q = (i < n && bd[i, k] == bd[i + 1, k])
+					bs = bs (p && q ? "=" : p ? "<" : q ? ">" : "x")
+				}
+				printf "    frame %d by band, top to bottom (< as the frame before, > as the one after, = both, x neither): %s\n", i, bs
+				for (j = 1; j <= nr; j++) if (rt[j] >= ts[i > 3 ? i - 3 : 1] - 1 && rt[j] <= ts[i + 2 <= n ? i + 2 : n] + 1) {
+					split(r[j], e, " ")
+					printf "    ring: %+.3f ms from frame %d, status %s ctrl %s done %s armed %s\n", rt[j] - ts[i - 1], i - 1, e[2], e[3], e[4], e[5]
+				}
+			}
+			printf "RESULT %s %s (%d frames, interval median %.3f ms, %d more than 10 %% off; %d frames with 32-byte blocks the DMA did not write; %s)\n",
+				tag, off || nun ? "FAIL" : "PASS", n, med, off, nun, lk }' "$W/start-ring.u" "$W/start.txt")
+	av_results roku-start "$(sed 's/^RESULT /RESULT /' <<< "$out")"
+	grep -E '^(INFO start_to_first|RESULT capture)' "$W/start.txt" | sed 's/ ch0_bytes.*//; s/^/  /'
+	vm "rm -f $W/start.txt $W/start-ring.txt $W/start-ring.u"
+}
+step_rokustart() {
+	local e i
+	e=$W/roku-edid
+	time_to_lock 30 > /dev/null || { result roku-start SKIP "(no input: $(roku_card))"; return; }
+	roku_edids "$e" || { result roku-start FAIL "(G_EDID or edid-variant.py)"; return; }
+	for i in $(seq "${GC573_ROKU_TRIALS:-6}"); do
+		roku_edid_set "$e/default.bin"
+		time_to_lock 60 > /dev/null
+		sleep 5
+		roku_start_one "720p-$i" "$e/720p.bin"
+		sleep 5
+		roku_start_one "1080p-$i" "$e/default.bin"
+		sleep 2
+	done
+	roku_edid_set "$e/default.bin"
+	time_to_lock 60 > /dev/null
+	vm "rm -rf $e"
+}
+
 # rokuobssoak: obssoak with the Roku: OBS records GC573_OBSSOAK_SECS while
 # the Roku plays the pattern video, a change every GC573_OBSSOAK_EVERY s
 # from GC573_OBSSOAK_ROTATION (default: the Roku's sleep, EDID re-sets,
@@ -3703,7 +3786,7 @@ fi
 all="bringup lock relock fpgawait fpgaheal capture modes change blip loss colour colorimetry audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
 [ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change blip loss audio exact avsync audioloss compliance"
-ROKU_STEPS="rokuwhich rokuwhichkey rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes rokuobsany rokureboot rokuobssoak rokusoakany q25 q25back"
+ROKU_STEPS="rokuwhich rokuwhichkey rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes rokustart rokuobsany rokureboot rokuobssoak rokusoakany q25 q25back"
 [ "$SOURCE" != roku ] || { all="rokulock rokucompliance rokusleep rokumodes rokuobsany"; LOCAL_STEPS=$ROKU_STEPS; }
 [ $# -gt 0 ] || set -- $all
 for s in "$@"; do

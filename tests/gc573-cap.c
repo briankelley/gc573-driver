@@ -48,7 +48,12 @@
  *   -r       with -X: afterwards wait for a lock (-L, default 15 s), set
  *            the new timings and capture -n frames (restart)
  *   -F       capture mode: print one line per frame (sequence, timestamp,
- *            signature over every word), for frame-repeat analysis
+ *            signature over every word), for frame-repeat analysis; with
+ *            -p also its untouched bytes (untouched=N: 32-byte blocks the
+ *            DMA did not write)
+ *   -B       with -F: also 18 signatures of the first plane in equal parts,
+ *            top to bottom (bands=H,...): a frame whose top matches the
+ *            frame before and bottom the frame after is a seam
  *   -M FILE  with -F: after each DQBUF, before hashing, read the ch0 DMA
  *            block (0x300-0x3fc, CH_STATUS first) and the VIP block
  *            (0x1000-0x10fc) from BAR0 through FILE (the device's sysfs
@@ -490,7 +495,25 @@ static void run_init(struct run *r)
 		die("calloc");
 }
 
-static int frame_log;
+static int frame_log, frame_bands;
+
+#define NBANDS 18
+
+/* FNV-1a over each of NBANDS equal parts of a plane, top to bottom */
+static void band_sigs(const struct buf *b, size_t off, size_t len,
+		      uint32_t *out)
+{
+	size_t nw = len / 4, w0 = off / 4, i;
+	unsigned int k;
+
+	for (k = 0; k < NBANDS; k++) {
+		uint32_t h = 2166136261u;
+
+		for (i = nw * k / NBANDS; i < nw * (k + 1) / NBANDS; i++)
+			h = (h ^ b->p[w0 + i]) * 16777619u;
+		out[k] = h;
+	}
+}
 static volatile uint32_t *bar;	/* -M */
 
 static void bar_open(const char *path)
@@ -528,6 +551,7 @@ static void check_frame(struct run *r, const struct v4l2_buffer *b,
 	size_t off[3], len[3];
 	unsigned int np = planes(off, len), c;
 	uint64_t sig = 0;
+	size_t utot = 0;
 	int bad = 0;
 
 	if (bar && frame_log)
@@ -554,6 +578,7 @@ static void check_frame(struct run *r, const struct v4l2_buffer *b,
 		if (pattern) {
 			size_t u = untouched(&bufs[b->index], off[c], len[c]);
 
+			utot += u;
 			if (u > ps->untouched_max)
 				ps->untouched_max = u;
 			if (u) {
@@ -568,9 +593,20 @@ static void check_frame(struct run *r, const struct v4l2_buffer *b,
 	if (r->nsigs < MAX_FRAMES)
 		r->sigs[r->nsigs++] = sig;
 	r->frames++;
-	if (frame_log)
-		printf("FRAME seq=%u ts_ms=%.3f sig=%016llx\n", b->sequence,
+	if (frame_log) {
+		printf("FRAME seq=%u ts_ms=%.3f sig=%016llx", b->sequence,
 		       ts_ms(b), (unsigned long long)sig);
+		if (pattern)
+			printf(" untouched=%zu", utot);
+		if (frame_bands) {
+			uint32_t bs[NBANDS];
+
+			band_sigs(&bufs[b->index], off[0], len[0], bs);
+			for (c = 0; c < NBANDS; c++)
+				printf("%s%08x", c ? "," : " bands=", bs[c]);
+		}
+		printf("\n");
+	}
 }
 
 static unsigned long distinct(uint64_t *v, unsigned long n)
@@ -1113,7 +1149,7 @@ int main(int argc, char **argv)
 	uint32_t list[NFMTS];
 	int opt, pattern = 0, under = 0, restart = 0;
 
-	while ((opt = getopt(argc, argv, "d:f:b:n:pT:t:L:o:c:uw:R:X:A:H:rFD:M:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:f:b:n:pT:t:L:o:c:uw:R:X:A:H:rFBD:M:")) != -1) {
 		switch (opt) {
 		case 'd': dev = optarg; break;
 		case 'f': fl = optarg; break;
@@ -1133,6 +1169,7 @@ int main(int argc, char **argv)
 		case 'H': hold_secs = atof(optarg); break;
 		case 'r': restart = 1; break;
 		case 'F': frame_log = 1; break;
+		case 'B': frame_bands = 1; break;
 		case 'D': dbgfile = optarg; break;
 		case 'M': bar_open(optarg); break;
 		default:
