@@ -67,7 +67,8 @@ While an application or PipeWire holds the card, the module stays loaded until t
   - With buffering off, OBS shows each frame as it arrives, and the A/V offset stays put.
 
 **Audio**
-- Add an *Audio Capture Device (ALSA)* source. Pick the GC573 device, or enter the custom PCM `hw:CARD=GC573,DEV=0`, at 48000 Hz. This source reads the card directly.
+- Add an *Audio Capture Device (ALSA)* source at 48000 Hz, with the custom PCM `hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0` (`ls -l /dev/snd/by-path/` shows yours, the link to the GC573's `controlC` node). This source reads the card directly.
+  - `hw:CARD=GC573,DEV=0`, or picking the GC573 in the list, works too, but alsa-lib finds a card by its name by opening the control device of every sound card before it, a webcam's microphone included. By its path, alsa-lib opens the GC573 alone.
 - With PipeWire, an *Audio Input Capture (PulseAudio)* source on *GC573 HDMI capture Stereo* works too.
 - The card has one capture stream. While PipeWire records from the card, the ALSA source cannot open it, and the other way round.
 
@@ -85,7 +86,7 @@ These were measured with the ALSA source and a test source on the HDMI input. Th
 **Device names that stay put**
 - V4L2 source: set the device to `/dev/v4l/by-path/pci-<address>-video-index0` (`ls -l /dev/v4l/by-path/` shows yours) rather than `/dev/videoN`, whose number depends on the other video devices present. OBS's list shows only `/dev/videoN` names, but OBS accepts the path when it is set through obs-websocket (`SetInputSettings`, `device_id`) or in the scene collection file.
 - With that path, OBS does not reconnect by itself after the driver is reloaded, because its reconnect looks for udev's `/dev/videoN` name. Reopen the source as described below.
-- ALSA source: use the custom PCM `hw:CARD=GC573,DEV=0`, not a card number.
+- ALSA source: use the custom PCM `hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0`, not a card number, which can change from one boot to the next.
 
 **When the source changes**
 

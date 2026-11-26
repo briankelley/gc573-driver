@@ -7,7 +7,9 @@ Run in the VM, as the desktop user, with OBS running (tests/live.sh starts it).
       1920x1080 at 60 fps canvas and output; no Desktop Audio or Mic/Aux; a
       V4L2 source "GC573 video" (VIDEODEV, YUYV) and an ALSA source "GC573
       audio" (PCM, 48 kHz) in the current scene. Stable names: VIDEODEV
-      /dev/v4l/by-path/pci-<device>-video-index0, PCM hw:CARD=GC573,DEV=0
+      /dev/v4l/by-path/pci-<device>-video-index0, PCM
+      hw:CARD=/dev/snd/by-path/pci-<device>,DEV=0 (never by the card's id:
+      alsa-lib would open the control node of every card before it)
       (OBS takes the path as it is; it lists only /dev/videoN, and its
       reconnect after a driver reload matches udev's /dev/videoN name, so
       with the stable name the source is set up again by a settings

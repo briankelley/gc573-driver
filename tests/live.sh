@@ -237,15 +237,25 @@ put() {
 		scp -q -o ControlPath="$SSHCTL" "${@:1:$#-1}" "$VM:${!#}"
 	fi
 }
-vdev="" dbgdir=""
+vdev="" dbgdir="" pcm=hw:none
 # the card's video node by its by-path name (the host's rules: every tool
-# gets -d with it, never a bare /dev/videoN), checked against sysfs
+# gets -d with it, never a bare /dev/videoN), checked against sysfs; the
+# PCM by its control node's by-path name, from the same PCI device. Never
+# by the card's id: alsa-lib finds hw:CARD=GC573 by opening the control
+# node of every card before it to compare ids (snd_card_get_index), a
+# webcam's among them (the breach in
+# tests/logs/20261126-031656_6.8.0-151-generic_live-events.log). A path
+# (or an index) it opens alone.
 find_vdev() {
-	local bdf node
+	local bdf node card
 	bdf=$(vm "basename \$(readlink -f /sys/bus/pci/drivers/gc573/0000:*)" 2>/dev/null)
 	node=$(vm "ls /sys/bus/pci/drivers/gc573/$bdf/video4linux/ 2>/dev/null" | head -1)
+	card=$(vm "ls -d /sys/bus/pci/drivers/gc573/$bdf/sound/card[0-9]* 2>/dev/null" | head -1)
 	vdev=/dev/v4l/by-path/pci-$bdf-video-index0
 	dbgdir=/sys/kernel/debug/gc573-$bdf
+	pcm=hw:none
+	[ -n "$card" ] && [ "$(vm "readlink -f /dev/snd/by-path/pci-$bdf")" = "/dev/snd/controlC${card##*/card}" ] &&
+		pcm=hw:CARD=/dev/snd/by-path/pci-$bdf,DEV=0
 	[ -n "$node" ] && [ "$(vm "readlink -f $vdev")" = "/dev/$node" ]
 }
 cap() { vm "sudo $W/gc573-cap -d $vdev -D $dbgdir/video $*"; }
@@ -254,7 +264,6 @@ locked() { vm "v4l2-ctl -d $vdev --query-dv-timings >/dev/null 2>&1"; }
 hdmi_dbg() { vm "sudo cat $dbgdir/hdmi"; }
 aud_dbg() { vm "sudo cat $dbgdir/audio"; }
 aud() { vm "sudo $W/gc573-aud -D $pcm $*"; }
-pcm=hw:CARD=GC573,DEV=0
 
 connected() { grep -q "^$OUT connected" <<< "$(xrandr --current)"; }
 wait_connected() {	# seconds
@@ -986,7 +995,7 @@ obsc() { vm "cd $W && GC573_OBS_BUFFERING=$OBS_BUFFERING python3 obs-check.py $*
 
 # OBS running, with the card's V4L2 and ALSA sources in its scene
 # OBS's sources by stable names: the video device by its PCI path, the
-# ALSA PCM by the card's id
+# ALSA PCM by its control node's PCI path (find_vdev: never by the card's id)
 # obs_up [FORMAT]: the recording format (tests/obs-run.sh), default hybrid_mp4
 obs_up() {
 	if [ "$LOCAL" = 1 ]; then

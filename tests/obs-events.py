@@ -118,8 +118,11 @@ Changes (host side, on the loopback output; the VM side through ssh):
   reopen-video OBS's V4L2 source reopened (reopen below), the input and the
                test source left as they are
   reopen-audio OBS's ALSA source reopened: custom_pcm (device_id
-               __custom__) between hw:CARD=GC573,DEV=0 and hw:GC573,0, two
-               names of the same PCM, so OBS closes and opens the device;
+               __custom__) between two names of the same PCM, with and
+               without ",DEV=0" (hw:CARD=/dev/snd/by-path/pci-BDF,DEV=0),
+               so OBS closes and opens the device. A name by the card's id
+               (hw:CARD=GC573) is refused: alsa-lib would open the control
+               node of every card before it (snd_card_get_index);
                its settings are put back after a soak. With only these
                three in a soak's rotation and --keep-source, one source
                session runs from the driver's first capture to its last,
@@ -322,12 +325,33 @@ class Source:
         self.obs.call('SetInputSettings', inputName=VSRC, inputSettings={'color_range': cr})
 
 
+def scan_free(pcm):
+    """True if alsa-lib opens PCM's card alone: hw:N,..., hw:CARD=N or
+    hw:CARD=/dev/snd/...; a card id (hw:CARD=GC573, hw:GC573,0) is looked
+    up by opening the control node of every card before it
+    (snd_card_get_index), a webcam's among them"""
+    m = re.match(r'^(?:plug)?hw:(?:CARD=)?([^,]+)', pcm or '')
+    return bool(m) and (m.group(1).isdigit() or m.group(1).startswith('/'))
+
+
+def other_name(pcm):
+    """the same PCM by another name: hw:N,M as hw:CARD=N,DEV=M, else with
+    or without ',DEV=0'"""
+    m = re.match(r'^hw:(\d+),(\d+)$', pcm)
+    if m:
+        return f'hw:CARD={m.group(1)},DEV={m.group(2)}'
+    return pcm[:-len(',DEV=0')] if pcm.endswith(',DEV=0') else pcm + ',DEV=0'
+
+
 def reopen_audio(obs):
     """OBS closes and opens its ALSA device: custom_pcm between two names
     of the same PCM (device_id __custom__)"""
     s = obs.call('GetInputSettings', inputName=ASRC)['inputSettings']
     cur = s.get('custom_pcm') if s.get('device_id') == '__custom__' else s.get('device_id')
-    new = PCM_ALT if cur == PCM else PCM
+    if not scan_free(cur):
+        raise RuntimeError(f'the ALSA source names its PCM {cur!r}: not reopened (a card id makes '
+                           f'alsa-lib open every card before it; use hw:CARD=/dev/snd/by-path/pci-BDF,DEV=0)')
+    new = other_name(cur)
     ev(f'obs audio reopen: device_id __custom__, custom_pcm {new} (was {cur})')
     obs.call('SetInputSettings', inputName=ASRC, inputSettings={'device_id': '__custom__', 'custom_pcm': new})
     return f'custom_pcm {cur} -> {new}'
@@ -858,8 +882,6 @@ class Runner:
 ORDER = ['restart', 'sleep', 'rate-59.94', 'rate-60', 'res-720p', 'res-1080p',
          'colour-rgb-limited', 'colour-ycbcr444', 'colour-ycbcr422', 'colour-rgb-full',
          'edid-same', 'edid-new', 'edid-default', 'idle', 'reopen-video', 'reopen-audio']
-PCM = 'hw:CARD=GC573,DEV=0'
-PCM_ALT = 'hw:GC573,0'	# the same PCM by another name
 
 
 def summary(results, out=print, recoveries=None, bridge=None, windows=(), t_start=None):

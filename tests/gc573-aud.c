@@ -7,7 +7,11 @@
  * gc573-aud [-D PCM] [-t SECS] [-p FRAMES] [-b FRAMES] [-o FILE] [-v]
  *           [-M FILE] [-V DEV [-P]] [-x SECS] [-s]
  *
- *   -D PCM     ALSA PCM (default hw:CARD=GC573,DEV=0)
+ *   -D PCM     ALSA PCM (default hw:CARD=/dev/snd/by-path/pci-BDF,DEV=0 for
+ *              the device gc573 has, from sysfs). Never hw:CARD=GC573:
+ *              alsa-lib finds a card by its id by opening the control node
+ *              of every card before it (snd_card_get_index), a webcam's
+ *              among them; a path or an index it opens alone
  *   -t SECS    capture time (default 5)
  *   -p FRAMES  period size (default 480, one hardware period: every
  *              period then updates the timestamp), -b buffer (default 9600)
@@ -35,6 +39,7 @@
  * 0 = ran, 1 = a read failed, 2 = usage or setup error.
  */
 #include <alsa/asoundlib.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -231,6 +236,28 @@ static int bar_open(const char *path)
 	return 0;
 }
 
+/* hw:CARD=/dev/snd/by-path/pci-BDF,DEV=0 for the first device bound to
+ * gc573 (sysfs only: no device node is opened to find it) */
+static const char *default_pcm(void)
+{
+	static char name[300];
+	struct dirent *d;
+	DIR *dir = opendir("/sys/bus/pci/drivers/gc573");
+
+	if (!dir)
+		return NULL;
+	while ((d = readdir(dir))) {
+		if (strncmp(d->d_name, "0000:", 5) == 0) {
+			snprintf(name, sizeof(name),
+				 "hw:CARD=/dev/snd/by-path/pci-%s,DEV=0", d->d_name);
+			closedir(dir);
+			return name;
+		}
+	}
+	closedir(dir);
+	return NULL;
+}
+
 static snd_pcm_t *pcm_open(const char *dev, snd_pcm_uframes_t period,
 			   snd_pcm_uframes_t buffer)
 {
@@ -284,7 +311,7 @@ static snd_pcm_t *pcm_open(const char *dev, snd_pcm_uframes_t period,
 
 int main(int argc, char **argv)
 {
-	const char *dev = "hw:CARD=GC573,DEV=0", *out = NULL, *vdev = NULL;
+	const char *dev = NULL, *out = NULL, *vdev = NULL;
 	snd_pcm_uframes_t period = 480, buffer = 9600;
 	double secs = 5, xrun_gap = -1, last_xrun = -1e9;
 	unsigned long long read_total = 0, nxrun = 0, nrestart = 0;
@@ -319,6 +346,12 @@ int main(int argc, char **argv)
 			fprintf(stderr, "usage: see the comment in gc573-aud.c\n");
 			return 2;
 		}
+	}
+	if (!dev)
+		dev = default_pcm();
+	if (!dev) {
+		fprintf(stderr, "no device bound to gc573: give -D PCM\n");
+		return 2;
 	}
 	if (out) {
 		of = fopen(out, "w");

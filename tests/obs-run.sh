@@ -46,6 +46,23 @@ if [ "${2:-}" = --keep-config ]; then
 			"$c/basic/profiles/gc573/basic.ini" 2>/dev/null)
 		[ "${have:-hybrid_mp4}" = "$fmt" ] ||
 			{ echo "profile gc573 records in ${have:-?}, not $fmt: not changed here"; exit 1; }
+		# The ALSA source must name the card so that alsa-lib opens it
+		# alone: by a path or an index. By the card's id (hw:CARD=GC573)
+		# alsa-lib opens the control node of every card before it to compare
+		# ids (snd_card_get_index), a webcam's among them, and this OBS is
+		# ours (tools/testsrc/camwatch.py)
+		bad=$(python3 - "$c/basic/scenes/gc573.json" <<'EOF'
+import json, re, sys
+for s in json.load(open(sys.argv[1])).get('sources', []):
+    if s.get('id') == 'alsa_input_capture':
+        st = s.get('settings', {})
+        pcm = st.get('custom_pcm') if st.get('device_id') == '__custom__' else st.get('device_id')
+        m = re.match(r'^(?:plug)?hw:(?:CARD=)?([^,]+)', pcm or '')
+        if not (m and (m.group(1).isdigit() or m.group(1).startswith('/'))):
+            print(f'"{s.get("name")}" on {pcm}')
+EOF
+)
+		[ -z "$bad" ] || { echo "scene collection gc573: ALSA source $bad: by the card's id alsa-lib opens the control node of every card before it; set hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0. Not started"; exit 1; }
 		DISPLAY=${DISPLAY:-:0} setsid obs --minimize-to-tray --disable-shutdown-check \
 			--disable-missing-files-check --profile gc573 --collection gc573 \
 			> "${XDG_RUNTIME_DIR:-/tmp}/gc573-obs-stdout.txt" 2>&1 < /dev/null &
