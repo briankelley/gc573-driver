@@ -8,10 +8,15 @@
 # - the override removed for good (install.sh --permanent): put back as it
 #   was. Asks first on a terminal; --yes skips that; without a terminal and
 #   without --yes it only prints the command.
-# Then gc573 is unloaded (if nothing has the card open), every gc573
+# First gc573 lets go of the card and is unloaded. PipeWire, which keeps
+# the card's ALSA control node open on a desktop, lets go by itself; any
+# other program with the card open (OBS, a capture) is named and nothing
+# is changed, unless --yes: then it loses the card. Then every gc573
 # version is removed from DKMS, with its sources in /usr/src, and the
 # modprobe.d entry install.sh may have left is removed.
 # Usage: sudo tools/uninstall.sh [--yes]
+#   --yes: the override is put back without a question, and programs that
+#   have the card open lose it
 set -euo pipefail
 
 NAME=gc573
@@ -33,16 +38,26 @@ done
 
 [ "$(id -u)" = 0 ] || exec sudo -- "$0" "$@"
 command -v dkms > /dev/null || die "dkms is not installed: nothing to remove with it"
+# shellcheck source=tools/card-release.sh
+. "$(cd "$(dirname "$0")" && pwd)/card-release.sh"
 
-unload() {
-	grep -q "^$NAME " /proc/modules || return 0
-	modprobe -r "$NAME" 2>/dev/null
-}
 bound() { if [ -L "/sys/bus/pci/devices/$1/driver" ]; then basename "$(readlink "/sys/bus/pci/devices/$1/driver")"; fi; }
 
+# gc573 lets go of the card (PipeWire by itself; another program only with
+# --yes), then unloads. inuse: it could not be unloaded yet (a program
+# with --yes did not let go): the card is back with it, and the binding
+# below takes it away again
 inuse=0
 if grep -q "^$NAME " /proc/modules; then
-	if unload; then
+	if ls -d /sys/bus/pci/drivers/"$NAME"/0000:* > /dev/null 2>&1; then
+		rc=0
+		gc573_release "$yes" || rc=$?
+		case $rc in
+		0) say "unloaded $NAME" ;;
+		1) die "nothing was changed" ;;
+		*) inuse=1 ;;
+		esac
+	elif gc573_unload_wait; then
 		say "unloaded $NAME"
 	else
 		inuse=1
@@ -67,7 +82,7 @@ if [ -f "$STATE" ]; then
 		elif [ -z "$saved" ] || ! command -v driverctl > /dev/null; then
 			say "warning: the saved driverctl override for $bdf is gone, so there is nothing to load again; the card stays as it is until a reboot"
 		else
-			[ "$inuse" = 0 ] || say "$NAME is in use: the applications using the card (PipeWire too) lose it now"
+			[ "$inuse" = 0 ] || say "$NAME is still in use: what has the card open loses it now"
 			# judged by the result: driverctl exits 1 when the driver
 			# cannot take the card at once (vfio-pci without an IOMMU)
 			driverctl load-override "$bdf" > /dev/null 2>&1 || true
@@ -93,7 +108,7 @@ if [ -f "$STATE" ]; then
 		fi
 		case $ans in
 		y|Y|yes|YES)
-			[ "$inuse" = 0 ] || say "$NAME is in use: the applications using the card (PipeWire too) lose it now"
+			[ "$inuse" = 0 ] || say "$NAME is still in use: what has the card open loses it now"
 			# --noprobe: without it driverctl does not save the override
 			# when the driver cannot take the card at once; probe after
 			if command -v driverctl > /dev/null &&
@@ -110,12 +125,13 @@ if [ -f "$STATE" ]; then
 		esac ;;
 	esac
 fi
-# without the card any more, gc573 can go now
+# without the card any more, gc573 can go now, once what used the card
+# has let go (up to 5 s; PipeWire needs about 0.2 s)
 if [ "$inuse" = 1 ]; then
-	if unload; then
+	if gc573_unload_wait; then
 		say "unloaded $NAME"
 	else
-		say "warning: $NAME is in use (close the applications using the card; PipeWire holds it too); it stays loaded until the next reboot"
+		say "warning: $NAME is still in use; it stays loaded until the next reboot (its files are removed below)"
 	fi
 fi
 

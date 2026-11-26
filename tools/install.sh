@@ -26,10 +26,20 @@
 #   --no-bind    install only and leave the card alone.
 # Without a terminal and without one of these, the card is left alone. A
 # virtual machine that is using the card stops the script before it
-# touches the card. Other ways of reserving the card (vfio-pci.ids on the
-# kernel command line or in modprobe.d) are reported, not changed.
+# touches the card.
+#
+# An update while an older gc573 has the card takes the card from it
+# (unbind), unloads it and loads the new one. PipeWire, which keeps the
+# card's ALSA control node open on a desktop, lets go of it by itself.
+# Any other program with the card open (OBS, a capture) would lose the
+# card: the script names it and leaves the card alone, unless --yes.
+#
+# Other ways of reserving the card (vfio-pci.ids on the kernel command
+# line or in modprobe.d) are reported, not changed.
 #
 # Usage: sudo tools/install.sh [--this-boot | --permanent | --no-bind] [--yes]
+#   --yes: no question for --permanent, and programs that have the card
+#   open lose it at an update
 # Undo:  sudo tools/uninstall.sh [--yes]
 set -euo pipefail
 
@@ -63,6 +73,8 @@ tty=0
 [ "$(id -u)" = 0 ] || exec sudo -- "$0" "$@"
 
 root=$(cd "$(dirname "$0")/.." && pwd)
+# shellcheck source=tools/card-release.sh
+. "$root/tools/card-release.sh"
 for f in dkms.conf Makefile Kbuild; do
 	[ -f "$root/$f" ] || die "$root/$f is missing: run the script from a complete source tree"
 done
@@ -230,7 +242,7 @@ noload_off() { rm -f "$NOLOAD"; }
 load_module() {
 	local out key
 	if [ -d "/sys/module/$NAME" ] && [ "$(bound)" != "$NAME" ]; then
-		modprobe -r "$NAME" 2>/dev/null ||
+		gc573_unload_wait ||
 			say "warning: an older $NAME is loaded and cannot be unloaded; it is the one that takes the card until a reboot"
 	fi
 	if ! out=$(modprobe "$NAME" 2>&1); then
@@ -292,10 +304,11 @@ if [ -n "$persistent" ] && [ "$persistent" != "$NAME" ]; then
 		noload_on "a driverctl override keeps the card for $persistent"
 		record this-boot
 		# an older gc573 with the card already (an earlier --this-boot):
-		# the new one takes over if that one is not in use
-		if [ "$drv" = "$NAME" ] && ! modprobe -r "$NAME" 2>/dev/null; then
-			say "an older $NAME has the card and is in use (by an application, or by PipeWire for its audio). Close what uses it and run this again, or reboot (the card goes back to $persistent) and run this again"
-			exit 0
+		# it lets go of the card (PipeWire by itself; another program only
+		# with --yes) and the new one takes over
+		if [ "$drv" = "$NAME" ] && ! gc573_release "$yes"; then
+			say "the older $NAME keeps the card. Run this again once the card is free, or reboot (the card goes back to $persistent) and run this again"
+			exit 1
 		fi
 		load_module || exit 1
 		# --nosave: driver_override for this boot; the saved override is
@@ -351,14 +364,15 @@ elif [ -n "$mode" ]; then
 	say "note: no driverctl override holds the card, so --$mode changes nothing: installing as usual"
 fi
 
-# bind: no override (any more). Reload an older gc573 if it is not in use
+# bind: no override (any more). An older gc573 with the card lets go of
+# it (PipeWire by itself; another program only with --yes) and is reloaded
 if [ "$drv" = "$NAME" ]; then
-	if modprobe -r "$NAME" 2>/dev/null; then
+	if gc573_release "$yes"; then
 		say "reloading $NAME"
 	else
-		say "an older $NAME is loaded and in use: the new one takes over after a reboot (or close the applications using the card and run: sudo modprobe -r $NAME && sudo modprobe $NAME)"
+		say "the older $NAME keeps the card: the new one takes over after a reboot, or when this runs again with the card free"
 		noload_off
-		exit 0
+		exit 1
 	fi
 elif [ -n "$drv" ]; then
 	say "warning: the card is bound to $drv, not $NAME. Unbind it (echo $bdf > /sys/bus/pci/drivers/$drv/unbind as root) or remove that driver, then: sudo modprobe $NAME"
