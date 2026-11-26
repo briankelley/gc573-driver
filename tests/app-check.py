@@ -16,7 +16,9 @@ RESULT lines (PASS/FAIL/SKIP):
   frames    frame timestamps against the counter of avsync.sh --pattern:
             no timestamp gap over 1.5 frame periods (the source's, --fps),
             none under half a period, and every counter step 1 where the
-            timestamps are regular. A counter step of 0 or 2 at a regular
+            timestamps are regular. Timestamps kept in steps (GStreamer
+            with alsasrc: the audio clock's 10 ms) are judged within one
+            step. A counter step of 0 or 2 at a regular
             interval is the source's (its player's pacing: tests/logs/
             20261125T2115Z-testsrc-pacing.log) and only counted; a gap is
             a loss in the application or the driver, and fails
@@ -154,6 +156,25 @@ def channels(x, onsets):
     return fl, fr, bad, xtalk
 
 
+def ts_step(ts, period):
+    """The step the file keeps its frame timestamps in, or 0. GStreamer
+    with alsasrc stamps video by the audio clock, which moves in 10 ms
+    steps: at 60 Hz the intervals are 10 and 20 ms, a few frames 1-2 ms
+    off the grid. A step is taken when 90 % of the timestamps lie within a
+    quarter step of its grid. Precise timestamps do not, unless the frame
+    period is a whole number of steps (50 Hz on a 20 ms grid): such a step
+    is not looked for, since the grid cannot be told from the frames."""
+    rel = ts - ts[0]
+    for q in (0.020, 0.010, 0.005):
+        k = period / q
+        if abs(k - round(k)) < 0.05:
+            continue
+        off = np.abs(rel / q - np.round(rel / q)) * q
+        if np.mean(off <= q / 4) >= 0.9:
+            return q
+    return 0.0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('file')
@@ -194,6 +215,7 @@ def main():
     # 20 ms at 60 Hz, median 20)
     period = 1 / a.fps
     med = float(np.median(np.diff(ts))) if have_ts else float('nan')
+    q = ts_step(ts, period) if have_ts else 0.0
 
     if a.change is not None:
         rel = ts - t0 if have_ts else np.arange(n) / 60
@@ -218,15 +240,16 @@ def main():
               f'{gap:.2f} s; from {settle:.1f} s: {prog}', flush=True)
         return 0
 
-    # frames: timestamp gaps, duplicates, and the counter at regular intervals
+    # frames: timestamp gaps, duplicates, and the counter at regular
+    # intervals; timestamps kept in steps of q judged within one step
     gaps = dups = src0 = src2 = other = unread = 0
     if have_ts:
         for i in range(1, n):
             d = ts[i] - ts[i - 1]
-            if d > 1.5 * period:
+            if d > 1.5 * period + q:
                 gaps += 1
                 continue
-            if d < 0.5 * period:
+            if d < 0.5 * period - q:
                 dups += 1
                 continue
             if c[i] is None or c[i - 1] is None:
@@ -240,8 +263,9 @@ def main():
             elif s != 1:
                 other += 1
         st = 'PASS' if gaps == 0 and dups == 0 and other == 0 else 'FAIL'
+        step = f', its timestamps in {q * 1e3:.0f} ms steps: judged within one' if q else ''
         result('frames', st, f'{n} frames, period {period * 1e3:.3f} ms (the file\'s median interval '
-               f'{med * 1e3:.3f}); {gaps} timestamp gaps over '
+               f'{med * 1e3:.3f}{step}); {gaps} timestamp gaps over '
                f'1.5 periods, {dups} under half; counter steps at regular intervals: {other} other '
                f'than 0, 1, 2; the source showed {src0} frames twice and skipped {src2}; '
                f'{unread} unreadable')
