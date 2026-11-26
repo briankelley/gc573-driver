@@ -28,11 +28,12 @@ the screenshot after it must be good too.
       bursts (a peak over -30 dBFS on both channels, then silence below
       -60 dBFS) and their spacing
   obs-events.py [--host H] events [--reps N] [--only NAME,...] [--record]
+                [--no-bridge]
       each source change in turn, N times (default 2); one EVENT line each
       and a RESULT line per kind (below). --record: OBS records across the
       changes (in the format OBS was started with: tests/obs-run.sh)
   obs-events.py [--host H] soak SECS [--every S] [--shot S] [--rotation A,B,..]
-                [--keep-source] [--no-restore] [--rec-dir DIR]
+                [--keep-source] [--no-restore] [--rec-dir DIR] [--no-bridge]
       the event soak: a recording across SECS seconds, a screenshot every
       --shot seconds (default 2), and every --every seconds (default 180)
       the next change from a rotation (default: of all kinds; --rotation
@@ -41,7 +42,8 @@ the screenshot after it must be good too.
       <file> (the recording, where OBS runs). No change is ever skipped:
       if the picture is not good before one, it is recovered first, and
       the change runs anyway. Between changes a watchdog recovers it after
-      WATCHDOG seconds without a good screenshot. A recovery reopens the
+      WATCHDOG seconds without a good screenshot (and none since the
+      bridge's last reopen, below). A recovery reopens the
       source while the driver reports a lock, and again after 5, 10, 20,
       40, then every 60 s while the picture stays not good, until it is
       good or its time runs out (60 s before a change; the watchdog's: to
@@ -74,15 +76,31 @@ Every run of events or soak writes an event log (UTC, ms; --events-log or
 GC573_EVENT_LOG) and runs tools/testsrc/guard.py on itself, unless
 GC573_GUARDED says a caller's guard (live.sh) already watches it.
 
+The bridge (events and soak; --no-bridge: without it): tests/obsbridge.py
+where the driver runs (here in host-local mode, in gc573-dev over ssh from
+~/gc573-driver/tests, which tools/vmbuild.sh keeps up to date). It reopens
+the source from the input's timings, not from the picture: once the input
+has been still for 2 s, when its timings differ from the stream's or the
+driver has failed the stream. It is the first trigger; the screenshots
+only fall back to a reopen (res-*: after WAIT_SELF s, the watchdog, before
+a change). Its lines go to the event log ("bridge ..."); each EVENT line
+lists its reopens in that change, and
+  RESULT obsev-bridge  PASS: the bridge reopened in every res-* change,
+                       in no change of the same timings, and each reopen
+                       for new timings was adopted (G_DV_TIMINGS took the
+                       input's: OBS closed the device). Its reopens
+                       outside the changes count in obsev-recoveries
+
 Changes (host side, on the loopback output; the VM side through ssh):
   sleep        output off for 8 s, then on in the same mode (a source
                sleeping and waking); TTFGF from "on"
   rate-59.94   1080p60 -> 1080p59.94; rate-60 back
   res-720p     1080p -> 720p (59.94 Hz, the only 720p rates the EDID
                lists are 59.94 and 50); res-1080p back. OBS cannot follow
-               a change of the frame size by itself: after WAIT_SELF
-               seconds without a good frame the step reopens the source
-               (reopen below) and reports TTFGF from that
+               a change of the frame size by itself: the bridge reopens the
+               source; without good frames at the new size after WAIT_SELF
+               seconds the step reopens it itself (reopen below) and
+               reports TTFGF from that
   colour-*     the GPU's colour format at the same timings: rgb-limited,
                ycbcr444, ycbcr422, then rgb-full (nvidia-settings
                ColorSpace and ColorRange, runtime only)
@@ -109,8 +127,10 @@ import base64
 import io
 import os
 import re
+import shlex
 import subprocess
 import sys
+import threading
 import time
 
 from PIL import Image, ImageChops, ImageStat
@@ -272,6 +292,8 @@ def fmt_runs(runs, t_ref):
 ENV = dict(os.environ, DISPLAY=os.environ.get('DISPLAY', ':0'),
            XAUTHORITY=os.environ.get('XAUTHORITY', os.path.expanduser('~/.Xauthority')))
 GUARD = os.path.join(ROOT, 'tools', 'testsrc', 'guard.py')
+BRIDGE = os.path.join(ROOT, 'tests', 'obsbridge.py')
+EV_LOCK = threading.Lock()	# the bridge's reader thread logs too
 
 
 def ev(text):
@@ -282,7 +304,7 @@ def ev(text):
     if f:
         import datetime
         t = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
-        with open(f, 'a') as fh:
+        with EV_LOCK, open(f, 'a') as fh:
             fh.write(f'{t} obs-events {text}\n')
 
 
@@ -400,6 +422,95 @@ def driver_locked():
     return None if not m else m.group(1) == '1'
 
 
+class BridgeProc:
+    """tests/obsbridge.py where the driver runs, its lines read as they
+    come: (monotonic arrival time, text) and into the event log"""
+
+    def __init__(self):
+        args = ['--device', VDEV, '--source', VSRC]
+        if LOCAL:
+            cmd = [sys.executable, '-u', BRIDGE, '--host', HOST] + args
+        else:
+            cmd = ['ssh', '-o', 'BatchMode=yes', VM, 'exec python3 -u ~/gc573-driver/tests/obsbridge.py '
+                   '--host 127.0.0.1 ' + ' '.join(shlex.quote(a) for a in args)]
+        self.p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, text=True, bufsize=1, start_new_session=True)
+        self.lines = []
+        self.lock = threading.Lock()
+        self.up = threading.Event()
+        threading.Thread(target=self._read, daemon=True).start()
+
+    def _read(self):
+        for line in self.p.stdout:
+            line = line.rstrip('\n')
+            text = line.split(' ', 2)[2] if line.startswith('BRIDGE ') and line.count(' ') >= 2 else line
+            with self.lock:
+                self.lines.append((time.monotonic(), text))
+            if text.startswith('start '):
+                self.up.set()
+            ev(f'bridge {text}')
+        self.up.set()
+
+    def started(self, timeout=10):
+        self.up.wait(timeout)
+        with self.lock:
+            return any(x.startswith('start ') for _, x in self.lines) and self.p.poll() is None
+
+    def since(self, t0, t1=None, prefix=''):
+        with self.lock:
+            return [(t, x) for t, x in self.lines
+                    if t >= t0 and (t1 is None or t <= t1) and x.startswith(prefix)]
+
+    def reopens(self, t0=0.0, t1=None):
+        """the reopen attempts (times)"""
+        return [t for t, _ in self.since(t0, t1, 'reopen: ')]
+
+    def last_reopen(self):
+        r = self.reopens()
+        return r[-1] if r else 0.0
+
+    def stop(self):
+        if self.p.poll() is None:
+            self.p.terminate()
+            try:
+                self.p.wait(5)
+            except subprocess.TimeoutExpired:
+                self.p.kill()
+        if not LOCAL:
+            vm('pkill -f tests/obsbridge.py')
+
+
+def bridge_summary(bridge, windows, out=print):
+    """RESULT obsev-bridge (see the header); returns its verdict and the
+    reopens outside the changes as (time, the settle line)"""
+    if bridge is None:
+        return True, []
+    lines = bridge.since(0.0)
+    settles = [(t, x) for t, x in lines if x.startswith('settled ') and ': reopen (' in x]
+    per, outside = {}, []
+    for t, x in settles:
+        w = next((name for t0, t1, name in reversed(windows) if t0 <= t <= t1 + 3), None)
+        if w is None:
+            outside.append((t, x))
+        else:
+            per.setdefault(w, []).append(x)
+    res = sorted({name for _, _, name in windows if name.startswith('res-')})
+    missing = [name for name in res if not any(n == name for n in per)
+               or sum(1 for t0, t1, n in windows if n == name) > len(per.get(name, []))]
+    wrong = {n: v for n, v in per.items() if not n.startswith('res-') and n != 'restore'}
+    unadopted = sum(1 for _, x in lines if x.startswith('not adopted'))
+    errors = [x for _, x in lines if x.startswith(('reopen failed', 'Traceback')) or 'Error' in x]
+    ok = bridge.started(0) or bool(lines)
+    ok = ok and not missing and not wrong and not errors
+    out(f"RESULT obsev-bridge {'PASS' if ok else 'FAIL'} (reopens in the changes: "
+        + (', '.join(f'{n} x{len(v)}' for n, v in sorted(per.items())) or 'none')
+        + f"; res-* changes without one: {', '.join(missing) or 'none'}; in changes of the same timings: "
+        + (', '.join(f'{n}: {v[0]}' for n, v in wrong.items()) or 'none')
+        + f'; not adopted at first: {unadopted}; outside the changes: {len(outside)}'
+        + (f"; errors: {'; '.join(errors[:3])}" if errors else '') + ')', flush=True)
+    return ok, outside
+
+
 EDID_TMP = '/tmp/gc573-obs-events'
 
 
@@ -424,8 +535,11 @@ class Runner:
     measures that alone. audio: the soak's source, avsync.sh --pattern with
     the bursts, started once the picture is back"""
 
-    def __init__(self, obs, audio=False, out=print, colours=True):
+    def __init__(self, obs, audio=False, out=print, colours=True, bridge=None):
         self.src = Source(obs)
+        self.bridge = bridge
+        self.windows = []	# (start, end, name) of each change
+        self.t_change = None
         self.obs = obs
         self.audio = audio
         self.out = out
@@ -452,6 +566,10 @@ class Runner:
 
     def record(self, name, ttf, detail, ok=None):
         good = ttf is not None if ok is None else ok
+        if self.bridge and self.t_change is not None:
+            r = self.bridge.reopens(self.t_change)
+            detail += (' bridge: reopen at ' + ', '.join(f'{t - self.t_change:+.2f} s' for t in r)
+                       if r else ' bridge: no reopen')
         if not good:
             detail += f' [{host_live()}; driver: {driver_state()}]'
         self.results.setdefault(name, []).append((good, ttf))
@@ -495,7 +613,8 @@ class Runner:
         ttf, runs, size = wait_good(self.src, t0, WAIT_SELF)
         if ttf is not None and size == want:
             self.audio_on()
-            self.record(name, ttf, f'(by itself: {fmt_runs(runs, t0)}; source {size[0]}x{size[1]})')
+            how = "after the bridge's reopen" if self.bridge and self.bridge.reopens(t0) else 'by itself'
+            self.record(name, ttf, f'({how}: {fmt_runs(runs, t0)}; source {size[0]}x{size[1]})')
             return
         self_runs = fmt_runs(runs, t0)
         t1 = time.monotonic()
@@ -594,6 +713,14 @@ class Runner:
         is recovered first if it can be (a skipped change leaves the input
         as it is, and every later change would be skipped too)"""
         ev(f'change {name}')
+        self.t_change = time.monotonic()
+        try:
+            self._run(name)
+        finally:
+            self.windows.append((self.t_change, time.monotonic(), name))
+            self.t_change = None
+
+    def _run(self, name):
         ok, base = self.baseline()
         if not ok:
             self.recover(f'before {name}', f'no good frames ({base})')
@@ -614,6 +741,13 @@ class Runner:
         }[name]()
 
     def restore(self):
+        t0 = time.monotonic()
+        try:
+            self._restore()
+        finally:
+            self.windows.append((t0, time.monotonic(), 'restore'))
+
+    def _restore(self):
         if self.colours:
             colour(0, 0)
         if self.edid != 'default':
@@ -631,14 +765,17 @@ ORDER = ['restart', 'sleep', 'rate-59.94', 'rate-60', 'res-720p', 'res-1080p',
          'edid-same', 'edid-new', 'edid-default']
 
 
-def summary(results, out=print, recoveries=None):
-    ok = True
+def summary(results, out=print, recoveries=None, bridge=None, windows=(), t_start=None):
+    ok, outside = bridge_summary(bridge, windows, out)
     if recoveries is not None:
-        good = not recoveries
+        good = not recoveries and not outside
+        what = '; '.join([f'{w}: {n} attempt{"s" if n > 1 else ""}, '
+                          + (f'good after {t:.2f} s' if g else 'not good')
+                          for w, n, g, t in recoveries]
+                         + [f"bridge at {t - (t_start or t):.1f} s: {x.split(': ', 1)[-1]}"
+                            for t, x in outside])
+        recoveries = list(recoveries) + outside
         ok &= good
-        what = '; '.join(f'{w}: {n} attempt{"s" if n > 1 else ""}, '
-                         + (f'good after {t:.2f} s' if g else 'not good')
-                         for w, n, g, t in recoveries)
         out(f"RESULT obsev-recoveries {'PASS' if good else 'FAIL'} ({len(recoveries)} times the "
             f"picture was not good outside a change's own recovery" + (f': {what}' if what else '') + ')')
     for name in ORDER:
@@ -749,10 +886,20 @@ def record_stop(obs):
     print(f"RECORDING {out.get('outputPath', '')}", flush=True)
 
 
-def cmd_events(obs, reps, only, record=False):
+def start_bridge(use):
+    if not use:
+        return None
+    b = BridgeProc()
+    if not b.started():
+        print(f'BRIDGE did not start: {"; ".join(x for _, x in b.since(0.0))[:300]}', flush=True)
+    return b
+
+
+def cmd_events(obs, reps, only, record=False, bridge=True):
     ev(f'events start: reps {reps}, {",".join(only) if only else "all"}'
        + (', recording' if record else ''))
-    r = Runner(obs)
+    bridge = start_bridge(bridge)
+    r = Runner(obs, bridge=bridge)
     r.restore()
     edid_prepare()
     names = only or ORDER
@@ -767,8 +914,11 @@ def cmd_events(obs, reps, only, record=False):
     finally:
         if record:
             record_stop(obs)
-    r.restore()
-    return summary(r.results, recoveries=r.recoveries)
+        r.restore()
+        if bridge:
+            time.sleep(3)	# its settle after the restore
+            bridge.stop()
+    return summary(r.results, recoveries=r.recoveries, bridge=bridge, windows=r.windows)
 
 
 SOAK_ROT = ['sleep', 'rate-59.94', 'colour-ycbcr444', 'edid-same', 'rate-60', 'colour-rgb-limited',
@@ -777,9 +927,10 @@ SOAK_ROT = ['sleep', 'rate-59.94', 'colour-ycbcr444', 'edid-same', 'rate-60', 'c
 
 
 def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=True,
-             rec_dir=None):
+             rec_dir=None, bridge=True):
     rot = rot or SOAK_ROT
-    r = Runner(obs, audio=True, colours=any(k.startswith('colour-') for k in rot))
+    bridge = start_bridge(bridge)
+    r = Runner(obs, audio=True, colours=any(k.startswith('colour-') for k in rot), bridge=bridge)
     if not keep_source:
         r.restore()
     edid_prepare()
@@ -815,7 +966,7 @@ def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=
                           f'size={size[0]}x{size[1]}', flush=True)
                 if state == 'good':
                     t_good = t
-                elif t - t_good > WATCHDOG:
+                elif t - max(t_good, bridge.last_reopen() if bridge else 0.0) > WATCHDOG:
                     # the watchdog: OBS stopped getting frames between
                     # changes; attempts until good or the next change
                     r.recover(f'watchdog at {t - t_start:.1f} s',
@@ -835,7 +986,11 @@ def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=
         obs.call('SetInputSettings', inputName=VSRC, inputSettings={'color_range': cr0})
     if restore:
         r.restore()
-    return summary(r.results, recoveries=r.recoveries)
+    if bridge:
+        time.sleep(3)
+        bridge.stop()
+    return summary(r.results, recoveries=r.recoveries, bridge=bridge, windows=r.windows,
+                   t_start=t_start)
 
 
 def counter_band(img, W, H):
@@ -1005,6 +1160,7 @@ def main():
     p.add_argument('--reps', type=int, default=2)
     p.add_argument('--only', default='')
     p.add_argument('--record', action='store_true', help='record across the changes')
+    p.add_argument('--no-bridge', action='store_true', help='without tests/obsbridge.py')
     p = sub.add_parser('soak')
     p.add_argument('secs', type=int)
     p.add_argument('--every', type=int, default=180)
@@ -1014,6 +1170,7 @@ def main():
                    help='record the test source that runs; do not restart it first')
     p.add_argument('--no-restore', action='store_true', help='leave the last source running')
     p.add_argument('--rec-dir', default='', help='OBS records here, for this soak only')
+    p.add_argument('--no-bridge', action='store_true', help='without tests/obsbridge.py')
     sub.add_parser('selftest')
     p = sub.add_parser('recheck')
     p.add_argument('file')
@@ -1040,14 +1197,14 @@ def main():
         if a.cmd == 'shots':
             ok = cmd_shots(obs, a.n)
         elif a.cmd == 'events':
-            ok = cmd_events(obs, a.reps, [x for x in a.only.split(',') if x], a.record)
+            ok = cmd_events(obs, a.reps, [x for x in a.only.split(',') if x], a.record, not a.no_bridge)
         else:
             rot = [x for x in a.rotation.split(',') if x]
             bad = [x for x in rot if x not in ORDER]
             if bad:
                 sys.exit(f'unknown changes in --rotation: {bad} (known: {ORDER})')
             ok = cmd_soak(obs, a.secs, a.every, a.shot, rot, a.keep_source, not a.no_restore,
-                          a.rec_dir or None)
+                          a.rec_dir or None, not a.no_bridge)
     finally:
         obs.close()
         if guard:
