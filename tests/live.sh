@@ -772,7 +772,7 @@ heal_delta() {	# two heal_counts: the change, or "none"
 	set -- $1 $2
 	echo "$(($4 - $1)) $(($5 - $2)) $(($6 - $3))"
 }
-heal_eld="" heal_eld_log="" heal_eld_pid="" heal_c0=""
+heal_eld="" heal_eld_log="" heal_eld_pid="" heal_c0="" heal_5v="" heal_probe=""
 heal_eld_start() {
 	heal_eld_log=$(mktemp)
 	[ -n "$heal_eld" ] || return 0
@@ -808,6 +808,69 @@ heal_times() {
 	sed -nE 's/^\[ *([0-9.]+)\].*HDMI: self-heal ([0-9] of|gave up).*/\1/p' <<< "$1" | paste -sd' ' -
 }
 heal_attempts() { grep -oE 'self-heal [0-9] of [0-9], [a-z -]+' <<< "$1" | paste -sd, - | sed 's/,/, /g'; }
+# Through a case, in the VM as root: every 50 ms the splitter's 5 V state
+# (debugfs hdmi "rx 5v" and the published power, RX 0x13 bit 0), each
+# change logged: does the source drop 5 V at a hot-plug's HPD low (the
+# self-heal's 10 s quiet guard)? And a second handle's QUERY_DV_TIMINGS,
+# G_FMT and G_EDID about 5 times a second, with their times: G_EDID waits
+# for h->lock, which a hot-plug holds for RD's 500 ms toggle; the other two
+# do not take it. Nothing may fail or hang.
+heal_watch_start() {
+	local f
+	f=$(mktemp)
+	cat > "$f" <<-EOF
+	( p=
+	while [ -e $W/heal.run ]; do
+		v=\$(grep -oE 'rx 5v [01]|^input: power [01]' $dbgdir/hdmi | tr '\n' ' ')
+		[ "\$v" = "\$p" ] || { echo "\$(date -u +%T.%3N) \$v"; p=\$v; }
+		sleep 0.05
+	done > $W/heal-5v.log ) &
+	while [ -e $W/heal.run ]; do
+		t0=\$(date +%s%N)
+		v4l2-ctl -d $vdev --query-dv-timings > /dev/null 2>&1; a=\$?
+		t1=\$(date +%s%N)
+		v4l2-ctl -d $vdev --get-fmt-video > /dev/null 2>&1; b=\$?
+		t2=\$(date +%s%N)
+		v4l2-ctl -d $vdev --get-edid=format=raw > /dev/null 2>&1; c=\$?
+		t3=\$(date +%s%N)
+		echo "\$(((t1 - t0) / 1000000)) \$a \$(((t2 - t1) / 1000000)) \$b \$(((t3 - t2) / 1000000)) \$c"
+		sleep 0.1
+	done > $W/heal-probe.log
+	wait
+	EOF
+	put "$f" "$W/heal-watch.sh"
+	rm -f "$f"
+	vm "touch $W/heal.run; sudo sh $W/heal-watch.sh > /dev/null 2>&1 &"
+}
+# Sets heal_5v (the 5 V log) and heal_probe ("rounds qdv_max fmt_max
+# edid_max fmt_failed edid_failed locked")
+heal_watch_stop() {
+	vm "rm -f $W/heal.run"
+	sleep 1
+	heal_5v=$(vm "cat $W/heal-5v.log")
+	heal_probe=$(vm "awk '{ n++; for (i = 1; i <= 5; i += 2) if (\$i > m[i]) m[i] = \$i
+		if (\$4) f++; if (\$6) g++; if (!\$2) l++ }
+		END { print n + 0, m[1] + 0, m[3] + 0, m[5] + 0, f + 0, g + 0, l + 0 }' $W/heal-probe.log")
+}
+# the probe's summary, and whether nothing failed and nothing waited long:
+# QUERY_DV_TIMINGS and G_FMT under 500 ms, G_EDID under 1500 ms
+heal_probe_text() {
+	# shellcheck disable=SC2086 # the seven numbers
+	set -- $heal_probe
+	echo "second handle: ${1:-0} rounds, max ms QUERY_DV_TIMINGS ${2:-?}, G_FMT ${3:-?}, G_EDID ${4:-?}; failed G_FMT ${5:-?}, G_EDID ${6:-?}; locked in ${7:-?}"
+}
+heal_probe_ok() {
+	# shellcheck disable=SC2086
+	set -- $heal_probe
+	[ "${1:-0}" -gt 10 ] && [ "$2" -lt 500 ] && [ "$3" -lt 500 ] && [ "$4" -lt 1500 ] &&
+		[ "$5" = 0 ] && [ "$6" = 0 ]
+}
+heal_5v_text() {	# the changes after the first line (the state at the start)
+	local n
+	n=$(($(grep -c . <<< "$heal_5v") - 1))
+	if [ "$n" -le 0 ]; then echo "5 V held ($(head -1 <<< "$heal_5v" | cut -d' ' -f2-))"
+	else echo "5 V changed $n times: $(tail -n +2 <<< "$heal_5v" | paste -sd';' -)"; fi
+}
 heal_case() {	# tag exp: a stable entry with exp_fpga_invalid = exp
 	src_off
 	wait_unlocked
@@ -817,6 +880,7 @@ heal_case() {	# tag exp: a stable entry with exp_fpga_invalid = exp
 	heal_c0=$(heal_counts)
 	src_bare 1920x1080 60
 	heal_eld_start
+	heal_watch_start
 }
 step_fpgaheal() {
 	local h0 c1 d e t q log log2 times i
@@ -837,6 +901,7 @@ step_fpgaheal() {
 	t=$(time_to_lock 20)
 	sleep 1
 	e=$(heal_eld_stop)
+	heal_watch_stop
 	q=$(query)
 	c1=$(heal_counts)
 	fpga_param 0
@@ -848,8 +913,8 @@ step_fpgaheal() {
 		[ "$(grep -c 'HDMI: self-heal' <<< "$log")" = 1 ] &&
 		grep -q 'HDMI: FPGA measurement valid after self-heal 1' <<< "$log" &&
 		[ "$(lock_lines "$log")" = 1 ] && [ "$d" = "1 1 0" ] &&
-		{ [ "$e" = 0 ] || [ "$e" = unknown ]; }; echo $?)" \
-		"(locked $t ms after the output came on; attempts: $(heal_attempts "$log"); $(lock_lines "$log") lock lines: $(lock_rates "$log"); heals, fixes, give-ups +$d; HPD drops the source saw: $e)"
+		{ [ "$e" = 0 ] || [ "$e" = unknown ]; } && heal_probe_ok; echo $?)" \
+		"(locked $t ms after the output came on; attempts: $(heal_attempts "$log"); $(lock_lines "$log") lock lines: $(lock_rates "$log"); heals, fixes, give-ups +$d; HPD drops the source saw: $e; $(heal_5v_text); $(heal_probe_text))"
 
 	# 2. never valid: a restart, then two hot-plugs at least 20 and 80 s
 	#    after the attempt before, one warning 5 s after the third, and no
@@ -865,9 +930,12 @@ step_fpgaheal() {
 	done
 	grep -q 'HDMI: self-heal gave up' <<< "$log" && sleep 30
 	e=$(heal_eld_stop)
+	heal_watch_stop
 	c1=$(heal_counts)
 	log=$(kmsg_since fpgaheal-never | grep 'gc573.*HDMI: ')
 	sed 's/^/  | /' <<< "$log"
+	echo "  the splitter's 5 V and the published power (UTC):"
+	sed 's/^/  5v | /' <<< "$heal_5v"
 	times=$(heal_times "$log")
 	d=$(heal_delta "$heal_c0" "$c1")
 	check fpgaheal-never "$(grep -q 'HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls' <<< "$log" &&
@@ -878,8 +946,8 @@ step_fpgaheal() {
 		[ "$(lock_lines "$log")" = 0 ] && [ "$d" = "3 0 1" ] &&
 		awk '{ exit !(NF == 4 && $2 - $1 >= 20 && $2 - $1 < 30 &&
 			$3 - $2 >= 80 && $3 - $2 < 90 && $4 - $3 >= 5 && $4 - $3 < 20) }' <<< "$times" &&
-		{ [ "$e" = 2 ] || [ "$e" = unknown ]; }; echo $?)" \
-		"(attempts: $(heal_attempts "$log"); at s ${times:-none} (kernel clock); $(grep -c 'HDMI: self-heal gave up' <<< "$log") warnings, nothing in the 30 s after; $(lock_lines "$log") lock lines; heals, fixes, give-ups +$d; HPD drops the source saw: $e)"
+		{ [ "$e" = 2 ] || [ "$e" = unknown ]; } && heal_probe_ok; echo $?)" \
+		"(attempts: $(heal_attempts "$log"); at s ${times:-none} (kernel clock); $(grep -c 'HDMI: self-heal gave up' <<< "$log") warnings, nothing in the 30 s after; $(lock_lines "$log") lock lines; heals, fixes, give-ups +$d; HPD drops the source saw: $e; $(heal_5v_text), $(grep -c 'HDMI: no 5 V' <<< "$log") no-5-V lines; $(heal_probe_text))"
 	kmsg_mark fpgaheal-valid
 	fpga_param 0
 	t=$(time_to_lock 5)
@@ -905,6 +973,7 @@ step_fpgaheal() {
 	t=$(time_to_lock 5)
 	sleep 1
 	e=$(heal_eld_stop)
+	heal_watch_stop
 	c1=$(heal_counts)
 	fpga_param 0
 	d=$(heal_delta "$heal_c0" "$c1")
@@ -914,8 +983,8 @@ step_fpgaheal() {
 	check fpgaheal-off "$([ "$q" = 'no lock' ] && ! grep -q 'HDMI: self-heal' <<< "$log" &&
 		[ "$t" != none ] && grep -q 'HDMI: self-heal 1 of 3, receiver restart' <<< "$log2" &&
 		[ "$(lock_lines "$log2")" = 1 ] && [ "$d" = "1 1 0" ] &&
-		{ [ "$e" = 0 ] || [ "$e" = unknown ]; }; echo $?)" \
-		"(off for 8 s: $q, $(grep -c 'HDMI: self-heal' <<< "$log") attempts; on: locked after $t ms, attempts: $(heal_attempts "$log2"); heals, fixes, give-ups +$d; HPD drops the source saw: $e)"
+		{ [ "$e" = 0 ] || [ "$e" = unknown ]; } && heal_probe_ok; echo $?)" \
+		"(off for 8 s: $q, $(grep -c 'HDMI: self-heal' <<< "$log") attempts; on: locked after $t ms, attempts: $(heal_attempts "$log2"); heals, fixes, give-ups +$d; HPD drops the source saw: $e; $(heal_5v_text); $(heal_probe_text))"
 	[ -z "$h0" ] || heal_param "$h0"
 	src_on 1920x1080 60
 }
