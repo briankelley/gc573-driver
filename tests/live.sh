@@ -238,12 +238,15 @@ put() {
 	fi
 }
 vdev="" dbgdir=""
+# the card's video node by its by-path name (the host's rules: every tool
+# gets -d with it, never a bare /dev/videoN), checked against sysfs
 find_vdev() {
-	local bdf
+	local bdf node
 	bdf=$(vm "basename \$(readlink -f /sys/bus/pci/drivers/gc573/0000:*)" 2>/dev/null)
-	vdev=/dev/$(vm "ls /sys/bus/pci/drivers/gc573/$bdf/video4linux/ 2>/dev/null" | head -1)
+	node=$(vm "ls /sys/bus/pci/drivers/gc573/$bdf/video4linux/ 2>/dev/null" | head -1)
+	vdev=/dev/v4l/by-path/pci-$bdf-video-index0
 	dbgdir=/sys/kernel/debug/gc573-$bdf
-	[ "$vdev" != /dev/ ]
+	[ -n "$node" ] && [ "$(vm "readlink -f $vdev")" = "/dev/$node" ]
 }
 cap() { vm "sudo $W/gc573-cap -d $vdev -D $dbgdir/video $*"; }
 query() { vm "v4l2-ctl -d $vdev --query-dv-timings" 2>&1; }
