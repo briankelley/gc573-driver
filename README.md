@@ -186,7 +186,7 @@ Name the devices explicitly. Then nothing else is opened, and the names stay put
   - 20 s later: `self-heal 2 of 3, hot-plug`, and 80 s after that `self-heal 3 of 3, hot-plug`. Each hot-plug looks to the source like an unplug and a replug, as when the EDID changes;
   - if the card still has no measurement: `self-heal gave up`. The driver tries again only after a lock or after the source's 5 V goes away (unplug, source off).
 
-  A source whose signal the card cannot measure gets the same restart and two hot-plugs each time it is plugged in. That may be the case for an interlaced or deep-colour signal or 4K, which the driver does not support yet, and maybe for an HDCP-encrypted signal without a splitter. To turn the self-heal off until the next load: `echo N | sudo tee /sys/module/gc573/parameters/fpga_heal`. For good: `options gc573 fpga_heal=0` in a file in `/etc/modprobe.d/`. By hand, set the source's mode again or unplug and replug the HDMI cable.
+  A source whose signal the card cannot measure gets the same restart and two hot-plugs each time it is plugged in. That may be the case for an interlaced or deep-colour signal or 4K, which the driver does not support yet. To turn the self-heal off until the next load: `echo N | sudo tee /sys/module/gc573/parameters/fpga_heal`. For good: `options gc573 fpga_heal=0` in a file in `/etc/modprobe.d/`. By hand, set the source's mode again or unplug and replug the HDMI cable.
 - HDCP-protected sources (consoles, streaming boxes) are untested.
 - Tested in a virtual machine with the card passed through, and on a real host (Linux Mint 22, kernel 6.8): a 2-hour OBS recording with a source change every 3 minutes, and frame-exact captures at 1080p60, 1080p59.94 and 720p59.94.
 

@@ -1,0 +1,39 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 15:58:05 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     dad8b1156ef9
+source:  the Roku (model Roku Ultra 4802X, software 16.0.4 build 853), go 0
+steps:   q25
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## q25
+  Roku: model Roku Ultra 4802X, software 16.0.4 build 853
+  +0 s: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz
+  +30 s: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz
+  +60 s: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz
+  +90 s: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz
+  +120 s: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz
+  +150 s: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz
+RESULT q25-no-hang                PASS (120 YUYV frames, the timings set from QUERY_DV_TIMINGS: exit 0)
+RESULT q25-no-garbage             PASS (the last frame: a picture; luma 16-235, neighbours 2.9 codes apart on average)
+  the self-heal with this input: 0 attempts, 0 give-ups; counters fpga_heals, fixes, giveups: 0 0 0 -> 0 0 0
+RESULT q25-unbind                 SKIP (the coordinator's: live.sh never unbinds on the host)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 1 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT q25-no-hang                PASS (120 YUYV frames, the timings set from QUERY_DV_TIMINGS: exit 0)
+RESULT q25-no-garbage             PASS (the last frame: a picture; luma 16-235, neighbours 2.9 codes apart on average)
+RESULT q25-unbind                 SKIP (the coordinator's: live.sh never unbinds on the host)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=5 fail=0 skip=2

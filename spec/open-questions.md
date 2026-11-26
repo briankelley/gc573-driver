@@ -24,7 +24,6 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 | 22 | Missing I2C completions, all on IT6805 reg 0x0f (`i2c.md`): engine or chip? Did the timed-out transfer reach the chip? | our driver: count timeouts per device and register; on timeout read STATUS and the bank register before retrying | no |
 | 23 | TX port 1 HPD fall latency after GPIO bit 2 goes low (masked by a splitter TX reset in every trace) | our driver: drop bit 2 while the splitter TX is idle; read TX port 1 status every 5 ms | yes |
 | 24 | Input types never traced: RGB or full-range input, deep colour, interlaced (1080i, 480i/576i), native 720p, negative sync polarity, mode change while streaming, load with no source then plug-in. Covered by our driver with the PC loopback (`E`, M3): full- and limited-range RGB, YCbCr 4:4:4, native 720p, 576p/480p/640×480 (negative sync), mode change and signal loss while streaming, output off/on. Still never seen: deep colour, interlaced, YCbCr 4:2:2 | M3/M5 test suite with a PC source and the Roku | yes |
-| 25 | Encrypting source without the external HDCP stripper: splitter RX and IT6805 behaviour | M5: Roku direct; the driver must report no signal, not hang | yes |
 | 26 | Bus-1 engine on NACK or absent device: STATUS value, INT behaviour; does reading STATUS have side effects? | read IT6805 reg 0x4b; if bit 0 is clear (EDID RAM slave off), read 0xa8 reg 0x00, where nothing answers, and record STATUS and INT | no |
 | 28 | Card frame store: size, which frames are held, can it be cleared; how many frames after a start can carry stale content (`video-dma.md`) | with the loopback: capture pattern A, stop, show pattern B, start; check the first frames | yes (PC loopback) |
 | 29 | RGB input → BGR24: +1 on one pixel in four (`video-pipeline.md`). Which stage adds it? | with our driver and the loopback: toggle the splitter, IT6805 and FPGA colour settings one at a time | yes (PC loopback) |
@@ -42,6 +41,7 @@ Ordered by impact on a first working driver. "Needs input" = requires an HDMI so
 ## Resolved
 | # | Question | Answer | Ev |
 |---|---|---|---|
+| 25 | Encrypting source without the external HDCP stripper: splitter RX and IT6805 behaviour | The splitter RX completes the HDCP 1.x handshake by itself (RX events 0x09 = 07) and passes the stream on in the clear. The IT6805 locks and the FPGA measures as for any source, captures are normal, and unbind and rebind work. The driver does nothing with HDCP (`hdmi-chips.md` §HDCP) | `E` (2026-11-26, the Roku direct) |
 | 33 | Delivery below 59.94 Hz: which completions repeat, any marker? | Every input frame is delivered once or more at 60.00 Hz (patterns in `video-pipeline.md`); no register marks a repeat; RATE_CTRL does not change delivery. Report the delivered 1/60 | `E` (driver M4), `T4/S44` |
 | 8 | ch1/ch2 CH_CTRL slot semantics | ch0's CH_CTRL gates every channel; ch1/ch2 slot and run bits are not needed (`video-dma.md` Slots) | `E` (driver M2 case 14) |
 | 1 | HW writes pixel data on all channels? | yes: ch0, ch1, ch2 carry real image data | `T3/S32-NV12`,`S32-YV12` |
