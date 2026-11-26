@@ -1,0 +1,142 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 06:03:04 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     0f40631ca000-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   loss colorimetry
+module:  srcversion 13D62A41034A1E031355133 loaded, 13D62A41034A1E031355133 in ~/gc573-driver, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## loss
+  colorimetry locked: YUYV sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: UYVY sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: NV12 sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: YV12 sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: BGR3 sRGB/sRGB/Rec. 709/Full Range
+  colorimetry locked: XR24 sRGB/sRGB/Rec. 709/Full Range
+  colorimetry locked: G_FMT:YUYV sRGB/sRGB/Rec. 709/Limited Range
+RESULT loss-idle-event            PASS (1295.866895: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+  query while off: VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed
+	Active width: 0
+	Active height: 0
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+RESULT loss-idle-colorimetry      FAIL (TRY_FMT and G_FMT while unlocked: changed: YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range; UYVY Rec. 709/Rec. 709/Rec. 709/Limited Range; NV12 Rec. 709/Rec. 709/Rec. 709/Limited Range; YV12 Rec. 709/Rec. 709/Rec. 709/Limited Range; BGR3 Rec. 709/Rec. 709/Rec. 709/Full Range; XR24 Rec. 709/Rec. 709/Rec. 709/Full Range; G_FMT:YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range)
+  input:	Status      : 0x00000002 (no signal)
+  RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.564 max=16.769 ch0_bytes=4147200 ch0_top_word=80108010(100.0%) distinct_frames=1
+  unlocked frame:  10 80 10 80 10 80 10 80 10 80 10 80 10 80 10 80
+  unlocked frame: *
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (1300.305178: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (10 ms)
+RESULT loss-relock-colorimetry    PASS (TRY_FMT and G_FMT after the relock: as before)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4359 ms, 241 frames
+    | stream: running 1 live 0 input_restarts 1 input_stops 0 input_holds 0 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 2 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 502 frames 500 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=500 event_ms=4359 events=1 last_event_ms=4359 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9363 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-streaming             PASS (continue: fmt=YUYV 1920x1080 frames=500 event_ms=4359 events=1 last_event_ms=4359 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9363 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-streaming-black       PASS (last frame: 100.00 % limited-range black)
+RESULT loss-streaming-colorimetry FAIL (G_FMT while the YUYV stream ran unlocked: Rec. 709/Rec. 709/Rec. 709/Limited Range; while locked: sRGB/sRGB/Rec. 709/Limited Range)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5586 ms, 317 frames
+    | stream: running 1 live 1 input_restarts 2 input_stops 0 input_holds 0 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 616 frames 614 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=614 event_ms=5586 events=1 last_event_ms=5586 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10596 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-return-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=614 event_ms=5586 events=1 last_event_ms=5586 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10596 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-return-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4345 ms, 241 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 9825 ms, 518 frames
+    | stream: running 1 live 1 input_restarts 4 input_stops 0 input_holds 0 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 1238 frames 1235 skipped 3 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=1235 event_ms=4345 events=2 last_event_ms=9825 frames_after_event=994 frames_after_last_event=717 last_frame_ms=21825 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-off-on-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=1235 event_ms=4345 events=2 last_event_ms=9825 frames_after_event=994 frames_after_last_event=717 last_frame_ms=21825 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-off-on-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+
+## colorimetry
+  colour settings before: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1; 
+  RGB full range (sent 0/0): YUYV sRGB/sRGB/Rec. 709/Limited Range
+  RGB full range (sent 0/0): UYVY sRGB/sRGB/Rec. 709/Limited Range
+  RGB full range (sent 0/0): NV12 sRGB/sRGB/Rec. 709/Limited Range
+  RGB full range (sent 0/0): YV12 sRGB/sRGB/Rec. 709/Limited Range
+  RGB full range (sent 0/0): BGR3 sRGB/sRGB/Rec. 709/Full Range
+  RGB full range (sent 0/0): XR24 sRGB/sRGB/Rec. 709/Full Range
+  RGB full range (sent 0/0): G_FMT:YUYV sRGB/sRGB/Rec. 709/Limited Range
+RESULT colorimetry-rgb-full       PASS (YUYV sRGB/sRGB/Rec. 709/Limited Range; XR24 sRGB/sRGB/Rec. 709/Full Range)
+  YCbCr 4:4:4 limited range (sent 2/1): YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range
+  YCbCr 4:4:4 limited range (sent 2/1): UYVY Rec. 709/Rec. 709/Rec. 709/Limited Range
+  YCbCr 4:4:4 limited range (sent 2/1): NV12 Rec. 709/Rec. 709/Rec. 709/Limited Range
+  YCbCr 4:4:4 limited range (sent 2/1): YV12 Rec. 709/Rec. 709/Rec. 709/Limited Range
+  YCbCr 4:4:4 limited range (sent 2/1): BGR3 Rec. 709/Rec. 709/Rec. 709/Full Range
+  YCbCr 4:4:4 limited range (sent 2/1): XR24 Rec. 709/Rec. 709/Rec. 709/Full Range
+  YCbCr 4:4:4 limited range (sent 2/1): G_FMT:YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range
+RESULT colorimetry-ycbcr444       PASS (at the lock: YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range; XR24 Rec. 709/Rec. 709/Rec. 709/Full Range)
+  RGB limited range (sent 0/1): YUYV sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): UYVY sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): NV12 sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): YV12 sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): BGR3 sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): XR24 sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): G_FMT:YUYV sRGB/sRGB/Rec. 709/Limited Range
+RESULT colorimetry-rgb-limited    PASS (at the lock: XR24 sRGB/sRGB/Rec. 709/Limited Range; YUYV sRGB/sRGB/Rec. 709/Limited Range)
+RESULT colorimetry-loss           FAIL (TRY_FMT and G_FMT while unlocked: changed: YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range; UYVY Rec. 709/Rec. 709/Rec. 709/Limited Range; NV12 Rec. 709/Rec. 709/Rec. 709/Limited Range; YV12 Rec. 709/Rec. 709/Rec. 709/Limited Range; BGR3 Rec. 709/Rec. 709/Rec. 709/Full Range; XR24 Rec. 709/Rec. 709/Rec. 709/Full Range; G_FMT:YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range)
+RESULT colorimetry-relock         PASS (sent 0/1; after the relock: as in RGB limited range)
+RESULT colorimetry-rgb-full-again PASS (sent 0/0: as at the start)
+  720x480 RGB full range: YUYV sRGB/sRGB/ITU-R 601/Limited Range
+  720x480 RGB full range: UYVY sRGB/sRGB/ITU-R 601/Limited Range
+  720x480 RGB full range: NV12 sRGB/sRGB/ITU-R 601/Limited Range
+  720x480 RGB full range: YV12 -
+  720x480 RGB full range: BGR3 sRGB/sRGB/ITU-R 601/Full Range
+  720x480 RGB full range: XR24 sRGB/sRGB/ITU-R 601/Full Range
+  720x480 RGB full range: G_FMT:YUYV sRGB/sRGB/ITU-R 601/Limited Range
+RESULT colorimetry-601            PASS (YUYV sRGB/sRGB/ITU-R 601/Limited Range)
+  INFO change: streaming YUYV 720x480, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4359 ms, 241 frames
+    | stream: running 1 live 0 input_restarts 5 input_stops 0 input_holds 0 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 720x480 sizeimage 691200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 503 frames 501 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 720x480 frames=501 event_ms=4359 events=1 last_event_ms=4359 frames_after_event=260 frames_after_last_event=260 last_frame_ms=9375 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT colorimetry-601-loss       PASS (continue: fmt=YUYV 720x480 frames=501 event_ms=4359 events=1 last_event_ms=4359 frames_after_event=260 frames_after_last_event=260 last_frame_ms=9375 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT colorimetry-601-gfmt       FAIL (G_FMT while the YUYV stream ran unlocked: Rec. 709/Rec. 709/Rec. 709/Limited Range; while locked: sRGB/sRGB/ITU-R 601/Limited Range)
+RESULT colorimetry-601-black      PASS (last frame: 100.00 % limited-range black)
+  colour settings after: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1; 
+RESULT colorimetry-settings       PASS (before: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1;  after: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1; : the other outputs as they were, DVI-D-0 at RGB full range, dithering off)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 30 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT loss-idle-event            PASS (1295.866895: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+RESULT loss-idle-colorimetry      FAIL (TRY_FMT and G_FMT while unlocked: changed: YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range; UYVY Rec. 709/Rec. 709/Rec. 709/Limited Range; NV12 Rec. 709/Rec. 709/Rec. 709/Limited Range; YV12 Rec. 709/Rec. 709/Rec. 709/Limited Range; BGR3 Rec. 709/Rec. 709/Rec. 709/Full Range; XR24 Rec. 709/Rec. 709/Rec. 709/Full Range; G_FMT:YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range)
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (1300.305178: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (10 ms)
+RESULT loss-relock-colorimetry    PASS (TRY_FMT and G_FMT after the relock: as before)
+RESULT loss-streaming             PASS (continue: fmt=YUYV 1920x1080 frames=500 event_ms=4359 events=1 last_event_ms=4359 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9363 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-streaming-black       PASS (last frame: 100.00 % limited-range black)
+RESULT loss-streaming-colorimetry FAIL (G_FMT while the YUYV stream ran unlocked: Rec. 709/Rec. 709/Rec. 709/Limited Range; while locked: sRGB/sRGB/Rec. 709/Limited Range)
+RESULT loss-return-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=614 event_ms=5586 events=1 last_event_ms=5586 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10596 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-return-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+RESULT loss-off-on-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=1235 event_ms=4345 events=2 last_event_ms=9825 frames_after_event=994 frames_after_last_event=717 last_frame_ms=21825 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-off-on-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+RESULT colorimetry-rgb-full       PASS (YUYV sRGB/sRGB/Rec. 709/Limited Range; XR24 sRGB/sRGB/Rec. 709/Full Range)
+RESULT colorimetry-ycbcr444       PASS (at the lock: YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range; XR24 Rec. 709/Rec. 709/Rec. 709/Full Range)
+RESULT colorimetry-rgb-limited    PASS (at the lock: XR24 sRGB/sRGB/Rec. 709/Limited Range; YUYV sRGB/sRGB/Rec. 709/Limited Range)
+RESULT colorimetry-loss           FAIL (TRY_FMT and G_FMT while unlocked: changed: YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range; UYVY Rec. 709/Rec. 709/Rec. 709/Limited Range; NV12 Rec. 709/Rec. 709/Rec. 709/Limited Range; YV12 Rec. 709/Rec. 709/Rec. 709/Limited Range; BGR3 Rec. 709/Rec. 709/Rec. 709/Full Range; XR24 Rec. 709/Rec. 709/Rec. 709/Full Range; G_FMT:YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range)
+RESULT colorimetry-relock         PASS (sent 0/1; after the relock: as in RGB limited range)
+RESULT colorimetry-rgb-full-again PASS (sent 0/0: as at the start)
+RESULT colorimetry-601            PASS (YUYV sRGB/sRGB/ITU-R 601/Limited Range)
+RESULT colorimetry-601-loss       PASS (continue: fmt=YUYV 720x480 frames=501 event_ms=4359 events=1 last_event_ms=4359 frames_after_event=260 frames_after_last_event=260 last_frame_ms=9375 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT colorimetry-601-gfmt       FAIL (G_FMT while the YUYV stream ran unlocked: Rec. 709/Rec. 709/Rec. 709/Limited Range; while locked: sRGB/sRGB/ITU-R 601/Limited Range)
+RESULT colorimetry-601-black      PASS (last frame: 100.00 % limited-range black)
+RESULT colorimetry-settings       PASS (before: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1;  after: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1; : the other outputs as they were, DVI-D-0 at RGB full range, dithering off)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=24 fail=4 skip=1

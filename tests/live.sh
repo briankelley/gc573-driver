@@ -47,8 +47,17 @@
 #             for good: the DQBUF error comes when the hold ends, 0.9-1.6 s
 #             after the lock
 #   loss      output off and on, idle and while streaming: the stream
-#             carries on, black while off, the pattern again after
+#             carries on, black while off, the pattern again after;
+#             TRY_FMT and G_FMT keep the colorimetry of the input that
+#             locked, idle and streaming
 #   colour    RGB limited range, YCbCr 4:4:4, YCbCr 4:2:2 (report only)
+#   colorimetry  TRY_FMT and G_FMT follow the last input that locked
+#             (spec/hdmi-chips.md "Stream policy on input changes"): RGB
+#             full, YCbCr 4:4:4 limited, RGB limited (each switched at its
+#             lock), a loss and the relock in RGB limited (kept), RGB full;
+#             720x480 RGB (BT.601 by size) through a loss while streaming:
+#             the format kept, the frames black. The output's colour only,
+#             at runtime, put back to RGB full range on every exit (VM only)
 #   audio     avsync.sh on HDMI audio: 10 s capture, a burst a second,
 #             left 1 kHz and right 2 kHz (channel order, rate), 48 kHz
 #             against the clock, no gap, no overrun (live-av.py)
@@ -915,14 +924,65 @@ step_blip() {
 	time_to_lock 10 >/dev/null
 }
 
+# The colorimetry v4l2-ctl prints for a format (colorspace/transfer/
+# encoding/quantization), from stdin
+col_fields() {
+	sed -nE 's/^\s*(Colorspace|Transfer Function|YCbCr\/HSV Encoding|Quantization)\s*:\s*(.*)$/\2/p' |
+		paste -sd/
+}
+# TRY_FMT's colorimetry for every format, a line each ("FOURCC fields"),
+# and G_FMT's for the format set now ("G_FMT:FOURCC fields"). A format not
+# offered at the size (YV12 at 720 wide) is "FOURCC -": v4l2-ctl takes
+# only a format ENUM_FMT lists
+fmt_cols() {
+	local f o c
+	for f in YUYV UYVY NV12 YV12 BGR3 XR24; do
+		c=$(vm "v4l2-ctl -d $vdev --try-fmt-video pixelformat=$f" 2>/dev/null | col_fields)
+		echo "$f ${c:--}"
+	done
+	o=$(vm "v4l2-ctl -d $vdev --get-fmt-video" 2>/dev/null)
+	echo "G_FMT:$(sed -nE "s/^\s*Pixel Format\s*:\s*'([^']*)'.*/\1/p" <<< "$o") $(col_fields <<< "$o")"
+}
+# fmt_cols' lines for the RGB formats, and for the others; the formats not
+# offered left out
+cols_rgb() { grep -E '^(G_FMT:)?(BGR3|XR24) ' <<< "$1" | grep -v ' -$'; }
+cols_yuv() { grep -vE '^(G_FMT:)?(BGR3|XR24) ' <<< "$1" | grep -v ' -$'; }
+# $1 has lines, and every one (but a format not offered) matches the
+# extended regex $2
+cols_all() {
+	local l
+	l=$(grep -v ' -$' <<< "$1")
+	[ -n "$l" ] && ! grep -vqE -- "$2" <<< "$l"
+}
+# the formats whose colorimetry differs from $1's, with the new value
+cols_diff() {
+	diff <(echo "$1") <(echo "$2") | sed -n 's/^> //p' | paste -sd';' | sed 's/;/; /g'
+}
+# the output off, and once unlocked G_FMT on a second handle into
+# $COL_FILE (a stream runs meanwhile: change_while_streaming)
+COL_FILE=/tmp/gc573-live-gfmt.txt
+src_off_gfmt() {
+	src_off
+	wait_unlocked
+	vm "v4l2-ctl -d $vdev --get-fmt-video" 2>/dev/null | col_fields > "$COL_FILE"
+}
+
 step_loss() {
-	local q out
+	local q out cols c g
 	src_on 1920x1080 60
 	time_to_lock 10 >/dev/null
+	# the colorimetry follows the last input that locked, through a loss
+	# (spec/hdmi-chips.md "Stream policy on input changes"): what TRY_FMT and
+	# G_FMT give while unlocked is what they gave while locked
+	cols=$(fmt_cols)
+	echo "$cols" | sed 's/^/  colorimetry locked: /'
 	event_during loss-idle-event src_off
 	q=$(query)
 	echo "  query while off: $q" | head -3
 	check loss-idle-query "$(grep -qiE 'link|lock' <<< "$q"; echo $?)" "($(echo "$q" | head -1))"
+	c=$(fmt_cols)
+	check loss-idle-colorimetry "$([ "$c" = "$cols" ]; echo $?)" \
+		"(TRY_FMT and G_FMT while unlocked: $([ "$c" = "$cols" ] && echo 'as while locked' || echo "changed: $(cols_diff "$cols" "$c")"))"
 	q=$(vm "v4l2-ctl -d $vdev --list-inputs" 2>&1 | grep -i status)
 	echo "  input:$q"
 	# what the hardware delivers while unlocked: free-running frames
@@ -934,11 +994,20 @@ step_loss() {
 	event_during loss-idle-return src_on 1920x1080 60
 	t=$(time_to_lock 10)
 	check loss-idle-relock $? "($t ms)"
+	c=$(fmt_cols)
+	check loss-relock-colorimetry "$([ "$c" = "$cols" ]; echo $?)" \
+		"(TRY_FMT and G_FMT after the relock: $([ "$c" = "$cols" ] && echo 'as before' || echo "changed: $(cols_diff "$cols" "$c")"))"
 	# live stream, then the output goes off: an event, and the stream
-	# carries on free-running, black (spec/video-dma.md)
-	change_while_streaming loss-streaming continue "-o $W/lost" src_off
+	# carries on free-running, black (spec/video-dma.md), its format as it
+	# was: G_FMT on a second handle while it runs unlocked
+	rm -f "$COL_FILE"
+	change_while_streaming loss-streaming continue "-o $W/lost" src_off_gfmt
 	q=$(frame_black $W/lost.YUYV)
 	check loss-streaming-black "$([ "$q" = 100.00 ]; echo $?)" "(last frame: $q % limited-range black)"
+	g=$(cat "$COL_FILE" 2>/dev/null)
+	c=$(sed -n 's/^YUYV //p' <<< "$cols")
+	check loss-streaming-colorimetry "$([ -n "$g" ] && [ "$g" = "$c" ]; echo $?)" \
+		"(G_FMT while the YUYV stream ran unlocked: ${g:-none}; while locked: $c)"
 	# free-running stream (no input), then the output comes back: an event,
 	# and the stream carries on live (same timings)
 	wait_unlocked
@@ -971,7 +1040,7 @@ avi_check() {
 		"(splitter AVI PB1 $pb1 PB3 $pb3 PB5 $pb5: colour $y full_range $full; published: $got)"
 }
 
-# ---- colour changes on the output (colour, avchange) ----
+# ---- colour changes on the output (colour, colorimetry, avchange) ----
 # Only on the output, at runtime (nvidia-settings --no-write-config). The
 # output goes back to RGB full range (0/0) on every exit path: at the end
 # of each step and in the EXIT trap (a failed or stopped run too: bash runs
@@ -980,6 +1049,18 @@ avi_check() {
 # trap in the script itself: a file marks a change not yet put back ($$
 # is the script's PID in both).
 COLOUR_MARK=/tmp/gc573-live-colour-$$
+COLOUR_ATTRS="ColorSpace ColorRange CurrentColorSpace CurrentColorRange Dithering CurrentDithering"
+# every connected output's colour settings, read-only, as
+# "OUTPUT space/range/current space/current range/dithering/current; "
+colour_query() {
+	local o a
+	local -a q
+	for o in $(xrandr --query | awk '/ connected/ { print $1 }'); do
+		q=()
+		for a in $COLOUR_ATTRS; do q+=(-q "[DPY:$o]/$a"); done
+		printf '%s %s; ' "$o" "$(nvidia-settings -t "${q[@]}" 2>/dev/null | paste -sd/)"
+	done
+}
 colour_set() {	# ColorSpace ColorRange, on the output only, never the primary
 	local primary
 	primary=$(xrandr --query | awk '/ connected primary/ { print $1; exit }')
@@ -1012,6 +1093,13 @@ colour_stop() {
 	echo "SUMMARY stopped: $OUT's colour could not be put back"
 	exit 3
 }
+# $2 (colour_query after) against $1 (before): every other output as it
+# was; the output at RGB full range, set and sent, dithering off as show.sh
+# leaves it
+colour_settings_ok() {
+	[ "$(sed 's/; /\n/g' <<< "$1" | grep -v "^$OUT ")" = "$(sed 's/; /\n/g' <<< "$2" | grep -v "^$OUT ")" ] &&
+		sed 's/; /\n/g' <<< "$2" | grep -qx "$OUT 0/0/0/0/2/0"
+}
 
 step_colour() {
 	local cs cr name
@@ -1029,6 +1117,92 @@ step_colour() {
 	done
 	colour_restore || colour_stop colour-restore
 	sleep 3
+}
+
+# ---- colorimetry: the format follows the last input that locked ----
+# (spec/hdmi-chips.md "Stream policy on input changes"). The colour
+# settings of every output are queried, read-only, before and after: the
+# others must not change.
+# fmt_cols once it differs from $1 (a colour change, taken at its lock: up
+# to about 14 s), the source settled again
+cols_change() {
+	local i
+	for i in $(seq 16); do
+		[ "$(fmt_cols)" != "$1" ] && break
+		sleep 0.5
+	done
+	settle
+	fmt_cols
+}
+# what the source sends now (the GPU's current colour space and range)
+colour_sent() {
+	nvidia-settings -t -q "[DPY:$OUT]/CurrentColorSpace" -q "[DPY:$OUT]/CurrentColorRange" 2>/dev/null | paste -sd/
+}
+step_colorimetry() {
+	local q0 q1 a b c d r e f g y
+	q0=$(colour_query)
+	echo "  colour settings before: $q0"
+	# RGB full range, 1080p60: sRGB, the YUV outputs limited range in
+	# BT.709, the RGB outputs full range
+	src_mode 1920x1080 60
+	a=$(fmt_cols)
+	echo "$a" | sed "s|^|  RGB full range (sent $(colour_sent)): |"
+	check colorimetry-rgb-full "$(cols_all "$a" ' sRGB/sRGB/Rec\. 709/' && cols_all "$(cols_rgb "$a")" '/Full Range$' &&
+		cols_all "$(cols_yuv "$a")" '/Limited Range$'; echo $?)" \
+		"(YUYV $(sed -n 's/^YUYV //p' <<< "$a"); XR24 $(sed -n 's/^XR24 //p' <<< "$a"))"
+	# YCbCr 4:4:4 limited range (BT.709 at 1080p), as a console or a
+	# streaming box sends after the PC's RGB: every format in BT.709 at its
+	# lock, the RGB outputs full range (converted)
+	colour_set 2 1
+	b=$(cols_change "$a")
+	echo "$b" | sed "s|^|  YCbCr 4:4:4 limited range (sent $(colour_sent)): |"
+	check colorimetry-ycbcr444 "$(cols_all "$b" ' Rec\. 709/Rec\. 709/Rec\. 709/' && cols_all "$(cols_rgb "$b")" '/Full Range$' &&
+		cols_all "$(cols_yuv "$b")" '/Limited Range$'; echo $?)" \
+		"(at the lock: YUYV $(sed -n 's/^YUYV //p' <<< "$b"); XR24 $(sed -n 's/^XR24 //p' <<< "$b"))"
+	# RGB limited range: sRGB again at its lock, and the RGB outputs keep
+	# the input's range (no conversion)
+	colour_set 0 1
+	c=$(cols_change "$b")
+	echo "$c" | sed "s|^|  RGB limited range (sent $(colour_sent)): |"
+	check colorimetry-rgb-limited "$(cols_all "$c" ' sRGB/sRGB/Rec\. 709/Limited Range$'; echo $?)" \
+		"(at the lock: XR24 $(sed -n 's/^XR24 //p' <<< "$c"); YUYV $(sed -n 's/^YUYV //p' <<< "$c"))"
+	# a loss in RGB limited range: every format as it was (the M2 setup
+	# would be BT.709 and full-range RGB)
+	src_off
+	wait_unlocked
+	d=$(fmt_cols)
+	check colorimetry-loss "$([ "$d" = "$c" ]; echo $?)" \
+		"(TRY_FMT and G_FMT while unlocked: $([ "$d" = "$c" ] && echo 'as in RGB limited range' || echo "changed: $(cols_diff "$c" "$d")"))"
+	# the relock, still RGB limited range
+	src_mode 1920x1080 60
+	r=$(fmt_cols)
+	check colorimetry-relock "$([ "$r" = "$c" ]; echo $?)" \
+		"(sent $(colour_sent); after the relock: $([ "$r" = "$c" ] && echo 'as in RGB limited range' || echo "changed: $(cols_diff "$c" "$r")"))"
+	# RGB full range again: as at the start
+	colour_restore || colour_stop colorimetry-restore
+	e=$(cols_change "$c")
+	check colorimetry-rgb-full-again "$([ "$e" = "$a" ]; echo $?)" \
+		"(sent $(colour_sent): $([ "$e" = "$a" ] && echo 'as at the start' || echo "differs: $(cols_diff "$a" "$e")"))"
+	# 720x480 RGB full range: the YUV outputs in BT.601 (by size); a loss
+	# while a YUYV stream runs keeps it (G_FMT on a second handle), and the
+	# free-run black is black through the RGB->YUV CSC in BT.601
+	src_mode 720x480 59.94
+	f=$(fmt_cols)
+	echo "$f" | sed 's|^|  720x480 RGB full range: |'
+	y=$(sed -n 's/^YUYV //p' <<< "$f")
+	check colorimetry-601 "$(cols_all "$(cols_yuv "$f")" ' sRGB/sRGB/ITU-R 601/Limited Range$'; echo $?)" "(YUYV $y)"
+	rm -f "$COL_FILE"
+	change_while_streaming colorimetry-601-loss continue "-o $W/lost601" src_off_gfmt
+	g=$(cat "$COL_FILE" 2>/dev/null)
+	check colorimetry-601-gfmt "$([ -n "$g" ] && [ "$g" = "$y" ]; echo $?)" \
+		"(G_FMT while the YUYV stream ran unlocked: ${g:-none}; while locked: $y)"
+	q1=$(frame_black $W/lost601.YUYV)
+	check colorimetry-601-black "$([ "$q1" = 100.00 ]; echo $?)" "(last frame: $q1 % limited-range black)"
+	src_mode 1920x1080 60
+	q1=$(colour_query)
+	echo "  colour settings after: $q1"
+	check colorimetry-settings "$(colour_settings_ok "$q0" "$q1"; echo $?)" \
+		"(before: $q0 after: $q1: the other outputs as they were, $OUT at RGB full range, dithering off)"
 }
 
 # M4: avsync.sh's bursts on the HDMI audio, 10 s
@@ -2208,7 +2382,7 @@ step_apps() {
 
 # ---- main ----
 
-all="bringup lock relock fpgawait capture modes change blip loss colour audio exact avsync audioloss"
+all="bringup lock relock fpgawait capture modes change blip loss colour colorimetry audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
 [ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change blip loss audio exact avsync audioloss compliance"
 [ $# -gt 0 ] || set -- $all
