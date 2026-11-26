@@ -20,7 +20,16 @@
 #             valid (module parameter exp_fpga_invalid, the boot race of
 #             2026-11-25): no lock and one warning while it is not valid;
 #             once valid, one lock at the FPGA's rate, also when it becomes
-#             valid 30 polls after the input's stable entry (VM only)
+#             valid 30 polls after the input's stable entry; the self-heal
+#             off for the step (VM only)
+#   fpgaheal  the self-heal of a measurement that stays not valid (the same
+#             parameter; spec/hdmi-chips.md "Lock policy"): valid after
+#             the first attempt, one receiver restart 90 polls in and the
+#             lock, the source seeing no hot-plug; never valid, a restart
+#             and two hot-plugs at least 20 and 80 s apart, one warning,
+#             nothing more in 30 s, and the lock once valid; with fpga_heal
+#             0 no attempt, and with 1 again the restart and the lock. The
+#             output on without a test player (VM only)
 #   capture   1080p60 and 1080p59.94, 6 formats x GC573_LIVE_FRAMES (600):
 #             each format's last frame compared with pattern.py, all frames
 #             identical (full-frame hash), no sequence gaps, G_PARM equal
@@ -677,11 +686,15 @@ fpga_waits() { hdmi_dbg | grep -oE 'fpga_waits [0-9]+' | cut -d' ' -f2; }
 lock_lines() { grep -c 'HDMI: locked' <<< "$1"; }
 lock_rates() { grep -oE 'frame period [0-9a-fx]+ \([0-9.]+ Hz\)' <<< "$1" | paste -sd, - | sed 's/,/, /g'; }
 step_fpgawait() {
-	local line log w0 w1 q t i
+	local line log w0 w1 q t i h0
 	if ! vm "test -e $FPGA_PARAM"; then
 		result fpgawait SKIP "(the loaded gc573 has no exp_fpga_invalid)"
 		return
 	fi
+	# the lock policy alone: the self-heal (fpgaheal) off for the step, or
+	# its restart 90 polls in could come before the measurement is valid
+	h0=$(vm "cat $HEAL_PARAM" 2>/dev/null)
+	[ -z "$h0" ] || heal_param 0
 	src_on 1920x1080 60
 	time_to_lock 10 > /dev/null
 	w0=$(fpga_waits)
@@ -734,6 +747,177 @@ step_fpgawait() {
 	check fpgawait-late "$([ "$t" != none ] && cta1080p60 "$q" && [ "$(lock_lines "$log")" = 1 ] &&
 		! grep -q 'frame period 0 ' <<< "$log"; echo $?)" \
 		"(the measurement valid 30 polls after the stable entry: locked $t ms after the output came on; $(lock_lines "$log") lock lines: $(lock_rates "$log"))"
+	[ -z "$h0" ] || heal_param "$h0"
+}
+
+# fpgaheal: the measurement self-heal (spec/hdmi-chips.md "Lock policy",
+# open question 40). exp_fpga_invalid holds the FPGA's measurement not
+# valid, as at the boot race: 4294967294 until the self-heal's first attempt
+# (a case the receiver restart fixes), 4294967295 for good (a case nothing
+# fixes). The module parameter fpga_heal turns the self-heal off. What the
+# source sees: monitor_present in the ELD of the card's port (/proc/asound,
+# as tests/hpd-unload.sh), every 50 ms. The output stays on without a test
+# player: the self-heal's hot-plugs can drop its mode (as vm() does for an
+# EDID set). A driver without the self-heal fails every case (no SKIP):
+# they are its failing-before test.
+HEAL_PARAM=/sys/module/gc573/parameters/fpga_heal
+heal_param() { vm "echo $1 | sudo tee $HEAL_PARAM > /dev/null"; }
+# "heals fixes giveups" from debugfs hdmi; empty without the self-heal
+heal_counts() {
+	hdmi_dbg | sed -nE 's/.* fpga_heals ([0-9]+) fpga_heal_fixes ([0-9]+) fpga_heal_giveups ([0-9]+).*/\1 \2 \3/p'
+}
+heal_delta() {	# two heal_counts: the change, or "none"
+	[ -n "$1" ] && [ -n "$2" ] || { echo none; return; }
+	# shellcheck disable=SC2086 # the six numbers
+	set -- $1 $2
+	echo "$(($4 - $1)) $(($5 - $2)) $(($6 - $3))"
+}
+heal_eld="" heal_eld_log="" heal_eld_pid="" heal_c0=""
+heal_eld_start() {
+	heal_eld_log=$(mktemp)
+	[ -n "$heal_eld" ] || return 0
+	(
+		p=1
+		while kill -0 $$ 2>/dev/null; do
+			m=
+			while read -r k v; do
+				[ "$k" = monitor_present ] && m=$v
+			done < "$heal_eld"
+			[ "$m" = "$p" ] || { echo "$(date -u +%T.%3N) monitor_present $m" >> "$heal_eld_log"; p=$m; }
+			sleep 0.05
+		done
+	) &
+	heal_eld_pid=$!
+}
+heal_eld_stop() {	# the drops of monitor_present since the start, or "unknown"
+	if [ -n "$heal_eld_pid" ]; then
+		kill "$heal_eld_pid" 2>/dev/null
+		wait "$heal_eld_pid" 2>/dev/null
+	fi
+	heal_eld_pid=
+	if [ -n "$heal_eld" ]; then grep -c 'monitor_present 0' "$heal_eld_log"; else echo unknown; fi
+	rm -f "$heal_eld_log"
+}
+# the output on in a mode, without a test player
+src_bare() {
+	src_on "$1" "$2"
+	"$ROOT/tools/testsrc/show.sh" --off
+}
+# kernel log $1: the seconds of the "self-heal N of" and "gave up" lines
+heal_times() {
+	sed -nE 's/^\[ *([0-9.]+)\].*HDMI: self-heal ([0-9] of|gave up).*/\1/p' <<< "$1" | paste -sd' ' -
+}
+heal_attempts() { grep -oE 'self-heal [0-9] of [0-9], [a-z -]+' <<< "$1" | paste -sd, - | sed 's/,/, /g'; }
+heal_case() {	# tag exp: a stable entry with exp_fpga_invalid = exp
+	src_off
+	wait_unlocked
+	fpga_param "$2"
+	ev "fpgaheal $1: exp_fpga_invalid $2"
+	kmsg_mark "fpgaheal-$1"
+	heal_c0=$(heal_counts)
+	src_bare 1920x1080 60
+	heal_eld_start
+}
+step_fpgaheal() {
+	local h0 c1 d e t q log log2 times i
+	if ! vm "test -e $FPGA_PARAM"; then
+		result fpgaheal SKIP "(the loaded gc573 has no exp_fpga_invalid)"
+		return
+	fi
+	h0=$(vm "cat $HEAL_PARAM" 2>/dev/null)
+	[ -z "$h0" ] || heal_param 1
+	src_bare 1920x1080 60
+	time_to_lock 10 > /dev/null
+	heal_eld=$(grep -l 'GC573' /proc/asound/card*/eld#* 2>/dev/null | head -1)
+	echo "  fpga_heal ${h0:-missing}; the ELD of the card's port: ${heal_eld:-not found}"
+
+	# 1. valid after the first attempt: one receiver restart 90 polls (about
+	#    5 s) after the release, then one lock; the source sees nothing
+	heal_case fixed 4294967294
+	t=$(time_to_lock 20)
+	sleep 1
+	e=$(heal_eld_stop)
+	q=$(query)
+	c1=$(heal_counts)
+	fpga_param 0
+	log=$(kmsg_since fpgaheal-fixed | grep 'gc573.*HDMI: ')
+	sed 's/^/  | /' <<< "$log"
+	d=$(heal_delta "$heal_c0" "$c1")
+	check fpgaheal-fixed "$([ "$t" != none ] && cta1080p60 "$q" &&
+		[ "$(grep -c 'HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls' <<< "$log")" = 1 ] &&
+		[ "$(grep -c 'HDMI: self-heal' <<< "$log")" = 1 ] &&
+		grep -q 'HDMI: FPGA measurement valid after self-heal 1' <<< "$log" &&
+		[ "$(lock_lines "$log")" = 1 ] && [ "$d" = "1 1 0" ] &&
+		{ [ "$e" = 0 ] || [ "$e" = unknown ]; }; echo $?)" \
+		"(locked $t ms after the output came on; attempts: $(heal_attempts "$log"); $(lock_lines "$log") lock lines: $(lock_rates "$log"); heals, fixes, give-ups +$d; HPD drops the source saw: $e)"
+
+	# 2. never valid: a restart, then two hot-plugs at least 20 and 80 s
+	#    after the attempt before, one warning 5 s after the third, and no
+	#    more (30 s); the lock once the measurement is valid, which ends
+	#    the session uncounted
+	heal_case never 4294967295
+	for i in $(seq 200); do
+		log=$(kmsg_since fpgaheal-never)
+		grep -q 'HDMI: self-heal gave up' <<< "$log" && break
+		# a driver without the self-heal: no attempt by 15 s
+		[ "$i" -lt 15 ] || grep -q 'HDMI: self-heal 1 of' <<< "$log" || break
+		sleep 1
+	done
+	grep -q 'HDMI: self-heal gave up' <<< "$log" && sleep 30
+	e=$(heal_eld_stop)
+	c1=$(heal_counts)
+	log=$(kmsg_since fpgaheal-never | grep 'gc573.*HDMI: ')
+	sed 's/^/  | /' <<< "$log"
+	times=$(heal_times "$log")
+	d=$(heal_delta "$heal_c0" "$c1")
+	check fpgaheal-never "$(grep -q 'HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls' <<< "$log" &&
+		grep -q 'HDMI: self-heal 2 of 3, hot-plug' <<< "$log" &&
+		grep -q 'HDMI: self-heal 3 of 3, hot-plug' <<< "$log" &&
+		[ "$(grep -c 'HDMI: self-heal gave up after 3 attempts' <<< "$log")" = 1 ] &&
+		[ "$(grep -c 'HDMI: self-heal' <<< "$log")" = 4 ] &&
+		[ "$(lock_lines "$log")" = 0 ] && [ "$d" = "3 0 1" ] &&
+		awk '{ exit !(NF == 4 && $2 - $1 >= 20 && $2 - $1 < 30 &&
+			$3 - $2 >= 80 && $3 - $2 < 90 && $4 - $3 >= 5 && $4 - $3 < 20) }' <<< "$times" &&
+		{ [ "$e" = 2 ] || [ "$e" = unknown ]; }; echo $?)" \
+		"(attempts: $(heal_attempts "$log"); at s ${times:-none} (kernel clock); $(grep -c 'HDMI: self-heal gave up' <<< "$log") warnings, nothing in the 30 s after; $(lock_lines "$log") lock lines; heals, fixes, give-ups +$d; HPD drops the source saw: $e)"
+	kmsg_mark fpgaheal-valid
+	fpga_param 0
+	t=$(time_to_lock 5)
+	q=$(query)
+	sleep 1
+	log=$(kmsg_since fpgaheal-valid | grep 'gc573.*HDMI: ')
+	c1=$(heal_counts)
+	d=$(heal_delta "$heal_c0" "$c1")
+	check fpgaheal-never-lock "$([ "$t" != none ] && cta1080p60 "$q" && [ "$(lock_lines "$log")" = 1 ] &&
+		! grep -q 'HDMI: FPGA measurement valid after self-heal' <<< "$log" &&
+		[ "$d" = "3 0 1" ] && hdmi_dbg | grep -q ' heal_tries 0 '; echo $?)" \
+		"(the measurement valid again: locked after $t ms, $(lock_lines "$log") lock lines: $(lock_rates "$log"); heals, fixes, give-ups +$d since the case began)"
+
+	# 3. fpga_heal 0: no attempt and no lock for 8 s; on again: the first
+	#    attempt at once (stable for more than 90 polls), then the lock
+	[ -z "$h0" ] || heal_param 0
+	heal_case off 4294967294
+	sleep 8
+	log=$(kmsg_since fpgaheal-off | grep 'gc573.*HDMI: ')
+	q=$(locked && echo locked || echo 'no lock')
+	kmsg_mark fpgaheal-on
+	heal_param 1
+	t=$(time_to_lock 5)
+	sleep 1
+	e=$(heal_eld_stop)
+	c1=$(heal_counts)
+	fpga_param 0
+	d=$(heal_delta "$heal_c0" "$c1")
+	sed 's/^/  | /' <<< "$log"
+	log2=$(kmsg_since fpgaheal-on | grep 'gc573.*HDMI: ')
+	sed 's/^/  | /' <<< "$log2"
+	check fpgaheal-off "$([ "$q" = 'no lock' ] && ! grep -q 'HDMI: self-heal' <<< "$log" &&
+		[ "$t" != none ] && grep -q 'HDMI: self-heal 1 of 3, receiver restart' <<< "$log2" &&
+		[ "$(lock_lines "$log2")" = 1 ] && [ "$d" = "1 1 0" ] &&
+		{ [ "$e" = 0 ] || [ "$e" = unknown ]; }; echo $?)" \
+		"(off for 8 s: $q, $(grep -c 'HDMI: self-heal' <<< "$log") attempts; on: locked after $t ms, attempts: $(heal_attempts "$log2"); heals, fixes, give-ups +$d; HPD drops the source saw: $e)"
+	[ -z "$h0" ] || heal_param "$h0"
+	src_on 1920x1080 60
 }
 
 # Show the pattern in a mode and wait until the input has locked to it and
@@ -2387,7 +2571,7 @@ step_apps() {
 
 # ---- main ----
 
-all="bringup lock relock fpgawait capture modes change blip loss colour colorimetry audio exact avsync audioloss"
+all="bringup lock relock fpgawait fpgaheal capture modes change blip loss colour colorimetry audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
 [ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change blip loss audio exact avsync audioloss compliance"
 [ $# -gt 0 ] || set -- $all
