@@ -237,8 +237,13 @@ def main():
             back = None
             if pk:
                 times = [edges[k]] + [t for t, _ in pk]
-                g = int(np.argmax(np.diff(times)))
-                back = times[g + 1]
+                gaps = np.diff(times)
+                g = int(np.argmax(gaps))
+                # the longest gap is the change's only if it is longer than
+                # one missed flash: OBS's 60 Hz canvas skips a frame of a
+                # 60.0016 Hz source every 10.75 min, now and then a flash
+                # (the obsside run of 2026-11-26: seg 4 "back" +58.9 s)
+                back = times[g + 1] if g == 0 or gaps[g] > 2.5 else times[1]
                 pk = [x for x in pk if x[0] >= back]
             po = [o for _, o in pk]
             steady = edges[k + 1] - back if back is not None else 0

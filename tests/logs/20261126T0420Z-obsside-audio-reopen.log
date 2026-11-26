@@ -1,0 +1,158 @@
+# Does reopening OBS's audio source reset OBS's own A/V offset? (host, 2026-11-26)
+# Run: tests/logs/20261126-040051_6.8.0-151-generic_live.log (live.sh obssoak in local mode,
+# 600 s, one test-source session, a change every 60 s: idle, reopen-video, idle, reopen-audio,
+# idle, reopen-video, reopen-audio, idle, idle). reopen-audio: custom_pcm toggled between
+# hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 and the same without ,DEV=0 (OBS closes
+# and opens the PCM). The recording was copied before live.sh deleted it, analysed with
+# tests/obs-av.py's video() and audio() (flash box 0.70,0.88,0.92,0.92; burst onsets,
+# sample-exact), then deleted.
+# 'burst interval across it': the interval between the last burst before the change and
+# the first after it, off whole seconds of the source: a jump of OBS's audio timeline.
+# 'offset': burst onset minus the flash's frame, per flash (positive: audio late).
+#
+# Reading: video reopens: 0.00 ms. Audio reopens: -10.54 ms and +10.73 ms, about
+# 512 samples either way: a step, not a reset to where OBS's offset began. Between
+# changes the offset stays put: OBS lays the samples back to back (audio-timeline 0.00
+# ppm), and the 60 Hz canvas samples the 60.0016 Hz source with the same rate error, so
+# the two cancel in the file until the canvas skips a source frame (about every 10.75
+# min: the 42.0/58.6 flicker 40-60 s after change 4, then +16.7 ms). The -16.7 ms between
+# segments 0 and 1 is the test source's (its offset at the driver: +42.11 ms before OBS,
+# +25.45 ms after).
+
+599 flashes, 601 bursts; events: ['idle', 'reopen-video', 'idle', 'reopen-audio', 'idle', 'reopen-video', 'reopen-audio', 'idle', 'idle']
+change 1 at   61.0 s (idle        ): burst interval across it    +0.00 ms off whole seconds; offset median 20 s before   +69.2 ms
+      0.0- 5.0 s after: +69.2 +69.2 +69.2 +69.2 +69.2
+      5.0-10.0 s after: +69.2 +69.2 +69.2 +69.2 +69.2
+     10.0-15.0 s after: +69.2 +69.2 +69.2 +69.2 +69.2
+     15.0-20.0 s after: +69.2 +69.2 +69.2 +69.2 +69.2
+     20.0-25.0 s after: +69.2 +69.2 +69.2 +69.2 +69.2
+     25.0-30.0 s after: +69.2 +69.2 +69.2 +69.2 +52.5
+     30.0-35.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     35.0-40.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     40.0-45.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     45.0-50.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     50.0-55.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     55.0-60.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     60.0-65.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     65.0-70.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+change 2 at  121.4 s (reopen-video): burst interval across it    +0.00 ms off whole seconds; offset median 20 s before   +52.5 ms
+      0.0- 5.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+      5.0-10.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     10.0-15.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     15.0-20.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     20.0-25.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     25.0-30.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     30.0-35.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     35.0-40.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     40.0-45.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     45.0-50.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     50.0-55.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     55.0-60.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     60.0-65.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     65.0-70.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+change 3 at  180.0 s (idle        ): burst interval across it    +0.00 ms off whole seconds; offset median 20 s before   +52.5 ms
+      0.0- 5.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+      5.0-10.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     10.0-15.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     15.0-20.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     20.0-25.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     25.0-30.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     30.0-35.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     35.0-40.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     40.0-45.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     45.0-50.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     50.0-55.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     55.0-60.0 s after: +52.5 +52.5 +52.5 +52.5 +52.5
+     60.0-65.0 s after: +52.5 +42.0 +42.0 +42.0 +42.0
+     65.0-70.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+change 4 at  240.4 s (reopen-audio): burst interval across it   -10.54 ms off whole seconds; offset median 20 s before   +52.5 ms
+      0.0- 5.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+      5.0-10.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+     10.0-15.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+     15.0-20.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+     20.0-25.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+     25.0-30.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+     30.0-35.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+     35.0-40.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+     40.0-45.0 s after: +42.0 +42.0 +58.6 +42.0 +42.0
+     45.0-50.0 s after: +42.0 +42.0 +42.0 +42.0 +42.0
+     50.0-55.0 s after: +58.6 +42.0 +58.6 +42.0 +58.6
+     55.0-60.0 s after: +58.6 +42.0 +58.6 +58.6
+     60.0-65.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     65.0-70.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+change 5 at  300.7 s (idle        ): burst interval across it    +0.00 ms off whole seconds; offset median 20 s before   +42.0 ms
+      0.0- 5.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+      5.0-10.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     10.0-15.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     15.0-20.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     20.0-25.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     25.0-30.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     30.0-35.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     35.0-40.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     40.0-45.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     45.0-50.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     50.0-55.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     55.0-60.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     60.0-65.0 s after: +58.6 +58.6 +58.6 +58.6
+     65.0-70.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+change 6 at  361.1 s (reopen-video): burst interval across it    +0.00 ms off whole seconds; offset median 20 s before   +58.6 ms
+      0.0- 5.0 s after: +58.6 +58.6 +58.6 +58.6
+      5.0-10.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     10.0-15.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     15.0-20.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     20.0-25.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     25.0-30.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     30.0-35.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     35.0-40.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     40.0-45.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     45.0-50.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     50.0-55.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     55.0-60.0 s after: +58.6 +58.6 +58.6 +58.6 +58.6
+     60.0-65.0 s after: +58.6 +69.4 +69.4 +69.4 +69.4
+     65.0-70.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+change 7 at  421.7 s (reopen-audio): burst interval across it   +10.73 ms off whole seconds; offset median 20 s before   +58.6 ms
+      0.0- 5.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+      5.0-10.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     10.0-15.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     15.0-20.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     20.0-25.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     25.0-30.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     30.0-35.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     35.0-40.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     40.0-45.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     45.0-50.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     50.0-55.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     55.0-60.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     60.0-65.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     65.0-70.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+change 8 at  480.1 s (idle        ): burst interval across it    +0.00 ms off whole seconds; offset median 20 s before   +69.4 ms
+      0.0- 5.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+      5.0-10.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     10.0-15.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     15.0-20.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     20.0-25.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     25.0-30.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     30.0-35.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     35.0-40.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     40.0-45.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     45.0-50.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     50.0-55.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     55.0-60.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     60.0-65.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     65.0-70.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+change 9 at  540.4 s (idle        ): burst interval across it    +0.00 ms off whole seconds; offset median 20 s before   +69.4 ms
+      0.0- 5.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+      5.0-10.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     10.0-15.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     15.0-20.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     20.0-25.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     25.0-30.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     30.0-35.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     35.0-40.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     40.0-45.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     45.0-50.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     50.0-55.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+     55.0-60.0 s after: +69.4 +69.4 +69.4 +69.4 +69.4
+burst intervals off whole seconds by >= 2 ms:
+  at   241.36 s:    989.46 ms (-10.54)
+  at   422.37 s:   1010.73 ms (+10.73)

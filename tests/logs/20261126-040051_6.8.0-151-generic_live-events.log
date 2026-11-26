@@ -1,0 +1,86 @@
+2026-11-26T04:00:51.093Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap /home/brian/dev/gc573-driver/.claude/worktrees/ag
+2026-11-26T04:00:51.118Z guard start: run pid 1514142, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-26T04:00:51.164Z camwatch start pid 1514171 (guard): 13 nodes marked: /dev/media0 (HD Pro Webcam C920, serial <serial>); /dev/snd/controlC0 (card 0 C920, serial <serial>); /dev/snd/controlC1 (card 1 Device, serial <serial>); /dev/snd/controlC2 (card 2 PCH, serial -); /dev/snd/hwC2D0 (card 2 PCH, serial -); /dev/snd/pcmC0D0c (card 0 C920, serial <serial>); /dev/snd/pcmC1D0c (card 1 Device, serial <serial>); /dev/snd/pcmC1D0p (card 1 Device, serial <serial>); /dev/snd/pcmC2D0c (card 2 PCH, serial -); /dev/snd/pcmC2D0p (card 2 PCH, serial -); /dev/snd/pcmC2D2c (card 2 PCH, serial -); /dev/video0 (HD Pro Webcam C920, serial <serial>); /dev/video1 (HD Pro Webcam C920, serial <serial>). Not watched: snd/controlC3 (card 3 NVidia: NVIDIA HDMI); snd/controlC4 (card 4 GC573: the GC573); snd/hwC3D0 (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D3p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D7p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D8p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D9p (card 3 NVidia: NVIDIA HDMI); snd/pcmC4D0c (card 4 GC573: the GC573); video2 (the GC573)
+2026-11-26T04:00:51.173Z guard x11 start: DVI-D-0 1920x1080+1920+0; outputs DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T04:00:51.183Z guard audio links: none
+2026-11-26T04:00:51.507Z live stream stop (exit 0)
+2026-11-26T04:00:51.874Z show mode DVI-D-0 1920x1080@60
+2026-11-26T04:00:52.225Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1514297 "ffplay"
+2026-11-26T04:00:52.369Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 1514297 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:00:52.453Z show player start 1920x1080@60 (pid 1514297)
+2026-11-26T04:00:52.473Z show player stop (pid 1514297)
+2026-11-26T04:00:52.489Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-26T04:00:52.489Z guard x11 destroy 0x4000007
+2026-11-26T04:00:52.729Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:00:52.730Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:00:52.730Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:00:52.750Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:00:52.878Z avsync mode DVI-D-0 1920x1080@60
+2026-11-26T04:00:53.080Z guard x11 create 0x4000002 1920x1080+1920+0 override 1 ffplay/ffplay pid 1514713 ""
+2026-11-26T04:00:53.080Z guard x11 destroy 0x4000002
+2026-11-26T04:00:53.214Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1514713 ""
+2026-11-26T04:00:53.345Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:00:53.356Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 1514713 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:00:53.464Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1514713)
+2026-11-26T04:00:56.513Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -t 60 -v -V /dev/v4l/by-path/pci-0000:
+2026-11-26T04:01:51.192Z guard ok: audio 1197 polls, longest interval 50 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 18
+2026-11-26T04:01:51.789Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:01:56.764Z live stream stop (exit 0)
+2026-11-26T04:01:57.078Z live obs start
+2026-11-26T04:02:00.834Z obs-events bridge start input=1920x1080p60.00 stream=1920x1080p60.00 settle=2 hold=0.9
+2026-11-26T04:02:01.085Z obs-events recording start (StartRecord, hybrid_mp4)
+2026-11-26T04:02:51.203Z guard ok: audio 2394 polls, longest interval 50 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:02:51.848Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:03:02.120Z obs-events event idle
+2026-11-26T04:03:02.120Z obs-events change idle
+2026-11-26T04:03:51.212Z guard ok: audio 3591 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:03:51.908Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:04:02.459Z obs-events event reopen-video
+2026-11-26T04:04:02.460Z obs-events change reopen-video
+2026-11-26T04:04:02.623Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-26T04:04:51.221Z guard ok: audio 4789 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:04:51.967Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:05:01.111Z obs-events event idle
+2026-11-26T04:05:01.111Z obs-events change idle
+2026-11-26T04:05:51.230Z guard ok: audio 5986 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:05:52.027Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:06:01.441Z obs-events event reopen-audio
+2026-11-26T04:06:01.442Z obs-events change reopen-audio
+2026-11-26T04:06:01.607Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0)
+2026-11-26T04:06:51.239Z guard ok: audio 7183 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:06:52.087Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:07:01.788Z obs-events event idle
+2026-11-26T04:07:01.788Z obs-events change idle
+2026-11-26T04:07:51.249Z guard ok: audio 8380 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:07:52.146Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:08:02.159Z obs-events event reopen-video
+2026-11-26T04:08:02.159Z obs-events change reopen-video
+2026-11-26T04:08:02.328Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-26T04:08:51.258Z guard ok: audio 9577 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:08:52.206Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:09:02.800Z obs-events event reopen-audio
+2026-11-26T04:09:02.800Z obs-events change reopen-audio
+2026-11-26T04:09:02.965Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0)
+2026-11-26T04:09:51.266Z guard ok: audio 10775 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:09:52.265Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:10:01.146Z obs-events event idle
+2026-11-26T04:10:01.146Z obs-events change idle
+2026-11-26T04:10:51.275Z guard ok: audio 11972 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:10:52.325Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:11:01.485Z obs-events event idle
+2026-11-26T04:11:01.486Z obs-events change idle
+2026-11-26T04:11:51.286Z guard ok: audio 13169 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 20
+2026-11-26T04:11:52.384Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:12:01.834Z obs-events recording stop (StopRecord)
+2026-11-26T04:12:06.841Z live obs stop
+2026-11-26T04:12:09.394Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -t 60 -v -V /dev/v4l/by-path/pci-0000:
+2026-11-26T04:12:51.299Z guard ok: audio 14366 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 24
+2026-11-26T04:12:52.445Z camwatch ok 13 nodes marked; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:13:09.644Z live stream stop (exit 0)
+2026-11-26T04:13:41.735Z avsync player stop (pid 1514713)
+2026-11-26T04:13:41.792Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-26T04:13:41.792Z guard x11 destroy 0x4000007
+2026-11-26T04:13:41.812Z guard audio links: none
+2026-11-26T04:13:41.865Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:13:42.309Z guard end: run pid 1514142 gone; audio 15379 polls, longest interval 51 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 2, maps inside DVI-D-0 2, unmapped geometries outside 0, output changes 0, breaches 0, X events 26; no breach
+2026-11-26T04:13:42.496Z camwatch end run pid 1514142 gone; opens: 3 info, 0 breach, 0 other, 0 unknown, 0 test
