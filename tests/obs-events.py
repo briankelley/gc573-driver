@@ -114,6 +114,17 @@ Changes (host side, on the loopback output; the VM side through ssh):
   colour-*     the GPU's colour format at the same timings: rgb-limited,
                ycbcr444, ycbcr422, then rgb-full (nvidia-settings
                ColorSpace and ColorRange, runtime only)
+  idle         nothing (a control for the next two)
+  reopen-video OBS's V4L2 source reopened (reopen below), the input and the
+               test source left as they are
+  reopen-audio OBS's ALSA source reopened: custom_pcm (device_id
+               __custom__) between hw:CARD=GC573,DEV=0 and hw:GC573,0, two
+               names of the same PCM, so OBS closes and opens the device;
+               its settings are put back after a soak. With only these
+               three in a soak's rotation and --keep-source, one source
+               session runs from the driver's first capture to its last,
+               so OBS's own part of the A/V offset is known in every
+               segment
   edid-same    VIDIOC_S_EDID with the image in place: no hot-plug
   edid-new     VIDIOC_S_EDID with another serial number: a hot-plug pulse.
                The GPU drops the link; the test source is started again
@@ -309,6 +320,17 @@ class Source:
         cr = 0 if s.get('color_range', 0) else 1
         ev(f'obs reopen: SetInputSettings color_range {cr} (OBS closes and reopens the device)')
         self.obs.call('SetInputSettings', inputName=VSRC, inputSettings={'color_range': cr})
+
+
+def reopen_audio(obs):
+    """OBS closes and opens its ALSA device: custom_pcm between two names
+    of the same PCM (device_id __custom__)"""
+    s = obs.call('GetInputSettings', inputName=ASRC)['inputSettings']
+    cur = s.get('custom_pcm') if s.get('device_id') == '__custom__' else s.get('device_id')
+    new = PCM_ALT if cur == PCM else PCM
+    ev(f'obs audio reopen: device_id __custom__, custom_pcm {new} (was {cur})')
+    obs.call('SetInputSettings', inputName=ASRC, inputSettings={'device_id': '__custom__', 'custom_pcm': new})
+    return f'custom_pcm {cur} -> {new}'
 
 
 def wait_good(src, t_ref, secs, log=None):
@@ -683,6 +705,18 @@ class Runner:
         self.record(name, ttf, f'(not by itself in {WAIT_SELF} s: {self_runs}; TTFGF from the reopen at '
                     f'{t1 - t0:+.2f}: {fmt_runs(runs, t1)}; source {size[0]}x{size[1]})', ok=ok)
 
+    def ev_obs_side(self, name):
+        """idle, reopen-video, reopen-audio: the picture through it"""
+        t0 = time.monotonic()
+        what = 'nothing'
+        if name == 'reopen-video':
+            self.src.reopen()
+            what = 'video source reopened'
+        elif name == 'reopen-audio':
+            what = 'audio source reopened: ' + reopen_audio(self.obs)
+        ttf, runs, size = wait_good(self.src, t0, TIMEOUT)
+        self.record(name, ttf, f'({what}: {fmt_runs(runs, t0)}; source {size[0]}x{size[1]})')
+
     def ev_colour(self, name, cs, cr):
         """The picture is not restarted: every screenshot for 5 s; TTFGF is
         the first good one after the last one that was not (0 if none)"""
@@ -796,6 +830,9 @@ class Runner:
             'edid-same': lambda: self.ev_edid('edid-same'),
             'edid-new': lambda: self.ev_edid('edid-new'),
             'edid-default': lambda: self.ev_edid('edid-default'),
+            'idle': lambda: self.ev_obs_side('idle'),
+            'reopen-video': lambda: self.ev_obs_side('reopen-video'),
+            'reopen-audio': lambda: self.ev_obs_side('reopen-audio'),
         }[name]()
 
     def restore(self):
@@ -820,7 +857,9 @@ class Runner:
 
 ORDER = ['restart', 'sleep', 'rate-59.94', 'rate-60', 'res-720p', 'res-1080p',
          'colour-rgb-limited', 'colour-ycbcr444', 'colour-ycbcr422', 'colour-rgb-full',
-         'edid-same', 'edid-new', 'edid-default']
+         'edid-same', 'edid-new', 'edid-default', 'idle', 'reopen-video', 'reopen-audio']
+PCM = 'hw:CARD=GC573,DEV=0'
+PCM_ALT = 'hw:GC573,0'	# the same PCM by another name
 
 
 def summary(results, out=print, recoveries=None, bridge=None, windows=(), t_start=None):
@@ -1015,6 +1054,8 @@ def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=
     ok, base = r.baseline()
     print(f'BASELINE {"good" if ok else "NOT GOOD"} ({base})')
     cr0 = obs.call('GetInputSettings', inputName=VSRC)['inputSettings'].get('color_range', 0)
+    a0 = obs.call('GetInputSettings', inputName=ASRC)['inputSettings']
+    a0 = {k: a0.get(k) for k in ('device_id', 'custom_pcm')}
     old_dir = None
     if rec_dir:
         old_dir = obs.call('GetRecordDirectory')['recordDirectory']
@@ -1067,6 +1108,10 @@ def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=
     if cr != cr0:
         ev(f'obs: SetInputSettings color_range {cr0} (as before the soak; OBS reopens the device)')
         obs.call('SetInputSettings', inputName=VSRC, inputSettings={'color_range': cr0})
+    a1 = obs.call('GetInputSettings', inputName=ASRC)['inputSettings']
+    if {k: a1.get(k) for k in a0} != a0:
+        ev(f'obs: SetInputSettings {a0} on the audio source (as before the soak; OBS reopens the PCM)')
+        obs.call('SetInputSettings', inputName=ASRC, inputSettings={k: v for k, v in a0.items() if v is not None})
     if restore:
         r.restore()
     if bridge:
