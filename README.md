@@ -146,17 +146,27 @@ While OBS records, the reopen works only with *Hybrid MP4* (tested; OBS 32's def
 
 ## Use with other applications
 
-The card is a plain V4L2 video device and ALSA sound card, so applications need no special support. These were tested on the host (Linux Mint 22) by recording the card's picture and sound into a file with a test pattern on the input. Each file was checked for the picture, every frame (from a counter in the picture), the sound's channels and rate, and the A/V offset against the driver's own.
+The card is a plain V4L2 video device and ALSA sound card, so applications need no special support. ffmpeg and VLC were tested on the host (Linux Mint 22) and GStreamer in the test virtual machine with the card (Ubuntu 24.04), each by recording the card's picture and sound into a file with a test pattern on the input. Each file was checked for the picture, every frame (from a counter in the picture), the sound's channels and rate, and the A/V offset against the driver's own.
 
-| Application | Picture and sound | Signal lost and back, EDID set again, 60 ↔ 59.94 Hz | Another resolution |
-|---|---|---|---|
-| ffmpeg 6.1 | Every frame, the right picture and sound. A/V within 1 ms of the driver's | Carries on | Stops taking frames, without an error: start it again |
-| VLC 3.0 | The right picture and sound. A/V 14 ms later than the driver's. Recording 1080p60 with lossless x264, it lost up to 36 of 1490 frames after taking them from the driver. The driver delivered them all, and VLC always had a buffer queued | Carries on | Stops taking frames: start it again |
+| Application | Picture and sound | Signal lost and back, EDID set again | 60 ↔ 59.94 Hz | Another resolution |
+|---|---|---|---|---|
+| ffmpeg 6.1 | Every frame, the right picture and sound. A/V within 1 ms of the driver's | Carries on | Carries on | Stops taking frames, without an error: start it again |
+| VLC 3.0 | The right picture and sound. A/V 14 ms later than the driver's. Recording 1080p60 with lossless x264, it lost up to 36 of 1490 frames after taking them from the driver. The driver delivered them all, and VLC always had a buffer queued | Carries on | Carries on | Stops taking frames: start it again |
+| GStreamer 1.24 | Every frame, the right picture and sound. A/V within 10 ms of the driver's. Its file's timestamps follow the audio clock, in 10 ms steps | Carries on | A Matroska recording ends: start it again, or record with fixed caps (below) | As at 60 ↔ 59.94 Hz |
 
-Neither application listens to the driver's source-change event. At another resolution or frame rate (60 ↔ 59.94 Hz aside), the driver ends the stream, because the format must not change under an application that is streaming (see *When the source changes* under *Use with OBS*). Start the application again.
+ffmpeg and VLC do not listen to the driver's source-change event. At another resolution or frame rate (60 ↔ 59.94 Hz aside), the driver ends their stream, because the format must not change under an application that is streaming (see *When the source changes* under *Use with OBS*). Start the application again.
+
+GStreamer's `v4l2src` does listen: at each change it stops, sets its format again and starts again. After a loss of the signal, a relock or an EDID change it gets the format it had, because the driver keeps the colour format of the last input that locked, and the recording goes on. A new frame rate or resolution changes its caps, and Matroska (`matroskamux`) takes no caps change ("Caps changes are not supported by Matroska"), so the recording ends there. To keep one recording through such changes, convert to fixed caps before the encoder:
+
+```
+gst-launch-1.0 -e v4l2src device=/dev/v4l/by-path/pci-<address>-video-index0 ! videorate ! videoscale ! videoconvert ! video/x-raw,format=I420,width=1920,height=1080,framerate=60/1 ! <encoder> ! queue ! mux. alsasrc device=hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0 ! audioconvert ! queue ! mux. matroskamux name=mux ! filesink location=capture.mkv
+```
+
+`videorate`, `videoscale` and `videoconvert` take the source's changes, so the encoder and the muxer always see the same caps. This was tested with `jpegenc` at 1280x720 and 30 frames/s, through 60 → 59.94 Hz → 720p → 1080p60: one recording, one video stream throughout.
 
 Name the devices explicitly. Then nothing else is opened, and the names stay put (see *Device names that stay put* under *Use with OBS*):
 - ffmpeg: `ffmpeg -f v4l2 -ts mono2abs -input_format yuyv422 -video_size 1920x1080 -framerate 60 -i /dev/v4l/by-path/pci-<address>-video-index0 -f alsa -channels 2 -sample_rate 48000 -i hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0 ...`. With `-ts mono2abs` the picture and the sound share a clock.
+- GStreamer: `v4l2src device=/dev/v4l/by-path/pci-<address>-video-index0` and `alsasrc device=hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0`. Even so, its v4l2 plugin opens every video device when it loads (cameras too), to see what each one is.
 - VLC: `cvlc "v4l2:///dev/videoN" --v4l2-dev=/dev/videoN --v4l2-chroma=YUYV --v4l2-width=1920 --v4l2-height=1080 --v4l2-fps=60 --input-slave="alsa://hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0" --sout ...`.
   - Use the `/dev/videoN` node that the by-path name points to (`readlink -f /dev/v4l/by-path/pci-<address>-video-index0`). VLC takes everything after `v4l2://` up to the first `:` as the device, and the by-path name has colons in it.
   - If nothing comes before that `:`, VLC opens its default device, `/dev/video0`, which may be another camera.
