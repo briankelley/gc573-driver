@@ -27,8 +27,13 @@
 #             to the DV timings' nominal interval (1/60 below 59.5 Hz: the
 #             card delivers those at 60 Hz), mean interval within 0.1 % of
 #             the interval G_PARM reports, first frame dropped
-#   modes     every other mode the GPU offers for the output: timings and a
-#             verified capture (GC573_MODE_FRAMES, 120, per format)
+#   modes     every mode the GPU offers for the output (the card's EDID;
+#             1080p60 last, as the way back), each entered from another:
+#             the lock with the FPGA's measurement valid within 40 polls
+#             (fpga_waits unchanged; the polls it took), the DV timings
+#             and their rate against the mode's, and a verified capture
+#             (GC573_MODE_FRAMES, 120, per format: 2 s at the card's
+#             delivery rate, which is 60 Hz below 59.94)
 #   change    input change while streaming: SOURCE_CHANGE, no DMA outside
 #             the queued images; to other timings a DQBUF error and a
 #             restart at the new timings; 60 -> 59.94 Hz (same buffers) the
@@ -420,6 +425,30 @@ g = math.gcd(n, d)
 print(f"{n // g}/{d // g}")
 EOF
 }
+# The input rate the DV timings in a LOCK line ($1) give, in Hz: the pixel
+# clock over the frame, x 1000/1001 with REDUCED_FPS (not G_PARM's 1/60)
+dv_rate() {
+	python3 - "$1" <<'EOF'
+import re, sys
+l = sys.argv[1]
+kv = dict(re.findall(r'(\w+)=(\S+)', l))
+w, h = map(int, re.search(r' (\d+)x(\d+)[pi] ', l).groups())
+hf, hs, hb = map(int, kv['h'].split('/'))
+vf, vs, vb = map(int, kv['v'].split('/'))
+n = (w + hf + hs + hb) * (h + vf + vs + vb)
+d = int(kv['pixelclock'])
+fl = int(kv['flags'], 16)
+if fl & 2 and fl & 4:	# CAN_REDUCE_FPS and REDUCED_FPS
+    n, d = n * 1001, d * 1000
+print(f"{d / n:.4f}")
+EOF
+}
+# a DV rate ($1) is the mode's rate ($2, xrandr's two decimals): within
+# its rounding and 0.02 %, so 60 and 59.94, 24 and 23.98 stay apart
+rate_is() {
+	awk -v a="$1" -v b="$2" 'BEGIN { d = a - b; t = 0.005 + b * 0.0002
+		exit !(d <= t && -d <= t) }'
+}
 
 # Capture fmts x n frames at the current input; compare the last frame of
 # each with pattern.py; check identical frames, gaps, cadence and the
@@ -434,8 +463,10 @@ live_capture() {
 	w=$(echo "$lock" | sed -E 's/.* ([0-9]+)x([0-9]+)p .*/\1/')
 	h=$(echo "$lock" | sed -E 's/.* ([0-9]+)x([0-9]+)p .*/\2/')
 	fps=$(echo "$lock" | sed -E 's/.* fps=([0-9.]+) .*/\1/')
-	check "$tag-timings" "$([ "${w}x$h" = "$size" ]; echo $?)" \
-		"(${w}x$h at $fps Hz, expected $size at $rate)"
+	local dvr
+	dvr=$(dv_rate "$lock")
+	check "$tag-timings" "$([ "${w}x$h" = "$size" ] && rate_is "$dvr" "$rate"; echo $?)" \
+		"(${w}x$h at $dvr Hz in the DV timings, delivered at $fps Hz; expected $size at $rate)"
 	# G_PARM reports the DV timings' nominal interval as an exact fraction
 	# (frame size over pixel clock, x 1001/1000 with REDUCED_FPS)
 	local tpf nom
@@ -730,17 +761,40 @@ step_capture() {
 	live_capture cap-1080p59.94 "$FRAMES" 1920x1080 59.94
 }
 
+# the FPGA counters in debugfs hdmi: "rejects waits" (polls of a stable
+# input whose measurement was not valid before a lock; warnings)
+fpga_counts() {
+	hdmi_dbg | sed -nE 's/.* fpga_rejects ([0-9]+) fpga_waits ([0-9]+).*/\1 \2/p'
+}
+mode_lock() {	# tag mode rate: enter the mode, then the lock checks
+	local tag=$1 m=$2 r=$3 c0 c1 t q d dvr
+	c0=$(fpga_counts)
+	src_on "$m" "$r"
+	t=$(time_to_lock 15)
+	c1=$(fpga_counts)
+	d=$((${c1% *} - ${c0% *}))
+	check "$tag-lock" "$([ "$t" != none ] && [ "${c1#* }" = "${c0#* }" ] && [ "$d" -lt 40 ]; echo $?)" \
+		"(locked ${t} ms after show.sh; the FPGA's measurement not yet valid for $d polls of the stable input, the warning at 40: fpga_waits ${c0#* } -> ${c1#* })"
+	q=$(vm "v4l2-ctl -d $vdev --query-dv-timings" 2>&1)
+	echo "$q" | grep -E 'Active width|Active height|Pixelclock|Total width|Total height|Flags' | sed 's/^/  /'
+	vm "sudo dmesg" | grep 'HDMI: locked' | tail -1 | sed 's/^/  last lock line: /'
+	sleep 1
+	settle
+}
 step_modes() {
 	local m r
 	while read -r m r; do
-		[ "$m" = 1920x1080 ] && { [ "$r" = 60.00 ] || [ "$r" = 59.94 ]; } && continue
+		[ "$m" = 1920x1080 ] && [ "$r" = 60.00 ] && continue
 		echo "== $m @ $r"
-		src_mode "$m" "$r"
+		mode_lock "mode-${m}@$r" "$m" "$r"
 		live_capture "mode-${m}@$r" "$MODE_FRAMES" "$m" "$r"
 	done < <(xrandr --current | awk -v o="$OUT" '$1 == o { f = 1; next }
 		f && /^[^ ]/ { exit }
 		f { for (i = 2; i <= NF; i++) { r = $i; gsub(/[*+]/, "", r); if (r != "") print $1, r } }')
-	src_mode 1920x1080 60
+	# 1080p60 last: from the last mode, and the way back
+	echo "== 1920x1080 @ 60.00"
+	mode_lock "mode-1920x1080@60.00" 1920x1080 60
+	live_capture "mode-1920x1080@60.00" "$MODE_FRAMES" 1920x1080 60
 }
 
 # Stream (cap -X), then run the host action $4... after 4 s. $1: tag;
