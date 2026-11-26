@@ -42,12 +42,15 @@
 #   audio     avsync.sh on HDMI audio: 10 s capture, a burst a second,
 #             left 1 kHz and right 2 kHz (channel order, rate), 48 kHz
 #             against the clock, no gap, no overrun (live-av.py)
-#   exact     the test source frame-exact: GC573_EXACT_SECS (60) of
-#             gc573-aud -V -P per source, show.sh --counter at 1080p60 and
-#             avsync.sh --pattern at 1080p60, 1080p59.94 and 720p59.94: the
-#             counter steps by one from each captured frame to the next
-#             (each source frame captured once), every flash captured once,
-#             no sequence gap (live-av.py's counter and flashes lines)
+#   exact     frame by frame: GC573_EXACT_SECS (60) of gc573-aud -V -P per
+#             source, show.sh --counter at 1080p60 and avsync.sh --pattern
+#             at 1080p60, 1080p59.94 and 720p59.94. FAIL only on a loss of
+#             the driver's: a sequence gap, or a frame interval outside half
+#             to one and a half periods (live-av.py --exact). The counter's
+#             repeats, skips and tears between regular frames are the
+#             source's (its player against the display's refresh): INFO,
+#             with the net slip against what the two clocks predict, and
+#             SOURCE BROKEN when it misses that by more than 1.5 frames
 #   avsync    GC573_AV_SECS (600) of audio and video together: no overrun,
 #             no gap, the driver's period counters clean, and the A/V
 #             offset (flash frame vs burst onset) with its drift
@@ -858,7 +861,7 @@ step_audio() {
 # (paced by the HDMI audio clock, which runs with the GPU's pixel clock).
 # One RESULT per source and mode; the INFO lines say what the capture saw
 step_exact() {
-	local spec kind mode rate name out i d rep lost once flashes vid
+	local spec kind mode rate name out i d ex src
 	for spec in "counter 1920x1080 60" "pattern 1920x1080 60" "pattern 1920x1080 59.94" \
 		"pattern 1280x720 59.94"; do
 		read -r kind mode rate <<< "$spec"
@@ -883,17 +886,15 @@ step_exact() {
 		fi
 		sleep 3
 		vm "sudo $W/gc573-aud -D $pcm -t $EXACT_SECS -v -V $vdev -P -o $W/exact.raw > $W/exact.txt 2>&1"
-		out=$(vm "python3 $W/live-av.py $W/exact.txt $W/exact.raw")
+		out=$(vm "python3 $W/live-av.py $W/exact.txt $W/exact.raw --exact $kind $rate")
 		vm "rm -f $W/exact.raw"
 		# (show.sh --counter plays no audio: live-av.py's audio lines do not apply)
-		grep -E "^INFO|^RESULT +video$([ "$kind" = counter ] || echo '|raw offsets|^RESULT +avsync')" <<< "$out" |
+		grep -E "^INFO|^RESULT +(video|exact)$([ "$kind" = counter ] || echo '|raw offsets|^RESULT +avsync')" <<< "$out" |
 			sed 's/^/  /'
-		read -r rep lost <<< "$(sed -n 's/^INFO counter .*; \([0-9]*\) repeated, \([0-9]*\) source frames never captured$/\1 \2/p' <<< "$out")"
-		read -r flashes once <<< "$(sed -n 's/^INFO flashes   every [0-9]* frames, \([0-9]*\) between the first and last frame: \([0-9]*\) captured once.*/\1 \2/p' <<< "$out")"
-		vid=$(grep -c '^RESULT video *PASS' <<< "$out")
-		check "$name" "$([ "${rep:-x}" = 0 ] && [ "${lost:-x}" = 0 ] && [ -n "$flashes" ] &&
-			[ "$flashes" -gt 0 ] && [ "$once" = "$flashes" ] && [ "$vid" = 1 ]; echo $?)" \
-			"($EXACT_SECS s: ${rep:-?} source frames captured twice, ${lost:-?} never; ${once:-?} of ${flashes:-?} flashes captured once; video $([ "$vid" = 1 ] && echo 'without a gap' || echo 'NOT clean'))"
+		ex=$(sed -n 's/^RESULT exact *\(PASS\|FAIL\) (\(.*\))$/\1 \2/p' <<< "$out")
+		src=$(sed -n 's/^INFO source *\([0-9]* frames shown twice, [0-9]* skipped, [0-9]* torn\).*; net \([-+0-9]*\) frames .*the clocks predict \([-+0-9.]*\) .*; \([^;]*\)$/\1, net \2 (the clocks: \3): \4/p' <<< "$out")
+		check "$name" "$([ "${ex%% *}" = PASS ]; echo $?)" \
+			"($EXACT_SECS s: ${ex#* }; the source: ${src:-no counters read})"
 	done
 	"$ROOT/tools/testsrc/avsync.sh" --off
 	src_on 1920x1080 60

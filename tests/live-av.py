@@ -3,6 +3,7 @@
 """Analyse a gc573-aud capture of tools/testsrc/avsync.sh (M4 gate).
 
 live-av.py LOG RAW [--min-secs S] [--bursts] [--tail S] [--segments T1,T2,..]
+            [--exact counter|pattern RATE]
 
 LOG: gc573-aud -v output (A lines; V lines with -V); RAW: its -o samples
 (S16_LE, 2 channels, 48 kHz). Prints RESULT lines (PASS/FAIL):
@@ -51,6 +52,27 @@ With counters (gc573-aud -V -P: the picture of avsync.sh --pattern or show.sh
              flash box disagrees with their counter
 They describe the source (the test player's pacing on the host's display)
 as much as the capture: the driver's own losses are the sequence gaps.
+--exact KIND RATE (with counters; KIND: counter for show.sh --counter,
+whose player is paced by the system clock, pattern for avsync.sh
+--pattern, paced by the HDMI audio clock; RATE: 60 or 59.94) tells the
+two apart:
+  exact      the driver lost nothing: no sequence gap, and every frame
+             interval between half and one and a half periods (PASS)
+  INFO source  the source's slips: counter repeats, skips and tears
+             (unreadable counters) between frames at regular intervals,
+             and how they cluster; their net (source frames advanced less
+             frames captured) against the clocks' prediction, (source
+             rate - capture rate) x duration. The capture rate is the
+             frames' own (a line through their timestamps, CLOCK_MONOTONIC);
+             the source's is RATE (60000/1001 for 59.94) on the system
+             clock, or times the audio rate over 48 kHz (the bursts' clock,
+             measured here) for pattern. A player shows a frame twice or
+             skips one when its frame times cross the display's refresh, in
+             a cluster while they stay within about 2 ms of it. The source
+             is flagged BROKEN when the net misses the prediction by more
+             than 1.5 frames, or the clusters are more than the crossings
+             the clocks allow (the whole number above duration x rate
+             difference, plus one)
 Without counters (plain avsync.sh, the whole frame flashes) one INFO line:
   flashes    runs of flash frames (mean luma over 128) by length, frames
              partly white (luma 48 to 208 at a flash: a torn or blended
@@ -112,6 +134,83 @@ def counters(seq, c, hot):
           f"{off} frames whose flash box disagrees with the counter")
 
 
+def exact_check(exact, seq, ts, c, arate):
+    """RESULT exact and INFO source (--exact, see the top)"""
+    kind, nominal = exact
+    f_nom = 60000 / 1001 if nominal == '59.94' else float(nominal)
+    seq = np.asarray(seq)
+    ts = np.asarray(ts, dtype=np.int64)
+    t = (ts - ts[0]) / 1e9
+    dseq = np.diff(seq)
+    ivl = np.diff(t)
+    period = np.polyfit(seq - seq[0], t, 1)[0]		# s per frame, by the sequence
+    f_cap = 1 / period
+    gaps = int(np.sum(dseq != 1))
+    long_ = int(np.sum(ivl > 1.5 * period))
+    short = int(np.sum(ivl < 0.5 * period))
+    ok = gaps == 0 and long_ == 0 and short == 0
+    result('exact', ok, f"the driver: {gaps} sequence gaps, {long_} frame intervals over 1.5 periods, "
+                        f"{short} under half a period, over {len(seq)} frames at {f_cap:.5f} Hz")
+    # the source: steps between readable frames at regular intervals
+    regular = (dseq == 1) & (ivl >= 0.5 * period) & (ivl <= 1.5 * period)
+    rd = c >= 0
+    ev = []		# (time, kind, frames)
+    for i in np.flatnonzero(regular & rd[:-1] & rd[1:]):
+        st = int((c[i + 1] - c[i]) % 65536)
+        if st == 0:
+            ev.append((t[i + 1], 'repeat', 1))
+        elif st > 1:
+            ev.append((t[i + 1], 'skip', st - 1))
+    for i in np.flatnonzero(~rd):
+        if 0 < i < len(c) - 1 and regular[i - 1] and regular[i]:
+            ev.append((t[i], 'tear', 1))
+    ev.sort()
+    good = np.flatnonzero(rd)
+    if len(good) < 2:
+        print(f"INFO source    {len(good)} readable counters: no slips to judge")
+        return ok
+    step = (c[good[1:]] - c[good[:-1]]) % 65536
+    advanced = int(np.sum(step))
+    captured = int(seq[good[-1]] - seq[good[0]])
+    net = advanced - captured
+    secs = t[good[-1]] - t[good[0]]
+    if kind == 'pattern':
+        f_src = f_nom * arate / RATE
+        how = f'{f_nom:.5f} Hz x {arate:.3f}/48000 (the HDMI audio clock)'
+    else:
+        f_src = f_nom
+        how = f'{f_nom:.5f} Hz (the system clock)'
+    df = f_src - f_cap
+    pred = df * secs
+    # one crossing every 1/|df| s; the frame times stay within J of the
+    # refresh for J x f_cap / |df| s: events closer than that are one
+    J = 2e-3
+    span = J * f_cap / abs(df) if df else secs
+    span = max(2.0, min(span, secs))
+    clusters = []
+    for x in ev:
+        if clusters and x[0] - clusters[-1][1] <= span:
+            clusters[-1][1] = x[0]
+            clusters[-1][2].append(x)
+        else:
+            clusters.append([x[0], x[0], [x]])
+    allowed = int(np.ceil(abs(pred))) + 1
+    broken = abs(net - pred) > 1.5 or len(clusters) > allowed
+    n = {k: sum(f for _, kk, f in ev if kk == k) for k in ('repeat', 'skip', 'tear')}
+    desc = '; '.join(f"{a:.1f}-{b:.1f} s: " + ', '.join(f"{sum(f for _, kk, f in e if kk == k)} {k}"
+                                                         for k in ('repeat', 'skip', 'tear')
+                                                         if any(kk == k for _, kk, _f in e))
+                     for a, b, e in clusters)
+    print(f"INFO source    {n['repeat']} frames shown twice, {n['skip']} skipped, {n['tear']} torn, between "
+          f"frames at regular intervals; net {net:+d} frames over {secs:.1f} s (source frames advanced "
+          f"{advanced}, captured {captured}); the clocks predict {pred:+.2f} (source {how} = "
+          f"{f_src:.5f} Hz, capture {f_cap:.5f} Hz, a crossing every "
+          f"{(1 / abs(df) if df else float('inf')):.0f} s); {len(clusters)} clusters (at most {allowed}, "
+          f"events within {span:.1f} s as one){': ' + desc if desc else ''}; "
+          + ('SOURCE BROKEN: more slips than its clock explains' if broken else 'explained by the clocks'))
+    return ok
+
+
 def flash_runs(y):
     """INFO flashes for a capture without counters (see the top)"""
     hot = y > 128
@@ -157,6 +256,11 @@ def main():
     if '--bursts' in args:
         args.remove('--bursts')
         want_bursts = True
+    exact = None
+    if '--exact' in args:
+        i = args.index('--exact')
+        exact = (args[i + 1], args[i + 2])
+        del args[i:i + 3]
     segments = []
     if '--segments' in args:
         i = args.index('--segments')
@@ -266,8 +370,12 @@ def main():
                  f"{vbad} by more than 10 %")
     if len(v_c) == len(v_seq):
         counters(v_seq, np.array(v_c), v_y > 128)
+        if exact:
+            ok &= exact_check(exact, v_seq, v_ts, np.array(v_c), rate)
     else:
         flash_runs(v_y)
+        if exact:
+            ok &= result('exact', False, 'no counters in the capture (gc573-aud -P)')
 
     hot = v_y > 128
     first = np.flatnonzero(hot & ~np.concatenate(([False], hot[:-1])))
