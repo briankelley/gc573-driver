@@ -5,7 +5,8 @@ the --model target, discover --save --model --identified, save-state and
 restore-state, stop-ours, and the gates on actions (the go; a saved Roku
 identified as the cabled one; its state saved before the first action).
 Ours is Play on Roku alone: the sideloaded dev channel (the user's own
-app) is never launched but by restore-state, and of it only the player
+app) is never launched but by restore-state and, once the user's handoff
+is there and enabled, by play --via user-app; of it only the player
 state is printed. Two fake
 Rokus answer on 127.0.0.1 and 127.0.0.2 port 8060, and SSDP is replaced:
 no network, no real Roku. The config, the state file and the event log
@@ -89,6 +90,7 @@ tmp = tempfile.mkdtemp()
 os.environ['GC573_EVENT_LOG'] = os.path.join(tmp, 'ev.log')
 ecp.CONF = os.path.join(tmp, 'roku')
 ecp.STATE = os.path.join(tmp, 'roku-state')
+ecp.USER_APP = os.path.join(tmp, 'user-app')
 ecp.ssdp = lambda timeout=3.0: list(ROKUS)
 fails = 0
 
@@ -232,8 +234,41 @@ check('save-dev-other', 'kind=other' in open(ecp.STATE).read() and 'dev' not in 
 LOG.clear()
 rc, out = run(ecp.restore_state, ecp.STATE)
 check('restore-dev', LOG == [('127.0.0.1', '/launch/dev')], repr(LOG))
+# 18. play through the user's app: refused until the handoff is there,
+# private and enabled; then launch/dev with its parameters; stop-ours
+# --via user-app with its stop key, only while dev plays
+os.environ['GC573_ROKU'] = '127.0.0.1'
+url = 'http://192.0.2.9:8573/p.mp4'
+handoff = 'launch=contentId={url}&mediaType=movie\nstop=key:Back\n'
+for name, text, mode in (('user-app-no-handoff', None, 0o600),
+                         ('user-app-not-enabled', handoff + 'enabled=no\n', 0o600),
+                         ('user-app-not-private', handoff + 'enabled=yes\n', 0o644)):
+    if os.path.exists(ecp.USER_APP):
+        os.remove(ecp.USER_APP)
+    if text is not None:
+        open(ecp.USER_APP, 'w').write(text)
+        os.chmod(ecp.USER_APP, mode)
+    LOG.clear()
+    try:
+        ecp.play(url, 'user-app')
+        check(name, False)
+    except ecp.EcpError as e:
+        check(name, LOG == [], str(e))
+os.chmod(ecp.USER_APP, 0o600)
+LOG.clear()
+rc, out = run(ecp.play, url, 'user-app')
+check('user-app-play', LOG == [('127.0.0.1', '/launch/dev?contentId=http%3A%2F%2F192.0.2.9%3A8573%2Fp.mp4'
+                               '&mediaType=movie')], repr(LOG))
+LOG.clear()
+rc, out = run(lambda: print(ecp.stop_ours('user-app')))
+check('user-app-stop', LOG == [('127.0.0.1', '/keypress/Back')], repr(out))
+ROKUS['127.0.0.1']['mstate'] = 'close'
+LOG.clear()
+rc, out = run(lambda: print(ecp.stop_ours('user-app')))
+check('user-app-stop-idle', LOG == [] and 'not playing' in out, repr(out))
 evlog = open(os.environ['GC573_EVENT_LOG']).read()
-check('event-log-private', '127.0.0' not in evlog and 'launch 12' not in evlog and '/12' not in evlog, '')
+check('event-log-private', '127.0.0' not in evlog and '192.0.2.9' not in evlog and 'launch 12' not in evlog
+      and '/12' not in evlog, '')
 print(evlog)
 shutil.rmtree(tmp, ignore_errors=True)
 print('FAILS', fails)

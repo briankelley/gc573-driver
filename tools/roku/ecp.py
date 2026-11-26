@@ -60,8 +60,9 @@ Usage:
   ecp.py save-state [--file F] the foreground app, the power mode and the
                                model, in F (~/.config/gc573/roku-state,
                                0600); a file that is there already is kept
-  ecp.py stop-ours             (GC573_ROKU_GO=1) Home if our video (Play on
-                               Roku) is in the media player, else nothing
+  ecp.py stop-ours [--via V]   (GC573_ROKU_GO=1) stop our video if it is in
+                               the media player, else nothing: Home (pol),
+                               or the handoff's stop (user-app)
   ecp.py restore-state [--file F]  (GC573_ROKU_GO=1; by hand only) PowerOff if it was in
                                Suspend, else the app launched again if it
                                was neither ours nor the home screen;
@@ -74,10 +75,16 @@ Usage:
   ecp.py power                 power mode (PowerOn, DisplayOff, ...)
   ecp.py key KEY...            keypresses (GC573_ROKU_GO=1)
   ecp.py launch APP [K=V...]   launch an app (GC573_ROKU_GO=1)
-  ecp.py play URL              play a video URL (GC573_ROKU_GO=1) with
-                               Play on Roku: input/15985 with t=v, u=URL,
-                               as phones cast to it (not in Roku's ECP
-                               documentation)
+  ecp.py play URL [--via V]    play a video URL (GC573_ROKU_GO=1):
+      pol       Play on Roku: input/15985 with t=v, u=URL, as phones cast
+                to it (not in Roku's ECP documentation; HTTP 404 on the
+                user's Roku)
+      user-app  the user's own app, the sideloaded channel: launch/dev
+                with the parameters of their handoff, in
+                ~/.config/gc573/user-app (0600): "launch=" the launch
+                parameters with {url} for the video's URL, "stop=key:KEY"
+                how to stop its playback, and "enabled=yes". Refused until
+                that file is there and enabled
 """
 import argparse
 import os
@@ -110,6 +117,7 @@ MSEARCH = ('M-SEARCH * HTTP/1.1\r\n'
 # is their own app
 OURS = {'15985'}
 PLAYING = {'open', 'startup', 'buffer', 'play', 'pause'}
+USER_APP = os.path.expanduser('~/.config/gc573/user-app')
 KEYS = {'Home', 'Rev', 'Fwd', 'Play', 'Select', 'Left', 'Right', 'Down',
         'Up', 'Back', 'InstantReplay', 'Info', 'Backspace', 'Search',
         'Enter', 'PowerOff'}
@@ -365,26 +373,67 @@ def launch(app, params=None):
     request('POST', f'launch/{app}', params)
 
 
+def user_app():
+    """The user's handoff for playing through their own app (USER_APP):
+    refused until it is there, private and enabled"""
+    try:
+        st = os.stat(USER_APP)
+    except FileNotFoundError:
+        raise EcpError(f"the user's app: no handoff yet ({USER_APP}): refused") from None
+    if st.st_mode & 0o077:
+        raise EcpError(f'{USER_APP} is readable by others: chmod 600 it')
+    with open(USER_APP) as f:
+        conf = dict(line.strip().split('=', 1) for line in f
+                    if '=' in line and not line.lstrip().startswith('#'))
+    if conf.get('enabled') != 'yes':
+        raise EcpError("the user's app: the handoff is not enabled (enabled=yes): refused")
+    if '{url}' not in conf.get('launch', ''):
+        raise EcpError("the user's app: its launch= parameters have no {url}: refused")
+    if not conf.get('stop', '').startswith('key:'):
+        raise EcpError("the user's app: no stop=key:KEY: refused")
+    return conf
+
+
 def play(url, via='pol'):
-    if via != 'pol':
-        raise EcpError(f'play: no way "{via}" (Play on Roku, pol, only)')
+    if via not in ('pol', 'user-app'):
+        raise EcpError(f'play: no way "{via}" (pol or user-app)')
+    conf = user_app() if via == 'user-app' else None
     action(f'play ({via})')
     # the URL's host is this machine's LAN address: the path only
     ev(f'play {urllib.parse.urlsplit(url).path} via {via}')
+    if conf:
+        pairs = urllib.parse.parse_qsl(conf['launch'], keep_blank_values=True)
+        request('POST', 'launch/dev', {k: v.replace('{url}', url) for k, v in pairs})
+        return
     request('POST', 'input/15985',
             {'t': 'v', 'u': url, 'videoName': 'gc573-pattern',
              'k': '(null)', 'videoFormat': 'mp4'})
 
 
-def stop_ours():
-    """Home if our video is in the media player; what was done"""
+def player_app():
+    """(state, the id of the app in the media player or ''), in memory"""
+    root = ET.fromstring(request('GET', 'query/media-player'))
+    plugin = root.find('plugin')
+    return root.get('state'), (plugin.get('id') or '') if plugin is not None else ''
+
+
+def stop_ours(via='pol'):
+    """Stop our video if it is in the media player; what was done. With
+    user-app, the app is the user's own: only after our play in this run
+    (live.sh calls it only then), with the handoff's stop"""
     need_go('stop-ours')
+    conf = user_app() if via == 'user-app' else None
     ev('query media-player (is ours playing?)')
-    st, _, _, ours = media_state()
-    if ours and st in PLAYING:
+    st, app = player_app()
+    if conf:
+        if app == 'dev' and st in PLAYING:
+            keypress(conf['stop'][4:])
+            return f"the user's app was playing ({st}): {conf['stop'][4:]}"
+        return f"the user's app is not playing (media player {st})"
+    if app in OURS and st in PLAYING:
         keypress('Home')
         return f'our video was in the media player ({st}): Home'
-    return f"nothing of ours playing (media player {st}{'' if ours else ', not ours'})"
+    return f"nothing of ours playing (media player {st}{'' if app in OURS else ', not ours'})"
 
 
 def ssdp(timeout=3.0):
@@ -446,8 +495,8 @@ def main():
     la.add_argument('params', nargs='*', help='K=V')
     p = sub.add_parser('play')
     p.add_argument('url')
-    p.add_argument('--via', default='pol', choices=('pol',))
-    sub.add_parser('stop-ours')
+    p.add_argument('--via', default='pol', choices=('pol', 'user-app'))
+    sub.add_parser('stop-ours').add_argument('--via', default='pol', choices=('pol', 'user-app'))
     ap.add_argument('--model', dest='target', default='',
                     help='the Roku of this model number (SSDP), not the saved one')
     a = ap.parse_args()
@@ -513,7 +562,7 @@ def main():
             print(f'state {st}' + (f' position {pos} s duration {dur} s app ours'
                                    if ours else ' app not ours'))
         elif a.cmd == 'stop-ours':
-            print(stop_ours())
+            print(stop_ours(a.via))
         elif a.cmd == 'power':
             ev('query device-info (power mode)')
             print(device_info().get('power-mode', '?'))

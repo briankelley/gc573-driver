@@ -2798,7 +2798,8 @@ roku_source_on() {
 # user restores the Roku's state themselves
 roku_end() {
 	roku_serve_stop
-	! roku_go || [ ! -e "$ROKU_RUN/played" ] || ecp stop-ours 2>&1 | sed 's/^/  /'
+	! roku_go || [ ! -e "$ROKU_RUN/played" ] ||
+		ecp stop-ours --via "${GC573_ROKU_VIA:-pol}" 2>&1 | sed 's/^/  /'
 	[ -z "$ROKU_RUN" ] || rm -rf "$ROKU_RUN"
 }
 roku_rate() {	# 60 or 59.94 from QUERY_DV_TIMINGS
