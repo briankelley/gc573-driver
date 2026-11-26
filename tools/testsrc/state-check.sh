@@ -42,7 +42,9 @@ for t in pactl pw-cli; do
 	printf '#!/bin/sh\necho "%s $*" >> "%s"\nexec %s "$@"\n' "$t" "$log" "$real" > "$tmp/$t"
 	chmod +x "$tmp/$t"
 done
-result() { echo "RESULT $1 $2 ($3)"; [ "$2" = PASS ] || fails=$((fails + 1)); }
+# shellcheck source=tools/testsrc/scrub.sh
+. "$here/scrub.sh"	# gc573_scrub: no USB serial in a log (pactl calls name sinks)
+result() { echo "RESULT $1 $2 ($(gc573_scrub "$3"))"; [ "$2" = PASS ] || fails=$((fails + 1)); }
 sums() { (cd "$st" && sha256sum default-profile default-nodes 2>/dev/null); }
 addr=$(lspci -D -d 10de: | awk '/Audio/{print $1; exit}')
 card=alsa_card.pci-${addr//:/_}
@@ -70,7 +72,7 @@ trap '"$avsync" --off >/dev/null 2>&1; kill $gpid 2>/dev/null; cat "$tmp/guard.l
 sleep 1
 s0=$(sums)
 p0=$(profile_param)
-echo "card $card, PipeWire device $(devid); active profile and save flag at the start: $p0"
+gc573_scrub "card $card, PipeWire device $(devid); active profile and save flag at the start: $p0"
 
 : > "$log"
 PATH=$tmp:$PATH "$avsync" --amplitude 0 >/dev/null 2>&1

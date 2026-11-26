@@ -47,6 +47,7 @@ import sys
 import threading
 import time
 
+from scrub import scrub
 from xwatch import Watcher
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -215,7 +216,7 @@ def main():
 
     def say(text):
         with lock:
-            log.write(f'{now()} guard {text}\n')
+            log.write(f'{now()} guard {scrub(text)}\n')
 
     def alive():
         try:

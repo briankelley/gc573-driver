@@ -1,0 +1,66 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 08:09:01 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     17c72392efb8
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   fpgawait fpgaheal
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, 5B3D6A46C710499DCDF4D74 in ~/gc573-driver, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## fpgawait
+  | [  477.766011] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  input: power 1 signal 1 locked 0 period 0x0 fpga 0x1 0x780 0x438 colour 0 vic 0 full_range 0 enc 0 dvi 0 dual 0 ddr 0
+RESULT fpgawait-no-lock           PASS (the FPGA measurement held not valid for good: locked 0 period 0x0, QUERY_DV_TIMINGS no lock, 0 lock lines: )
+RESULT fpgawait-warning           PASS (the warning once: 1; fpga_waits 0 -> 1)
+  | [  479.086029] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgawait-lock              PASS (the measurement valid again: locked after 90 ms; 1 lock lines: frame period 0x196dab (60.006 Hz))
+  | [  483.518674] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgawait-late              PASS (the measurement valid 30 polls after the stable entry: locked 2003 ms after the output came on; 1 lock lines: frame period 0x196dab (60.006 Hz))
+
+## fpgaheal
+  fpga_heal Y; the ELD of the card's port: /proc/asound/card3/eld#0.0
+  | [  491.400372] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  494.204604] gc573 0000:07:00.0: HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  494.586819] gc573 0000:07:00.0: HDMI: FPGA measurement valid after self-heal 1
+  | [  494.586826] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgaheal-fixed             PASS (locked 5443 ms after the output came on; attempts: self-heal 1 of 3,  receiver restart; 1 lock lines: frame period 0x196dab (60.006 Hz); heals, fixes, give-ups +1 1 0; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 53 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 9, G_EDID 9; failed G_FMT 0, G_EDID 0; locked in 9)
+  | [  500.631610] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  503.441615] gc573 0000:07:00.0: HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  505.980778] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  523.492264] gc573 0000:07:00.0: HDMI: self-heal 2 of 3, hot-plug: input stable for 352 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  527.610682] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  603.504185] gc573 0000:07:00.0: HDMI: self-heal 3 of 3, hot-plug: input stable for 1394 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  607.693395] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  610.522449] gc573 0000:07:00.0: HDMI: self-heal gave up after 3 attempts: input stable, still no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0); none until a lock or a 5 V loss
+  the splitter's 5 V and the published power (UTC):
+  5v | 08:09:27.951 rx 5v 1 input: power 1 
+RESULT fpgaheal-never             PASS (attempts: self-heal 1 of 3,  receiver restart, self-heal 2 of 3,  hot-plug, self-heal 3 of 3,  hot-plug; at s 503.441615 523.492264 603.504185 610.522449 (kernel clock); 1 warnings, nothing in the 30 s after; 0 lock lines; heals, fixes, give-ups +3 0 1; HPD drops the source saw: 2; 5 V held (rx 5v 1 input: power 1 ), 0 no-5-V lines; second handle: 1138 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 10, G_EDID 539; failed G_FMT 0, G_EDID 0; locked in 0)
+RESULT fpgaheal-never-lock        PASS (the measurement valid again: locked after 95 ms, 1 lock lines: frame period 0x196dab (60.006 Hz); heals, fixes, give-ups +3 0 1 since the case began)
+  | [  646.901318] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  653.104328] gc573 0000:07:00.0: HDMI: self-heal 1 of 3, receiver restart: input stable for 150 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  653.492948] gc573 0000:07:00.0: HDMI: FPGA measurement valid after self-heal 1
+  | [  653.492956] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgaheal-off               PASS (off for 8 s: no lock, 0 attempts; on: locked after 392 ms, attempts: self-heal 1 of 3,  receiver restart; heals, fixes, give-ups +1 1 0; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 78 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 9, G_EDID 11; failed G_FMT 0, G_EDID 0; locked in 8)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 44 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT fpgawait-no-lock           PASS (the FPGA measurement held not valid for good: locked 0 period 0x0, QUERY_DV_TIMINGS no lock, 0 lock lines: )
+RESULT fpgawait-warning           PASS (the warning once: 1; fpga_waits 0 -> 1)
+RESULT fpgawait-lock              PASS (the measurement valid again: locked after 90 ms; 1 lock lines: frame period 0x196dab (60.006 Hz))
+RESULT fpgawait-late              PASS (the measurement valid 30 polls after the stable entry: locked 2003 ms after the output came on; 1 lock lines: frame period 0x196dab (60.006 Hz))
+RESULT fpgaheal-fixed             PASS (locked 5443 ms after the output came on; attempts: self-heal 1 of 3,  receiver restart; 1 lock lines: frame period 0x196dab (60.006 Hz); heals, fixes, give-ups +1 1 0; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 53 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 9, G_EDID 9; failed G_FMT 0, G_EDID 0; locked in 9)
+RESULT fpgaheal-never             PASS (attempts: self-heal 1 of 3,  receiver restart, self-heal 2 of 3,  hot-plug, self-heal 3 of 3,  hot-plug; at s 503.441615 523.492264 603.504185 610.522449 (kernel clock); 1 warnings, nothing in the 30 s after; 0 lock lines; heals, fixes, give-ups +3 0 1; HPD drops the source saw: 2; 5 V held (rx 5v 1 input: power 1 ), 0 no-5-V lines; second handle: 1138 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 10, G_EDID 539; failed G_FMT 0, G_EDID 0; locked in 0)
+RESULT fpgaheal-never-lock        PASS (the measurement valid again: locked after 95 ms, 1 lock lines: frame period 0x196dab (60.006 Hz); heals, fixes, give-ups +3 0 1 since the case began)
+RESULT fpgaheal-off               PASS (off for 8 s: no lock, 0 attempts; on: locked after 392 ms, attempts: self-heal 1 of 3,  receiver restart; heals, fixes, give-ups +1 1 0; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 78 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 9, G_EDID 11; failed G_FMT 0, G_EDID 0; locked in 8)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=11 fail=0 skip=1

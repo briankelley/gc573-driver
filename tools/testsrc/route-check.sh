@@ -24,7 +24,9 @@ here=$(cd "$(dirname "$0")" && pwd)
 export DISPLAY=${DISPLAY:-:0} XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
 export GC573_EVENT_LOG=$dir/route-check.log
 VM=${VM:-gc573-dev} OUT=DVI-D-0
-log() { echo "$(date -u +%FT%T.%3NZ) check $*" >> "$GC573_EVENT_LOG"; echo "$*"; }
+# shellcheck source=tools/testsrc/scrub.sh
+. "$here/scrub.sh"	# gc573_scrub: no USB serial in a log (the default sink's name)
+log() { local l; l=$(gc573_scrub "$*"); echo "$(date -u +%FT%T.%3NZ) check $l" >> "$GC573_EVENT_LOG"; echo "$l"; }
 vm() { ssh -n -o BatchMode=yes "$VM" "$@"; }
 connected() { xrandr --current | grep -q "^$OUT connected"; }
 wait_connected() { for _ in $(seq 100); do connected && return 0; sleep 0.1; done; return 1; }

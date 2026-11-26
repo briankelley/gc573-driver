@@ -1,0 +1,87 @@
+2026-11-26T08:07:00.714Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-26T08:07:00.729Z guard start: run pid 1120412, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-26T08:07:00.782Z camwatch start pid 1120442 (guard): 13 nodes marked: /dev/media0 (HD Pro Webcam C920); /dev/snd/controlC0 (card 0 C920); /dev/snd/controlC1 (card 1 Device); /dev/snd/controlC2 (card 2 PCH); /dev/snd/hwC2D0 (card 2 PCH); /dev/snd/pcmC0D0c (card 0 C920); /dev/snd/pcmC1D0c (card 1 Device); /dev/snd/pcmC1D0p (card 1 Device); /dev/snd/pcmC2D0c (card 2 PCH); /dev/snd/pcmC2D0p (card 2 PCH); /dev/snd/pcmC2D2c (card 2 PCH); /dev/video0 (HD Pro Webcam C920); /dev/video1 (HD Pro Webcam C920). Not watched: snd/controlC3 (card 3 NVidia: NVIDIA HDMI); snd/hwC3D0 (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D3p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D7p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D8p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D9p (card 3 NVidia: NVIDIA HDMI)
+2026-11-26T08:07:00.794Z guard x11 start: DVI-D-0 1920x1080+1920+0; outputs DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T08:07:00.805Z guard audio links: none
+2026-11-26T08:07:01.117Z live stream stop (exit 0)
+2026-11-26T08:07:01.196Z live driver load
+2026-11-26T08:07:01.658Z show mode DVI-D-0 1920x1080@60
+2026-11-26T08:07:02.069Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1120567 "ffplay"
+2026-11-26T08:07:02.236Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1120567 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T08:07:02.313Z show player start 1920x1080@60 (pid 1120567)
+2026-11-26T08:07:02.362Z show player stop (pid 1120567)
+2026-11-26T08:07:02.374Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T08:07:02.374Z guard x11 destroy 0x3400007
+2026-11-26T08:07:02.466Z live output off DVI-D-0
+2026-11-26T08:07:02.631Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T08:07:02.848Z show mode DVI-D-0 1920x1080@60
+2026-11-26T08:07:02.944Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T08:07:03.455Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1121019 "ffplay"
+2026-11-26T08:07:03.641Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 1121019 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T08:07:03.766Z show player start 1920x1080@60 (pid 1121019)
+2026-11-26T08:07:08.617Z show player stop (pid 1121019)
+2026-11-26T08:07:08.655Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-26T08:07:08.655Z guard x11 destroy 0x4200007
+2026-11-26T08:07:08.723Z live output off DVI-D-0
+2026-11-26T08:07:08.869Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T08:07:09.089Z show mode DVI-D-0 1920x1080@60
+2026-11-26T08:07:09.183Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T08:07:09.744Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1131676 "ffplay"
+2026-11-26T08:07:09.912Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 1131676 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T08:07:10.030Z show player start 1920x1080@60 (pid 1131676)
+2026-11-26T08:07:14.996Z show player stop (pid 1131676)
+2026-11-26T08:07:15.007Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-26T08:07:15.007Z guard x11 destroy 0x4200007
+2026-11-26T08:07:15.228Z show mode DVI-D-0 1920x1080@60
+2026-11-26T08:07:15.441Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1141906 "ffplay"
+2026-11-26T08:07:15.535Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1141906 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T08:07:15.648Z show player start 1920x1080@60 (pid 1141906)
+2026-11-26T08:07:15.665Z show player stop (pid 1141906)
+2026-11-26T08:07:15.688Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T08:07:15.688Z guard x11 destroy 0x3400007
+2026-11-26T08:07:15.840Z live output off DVI-D-0
+2026-11-26T08:07:15.972Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T08:07:15.984Z live fpgaheal fixed: exp_fpga_invalid 4294967294
+2026-11-26T08:07:16.203Z show mode DVI-D-0 1920x1080@60
+2026-11-26T08:07:16.286Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T08:07:16.799Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1142467 "ffplay"
+2026-11-26T08:07:16.985Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 1142467 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T08:07:17.117Z show player start 1920x1080@60 (pid 1142467)
+2026-11-26T08:07:17.144Z show player stop (pid 1142467)
+2026-11-26T08:07:17.220Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-26T08:07:17.220Z guard x11 destroy 0x4200007
+2026-11-26T08:07:49.411Z live output off DVI-D-0
+2026-11-26T08:07:49.593Z live fpgaheal never: exp_fpga_invalid 4294967295
+2026-11-26T08:07:49.621Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T08:07:49.892Z show mode DVI-D-0 1920x1080@60
+2026-11-26T08:07:49.980Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T08:07:50.625Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1145833 "ffplay"
+2026-11-26T08:07:50.796Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 1145833 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T08:07:50.900Z show player start 1920x1080@60 (pid 1145833)
+2026-11-26T08:07:50.911Z show player stop (pid 1145833)
+2026-11-26T08:07:50.996Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-26T08:07:50.996Z guard x11 destroy 0x4200007
+2026-11-26T08:08:00.811Z guard ok: audio 1198 polls, longest interval 51 ms; windows: test windows created 6 (0 created outside DVI-D-0, unmapped), maps 6, maps inside DVI-D-0 6, unmapped geometries outside 0, output changes 8, breaches 0, X events 108
+2026-11-26T08:08:00.842Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T08:08:08.230Z live output off DVI-D-0
+2026-11-26T08:08:08.381Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T08:08:08.396Z live fpgaheal off: exp_fpga_invalid 4294967294
+2026-11-26T08:08:08.598Z show mode DVI-D-0 1920x1080@60
+2026-11-26T08:08:08.679Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T08:08:08.995Z guard x11 create 0x3400002 1920x1080+1920+0 override 1 ffplay/ffplay pid 1147539 ""
+2026-11-26T08:08:08.995Z guard x11 destroy 0x3400002
+2026-11-26T08:08:09.175Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1147539 ""
+2026-11-26T08:08:09.343Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1147539 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T08:08:09.401Z show player start 1920x1080@60 (pid 1147539)
+2026-11-26T08:08:09.416Z show player stop (pid 1147539)
+2026-11-26T08:08:09.454Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T08:08:09.454Z guard x11 destroy 0x3400007
+2026-11-26T08:08:27.626Z show mode DVI-D-0 1920x1080@60
+2026-11-26T08:08:28.021Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1149288 ""
+2026-11-26T08:08:28.132Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1149288 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T08:08:28.245Z show player start 1920x1080@60 (pid 1149288)
+2026-11-26T08:08:28.283Z show player stop (pid 1149288)
+2026-11-26T08:08:28.300Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T08:08:28.300Z guard x11 destroy 0x3400007
+2026-11-26T08:08:28.817Z guard end: run pid 1120412 gone; audio 1753 polls, longest interval 51 ms; windows: test windows created 9 (0 created outside DVI-D-0, unmapped), maps 8, maps inside DVI-D-0 8, unmapped geometries outside 0, output changes 10, breaches 0, X events 140; no breach
+2026-11-26T08:08:28.870Z camwatch end run pid 1120412 gone; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test

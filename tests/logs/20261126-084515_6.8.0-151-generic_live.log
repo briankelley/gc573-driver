@@ -1,0 +1,100 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 08:45:15 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     a674366487a7
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   bringup lock relock
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, 5B3D6A46C710499DCDF4D74 in ~/gc573-driver, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## bringup
+  [ 1234.981939] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  [ 1235.084302] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  [ 1235.085031] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  [ 1235.186527] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  [ 1235.332058] gc573 0000:07:00.0: video device video0
+  [ 1235.354542] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT bringup-connected          PASS (DVI-D-0 connected)
+  driver: 00ffffffffffff0031d83057000000000124010380a05a780eee91a3544c99260f505420000001010101010101010101010101010101023a801871382d40582c450040846300001e000000fd00173d0f440f000a202020202020000000fc004743353733204c696e75780a2000000010000000000000000000000000000001e4020324f14c101f22212004130203111201230904078301000067030c0010000021e200ca00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ba
+  host:   00ffffffffffff0031d83057000000000124010380a05a780eee91a3544c99260f505420000001010101010101010101010101010101023a801871382d40582c450040846300001e000000fd00173d0f440f000a202020202020000000fc004743353733204c696e75780a2000000010000000000000000000000000000001e4020324f14c101f22212004130203111201230904078301000067030c0010000021e200ca00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ba
+RESULT bringup-edid-host          PASS (256 bytes on the host, 256 from G_EDID)
+RESULT bringup-edid-decode        PASS (EDID conformity: PASS)
+
+## lock
+  	Active width: 1920
+  	Active height: 1080
+  	Total width: 2200
+  	Total height: 1125
+  	Frame format: progressive
+  	Polarities: +vsync +hsync
+  	Pixelclock: 148500000 Hz (60.00 frames per second)
+  	Horizontal frontporch: 88
+  	Horizontal sync: 44
+  	Horizontal backporch: 148
+  	Vertical frontporch: 4
+  	Vertical sync: 5
+  	Vertical backporch: 36
+  	Standards: CTA-861, DMT
+  	CTA-861 VIC: 16
+  	Flags: framerate can be reduced by 1/1.001, can detect reduced framerates, CE-video, has CTA-861 VIC
+RESULT lock-1080p60               PASS (1406 ms from output on)
+  	Active width: 1920
+  	Active height: 1080
+  	Total width: 2200
+  	Total height: 1125
+  	Frame format: progressive
+  	Polarities: +vsync +hsync
+  	Pixelclock: 148500000 Hz (60.00 frames per second)
+  	Horizontal frontporch: 88
+  	Horizontal sync: 44
+  	Horizontal backporch: 148
+  	Vertical frontporch: 4
+  	Vertical sync: 5
+  	Vertical backporch: 36
+  	Standards: CTA-861, DMT
+  	CTA-861 VIC: 16
+  	Flags: framerate can be reduced by 1/1.001, framerate is reduced by 1/1.001, can detect reduced framerates, CE-video, has CTA-861 VIC
+RESULT lock-1080p59.94            PASS (1852 ms from the mode switch)
+RESULT lock-power-present         PASS (power_present: 1)
+RESULT lock-event-mode-change     PASS (1242.260187: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-loss            PASS (1245.409040: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-lock            PASS (1248.289678: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+  Video input : 0 (HDMI: ok)
+  ioctl: VIDIOC_ENUMINPUT
+  	Input       : 0
+  	Name        : HDMI
+  	Type        : 0x00000002 (Camera)
+  	Audioset    : 0x00000000
+  	Tuner       : 0x00000000
+  	Standard    : 0x0000000000000000 ()
+  	Status      : 0x00000000 (ok)
+  	Capabilities: 0x00000002 (DV timings)
+
+## relock
+  ms from the switch to the new rate: 1787 1822 1725 1779 1766 1791 1703 1788 1757 1742 1676 1713 1723 1757 1747 1747 1733 1743 1823 1801 1719 1803 1795 1775 1728 1850 1760 1678 1742 1749 1771 1750 1760 1706 1708 1816 1785 1771 1679 1694 1709 1848 1751 1828 1787 1802 1742 1771 1720 1793
+RESULT relock                     PASS (50 of 50 switches locked within 3 s, slowest 1850 ms; fpga_rejects 132 level_changes 5 )
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 176 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT bringup-connected          PASS (DVI-D-0 connected)
+RESULT bringup-edid-host          PASS (256 bytes on the host, 256 from G_EDID)
+RESULT bringup-edid-decode        PASS (EDID conformity: PASS)
+RESULT lock-1080p60               PASS (1406 ms from output on)
+RESULT lock-1080p59.94            PASS (1852 ms from the mode switch)
+RESULT lock-power-present         PASS (power_present: 1)
+RESULT lock-event-mode-change     PASS (1242.260187: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-loss            PASS (1245.409040: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-lock            PASS (1248.289678: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT relock                     PASS (50 of 50 switches locked within 3 s, slowest 1850 ms; fpga_rejects 132 level_changes 5 )
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=13 fail=0 skip=1

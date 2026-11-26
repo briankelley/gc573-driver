@@ -1,0 +1,55 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 08:07:00 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     17c72392efb8
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   fpgawait fpgaheal
+module:  srcversion 831037C95986635A750EBA2 loaded, 831037C95986635A750EBA2 in ~/gc573-driver, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## fpgawait
+  | [  356.676641] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  input: power 1 signal 1 locked 0 period 0x0 fpga 0x1 0x780 0x438 colour 0 vic 0 full_range 0 enc 0 dvi 0 dual 0 ddr 0
+RESULT fpgawait-no-lock           PASS (the FPGA measurement held not valid for good: locked 0 period 0x0, QUERY_DV_TIMINGS no lock, 0 lock lines: )
+RESULT fpgawait-warning           PASS (the warning once: 1; fpga_waits 0 -> 1)
+  | [  358.055357] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgawait-lock              PASS (the measurement valid again: locked after 103 ms; 1 lock lines: frame period 0x196dab (60.006 Hz))
+  | [  362.467939] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgawait-late              PASS (the measurement valid 30 polls after the stable entry: locked 1886 ms after the output came on; 1 lock lines: frame period 0x196dab (60.006 Hz))
+
+## fpgaheal
+  fpga_heal missing; the ELD of the card's port: /proc/asound/card3/eld#0.0
+  | [  370.052664] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+RESULT fpgaheal-fixed             FAIL (locked none ms after the output came on; attempts: ; 0 lock lines: ; heals, fixes, give-ups +none; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 254 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 9, G_EDID 13; failed G_FMT 0, G_EDID 0; locked in 0)
+  | [  403.732083] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  the splitter's 5 V and the published power (UTC):
+  5v | 08:07:51.060 rx 5v 1 input: power 1 
+RESULT fpgaheal-never             FAIL (attempts: ; at s none (kernel clock); 0 warnings, nothing in the 30 s after; 0 lock lines; heals, fixes, give-ups +none; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ), 0 no-5-V lines; second handle: 120 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 8, G_EDID 12; failed G_FMT 0, G_EDID 0; locked in 0)
+RESULT fpgaheal-never-lock        FAIL (the measurement valid again: locked after 91 ms, 1 lock lines: frame period 0x196dab (60.006 Hz); heals, fixes, give-ups +none since the case began)
+tee: /sys/module/gc573/parameters/fpga_heal: Permission denied
+  | [  422.435785] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | 
+RESULT fpgaheal-off               FAIL (off for 8 s: no lock, 0 attempts; on: locked after none ms, attempts: ; heals, fixes, give-ups +none; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 137 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 9, G_EDID 46; failed G_FMT 0, G_EDID 0; locked in 0)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 27 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT fpgawait-no-lock           PASS (the FPGA measurement held not valid for good: locked 0 period 0x0, QUERY_DV_TIMINGS no lock, 0 lock lines: )
+RESULT fpgawait-warning           PASS (the warning once: 1; fpga_waits 0 -> 1)
+RESULT fpgawait-lock              PASS (the measurement valid again: locked after 103 ms; 1 lock lines: frame period 0x196dab (60.006 Hz))
+RESULT fpgawait-late              PASS (the measurement valid 30 polls after the stable entry: locked 1886 ms after the output came on; 1 lock lines: frame period 0x196dab (60.006 Hz))
+RESULT fpgaheal-fixed             FAIL (locked none ms after the output came on; attempts: ; 0 lock lines: ; heals, fixes, give-ups +none; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 254 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 9, G_EDID 13; failed G_FMT 0, G_EDID 0; locked in 0)
+RESULT fpgaheal-never             FAIL (attempts: ; at s none (kernel clock); 0 warnings, nothing in the 30 s after; 0 lock lines; heals, fixes, give-ups +none; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ), 0 no-5-V lines; second handle: 120 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 8, G_EDID 12; failed G_FMT 0, G_EDID 0; locked in 0)
+RESULT fpgaheal-never-lock        FAIL (the measurement valid again: locked after 91 ms, 1 lock lines: frame period 0x196dab (60.006 Hz); heals, fixes, give-ups +none since the case began)
+RESULT fpgaheal-off               FAIL (off for 8 s: no lock, 0 attempts; on: locked after none ms, attempts: ; heals, fixes, give-ups +none; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 137 rounds, max ms QUERY_DV_TIMINGS 10, G_FMT 9, G_EDID 46; failed G_FMT 0, G_EDID 0; locked in 0)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=7 fail=4 skip=1

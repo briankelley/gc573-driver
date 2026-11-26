@@ -475,6 +475,32 @@ static int gc573_it_sync(struct gc573_hdmi *h, bool on)
 	return ret ?: gc573_it_audio_off(h);
 }
 
+/*
+ * Receiver restart for the measurement self-heal (driver policy,
+ * hdmi-chips.md "Lock policy"; open question 40 proposes it: a pass
+ * through WAIT_SYNC). The WAIT_SYNC entry of 7.5 (tristate, the stable
+ * flags cleared) and audio off, as at a sync loss (7.9), while the source
+ * still sends sync; not the sync loss's 0:40 write (meaning unknown, never
+ * traced with sync present). The next poll finds 0:19 bit 7 set in
+ * WAIT_SYNC and takes the sync-on path (DEBOUNCE), so the stable entry
+ * (7.6) with its output enable runs again four polls later, as after a
+ * mode change of the source. No HPD or power write: the source sees
+ * nothing. Not counted as a loss. Only from STABLE. Bus held.
+ */
+int gc573_it6805_restart(struct gc573_hdmi *h)
+{
+	struct gc573_it6805 *it = &h->it;
+	int ret;
+
+	if (it->state != GC573_IT_STABLE)
+		return 0;
+	it->restarts++;
+	/* not STABLE: gc573_it_wait_sync() counts no loss */
+	it->state = GC573_IT_WAIT_SYNC;
+	ret = gc573_it_wait_sync(h);
+	return ret ?: gc573_it_audio_off(h);
+}
+
 /* 7.6 */
 static int gc573_it_entry(struct gc573_hdmi *h)
 {
@@ -916,11 +942,11 @@ void gc573_it6805_show(struct gc573_hdmi *h, struct seq_file *m)
 
 	seq_printf(m, "it6805: rev %#04x factory %u kHz trim %#04x cal_retrigger %u\n",
 		   it->rev, it->f_khz, it->trim, it->cal_retrigger);
-	seq_printf(m, "it6805: state %s power %s audio %s armed %d sync %d debounce %u wait %u released %d polls %u entries %u losses %u releases %u\n",
+	seq_printf(m, "it6805: state %s power %s audio %s armed %d sync %d debounce %u wait %u released %d polls %u entries %u losses %u releases %u restarts %u\n",
 		   states[it->state], powers[it->power], audio[it->audio],
 		   it->normal_armed, it->sync, it->debounce, it->wait,
 		   it->released, it->polls, it->entries, it->losses,
-		   it->releases);
+		   it->releases, it->restarts);
 	seq_printf(m, "it6805: 13 %02x 14 %02x 19 %02x 4f %02x avi_store %02x %02x\n",
 		   it->r13, it->r14, it->r19, it->r4f, it->avi_store[0],
 		   it->avi_store[1]);

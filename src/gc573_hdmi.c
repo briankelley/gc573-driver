@@ -26,10 +26,18 @@
 
 #include "gc573.h"
 
+/* exp_fpga_invalid: not valid until the self-heal's first attempt */
+#define GC573_EXP_FPGA_UNTIL_HEAL	0xfffffffe
+
 static unsigned int exp_fpga_invalid;
 module_param(exp_fpga_invalid, uint, 0644);
 MODULE_PARM_DESC(exp_fpga_invalid,
-		 "Experiment, a test of the lock policy (hdmi-chips.md \"Lock policy\"); read per poll. For this many polls after each stable entry the poll sees the FPGA's input measurement not valid yet: 0x1004[1:0] = 1, as in the boot race, and 0x1010 = 0; 0xffffffff: always. Default 0");
+		 "Experiment, a test of the lock policy (hdmi-chips.md \"Lock policy\"); read per poll. For this many polls after each stable entry the poll sees the FPGA's input measurement not valid yet: 0x1004[1:0] = 1, as in the boot race, and 0x1010 = 0; 0xfffffffe: until the self-heal's first attempt, again after each lock or 5 V loss (a case the first attempt fixes); 0xffffffff: always (a case nothing fixes). Default 0");
+
+static bool fpga_heal = true;
+module_param(fpga_heal, bool, 0644);
+MODULE_PARM_DESC(fpga_heal,
+		 "Self-heal of a stable input the FPGA does not measure (hdmi-chips.md \"Lock policy\", open question 40): a receiver restart, then hot-plugs, at most 3 attempts. Default on");
 
 /* hdmi-chips.md "Control model": the next poll 50 ms after a cycle ends */
 #define GC573_HDMI_POLL_MS		50
@@ -43,6 +51,37 @@ MODULE_PARM_DESC(exp_fpga_invalid,
  * (hdmi-chips.md "Lock policy")
  */
 #define GC573_HDMI_FPGA_WARN		40
+/*
+ * Driver policy, the measurement self-heal (hdmi-chips.md "Lock policy",
+ * open question 40). With the IT6805 stable and released, and the FPGA's
+ * active size matching it but its status (0x1004[1:0]) not 3, this many
+ * polls after the release (about 5 s, past the warning) and still no
+ * lock, the driver tries:
+ *  1. a receiver restart through WAIT_SYNC (gc573_it6805_restart(); the
+ *     source sees nothing);
+ *  2. and 3. the hot-plug of an EDID change (gc573_hdmi_edid_load()),
+ *     at least 20 s, then 80 s, after the attempt before.
+ * Then, 5 s after the third, one warning and no more, until a lock or a
+ * 5 V loss that comes more than GC573_HDMI_HEAL_QUIET_MS after the last
+ * attempt: a loss the hot-plug may have caused does not restart the
+ * count. A sync loss never does: both attempts cause one, and a source
+ * that keeps dropping sync must not get a hot-plug after each. A source
+ * the FPGA measures as stable (status 3) never gets one, even when the
+ * lock policy rejects its measurement (a frame period that moves).
+ */
+#define GC573_HDMI_HEAL_POLLS		90
+#define GC573_HDMI_HEAL_TRIES		3
+#define GC573_HDMI_HEAL_QUIET_MS	10000
+#define GC573_HEAL_RESTART		1
+#define GC573_HEAL_HOTPLUG		2
+/*
+ * Seconds from the last attempt, by the attempts made: before the second
+ * and the third, and before the warning after the third
+ */
+static const unsigned int gc573_heal_gap_s[GC573_HDMI_HEAL_TRIES + 1] = {
+	0, 20, 80, 5,
+};
+
 /* frame periods (0x1010) taken as valid: 5-121 Hz */
 #define GC573_PERIOD_MIN		(GC573_IN_FRAME_PERIOD_HZ / 121)
 #define GC573_PERIOD_MAX		(GC573_IN_FRAME_PERIOD_HZ / 5)
@@ -217,14 +256,38 @@ int gc573_hdmi_get_edid(struct gc573 *gc, struct v4l2_edid *e)
 }
 
 /*
+ * The hot-plug of an EDID change, for h->edid as it is: the source HPD
+ * low, both RAMs loaded (IT6805: hdmi-it6805.md section 4 with its HPD
+ * low; splitter: hdmi-splitter.md 8.3 with RD's change toggle, 500 ms
+ * low), both HPDs high again with 5 V present (port 1: once the IT6805 is
+ * out of SAVING, hdmi-it6805.md section 5). VIDIOC_S_EDID uses it on a
+ * change, and the measurement self-heal with the image unchanged.
+ * h->lock held, bus not.
+ */
+static int gc573_hdmi_edid_load(struct gc573_hdmi *h)
+{
+	unsigned int n = h->edid_blocks;
+	int ret;
+
+	gc573_chip_begin(h);
+	ret = gc573_sp_hpd_low(h);
+	gc573_hdmi_hpd(h, false);
+	if (!ret && n)
+		ret = gc573_seq_run(h, &gc573_seq_it_edid, 0);
+	if (!ret)
+		ret = gc573_sp_edid(h, true);
+	gc573_chip_end(h);
+	if (!ret && n && h->it.power != GC573_IT_SAVING)
+		gc573_hdmi_hpd(h, true);
+	return ret;
+}
+
+/*
  * VIDIOC_S_EDID (hdmi-chips.md EDID policy; e->pad checked): at most two
- * blocks. On a change the source HPD goes low, both RAMs are reloaded
- * (IT6805: hdmi-it6805.md section 4 with its HPD low; splitter:
- * hdmi-splitter.md 8.3 with RD's change toggle, 500 ms low), and both
- * HPDs return high with 5 V present (port 1: once the IT6805 is out of
- * SAVING, hdmi-it6805.md section 5). The same image again is a no-op, so
- * the source sees no hot-plug. 0 blocks: no EDID, both HPDs stay low.
- * The checksums the chips serve are their own (registers c9/ca).
+ * blocks. On a change the source HPD goes low, both RAMs are reloaded and
+ * both HPDs return high (gc573_hdmi_edid_load()). The same image again is
+ * a no-op, so the source sees no hot-plug. 0 blocks: no EDID, both HPDs
+ * stay low. The checksums the chips serve are their own (registers c9/ca).
  */
 int gc573_hdmi_set_edid(struct gc573 *gc, struct v4l2_edid *e)
 {
@@ -248,16 +311,7 @@ int gc573_hdmi_set_edid(struct gc573 *gc, struct v4l2_edid *e)
 	h->edid_blocks = n;
 	gc573_hdmi_edid_parse(h);
 
-	gc573_chip_begin(h);
-	ret = gc573_sp_hpd_low(h);
-	gc573_hdmi_hpd(h, false);
-	if (!ret && n)
-		ret = gc573_seq_run(h, &gc573_seq_it_edid, 0);
-	if (!ret)
-		ret = gc573_sp_edid(h, true);
-	gc573_chip_end(h);
-	if (!ret && n && h->it.power != GC573_IT_SAVING)
-		gc573_hdmi_hpd(h, true);
+	ret = gc573_hdmi_edid_load(h);
 	if (ret)
 		dev_err(&gc->pdev->dev, "HDMI: EDID update failed: %d\n", ret);
 	else
@@ -278,6 +332,15 @@ static bool gc573_period_valid(u32 period)
 static u32 gc573_hdmi_mul(const struct gc573_it_mode *m)
 {
 	return (m->avi[1] >> 5 & 3) == 3 ? 2 : 1;
+}
+
+/* The FPGA's active size (0x1008, 0x100c) is the IT6805's */
+static bool gc573_hdmi_fpga_size_ok(struct gc573_hdmi *h, const u32 *fpga)
+{
+	const struct gc573_it_mode *m = &h->it.mode;
+
+	return (fpga[1] & 0xffff) == m->hactive >> (m->dual + m->ddr) &&
+	       (m->interlaced || (fpga[2] & 0xffff) == m->vactive);
 }
 
 /*
@@ -301,9 +364,7 @@ static bool gc573_hdmi_fpga_ok(struct gc573_hdmi *h, u32 period, u32 prev,
 	u64 frame = (u64)m->htotal * mul * m->vtotal;
 	u64 it_hz = (u64)m->pclk_khz * 1000 * mul, hz;
 
-	if ((fpga[0] & 3) != 3 ||
-	    (fpga[1] & 0xffff) != m->hactive >> (m->dual + m->ddr) ||
-	    (!m->interlaced && (fpga[2] & 0xffff) != m->vactive))
+	if ((fpga[0] & 3) != 3 || !gc573_hdmi_fpga_size_ok(h, fpga))
 		return false;
 	if (!gc573_period_valid(period) || !frame ||
 	    abs_diff(period, prev) > period / 5000)
@@ -421,6 +482,73 @@ static void gc573_hdmi_log_lock(struct gc573_hdmi *h,
 		 in->fpga[2]);
 }
 
+/* ---- the measurement self-heal (GC573_HDMI_HEAL_POLLS) ---- */
+
+/* A session ends: at a lock, or with no 5 V */
+static void gc573_hdmi_heal_reset(struct gc573_hdmi *h)
+{
+	h->heal_tries = 0;
+	h->heal_gave_up = false;
+	h->heal_due = 0;
+}
+
+/*
+ * In a poll that publishes a stable, released input without a lock, whose
+ * active size the FPGA measures as the IT6805's but not as stable: pick the
+ * next attempt, which gc573_hdmi_heal() runs after the publish, or give up.
+ * h->lock held.
+ */
+static void gc573_hdmi_heal_check(struct gc573_hdmi *h,
+				  const struct gc573_input *in, u32 period)
+{
+	struct device *dev = &h->gc->pdev->dev;
+	unsigned int n = h->heal_tries;
+
+	if (!READ_ONCE(fpga_heal) || h->heal_gave_up ||
+	    h->lock_polls < GC573_HDMI_HEAL_POLLS ||
+	    (n && time_before(jiffies, h->heal_at + gc573_heal_gap_s[n] * HZ)))
+		return;
+	if (n == GC573_HDMI_HEAL_TRIES) {
+		h->heal_gave_up = true;
+		h->fpga_heal_giveups++;
+		dev_warn(dev,
+			 "HDMI: self-heal gave up after %u attempts: input stable, still no valid FPGA measurement (1004 %#x 1008 %#x 100c %#x 1010 %#x); none until a lock or a 5 V loss\n",
+			 n, in->fpga[0], in->fpga[1], in->fpga[2], period);
+		return;
+	}
+	/* the source sees nothing of a restart; a hot-plug needs an EDID */
+	h->heal_due = n && h->edid_blocks ? GC573_HEAL_HOTPLUG :
+					    GC573_HEAL_RESTART;
+	h->heal_tries++;
+	h->fpga_heals++;
+	h->heal_at = jiffies;
+	dev_info(dev,
+		 "HDMI: self-heal %u of %u, %s: input stable for %u polls, no valid FPGA measurement (1004 %#x 1008 %#x 100c %#x 1010 %#x)\n",
+		 h->heal_tries, GC573_HDMI_HEAL_TRIES,
+		 h->heal_due == GC573_HEAL_HOTPLUG ? "hot-plug" :
+						     "receiver restart",
+		 h->lock_polls, in->fpga[0], in->fpga[1], in->fpga[2], period);
+}
+
+/* The attempt gc573_hdmi_heal_check() picked; h->lock held, bus not */
+static void gc573_hdmi_heal(struct gc573_hdmi *h)
+{
+	u8 due = h->heal_due;
+	int ret;
+
+	h->heal_due = 0;
+	if (due == GC573_HEAL_HOTPLUG) {
+		ret = gc573_hdmi_edid_load(h);
+	} else {
+		gc573_chip_begin(h);
+		ret = gc573_it6805_restart(h);
+		gc573_chip_end(h);
+	}
+	if (ret)
+		dev_err(&h->gc->pdev->dev, "HDMI: self-heal %u failed: %d\n",
+			h->heal_tries, ret);
+}
+
 /*
  * Publish the input state; h->lock held. Locked (hdmi-chips.md "Lock
  * policy"): IT6805 stable with the AV mute released (hdmi-it6805.md 7.7,
@@ -443,6 +571,7 @@ static bool gc573_hdmi_publish(struct gc573_hdmi *h)
 	struct gc573_input in = { };
 	bool changed, hold = false;
 	u32 period, prev = h->period_raw;
+	u32 exp = READ_ONCE(exp_fpga_invalid);
 
 	in.power = h->sp.r13 & BIT(0);
 	in.signal = in.power && (h->sp.r13 & BIT(3));
@@ -452,7 +581,8 @@ static bool gc573_hdmi_publish(struct gc573_hdmi *h)
 	in.fpga[2] = gc573_rd(gc, GC573_IN_HEIGHT);
 
 	if (h->it.state == GC573_IT_STABLE && h->it.released) {
-		if (h->lock_polls < READ_ONCE(exp_fpga_invalid)) {
+		if (exp == GC573_EXP_FPGA_UNTIL_HEAL ? !h->heal_tries :
+		    h->lock_polls < exp) {
 			/* experiment: the boot race's FPGA state */
 			in.fpga[0] = (in.fpga[0] & ~3U) | 1;
 			period = 0;
@@ -475,10 +605,25 @@ static bool gc573_hdmi_publish(struct gc573_hdmi *h)
 				 h->lock_polls, in.fpga[0], in.fpga[1],
 				 in.fpga[2], period);
 		}
+		if (!in.locked && (in.fpga[0] & 3) != 3 &&
+		    gc573_hdmi_fpga_size_ok(h, in.fpga))
+			gc573_hdmi_heal_check(h, &in, period);
 	} else {
 		h->lock_polls = 0;
 	}
 	h->period_raw = period;
+	if (h->heal_tries &&
+	    (in.locked ||
+	     (!in.power && time_after(jiffies, h->heal_at +
+				      msecs_to_jiffies(GC573_HDMI_HEAL_QUIET_MS))))) {
+		if (in.locked && !h->heal_gave_up) {
+			h->fpga_heal_fixes++;
+			dev_info(&gc->pdev->dev,
+				 "HDMI: FPGA measurement valid after self-heal %u\n",
+				 h->heal_tries);
+		}
+		gc573_hdmi_heal_reset(h);
+	}
 	if (in.locked) {
 		/* the rate is part of the timings: keep them while it holds */
 		if (hold && (!in.period ||
@@ -546,6 +691,9 @@ static void gc573_hdmi_poll(struct work_struct *work)
 	changed = gc573_hdmi_publish(h);
 	ms = ktime_ms_delta(ktime_get(), t0);
 	h->poll_ms_max = max(h->poll_ms_max, ms);
+	/* not in poll_ms_max: a hot-plug takes RD's 500 ms toggle */
+	if (h->heal_due)
+		gc573_hdmi_heal(h);
 	mutex_unlock(&h->lock);
 
 	if (changed)
@@ -678,11 +826,13 @@ static int gc573_hdmi_debugfs_show(struct seq_file *m, void *unused)
 	struct gc573_input in;
 
 	mutex_lock(&h->lock);
-	seq_printf(m, "hdmi: polling %d failed %d polls %u poll_errors %u poll_ms_max %u xfers %u xfer_errors %u retries %u resyncs %u runs %u lock_polls %u period_raw %#x fpga_rejects %u fpga_waits %u gpio %#010x\n",
+	seq_printf(m, "hdmi: polling %d failed %d polls %u poll_errors %u poll_ms_max %u xfers %u xfer_errors %u retries %u resyncs %u runs %u lock_polls %u period_raw %#x fpga_rejects %u fpga_waits %u fpga_heals %u fpga_heal_fixes %u fpga_heal_giveups %u heal_tries %u gpio %#010x\n",
 		   h->polling, h->failed, h->polls, h->poll_errors,
 		   h->poll_ms_max, h->xfers, h->xfer_errors, h->retries,
 		   h->resyncs, h->runs, h->lock_polls, h->period_raw,
-		   h->fpga_rejects, h->fpga_waits, gc573_rd(gc, GC573_GPIO));
+		   h->fpga_rejects, h->fpga_waits, h->fpga_heals,
+		   h->fpga_heal_fixes, h->fpga_heal_giveups, h->heal_tries,
+		   gc573_rd(gc, GC573_GPIO));
 	gc573_it6805_show(h, m);
 	gc573_sp_show(h, m);
 	mutex_unlock(&h->lock);

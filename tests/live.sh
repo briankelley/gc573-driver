@@ -20,7 +20,16 @@
 #             valid (module parameter exp_fpga_invalid, the boot race of
 #             2026-11-25): no lock and one warning while it is not valid;
 #             once valid, one lock at the FPGA's rate, also when it becomes
-#             valid 30 polls after the input's stable entry (VM only)
+#             valid 30 polls after the input's stable entry; the self-heal
+#             off for the step (VM only)
+#   fpgaheal  the self-heal of a measurement that stays not valid (the same
+#             parameter; spec/hdmi-chips.md "Lock policy"): valid after
+#             the first attempt, one receiver restart 90 polls in and the
+#             lock, the source seeing no hot-plug; never valid, a restart
+#             and two hot-plugs at least 20 and 80 s apart, one warning,
+#             nothing more in 30 s, and the lock once valid; with fpga_heal
+#             0 no attempt, and with 1 again the restart and the lock. The
+#             output on without a test player (VM only)
 #   capture   1080p60 and 1080p59.94, 6 formats x GC573_LIVE_FRAMES (600):
 #             each format's last frame compared with pattern.py, all frames
 #             identical (full-frame hash), no sequence gaps, G_PARM equal
@@ -140,6 +149,31 @@
 # GC573_OBS_BUFFERING defaults to 0 here, the README's recommendation.
 # GC573_OBS_BRIDGE=0: obsevents and obssoak without tests/obsbridge.py (the
 # reopen from the input's timings; default on).
+# Roku mode (GC573_SOURCE=roku, host-local only; M6): the source is the
+# Roku through the HDCP filter, driven by tools/roku/ecp.py, playing
+# tools/roku/pattern-video.sh's file from tools/roku/serve.py. DVI-D-0 is
+# never touched (src_on, src_off, av_on and colour_set refuse). Actions on
+# the Roku need GC573_ROKU_GO=1; without it only rokulock, rokucompliance,
+# q25 and q25back run, passively. Steps (default: the first six):
+#   rokulock  the input locks; timings, colour and range; model, software
+#   rokucompliance  v4l2-compliance -s with the Roku's input
+#   rokucapture  GC573_ROKU_SECS (60) of the pattern video: the driver loses
+#             nothing (live-av.py --exact), the bursts' channels and the A/V
+#             offset, the colour patches against BT.709 limited range
+#   rokuobs   OBS on the Roku's pattern: screenshots, meters, a recording
+#   rokusleep the Roku asleep and awake (GC573_ROKU_SLEEP_KEYS, PowerOff;
+#             GC573_ROKU_WAKE_KEYS, Home): the input goes, comes back at the
+#             same timings, and the pattern plays again
+#   rokumodes EDID re-sets (another serial, 720p only, the default): the
+#             Roku's mode set after each hot-plug, the lock and the pattern
+#   rokureboot  the Roku restarted (GC573_ROKU_REBOOT_KEYS: ECP has no
+#             command for it): the input back within 3 minutes
+#   rokuobssoak  obssoak with the Roku's pattern and the Roku's changes
+#   q25       open question 25, the Roku without the filter: what the driver
+#             reports over GC573_Q25_SECS (180), the self-heal's lines, a
+#             capture that neither hangs nor delivers garbage (the unbind
+#             is the coordinator's)
+#   q25back   the filter back: the lock without a reload, and the pattern
 # Prints RESULT lines and a SUMMARY; log: tests/logs/<UTC>_<kernel>_live.log.
 # Event log: tests/logs/<UTC>_<kernel>_live-events.log, every action that
 # changes the card's input or its streams (UTC, ms), and the lines of
@@ -161,6 +195,12 @@ OBS_SECS=${GC573_OBS_SECS:-600}
 OBSEV_REPS=${GC573_OBSEV_REPS:-2}
 LOCAL=0
 { [ "${GC573_LOCAL:-0}" = 1 ] || [ "$VM" = local ]; } && LOCAL=1
+SOURCE=${GC573_SOURCE:-pc}
+case $SOURCE in
+pc) ;;
+roku) [ "$LOCAL" = 1 ] || { echo "GC573_SOURCE=roku: host-local only (GC573_LOCAL=1)"; exit 2; } ;;
+*) echo "GC573_SOURCE: pc or roku"; exit 2 ;;
+esac
 OBS_BUFFERING=${GC573_OBS_BUFFERING:-$((1 - LOCAL))}
 OBSSOAK_SECS=${GC573_OBSSOAK_SECS:-7200}
 OBSSOAK_EVERY=${GC573_OBSSOAK_EVERY:-180}
@@ -211,7 +251,9 @@ check() {	# name, condition result (0 = pass), detail
 # loads or unloads the driver, sets the EDID or starts or stops OBS; host
 # side, src_off, the colour changes and the test sources themselves
 # (show.sh and avsync.sh log their own mode sets and players)
-ev() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) live $*" >> "$GC573_EVENT_LOG"; }
+# shellcheck source=tools/testsrc/scrub.sh
+. "$ROOT/tools/testsrc/scrub.sh"	# gc573_scrub: no USB serial in a log
+ev() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) live $(gc573_scrub "$*")" >> "$GC573_EVENT_LOG"; }
 vm() {
 	local what="" rc
 	if [ "$LOCAL" = 1 ]; then
@@ -675,11 +717,15 @@ fpga_waits() { hdmi_dbg | grep -oE 'fpga_waits [0-9]+' | cut -d' ' -f2; }
 lock_lines() { grep -c 'HDMI: locked' <<< "$1"; }
 lock_rates() { grep -oE 'frame period [0-9a-fx]+ \([0-9.]+ Hz\)' <<< "$1" | paste -sd, - | sed 's/,/, /g'; }
 step_fpgawait() {
-	local line log w0 w1 q t i
+	local line log w0 w1 q t i h0
 	if ! vm "test -e $FPGA_PARAM"; then
 		result fpgawait SKIP "(the loaded gc573 has no exp_fpga_invalid)"
 		return
 	fi
+	# the lock policy alone: the self-heal (fpgaheal) off for the step, or
+	# its restart 90 polls in could come before the measurement is valid
+	h0=$(vm "cat $HEAL_PARAM" 2>/dev/null)
+	[ -z "$h0" ] || heal_param 0
 	src_on 1920x1080 60
 	time_to_lock 10 > /dev/null
 	w0=$(fpga_waits)
@@ -732,6 +778,246 @@ step_fpgawait() {
 	check fpgawait-late "$([ "$t" != none ] && cta1080p60 "$q" && [ "$(lock_lines "$log")" = 1 ] &&
 		! grep -q 'frame period 0 ' <<< "$log"; echo $?)" \
 		"(the measurement valid 30 polls after the stable entry: locked $t ms after the output came on; $(lock_lines "$log") lock lines: $(lock_rates "$log"))"
+	[ -z "$h0" ] || heal_param "$h0"
+}
+
+# fpgaheal: the measurement self-heal (spec/hdmi-chips.md "Lock policy",
+# open question 40). exp_fpga_invalid holds the FPGA's measurement not
+# valid, as at the boot race: 4294967294 until the self-heal's first attempt
+# (a case the receiver restart fixes), 4294967295 for good (a case nothing
+# fixes). The module parameter fpga_heal turns the self-heal off. What the
+# source sees: monitor_present in the ELD of the card's port (/proc/asound,
+# as tests/hpd-unload.sh), every 50 ms. The output stays on without a test
+# player: the self-heal's hot-plugs can drop its mode (as vm() does for an
+# EDID set). A driver without the self-heal fails every case (no SKIP):
+# they are its failing-before test.
+HEAL_PARAM=/sys/module/gc573/parameters/fpga_heal
+heal_param() { vm "echo $1 | sudo tee $HEAL_PARAM > /dev/null"; }
+# "heals fixes giveups" from debugfs hdmi; empty without the self-heal
+heal_counts() {
+	hdmi_dbg | sed -nE 's/.* fpga_heals ([0-9]+) fpga_heal_fixes ([0-9]+) fpga_heal_giveups ([0-9]+).*/\1 \2 \3/p'
+}
+heal_delta() {	# two heal_counts: the change, or "none"
+	[ -n "$1" ] && [ -n "$2" ] || { echo none; return; }
+	# shellcheck disable=SC2086 # the six numbers
+	set -- $1 $2
+	echo "$(($4 - $1)) $(($5 - $2)) $(($6 - $3))"
+}
+heal_eld="" heal_eld_log="" heal_eld_pid="" heal_c0="" heal_5v="" heal_probe=""
+heal_eld_start() {
+	heal_eld_log=$(mktemp)
+	[ -n "$heal_eld" ] || return 0
+	(
+		p=1
+		while kill -0 $$ 2>/dev/null; do
+			m=
+			while read -r k v; do
+				[ "$k" = monitor_present ] && m=$v
+			done < "$heal_eld"
+			[ "$m" = "$p" ] || { echo "$(date -u +%T.%3N) monitor_present $m" >> "$heal_eld_log"; p=$m; }
+			sleep 0.05
+		done
+	) &
+	heal_eld_pid=$!
+}
+heal_eld_stop() {	# the drops of monitor_present since the start, or "unknown"
+	if [ -n "$heal_eld_pid" ]; then
+		kill "$heal_eld_pid" 2>/dev/null
+		wait "$heal_eld_pid" 2>/dev/null
+	fi
+	heal_eld_pid=
+	if [ -n "$heal_eld" ]; then grep -c 'monitor_present 0' "$heal_eld_log"; else echo unknown; fi
+	rm -f "$heal_eld_log"
+}
+# the output on in a mode, without a test player
+src_bare() {
+	src_on "$1" "$2"
+	"$ROOT/tools/testsrc/show.sh" --off
+}
+# kernel log $1: the seconds of the "self-heal N of" and "gave up" lines
+heal_times() {
+	sed -nE 's/^\[ *([0-9.]+)\].*HDMI: self-heal ([0-9] of|gave up).*/\1/p' <<< "$1" | paste -sd' ' -
+}
+heal_attempts() { grep -oE 'self-heal [0-9] of [0-9], [a-z -]+' <<< "$1" | paste -sd';' - | sed 's/;/; /g'; }
+# Through a case, in the VM as root: every 50 ms the splitter's 5 V state
+# (debugfs hdmi "rx 5v" and the published power, RX 0x13 bit 0), each
+# change logged: does the source drop 5 V at a hot-plug's HPD low (the
+# self-heal's 10 s quiet guard)? And a second handle's QUERY_DV_TIMINGS,
+# G_FMT and G_EDID about 5 times a second, with their times: G_EDID waits
+# for h->lock, which a hot-plug holds for RD's 500 ms toggle; the other two
+# do not take it. Nothing may fail or hang.
+heal_watch_start() {
+	local f
+	f=$(mktemp)
+	cat > "$f" <<-EOF
+	( p=
+	while [ -e $W/heal.run ]; do
+		v=\$(grep -oE 'rx 5v [01]|^input: power [01]' $dbgdir/hdmi | tr '\n' ' ')
+		[ "\$v" = "\$p" ] || { echo "\$(date -u +%T.%3N) \$v"; p=\$v; }
+		sleep 0.05
+	done > $W/heal-5v.log ) &
+	while [ -e $W/heal.run ]; do
+		t0=\$(date +%s%N)
+		v4l2-ctl -d $vdev --query-dv-timings > /dev/null 2>&1; a=\$?
+		t1=\$(date +%s%N)
+		v4l2-ctl -d $vdev --get-fmt-video > /dev/null 2>&1; b=\$?
+		t2=\$(date +%s%N)
+		v4l2-ctl -d $vdev --get-edid=format=raw > /dev/null 2>&1; c=\$?
+		t3=\$(date +%s%N)
+		echo "\$(((t1 - t0) / 1000000)) \$a \$(((t2 - t1) / 1000000)) \$b \$(((t3 - t2) / 1000000)) \$c"
+		sleep 0.1
+	done > $W/heal-probe.log
+	wait
+	EOF
+	put "$f" "$W/heal-watch.sh"
+	rm -f "$f"
+	vm "touch $W/heal.run; sudo sh $W/heal-watch.sh > /dev/null 2>&1 &"
+}
+# Sets heal_5v (the 5 V log) and heal_probe ("rounds qdv_max fmt_max
+# edid_max fmt_failed edid_failed locked")
+heal_watch_stop() {
+	vm "rm -f $W/heal.run"
+	sleep 1
+	heal_5v=$(vm "cat $W/heal-5v.log")
+	heal_probe=$(vm "awk '{ n++; for (i = 1; i <= 5; i += 2) if (\$i > m[i]) m[i] = \$i
+		if (\$4) f++; if (\$6) g++; if (!\$2) l++ }
+		END { print n + 0, m[1] + 0, m[3] + 0, m[5] + 0, f + 0, g + 0, l + 0 }' $W/heal-probe.log")
+}
+# the probe's summary, and whether nothing failed and nothing waited long:
+# QUERY_DV_TIMINGS and G_FMT under 500 ms, G_EDID under 1500 ms
+heal_probe_text() {
+	# shellcheck disable=SC2086 # the seven numbers
+	set -- $heal_probe
+	echo "second handle: ${1:-0} rounds, max ms QUERY_DV_TIMINGS ${2:-?}, G_FMT ${3:-?}, G_EDID ${4:-?}; failed G_FMT ${5:-?}, G_EDID ${6:-?}; locked in ${7:-?}"
+}
+heal_probe_ok() {
+	# shellcheck disable=SC2086
+	set -- $heal_probe
+	[ "${1:-0}" -gt 10 ] && [ "$2" -lt 500 ] && [ "$3" -lt 500 ] && [ "$4" -lt 1500 ] &&
+		[ "$5" = 0 ] && [ "$6" = 0 ]
+}
+heal_5v_text() {	# the changes after the first line (the state at the start)
+	local n
+	n=$(($(grep -c . <<< "$heal_5v") - 1))
+	if [ "$n" -le 0 ]; then echo "5 V held ($(head -1 <<< "$heal_5v" | cut -d' ' -f2-))"
+	else echo "5 V changed $n times: $(tail -n +2 <<< "$heal_5v" | paste -sd';' -)"; fi
+}
+heal_case() {	# tag exp: a stable entry with exp_fpga_invalid = exp
+	src_off
+	wait_unlocked
+	fpga_param "$2"
+	ev "fpgaheal $1: exp_fpga_invalid $2"
+	kmsg_mark "fpgaheal-$1"
+	heal_c0=$(heal_counts)
+	src_bare 1920x1080 60
+	heal_eld_start
+	heal_watch_start
+}
+step_fpgaheal() {
+	local h0 c1 d e t q log log2 times i
+	if ! vm "test -e $FPGA_PARAM"; then
+		result fpgaheal SKIP "(the loaded gc573 has no exp_fpga_invalid)"
+		return
+	fi
+	h0=$(vm "cat $HEAL_PARAM" 2>/dev/null)
+	[ -z "$h0" ] || heal_param 1
+	src_bare 1920x1080 60
+	time_to_lock 10 > /dev/null
+	heal_eld=$(grep -l 'GC573' /proc/asound/card*/eld#* 2>/dev/null | head -1)
+	echo "  fpga_heal ${h0:-missing}; the ELD of the card's port: ${heal_eld:-not found}"
+
+	# 1. valid after the first attempt: one receiver restart 90 polls (about
+	#    5 s) after the release, then one lock; the source sees nothing
+	heal_case fixed 4294967294
+	t=$(time_to_lock 20)
+	sleep 1
+	e=$(heal_eld_stop)
+	heal_watch_stop
+	q=$(query)
+	c1=$(heal_counts)
+	fpga_param 0
+	log=$(kmsg_since fpgaheal-fixed | grep 'gc573.*HDMI: ')
+	sed 's/^/  | /' <<< "$log"
+	d=$(heal_delta "$heal_c0" "$c1")
+	check fpgaheal-fixed "$([ "$t" != none ] && cta1080p60 "$q" &&
+		[ "$(grep -c 'HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls' <<< "$log")" = 1 ] &&
+		[ "$(grep -c 'HDMI: self-heal' <<< "$log")" = 1 ] &&
+		grep -q 'HDMI: FPGA measurement valid after self-heal 1' <<< "$log" &&
+		[ "$(lock_lines "$log")" = 1 ] && [ "$d" = "1 1 0" ] &&
+		{ [ "$e" = 0 ] || [ "$e" = unknown ]; } && heal_probe_ok; echo $?)" \
+		"(locked $t ms after the output came on; attempts: $(heal_attempts "$log"); $(lock_lines "$log") lock lines: $(lock_rates "$log"); heals, fixes, give-ups +$d; HPD drops the source saw: $e; $(heal_5v_text); $(heal_probe_text))"
+
+	# 2. never valid: a restart, then two hot-plugs at least 20 and 80 s
+	#    after the attempt before, one warning 5 s after the third, and no
+	#    more (30 s); the lock once the measurement is valid, which ends
+	#    the session uncounted
+	heal_case never 4294967295
+	for i in $(seq 200); do
+		log=$(kmsg_since fpgaheal-never)
+		grep -q 'HDMI: self-heal gave up' <<< "$log" && break
+		# a driver without the self-heal: no attempt by 15 s
+		[ "$i" -lt 15 ] || grep -q 'HDMI: self-heal 1 of' <<< "$log" || break
+		sleep 1
+	done
+	grep -q 'HDMI: self-heal gave up' <<< "$log" && sleep 30
+	e=$(heal_eld_stop)
+	heal_watch_stop
+	c1=$(heal_counts)
+	log=$(kmsg_since fpgaheal-never | grep 'gc573.*HDMI: ')
+	sed 's/^/  | /' <<< "$log"
+	echo "  the splitter's 5 V and the published power (UTC):"
+	sed 's/^/  5v | /' <<< "$heal_5v"
+	times=$(heal_times "$log")
+	d=$(heal_delta "$heal_c0" "$c1")
+	check fpgaheal-never "$(grep -q 'HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls' <<< "$log" &&
+		grep -q 'HDMI: self-heal 2 of 3, hot-plug' <<< "$log" &&
+		grep -q 'HDMI: self-heal 3 of 3, hot-plug' <<< "$log" &&
+		[ "$(grep -c 'HDMI: self-heal gave up after 3 attempts' <<< "$log")" = 1 ] &&
+		[ "$(grep -c 'HDMI: self-heal' <<< "$log")" = 4 ] &&
+		[ "$(lock_lines "$log")" = 0 ] && [ "$d" = "3 0 1" ] &&
+		awk '{ exit !(NF == 4 && $2 - $1 >= 20 && $2 - $1 < 30 &&
+			$3 - $2 >= 80 && $3 - $2 < 90 && $4 - $3 >= 5 && $4 - $3 < 20) }' <<< "$times" &&
+		{ [ "$e" = 2 ] || [ "$e" = unknown ]; } && heal_probe_ok; echo $?)" \
+		"(attempts: $(heal_attempts "$log"); at s ${times:-none} (kernel clock); $(grep -c 'HDMI: self-heal gave up' <<< "$log") warnings, nothing in the 30 s after; $(lock_lines "$log") lock lines; heals, fixes, give-ups +$d; HPD drops the source saw: $e; $(heal_5v_text), $(grep -c 'HDMI: no 5 V' <<< "$log") no-5-V lines; $(heal_probe_text))"
+	kmsg_mark fpgaheal-valid
+	fpga_param 0
+	t=$(time_to_lock 5)
+	q=$(query)
+	sleep 1
+	log=$(kmsg_since fpgaheal-valid | grep 'gc573.*HDMI: ')
+	c1=$(heal_counts)
+	d=$(heal_delta "$heal_c0" "$c1")
+	check fpgaheal-never-lock "$([ "$t" != none ] && cta1080p60 "$q" && [ "$(lock_lines "$log")" = 1 ] &&
+		! grep -q 'HDMI: FPGA measurement valid after self-heal' <<< "$log" &&
+		[ "$d" = "3 0 1" ] && hdmi_dbg | grep -q ' heal_tries 0 '; echo $?)" \
+		"(the measurement valid again: locked after $t ms, $(lock_lines "$log") lock lines: $(lock_rates "$log"); heals, fixes, give-ups +$d since the case began)"
+
+	# 3. fpga_heal 0: no attempt and no lock for 8 s; on again: the first
+	#    attempt at once (stable for more than 90 polls), then the lock
+	[ -z "$h0" ] || heal_param 0
+	heal_case off 4294967294
+	sleep 8
+	log=$(kmsg_since fpgaheal-off | grep 'gc573.*HDMI: ')
+	q=$(locked && echo locked || echo 'no lock')
+	kmsg_mark fpgaheal-on
+	heal_param 1
+	t=$(time_to_lock 5)
+	sleep 1
+	e=$(heal_eld_stop)
+	heal_watch_stop
+	c1=$(heal_counts)
+	fpga_param 0
+	d=$(heal_delta "$heal_c0" "$c1")
+	sed 's/^/  | /' <<< "$log"
+	log2=$(kmsg_since fpgaheal-on | grep 'gc573.*HDMI: ')
+	sed 's/^/  | /' <<< "$log2"
+	check fpgaheal-off "$([ "$q" = 'no lock' ] && ! grep -q 'HDMI: self-heal' <<< "$log" &&
+		[ "$t" != none ] && grep -q 'HDMI: self-heal 1 of 3, receiver restart' <<< "$log2" &&
+		[ "$(lock_lines "$log2")" = 1 ] && [ "$d" = "1 1 0" ] &&
+		{ [ "$e" = 0 ] || [ "$e" = unknown ]; } && heal_probe_ok; echo $?)" \
+		"(off for 8 s: $q, $(grep -c 'HDMI: self-heal' <<< "$log") attempts; on: locked after $t ms, attempts: $(heal_attempts "$log2"); heals, fixes, give-ups +$d; HPD drops the source saw: $e; $(heal_5v_text); $(heal_probe_text))"
+	[ -z "$h0" ] || heal_param "$h0"
+	src_on 1920x1080 60
 }
 
 # Show the pattern in a mode and wait until the input has locked to it and
@@ -1888,7 +2174,9 @@ obssoak_local() {
 	[ "$avail" -gt $((OBSSOAK_SECS * 6200 / 8 * 3)) ] ||
 		{ result obssoak-recdir FAIL "($REC_DIR: $((avail / 1024)) MB free)"; return; }
 	echo "  recording to $REC_DIR ($((avail / 1048576)) GB free); rotation $OBSSOAK_ROTATION"
-	av_on --pattern || { result obssoak-source FAIL "(avsync.sh --pattern or the IT6805 audio state ON)"; av_off; return; }
+	# the Roku's pattern video plays already (rokuobssoak)
+	[ "$SOURCE" = roku ] || av_on --pattern ||
+		{ result obssoak-source FAIL "(avsync.sh --pattern or the IT6805 audio state ON)"; av_off; return; }
 	sleep 3
 	driver_ref obssoak-driver-first 60
 	refa=$ref
@@ -2383,16 +2671,435 @@ step_apps() {
 	src_on 1920x1080 60
 }
 
+# ---- the Roku (GC573_SOURCE=roku, host-local only) ----
+# M6. The source is the Roku, through the HDCP filter: the user moves the
+# card's input cable to it. tools/roku/ecp.py drives it over the LAN. Its
+# address is kept outside the repo, in ~/.config/gc573/roku (mode 0600) or
+# GC573_ROKU. The Roku plays tools/roku/pattern-video.sh's file (the
+# counter, the flash and the burst), which tools/roku/serve.py serves from
+# this machine for the run's length only.
+# Nothing in this mode touches DVI-D-0: src_on, src_off, av_on and
+# colour_set refuse, and colour_restore does nothing.
+# Actions on the Roku (keypresses, playing a URL) need GC573_ROKU_GO=1,
+# the go to use it, since the user may be using it. Without it only
+# rokulock, rokucompliance and q25 run, passively.
+# The logs keep numbers, and checks of our own pattern video only: never a
+# picture or a recording of what the Roku shows, nor its identifiers.
+ECP=$ROOT/tools/roku/ecp.py
+ROKU_DIR=${GC573_ROKU_DIR:-$HOME/gc573-roku}
+ROKU_SECS=${GC573_ROKU_SECS:-60}
+Q25_SECS=${GC573_Q25_SECS:-180}
+ROKU_URL_FILE="" roku_serve_pid="" roku_served="" roku_played=0
+ecp() { python3 "$ECP" "$@"; }
+roku_go() { [ "${GC573_ROKU_GO:-0}" = 1 ]; }
+roku_skip() { result "$1" SKIP "(needs GC573_ROKU_GO=1: it $2)"; }
+# the pattern video for SECS seconds, made once and checked
+# (tools/roku/check-video.py) in ROKU_DIR; prints its path
+roku_video() {
+	local f=$ROKU_DIR/pattern-$1s.mp4
+	mkdir -p "$ROKU_DIR" || return 1
+	if [ ! -s "$f" ]; then
+		echo "  making $f ($1 s of the pattern video)" >&2
+		nice "$ROOT/tools/roku/pattern-video.sh" "$f.new.mp4" "$1" > /dev/null &&
+			python3 "$ROOT/tools/roku/check-video.py" "$f.new.mp4" > "$f.check" &&
+			mv "$f.new.mp4" "$f" || { cat "$f.check" >&2; rm -f "$f.new.mp4"; return 1; }
+	fi
+	echo "$f"
+}
+# serve FILE to the Roku until the run ends (or roku_serve_stop); the URL
+# goes to a 0600 file, never to a log
+roku_serve_start() {
+	local i
+	ROKU_URL_FILE=$(mktemp -u /tmp/gc573-roku-url.XXXXXX)
+	python3 "$ROOT/tools/roku/serve.py" "$1" --url-file "$ROKU_URL_FILE" \
+		--secs $((OBSSOAK_SECS + 14400)) --pid $$ &
+	roku_serve_pid=$!
+	for i in $(seq 50); do
+		[ -s "$ROKU_URL_FILE" ] && { roku_served=$1; return 0; }
+		sleep 0.1
+	done
+	roku_serve_stop
+	return 1
+}
+roku_serve_stop() {
+	roku_served=""
+	[ -n "$roku_serve_pid" ] || return 0
+	kill "$roku_serve_pid" 2>/dev/null
+	wait "$roku_serve_pid" 2>/dev/null
+	roku_serve_pid=""
+}
+roku_play() {
+	roku_played=1
+	ecp play "$(cat "$ROKU_URL_FILE")" --via "${GC573_ROKU_VIA:-pol}"
+}
+# awake: a Home keypress unless its power mode is PowerOn
+roku_wake() {
+	[ "$(ecp power 2>/dev/null)" = PowerOn ] && return 0
+	ecp key Home && sleep 3
+}
+# frames of a 1 s capture whose counter reads: the pattern is on the card
+roku_counters() {
+	vm "sudo $W/gc573-aud -D $pcm -t 1 -v -V $vdev -P -o /dev/null 2>/dev/null" | grep -c '^V .* c=[0-9]'
+}
+# SECS: the pattern video (of SECS seconds) playing and on the card
+roku_source_on() {
+	local f i
+	f=$(roku_video "$1") || return 1
+	# a step that needs a longer video than the one served gets it
+	[ "$roku_served" = "$f" ] || { roku_serve_stop; roku_serve_start "$f"; } || return 1
+	roku_wake
+	roku_play || return 1
+	for i in $(seq 40); do
+		locked && [ "$(roku_counters)" -gt 30 ] && return 0
+		sleep 1
+	done
+	return 1
+}
+# the end of a Roku run: the server stopped; the Roku back on its home
+# screen if we played something on it
+roku_end() {
+	roku_serve_stop
+	[ "$roku_played" = 0 ] || ! roku_go || ecp key Home > /dev/null 2>&1
+}
+roku_rate() {	# 60 or 59.94 from QUERY_DV_TIMINGS
+	local q
+	q=$(query)
+	if grep -q 'framerate is reduced' <<< "$q"; then echo 59.94; else echo 60; fi
+}
+roku_timings() { query | grep -oE 'Active width: [0-9]+|Active height: [0-9]+|Pixelclock: [0-9]+ Hz' | paste -sd, -; }
+roku_input() { hdmi_dbg | grep '^input:' | grep -oE 'power [01] signal [01] locked [01]|colour [0-9] vic [0-9]+ full_range [01] enc [0-9] dvi [01]' | paste -sd' ' -; }
+
+# rokulock: the Roku's input locks; its timings, colour and range as the
+# driver reports them, and the Roku's model and software. Passive without
+# the go (the Roku must be on); with it, a Home keypress wakes it first
+step_rokulock() {
+	local t d
+	echo "  Roku: $(ecp info 2>&1)"
+	! roku_go || roku_wake
+	t=$(time_to_lock 30)
+	d=$(roku_input)
+	query | grep -E 'Active width|Active height|Pixelclock|Frame format|CTA|Flags' | sed 's/^/  /'
+	check roku-lock "$([ "$t" != none ] && grep -q 'power 1 signal 1 locked 1' <<< "$d"; echo $?)" \
+		"(locked within $t ms; $(roku_timings); $d)"
+}
+
+step_rokucompliance() {
+	local out
+	time_to_lock 30 > /dev/null
+	vm "v4l2-ctl -d $vdev --set-dv-bt-timings query >/dev/null"
+	out=$(vm "v4l2-compliance -d $vdev -s 2>&1")
+	echo "$out" | grep -E 'fail|warn|Total for' | sed 's/^/  /'
+	check roku-compliance "$(grep -q 'Failed: 0, Warnings: 0' <<< "$out"; echo $?)" \
+		"($(grep 'Total for' <<< "$out"))"
+}
+
+# The colour patches of one YUYV frame of the pattern video (numbers only):
+# mean Y, Cb, Cr per patch against BT.709 limited range, within 12 codes
+roku_patches() {
+	local q
+	vm "sudo $W/gc573-cap -d $vdev -L 10 -f YUYV -n 30 -o $W/roku-frame > /dev/null 2>&1" &&
+		[ -s "$W/roku-frame.YUYV" ] || { echo "RESULT patches FAIL (no frame)"; return; }
+	q=$(query)
+	python3 - "$W/roku-frame.YUYV" "$(sed -n 's/.*Active width: //p' <<< "$q")" \
+		"$(sed -n 's/.*Active height: //p' <<< "$q")" <<'PY'
+import sys
+w, h = int(sys.argv[2]), int(sys.argv[3])
+d = open(sys.argv[1], 'rb').read()
+want = [('black', 16, 128, 128), ('white', 235, 128, 128), ('grey', 126, 128, 128),
+        ('red', 63, 102, 240), ('green', 173, 42, 26), ('blue', 32, 240, 118)]
+pw, ph, py = w // 8, h // 4, h // 8
+worst, txt = 0, []
+for i, (name, y0, cb0, cr0) in enumerate(want):
+    x0 = w // 16 + i * (pw + w // 32)
+    ys, cbs, crs = [], [], []
+    for y in range(py + ph // 4, py + 3 * ph // 4, 4):
+        row = d[y * w * 2:(y + 1) * w * 2]
+        for x in range(x0 + pw // 4, x0 + 3 * pw // 4, 4):
+            x &= ~1
+            ys.append(row[2 * x]); cbs.append(row[2 * x + 1]); crs.append(row[2 * x + 3])
+    m = [sum(v) / len(v) for v in (ys, cbs, crs)]
+    worst = max(worst, abs(m[0] - y0), abs(m[1] - cb0), abs(m[2] - cr0))
+    txt.append(f'{name} {m[0]:.0f}/{m[1]:.0f}/{m[2]:.0f}')
+print(f"RESULT patches {'PASS' if worst <= 12 else 'FAIL'} (Y/Cb/Cr: {', '.join(txt)}; worst {worst:.0f} codes from BT.709 limited range)")
+PY
+	vm "rm -f $W/roku-frame.*"
+}
+
+# rokucapture: the pattern video on the Roku (go). GC573_ROKU_SECS (60) of
+# gc573-aud -V -P: the driver loses nothing (live-av.py --exact; the
+# Roku's own repeats and skips are INFO), the bursts on the right channels,
+# the A/V offset (flash against burst), and the colour patches
+step_rokucapture() {
+	local out rate
+	roku_go || { roku_skip roku-capture "plays our pattern video on the Roku"; return; }
+	roku_source_on 3600 || { result roku-capture-source FAIL "(the pattern video on the Roku and the card: ecp.py play)"; return; }
+	rate=$(roku_rate)
+	echo "  $(roku_timings), $rate Hz; $(roku_input)"
+	sleep 3
+	vm "sudo $W/gc573-aud -D $pcm -t $ROKU_SECS -v -V $vdev -P -o $W/roku.raw > $W/roku.txt 2>&1"
+	out=$(vm "python3 $W/live-av.py $W/roku.txt $W/roku.raw --exact pattern $rate")
+	vm "rm -f $W/roku.raw"
+	av_results roku-capture "$out"
+	av_results roku "$(roku_patches)"
+}
+
+# rokuobs: OBS (the user's, started minimized, its sources checked) on the
+# Roku's pattern through obs-websocket: screenshots (counter and patches),
+# the level meters (the bursts), a 60 s recording's picture and A/V offset
+step_rokuobs() {
+	local out f
+	roku_go || { roku_skip roku-obs "plays our pattern video on the Roku"; return; }
+	roku_source_on 3600 || { result roku-obs-source FAIL "(the pattern video on the Roku and the card)"; return; }
+	obs_up || { result roku-obs-start FAIL "(OBS minimized, with the sources expected)"; obs_down; return; }
+	sleep 3
+	av_results roku-obs "$(roku_obsev shots 10 2>&1)"
+	av_results roku-obs "$(roku_obsev meters 20 2>&1)"
+	out=$(obsc "record 60")
+	f=$(sed -n 's/^RECORDING //p' <<< "$out")
+	check roku-obs-record "$([ -n "$f" ]; echo $?)" "($(grep '^STATS' <<< "$out"))"
+	if [ -n "$f" ]; then
+		av_results roku-obs "$(GC573_SOURCE=roku python3 "$ROOT/tests/obs-events.py" recheck "$f" --every 5 2>&1)"
+		av_results roku-obs-rec "$(python3 "$ROOT/tests/obs-av.py" "$f" --box 0.70,0.88,0.92,0.92 --min-secs 55 2>&1)"
+		rm -f "$f"
+	fi
+	obs_down
+}
+# tests/obs-events.py on the Roku's picture
+roku_obsev() {
+	GC573_SOURCE=roku GC573_ROKU_URL_FILE=$ROKU_URL_FILE python3 "$ROOT/tests/obs-events.py" "$@"
+}
+
+# The Roku's input lost, then back: seconds to each, from now (limits
+# LOSE, BACK s); prints "lost back" (- for never)
+roku_loss_back() {
+	local t0 lost=- back=- i
+	t0=$(date +%s%N)
+	for i in $(seq $(($1 * 4))); do
+		locked || { lost=$(( ($(date +%s%N) - t0) / 100000000 )); break; }
+		sleep 0.25
+	done
+	if [ "$lost" != - ]; then
+		for i in $(seq $(($2 * 4))); do
+			locked && { back=$(( ($(date +%s%N) - t0) / 100000000 )); break; }
+			sleep 0.25
+		done
+	fi
+	# tenths of a second as seconds
+	for i in lost back; do
+		[ "${!i}" = - ] || printf -v "$i" '%d.%d' $((${!i} / 10)) $((${!i} % 10))
+	done
+	echo "$lost $back"
+}
+
+# rokusleep: the Roku asleep and awake (GC573_ROKU_SLEEP_KEYS, default
+# PowerOff; GC573_ROKU_WAKE_KEYS, default Home): the input goes and comes
+# back at the timings it had, and the pattern plays on the card again
+step_rokusleep() {
+	local tm0 lb t
+	roku_go || { roku_skip roku-sleep "puts the Roku to sleep and wakes it"; return; }
+	roku_source_on 3600 || { result roku-sleep-source FAIL "(the pattern video on the Roku and the card)"; return; }
+	tm0=$(roku_timings)
+	# shellcheck disable=SC2086
+	ecp key --gap 1 ${GC573_ROKU_SLEEP_KEYS:-PowerOff}
+	lb=$(roku_loss_back 20 1)
+	echo "  asleep: input lost after ${lb% *} s; Roku power mode $(ecp power 2>&1)"
+	sleep 8
+	# shellcheck disable=SC2086
+	ecp key --gap 1 ${GC573_ROKU_WAKE_KEYS:-Home}
+	t=$(time_to_lock 60)
+	roku_play
+	sleep 5
+	check roku-sleep "$([ "${lb% *}" != - ] && [ "$t" != none ] && [ "$(roku_timings)" = "$tm0" ] &&
+		[ "$(roku_counters)" -gt 30 ]; echo $?)" \
+		"(input lost ${lb% *} s after the sleep keys, locked $t ms after the wake keys at $(roku_timings) (before: $tm0); the pattern on the card again: $(roku_counters) of 60 counters read in 1 s)"
+}
+
+# rokureboot: the Roku restarted (GC573_ROKU_REBOOT_KEYS: the keypresses to
+# its System restart; ECP has no command for it): the input goes and comes
+# back within 3 minutes, and the pattern plays on the card again
+step_rokureboot() {
+	local lb
+	roku_go || { roku_skip roku-reboot "restarts the Roku"; return; }
+	[ -n "${GC573_ROKU_REBOOT_KEYS:-}" ] ||
+		{ result roku-reboot SKIP "(no GC573_ROKU_REBOOT_KEYS: the keypresses to the Roku's System restart)"; return; }
+	roku_source_on 3600 || { result roku-reboot-source FAIL "(the pattern video on the Roku and the card)"; return; }
+	# shellcheck disable=SC2086
+	ecp key --gap 1.5 $GC573_ROKU_REBOOT_KEYS
+	lb=$(roku_loss_back 60 180)
+	for i in $(seq 120); do ecp info > /dev/null 2>&1 && break; sleep 1; done
+	sleep 10
+	roku_play
+	sleep 8
+	check roku-reboot "$([ "${lb#* }" != - ] && [ "$(roku_counters)" -gt 30 ]; echo $?)" \
+		"(input lost ${lb% *} s after the keys, back at ${lb#* } s; $(roku_timings); the pattern on the card again: $(roku_counters) of 60 counters read in 1 s)"
+}
+
+# rokumodes: EDID re-sets, each a hot-plug the Roku answers with a new mode
+# set: the default image with another serial number (the same modes), a
+# 720p-only image (the Roku goes to 720p if its display type is Auto
+# detect), and the default again. Each: time to the lock, the timings,
+# the pattern on the card
+step_rokumodes() {
+	local e t name
+	roku_go || { roku_skip roku-modes "plays our pattern video on the Roku"; return; }
+	roku_source_on 3600 || { result roku-modes-source FAIL "(the pattern video on the Roku and the card)"; return; }
+	e=$W/roku-edid
+	vm "mkdir -p $e && v4l2-ctl -d $vdev --get-edid=format=raw,file=$e/default.bin" ||
+		{ result roku-modes FAIL "(G_EDID)"; return; }
+	python3 "$ROOT/tools/roku/edid-variant.py" "$e/default.bin" "$e/serial.bin" --serial 0x5731 &&
+		python3 "$ROOT/tools/roku/edid-variant.py" "$e/default.bin" "$e/720p.bin" --only-720p ||
+		{ result roku-modes FAIL "(edid-variant.py)"; return; }
+	for name in serial 720p default; do
+		vm "v4l2-ctl -d $vdev --set-edid=file=$e/$name.bin,format=raw" > /dev/null
+		sleep 2
+		t=$(time_to_lock 60)
+		sleep 3
+		roku_play
+		sleep 6
+		check "roku-edid-$name" "$([ "$t" != none ] && [ "$(roku_counters)" -gt 30 ] &&
+			{ [ "$name" != 720p ] || roku_timings | grep -q 'Active width: 1280'; }; echo $?)" \
+			"(locked $t ms after the EDID set at $(roku_timings), $(roku_rate) Hz; the pattern on the card: $(roku_counters) of 60 counters read in 1 s)"
+	done
+	vm "rm -rf $e"
+}
+
+# rokuobssoak: obssoak with the Roku: OBS records GC573_OBSSOAK_SECS while
+# the Roku plays the pattern video, a change every GC573_OBSSOAK_EVERY s
+# from GC573_OBSSOAK_ROTATION (default: the Roku's sleep, EDID re-sets,
+# OBS's reopens). obssoak_local does the rest (recording, A/V offset,
+# memory, OBS's log)
+step_rokuobssoak() {
+	roku_go || { roku_skip roku-obssoak "plays our pattern video on the Roku for the soak"; return; }
+	roku_source_on $((OBSSOAK_SECS + 900)) ||
+		{ result roku-obssoak-source FAIL "(the pattern video on the Roku and the card)"; return; }
+	OBSSOAK_ROTATION=${GC573_OBSSOAK_ROTATION:-sleep,edid-same,edid-new,idle,reopen-video,edid-default,reopen-audio}
+	export GC573_SOURCE=roku GC573_ROKU_URL_FILE=$ROKU_URL_FILE
+	obssoak_local
+}
+
+# q25: open question 25, the Roku without the HDCP filter (the user moves
+# the cable a second time). Over GC573_Q25_SECS (180): what the driver
+# reports (the input line, QUERY_DV_TIMINGS), the kernel log's HDMI lines
+# and the self-heal's attempts and counters. Then a capture of 120 YUYV
+# frames (with -L when locked, else free-running), which must end within
+# 70 s (q25-no-hang; a capture that does not is left running for the
+# coordinator) and must not deliver noise (q25-no-garbage: its last frame
+# uniform, such as the free-run black, or a picture, not noise; numbers
+# only). With the go, whether the pattern video comes through (INFO: an
+# HDCP receiver that decrypts would show it). The unbind with this input
+# is the coordinator's: live.sh never unbinds on the host
+roku_reported() {
+	local q
+	q=$(query)
+	if grep -q 'Active width' <<< "$q"; then
+		echo "QUERY_DV_TIMINGS $(grep -oE 'Active width: [0-9]+|Active height: [0-9]+|Pixelclock: [0-9]+ Hz' <<< "$q" | paste -sd, -)"
+	else
+		echo "QUERY_DV_TIMINGS $(grep -oE 'failed: .*' <<< "$q" | head -1)"
+	fi
+}
+# the class of a YUYV frame (FILE WIDTH) from its luma: uniform, a picture
+# (neighbours a few codes apart) or noise (tens of codes apart)
+frame_class() {
+	python3 - "$1" "$2" <<'PY'
+import sys
+import numpy as np
+w = int(sys.argv[2])
+y = np.frombuffer(open(sys.argv[1], 'rb').read(), np.uint8)[0::2].astype(np.int16)
+y = y[:len(y) // w * w].reshape(-1, w)
+lo, hi = int(y.min()), int(y.max())
+step = float(np.abs(np.diff(y, axis=1)).mean())
+kind = 'uniform' if hi - lo <= 8 else 'a picture' if step < 12 else 'noise'
+print(f"RESULT no-garbage {'FAIL' if kind == 'noise' else 'PASS'} (the last frame: {kind}; "
+      f"luma {lo}-{hi}, neighbours {step:.1f} codes apart on average)")
+PY
+}
+step_q25() {
+	local i st out log h0 h1 lk cpid w
+	kmsg_mark q25
+	h0=$(heal_counts)
+	echo "  Roku: $(ecp info 2>&1)"
+	for i in $(seq 6); do
+		echo "  +$(((i - 1) * Q25_SECS / 6)) s: $(roku_input); $(roku_reported)"
+		sleep $((Q25_SECS / 6))
+	done
+	lk=""
+	! locked || lk="-L 10"
+	vm "sudo $W/gc573-cap -d $vdev $lk -f YUYV -n 120 -o $W/q25 > $W/q25.txt 2>&1" &
+	cpid=$!
+	for i in $(seq 70); do
+		kill -0 "$cpid" 2>/dev/null || break
+		sleep 1
+	done
+	if kill -0 "$cpid" 2>/dev/null; then
+		st=hung
+	else
+		wait "$cpid"
+		st=$?
+	fi
+	check q25-no-hang "$([ "$st" != hung ]; echo $?)" \
+		"(120 YUYV frames, $([ -n "$lk" ] && echo 'the timings set from QUERY_DV_TIMINGS' || echo 'not locked: free-running'): $([ "$st" = hung ] && echo 'not ended after 70 s, left running' || echo "exit $st"))"
+	if [ "$st" != hung ]; then
+		w=$(vm "v4l2-ctl -d $vdev --get-fmt-video" | sed -n 's/.*Width\/Height *: *\([0-9]*\)\/.*/\1/p')
+		if [ -s "$W/q25.YUYV" ] && [ -n "$w" ]; then
+			out=$(frame_class "$W/q25.YUYV" "$w")
+		else
+			out="RESULT no-garbage PASS (no frame delivered: $(grep -m1 -iE 'error|fail|lock|signal' "$W/q25.txt" 2>/dev/null | head -c 160))"
+		fi
+		av_results q25 "$out"
+		vm "rm -f $W/q25.*"
+	fi
+	if roku_go; then
+		roku_source_on 3600
+		echo "  INFO the pattern video, played: $(roku_counters) of 60 counters read in 1 s; $(roku_input); $(roku_reported)"
+	fi
+	log=$(kmsg_since q25 | grep 'gc573')
+	grep -E 'HDMI|HDCP' <<< "$log" | sed 's/^/  | /'
+	h1=$(heal_counts)
+	echo "  the self-heal with this input: $(grep -c 'HDMI: self-heal [0-9] of' <<< "$log") attempts, $(grep -c 'self-heal gave up' <<< "$log") give-ups; counters fpga_heals, fixes, giveups: ${h0:--} -> ${h1:--}"
+	result q25-unbind SKIP "(the coordinator's: live.sh never unbinds on the host)"
+}
+
+# q25back: the filter back in the path (the user's cable move): the input
+# locks again without a reload, and with the go the pattern plays
+step_q25back() {
+	local t
+	t=$(time_to_lock 60)
+	check q25-back-lock "$([ "$t" != none ]; echo $?)" "(locked $t ms into the step: $(roku_timings); $(roku_input))"
+	roku_go || return 0
+	roku_source_on 3600
+	check q25-back-pattern "$([ "$(roku_counters)" -gt 30 ]; echo $?)" \
+		"(the pattern on the card: $(roku_counters) of 60 counters read in 1 s)"
+}
+
+if [ "$SOURCE" = roku ]; then
+	roku_refuse() {
+		echo "live.sh: $1 drives $OUT, which GC573_SOURCE=roku never touches" >&2
+		ev "refused (source roku): $1"
+		return 1
+	}
+	src_on() { roku_refuse src_on; }
+	src_off() { roku_refuse src_off; }
+	av_on() { roku_refuse av_on; }
+	colour_set() { roku_refuse colour_set; }
+	colour_restore() { return 0; }
+fi
+
 # ---- main ----
 
-all="bringup lock relock fpgawait capture modes change blip loss colour colorimetry audio exact avsync audioloss"
+all="bringup lock relock fpgawait fpgaheal capture modes change blip loss colour colorimetry audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
 [ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change blip loss audio exact avsync audioloss compliance"
+ROKU_STEPS="rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes rokureboot rokuobssoak q25 q25back"
+[ "$SOURCE" != roku ] || { all="rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes"; LOCAL_STEPS=$ROKU_STEPS; }
 [ $# -gt 0 ] || set -- $all
+for s in "$@"; do
+	[ "$SOURCE" = roku ] || ! grep -qw -- "$s" <<< "$ROKU_STEPS" ||
+		{ echo "step $s is the Roku's: GC573_SOURCE=roku GC573_LOCAL=1"; exit 2; }
+done
 if [ "$LOCAL" = 1 ]; then
 	for s in "$@"; do
 		grep -qw -- "$s" <<< "$LOCAL_STEPS" ||
-			{ echo "step $s does not run on the host (local mode runs: $LOCAL_STEPS)"; exit 2; }
+			{ echo "step $s does not run here (local mode, source $SOURCE, runs: $LOCAL_STEPS)"; exit 2; }
 	done
 	[ -n "${SUDO_ASKPASS:-}" ] || sudo -n true 2>/dev/null ||
 		{ echo "local mode needs sudo without a terminal: SUDO_ASKPASS, or cached credentials"; exit 2; }
@@ -2406,7 +3113,9 @@ mkdir -p "$ROOT/tests/logs"
 # stops the run
 export GC573_EVENT_LOG=${log%.log}-events.log GC573_GUARDED=1
 python3 "$ROOT/tools/testsrc/guard.py" --pid $$ --log "$GC573_EVENT_LOG" --output "$OUT" &
-if [ "$LOCAL" = 1 ]; then
+if [ "$SOURCE" = roku ]; then
+	trap 'roku_end' EXIT
+elif [ "$LOCAL" = 1 ]; then
 	trap 'colour_restore; "$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off' EXIT
 else
 	trap 'colour_restore
@@ -2416,7 +3125,7 @@ else
 		ssh -O exit -o ControlPath="$SSHCTL" "$VM" 2>/dev/null' EXIT
 fi
 {
-	echo "# GC573 live-input suite (PC loopback)"
+	echo "# GC573 live-input suite ($([ "$SOURCE" = roku ] && echo 'the Roku' || echo 'PC loopback'))"
 	echo "date:    $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 	if [ "$LOCAL" = 1 ]; then
 		echo "driver:  this host (local mode), kernel $krel"
@@ -2424,7 +3133,11 @@ fi
 		echo "vm:      $VM, kernel $krel"
 	fi
 	echo "rev:     $(git -C "$ROOT" describe --always --dirty --abbrev=12)"
-	echo "source:  host $(hostname) $OUT, $(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader 2>/dev/null)"
+	if [ "$SOURCE" = roku ]; then
+		echo "source:  the Roku ($(ecp info 2>&1)), go ${GC573_ROKU_GO:-0}"
+	else
+		echo "source:  host $(hostname) $OUT, $(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader 2>/dev/null)"
+	fi
 	echo "steps:   $*"
 	setup || { echo "setup failed"; exit 2; }
 	kmark=$(date +%s%N)

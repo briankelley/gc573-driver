@@ -50,7 +50,9 @@ run=$XDG_RUNTIME_DIR/gc573-testsrc; mkdir -p "$run"
 pidf=$run/avsync.pid wdf=$run/avsync-watchdog.pid statef=$run/avsync.state
 here=$(cd "$(dirname "$0")" && pwd)
 
-evlog() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) avsync $*" >> "$GC573_EVENT_LOG"; }
+# shellcheck source=tools/testsrc/scrub.sh
+. "$here/scrub.sh"	# gc573_scrub: no USB serial in a log
+evlog() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) avsync $(gc573_scrub "$*")" >> "$GC573_EVENT_LOG"; }
 
 # pactl's view of the card $card, and its active profile
 cardinfo() { pactl list cards | awk -v C="Name: $card" '$0 ~ C {f=1; next} f && /^Card #/ {exit} f'; }

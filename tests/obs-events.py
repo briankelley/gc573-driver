@@ -164,6 +164,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from obsws import OBS  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'testsrc'))
+from scrub import scrub  # noqa: E402
 AVSYNC = os.path.join(ROOT, 'tools', 'testsrc', 'avsync.sh')
 SHOW = os.path.join(ROOT, 'tools', 'testsrc', 'show.sh')
 VSRC, ASRC = 'GC573 video', 'GC573 audio'
@@ -173,6 +175,18 @@ LOCAL = VM == 'local'
 VDEV = os.environ.get('GC573_VDEV', '/dev/v4l/by-path/pci-0000:07:00.0-video-index0')
 TOL = 8
 WAIT_SELF = 12
+# GC573_SOURCE: pc, the PC loopback (show.sh and avsync.sh on OUT); roku,
+# the Roku playing tools/roku/pattern-video.sh's file through
+# tools/roku/ecp.py (the URL in GC573_ROKU_URL_FILE, from
+# tools/roku/serve.py; actions need GC573_ROKU_GO=1). With the Roku the
+# host's outputs are never touched. Its picture is that file's six patches
+# on grey, with the same counter and flash box, read with a coarser
+# tolerance (H.264, and the Roku's own conversion to its HDMI format)
+SOURCE = os.environ.get('GC573_SOURCE', 'pc')
+ROKU = SOURCE == 'roku'
+if ROKU:
+    TOL = 24
+ECP = os.path.join(ROOT, 'tools', 'roku', 'ecp.py')
 TIMEOUT = 20
 WATCHDOG = 10	# s without a good screenshot between changes: reopen
 
@@ -184,9 +198,29 @@ MARKS = [(16, 16, 16), (235, 235, 235), (16, 128, 128), (128, 16, 240),
 
 # ---- the picture -------------------------------------------------------
 
+ROKU_PATCHES = [(0, 0, 0), (255, 255, 255), (128, 128, 128), (255, 0, 0),
+                (0, 255, 0), (0, 0, 255)]
+ROKU_GREY = (80, 80, 80)
+
+
+def roku_regions(W, H, m=6):
+    """tools/roku/pattern-video.sh's patches (x0, y0, x1, y1, rgb), m pixels
+    inside their edges, and an area of its grey below them"""
+    pw, ph, py = W // 8, H // 4, H // 8
+    out = []
+    for i, c in enumerate(ROKU_PATCHES):
+        x = W // 16 + i * (pw + W // 32)
+        out.append((x + m, py + m, x + pw - m, py + ph - m, c))
+    out.append((W // 16 + m, H // 2 + m, W * 15 // 16 - m, H * 3 // 4 - m, ROKU_GREY))
+    return out
+
+
 def regions(W, H, m=6):
     """Flat regions of pattern.py (x0, y0, x1, y1, rgb), m pixels inside
-    their edges; the colour bars start below the 8-pixel corner markers"""
+    their edges; the colour bars start below the 8-pixel corner markers.
+    With the Roku: those of its video (roku_regions())"""
+    if ROKU:
+        return roku_regions(W, H, m)
     h1, h2, h3 = H * 4 // 10, H * 6 // 10, H * 8 // 10
     out = []
     for i, c in enumerate(BARS):
@@ -404,7 +438,7 @@ def ev(text):
         import datetime
         t = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
         with EV_LOCK, open(f, 'a') as fh:
-            fh.write(f'{t} obs-events {text}\n')
+            fh.write(f'{t} obs-events {scrub(text)}\n')
 
 
 def start_guard(log):
@@ -432,11 +466,41 @@ def vm(cmd, timeout=60):
                           capture_output=True, text=True, timeout=timeout)
 
 
+def roku(*args, timeout=30):
+    """tools/roku/ecp.py ARGS"""
+    return subprocess.run([sys.executable, ECP, *args], env=ENV, capture_output=True,
+                          text=True, timeout=timeout)
+
+
+def roku_keys(var, default):
+    """The keypresses of GC573_ROKU_<VAR> (default DEFAULT), a second apart;
+    False if one was refused"""
+    keys = os.environ.get(f'GC573_ROKU_{var}', default).split()
+    r = roku('key', '--gap', '1', *keys, timeout=30 + 2 * len(keys)) if keys else None
+    if r is not None and r.returncode:
+        ev(f'roku keys {var}: ' + ' '.join(r.stderr.split())[:200])
+    return bool(keys) and r.returncode == 0
+
+
+def roku_play():
+    """The pattern video playing on the Roku (from its start): ecp.py play
+    with the URL tools/roku/serve.py wrote"""
+    with open(os.environ['GC573_ROKU_URL_FILE']) as f:
+        url = f.read().strip()
+    r = roku('play', url, '--via', os.environ.get('GC573_ROKU_VIA', 'pol'))
+    if r.returncode:
+        ev('roku play: ' + ' '.join(r.stderr.split())[:200])
+    return r.returncode == 0
+
+
 def src_on(mode, rate):
     """The output on in MODE at RATE with the counter pattern (show.sh
     --counter, picture only), retried while the output comes back. Every
     test player is closed first: no test window may exist while the output
-    changes mode (show.sh does the same)"""
+    changes mode (show.sh does the same). With the Roku: its video played
+    again, in the mode the Roku chooses"""
+    if ROKU:
+        return roku_play()
     src_stop()
     for _ in range(40):
         if sh(SHOW, '--counter', OUT, mode, rate).returncode == 0:
@@ -449,7 +513,10 @@ def av_on(mode, rate, tries=30):
     """avsync.sh --pattern, the picture with the bursts, once the HDMI audio
     port has a valid ELD again (a moment after a mode change). Each failed
     start goes to the event log with avsync.sh's reason. Returns the
-    attempt that started (1 ...), or 0"""
+    attempt that started (1 ...), or 0. With the Roku: its video, which has
+    the bursts, played again"""
+    if ROKU:
+        return 1 if roku_play() else 0
     for i in range(tries):
         r = sh(AVSYNC, '--pattern', OUT, mode, rate)
         if r.returncode == 0:
@@ -462,17 +529,24 @@ def av_on(mode, rate, tries=30):
 
 def src_stop():
     """The test source closed before the output goes off or is unplugged:
-    the desktop could otherwise move its window to the main screen"""
+    the desktop could otherwise move its window to the main screen. With
+    the Roku there is none"""
+    if ROKU:
+        return
     sh(AVSYNC, '--off')
     sh(SHOW, '--off')
 
 
 def connected():
+    if ROKU:
+        return True
     return any(line.startswith(f'{OUT} connected')
                for line in sh('xrandr', '--current').stdout.splitlines())
 
 
 def colour(cs, cr):
+    if ROKU:
+        raise RuntimeError('colour changes are the PC loopback\'s')
     ev(f'colour {OUT} ColorSpace={cs} ColorRange={cr}')
     sh('nvidia-settings', '--no-write-config', '-a', f'[DPY:{OUT}]/ColorSpace={cs}',
        '-a', f'[DPY:{OUT}]/ColorRange={cr}')
@@ -481,7 +555,9 @@ def colour(cs, cr):
 def host_counter():
     """The counter as the host's X server shows it on OUT (ffmpeg x11grab of
     that output's area, read only): tells a frozen test source from a frozen
-    capture. None if unreadable"""
+    capture. None if unreadable, and with the Roku"""
+    if ROKU:
+        return None
     import re
     line = next((x for x in sh('xrandr', '--current').stdout.splitlines()
                  if x.startswith(f'{OUT} connected')), '')
@@ -501,6 +577,9 @@ def host_counter():
 def host_live():
     """Two reads of the host's counter 0.3 s apart: 'source live' when it
     moves, 'source frozen' when not, 'source unreadable'"""
+    if ROKU:
+        st = roku('state')
+        return 'Roku: ' + (st.stdout.strip() or ' '.join(st.stderr.split())[:120])
     a = host_counter()
     time.sleep(0.3)
     b = host_counter()
@@ -688,6 +767,8 @@ class Runner:
         self.record('restart', ttf, f'(the test source alone: {fmt_runs(runs, t0)})')
 
     def ev_sleep(self):
+        if ROKU:
+            return self.ev_roku_sleep()
         src_stop()
         t_off = time.monotonic()
         ev(f'output off {OUT}')
@@ -699,6 +780,49 @@ class Runner:
         self.audio_on()
         self.record('sleep', ttf, f'(off: {fmt_runs(runs_off, t_off)}; on: {fmt_runs(runs, t_on)}; '
                     f'source {size[0]}x{size[1]})')
+
+    def ev_roku_sleep(self):
+        """The Roku to sleep (GC573_ROKU_SLEEP_KEYS, default PowerOff) for 8 s,
+        woken (GC573_ROKU_WAKE_KEYS, default Home), its video played again"""
+        t_off = time.monotonic()
+        slept = roku_keys('SLEEP_KEYS', 'PowerOff')
+        _, runs_off, _ = wait_good(self.src, t_off, 8)
+        t_on = time.monotonic()
+        woke = roku_keys('WAKE_KEYS', 'Home')
+        for _ in range(30):
+            if driver_locked():
+                break
+            time.sleep(0.5)
+        roku_play()
+        ttf, runs, size = wait_good(self.src, t_on, 2 * TIMEOUT)
+        self.record('sleep', ttf, f'(Roku asleep 8 s: {fmt_runs(runs_off, t_off)}; woken: '
+                    f'{fmt_runs(runs, t_on)}; source {size[0]}x{size[1]}'
+                    f'{"" if slept and woke else "; a keypress was refused"})',
+                    ok=ttf is not None and slept and woke)
+
+    def ev_roku_reboot(self):
+        """The Roku restarted (GC573_ROKU_REBOOT_KEYS: the keypresses to its
+        System restart; ECP has no command for it), then its video played
+        again once the input is back: up to 3 minutes"""
+        t0 = time.monotonic()
+        if not roku_keys('REBOOT_KEYS', ''):
+            self.record('roku-reboot', None, '(no GC573_ROKU_REBOOT_KEYS, or a keypress refused)')
+            return
+        for _ in range(120):		# the input goes when the Roku restarts
+            if not driver_locked():
+                break
+            time.sleep(0.5)
+        t_lost = time.monotonic()
+        for _ in range(360):
+            if driver_locked() and roku('info').returncode == 0:
+                break
+            time.sleep(0.5)
+        t_back = time.monotonic()
+        time.sleep(10)			# the Roku's home screen settles
+        roku_play()
+        ttf, runs, size = wait_good(self.src, t_back, 2 * TIMEOUT)
+        self.record('roku-reboot', ttf, f'(input lost {t_lost - t0:+.1f} s, back {t_back - t0:+.1f} s; '
+                    f'TTFGF from the input back: {fmt_runs(runs, t_back)}; source {size[0]}x{size[1]})')
 
     def ev_rate(self, rate):
         self.mode = (self.mode[0], rate)
@@ -857,6 +981,7 @@ class Runner:
             'idle': lambda: self.ev_obs_side('idle'),
             'reopen-video': lambda: self.ev_obs_side('reopen-video'),
             'reopen-audio': lambda: self.ev_obs_side('reopen-audio'),
+            'roku-reboot': self.ev_roku_reboot,
         }[name]()
 
     def restore(self):
@@ -867,7 +992,7 @@ class Runner:
             self.windows.append((t0, time.monotonic(), 'restore'))
 
     def _restore(self):
-        if self.colours:
+        if self.colours and not ROKU:
             colour(0, 0)
         if self.edid != 'default':
             src_stop()
@@ -882,6 +1007,13 @@ class Runner:
 ORDER = ['restart', 'sleep', 'rate-59.94', 'rate-60', 'res-720p', 'res-1080p',
          'colour-rgb-limited', 'colour-ycbcr444', 'colour-ycbcr422', 'colour-rgb-full',
          'edid-same', 'edid-new', 'edid-default', 'idle', 'reopen-video', 'reopen-audio']
+# with the Roku: its own sleep, EDID re-sets (its mode set again), OBS's
+# reopens and, with GC573_ROKU_REBOOT_KEYS, its restart. Its frame rate and
+# size are its display type's, and the colour is its own
+ROKU_ORDER = ['restart', 'sleep', 'edid-same', 'edid-new', 'edid-default', 'idle',
+              'reopen-video', 'reopen-audio', 'roku-reboot']
+if ROKU:
+    ORDER = ROKU_ORDER
 
 
 def summary(results, out=print, recoveries=None, bridge=None, windows=(), t_start=None):

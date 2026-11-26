@@ -83,6 +83,15 @@ resetting MASK. `exp-reset.py` summarises. Result:
 
 Helpers: `gc573-aud.c` (ALSA capture tool, alsa-lib: per-read frame count and timestamp, raw samples, BAR0 snapshot, a V4L2 capture beside it for A/V timing, stop/start), `gc573-regs.c` (BAR0 registers through `resource0`, mapped read-only; documented offsets only), `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep (`-T all`, or a list saved with `-t`), stop/start, underrun, wait and returned-buffer modes; live input: lock wait `-L`, frame save `-o`, input-change test `-X` (every event, the frames after them, the DQBUF or QBUF error, the last frame with `-o`; `-A` time after the last event, `-H` buffers held after STREAMOFF) with restart `-r`, per-frame log `-F`; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`, `live-compare.py` (saved frame vs `tools/testsrc/pattern.py`), `live-av.py` (a `gc573-aud` capture of `tools/testsrc/avsync.sh`: bursts, channel order and rate by frequency, frames against the clock, gaps, video cadence, A/V offset and drift; reads the samples through a memory map, hours of them fit), `obsws.py` (minimal obs-websocket v5 client, standard library only: `obsws.py REQUEST [JSON]`), `obs-check.py` (OBS set-up, format screenshots, recording, reopen; see its docstring), `obs-av.py` (A/V offset and drift in a recording of `avsync.sh`, per-segment flash counts), `obs-run.sh` (starts OBS on the VM's desktop with a minimal profile and obs-websocket on port 4455 without a password, or stops it). Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.
 
+`scrub-check.sh` (host or VM, no device touched): `tools/testsrc/scrub.py`
+and `scrub.sh` on made-up device names. Every log writer passes its text
+through them: guard.py, obs-events.py, and the event lines of live.sh,
+show.sh and avsync.sh, route-check.sh and state-check.sh. The serial in a
+udev or PipeWire USB name (`usb-<vendor>_<model>_<serial>-00`,
+`...-video-index0`) becomes `<serial>`. PCI names, such as the GC573's,
+and path-based USB names stay as they are. The Python filter and the bash
+function must agree, and scrubbing twice must change nothing.
+
 ## Live input (`live.sh`, host)
 `tests/live.sh [STEP...]` runs on the host: it drives the loopback output
 (`DVI-D-0`, never the primary) with `tools/testsrc/show.sh`, `avsync.sh` and xrandr, and runs
@@ -107,12 +116,34 @@ drawn) without writing its configuration, and `tests/obs-check.py verify`
 checks the sources (setting them up would make OBS open every `/dev/video*`
 node, cameras too). `GC573_OBS_BUFFERING` defaults to 0 there.
 
+Roku mode (`GC573_SOURCE=roku GC573_LOCAL=1`, M6): the source is the Roku
+through the HDCP filter. `tools/roku/ecp.py` drives it, and it plays
+`tools/roku/pattern-video.sh`'s file, served by `tools/roku/serve.py` for the
+run only. `DVI-D-0` is never touched. Actions on the Roku need
+`GC573_ROKU_GO=1`; without it only `rokulock`, `rokucompliance`, `q25` and
+`q25back` run. Steps:
+- `rokulock`: the lock, its timings and colour;
+- `rokucompliance`;
+- `rokucapture`: `live-av.py --exact` on the pattern video, the bursts'
+  channels, the A/V offset, and the colour patches against BT.709 limited
+  range;
+- `rokuobs`: OBS screenshots, meters and a recording, with
+  `tests/obs-events.py` in its Roku mode;
+- `rokusleep`, `rokumodes` (EDID re-sets: another serial, 720p only, the
+  default) and `rokureboot` (`GC573_ROKU_REBOOT_KEYS`);
+- `rokuobssoak`: obssoak with the Roku's changes;
+- `q25` (the Roku without the filter: open question 25) and `q25back`.
+
+Details are in `live.sh`'s header. The privacy rules are in AGENTS.md: no
+identifiers, no pictures of what the Roku shows.
+
 | Step | Checks |
 |---|---|
 | `bringup` | load; the host sees the output connected; its EDID (`xrandr --verbose`) equals `VIDIOC_G_EDID` byte for byte; `edid-decode --check` PASS |
 | `lock` | 1080p60 and 1080p59.94 (1000/1001 flag): `QUERY_DV_TIMINGS` = CTA VIC 16 within 3 s of the switch; `power_present` = 1; `SOURCE_CHANGE` on lock, loss and mode change |
 | `relock` | `GC573_RELOCKS` (25) x 2 switches 1080p60 <-> 1080p59.94 through `show.sh`: each locks to the new rate within 3 s |
-| `fpgawait` | the lock policy (`spec/hdmi-chips.md` "Lock policy") with the FPGA's input measurement held not valid through the module parameter `exp_fpga_invalid` (0x1004[1:0] = 1 and 0x1010 = 0 for that many polls after each stable entry: the host's boot race of 2026-11-25): held for good, no lock and one `dev_warn` (debugfs hdmi `fpga_waits` + 1) (`fpgawait-no-lock`, `fpgawait-warning`); valid again, one lock within 3 s at CTA 1080p60 with an FPGA frame period (`fpgawait-lock`); valid 30 polls after the entry, one lock line, with a period (`fpgawait-late`). VM only (it writes a module parameter) |
+| `fpgawait` | the lock policy (`spec/hdmi-chips.md` "Lock policy") with the FPGA's input measurement held not valid through the module parameter `exp_fpga_invalid` (0x1004[1:0] = 1 and 0x1010 = 0 for that many polls after each stable entry: the host's boot race of 2026-11-25): held for good, no lock and one `dev_warn` (debugfs hdmi `fpga_waits` + 1) (`fpgawait-no-lock`, `fpgawait-warning`); valid again, one lock within 3 s at CTA 1080p60 with an FPGA frame period (`fpgawait-lock`); valid 30 polls after the entry, one lock line, with a period (`fpgawait-late`). The self-heal (`fpgaheal`) is off for the step. VM only (it writes a module parameter) |
+| `fpgaheal` | the self-heal of a measurement that stays not valid (`spec/hdmi-chips.md` "Lock policy", open question 40), with `exp_fpga_invalid` 4294967294 (not valid until the first attempt) and 4294967295 (never). The output is on without a test player, since the self-heal's hot-plugs can drop its mode. What the source sees: `monitor_present` in the ELD of the card's port (`/proc/asound`), every 50 ms. Valid after the first attempt: one receiver restart, logged at 90 polls, then one lock at CTA 1080p60; debugfs hdmi `fpga_heals` and `fpga_heal_fixes` + 1; no HPD drop (`fpgaheal-fixed`). Never valid: the restart, then two hot-plugs at least 20 s and 80 s after the attempt before, one `dev_warn` 5-20 s after the third, nothing more in 30 s, no lock; `fpga_heals` + 3, `fpga_heal_giveups` + 1; two HPD drops (`fpgaheal-never`). Valid again: one lock, which ends the session without a fix counted (`fpgaheal-never-lock`). `fpga_heal` 0: no attempt and no lock in 8 s; 1 again: the restart at once and the lock (`fpgaheal-off`). Through every case, in the VM: the splitter's 5 V (debugfs `rx 5v` and the published power, every 50 ms, each change logged: does the source drop 5 V at a hot-plug's HPD low?). Also a second handle's QUERY_DV_TIMINGS, G_FMT and G_EDID about 5 times a second. None may fail. QUERY_DV_TIMINGS and G_FMT must stay under 500 ms; G_EDID, which waits for a hot-plug's 500 ms toggle under the HDMI lock, must stay under 1500 ms. A driver without the self-heal fails every case: they are its failing-before test. About 4 min. VM only |
 | `capture` | after the source has settled (90 identical, evenly spaced frames), 1080p60 and 1080p59.94, 6 formats x `GC573_LIVE_FRAMES` (600): last frame vs `pattern.py` (RGB 0..+1; YUV within 2 code values, chroma at flat sites), every frame identical (full-frame signature), no sequence gaps (`TAG-FMT`); G_PARM equal to the DV timings' nominal interval as an exact fraction, e.g. 1/60 and 1001/60000, and 1/60 for inputs below 59.5 Hz, which the card delivers at 60 Hz with repeated frames (`TAG-interval`; spec/video-pipeline.md "Delivery rate"); mean interval within 0.1 % of the interval G_PARM reports (`TAG-FMT-cadence`); the first frame of every stream dropped |
 | `modes` | every mode the output offers (the card's EDID, as far as the GPU drives it), each entered from another, 1080p60 last: the lock within 15 s with the FPGA's measurement valid within 40 polls (debugfs hdmi `fpga_waits` unchanged; `fpga_rejects` gives the polls it took), the DV timings' rate against the mode's (within xrandr's rounding and 0.02 %: 60 and 59.94, 24 and 23.98 stay apart), and the same capture checks per format (`GC573_MODE_FRAMES`, 120: 2 s at the card's delivery rate) |
 | `change` | input change while streaming (`gc573-cap -X`): `SOURCE_CHANGE` and no DMA outside the queued buffers every time; to other timings (1080p60 <-> 720p60) a `DQBUF` error (after the 1 s hold) and a restart at the new timings; 1080p60 -> 59.94 (the buffers still fit) the stream carries on, no error, frames after the last event; an application that never sets timings and keeps its buffers through a change to 720p (as OBS does) gets the new timings once its queue is free (`change-adopted`) |
