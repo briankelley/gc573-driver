@@ -403,7 +403,12 @@ def main():
         return 0 if ok else 1
     offs, when = np.array(offs), np.array(when)
     tfm = tf * 1e3
-    cl = np.round(offs / tfm).astype(int)
+    # whole frames from the median: rounding offs / tfm itself splits a
+    # tight set of offsets near half a period into two classes a frame
+    # apart (the 2 h host soak's last session: +8.21 to +8.82 ms at
+    # 16.683 ms, "corrected" to a 17 ms spread)
+    med = float(np.median(offs))
+    cl = np.round((offs - med) / tfm).astype(int)
     vals, cnt = np.unique(cl, return_counts=True)
     ref = vals[np.argmax(cnt)]
     corr = offs - (cl - ref) * tfm
@@ -423,7 +428,7 @@ def main():
                 print(f"SEGMENT {k} {edges[k]:.1f} {edges[k + 1]:.1f} pairs=0")
                 continue
             o = offs[m]
-            sv, sc = np.unique(np.round(o / tfm).astype(int), return_counts=True)
+            sv, sc = np.unique(np.round((o - med) / tfm).astype(int), return_counts=True)
             print(f"SEGMENT {k} {edges[k]:.1f} {edges[k + 1]:.1f} pairs={len(o)} raw={o.mean():+.2f} "
                   f"min={o.min():+.2f} max={o.max():+.2f} frames=" +
                   ','.join(f'{v - ref:+d}:{c}' for v, c in zip(sv, sc)) + f" corr={corr[m].mean():+.3f}")
