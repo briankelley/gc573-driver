@@ -139,5 +139,15 @@ A host GPU output (GT 710, DVI-D, through a DVI-to-HDMI cable) feeds HDMI IN. Fa
 - One polling work item per chip (or one combined), every 50 ms. Event registers are write-1-to-clear: read, then write back the value read (exceptions per chip chapter).
 - All observed I2C timeouts were on the IT6805 bank register; retry and bank-resync rules in `i2c.md`.
 - On unload RD writes nothing to the chips or the GPIO register: the chips keep running and HPD stays as it was. (`T3/S36`; C) Whether a driver should drop HPD or enter power saving on remove is a design choice; untested.
-- Report lock and unlock as `V4L2_EVENT_SOURCE_CHANGE`. Report DV timings from the IT6805 timing registers plus FPGA 0x1010. Stop streaming on unlock.
+- Report lock and unlock as `V4L2_EVENT_SOURCE_CHANGE`. Report DV timings from the IT6805 timing registers plus FPGA 0x1010. What a running stream does is driver policy (below).
 - The chips are separate I2C devices on the bus-1 adapter. Implement them as v4l2 subdevices or internal helpers. All their I2C goes through the bus-1 adapter.
+
+## Stream policy on input changes
+Driver policy (design decision, not a hardware fact; also in the header comment of `src/gc573_video.c`):
+- Every lock, loss and mode change raises `V4L2_EVENT_SOURCE_CHANGE` at once. An application that handles it stops streaming, queries and sets the timings, and starts again.
+- A running stream also follows the input by itself, for applications that ignore the event:
+  - input lost: the stream restarts free-running (black at 60 Hz, `video-dma.md`);
+  - input locked in the stream's timings: the stream restarts live;
+  - input locked in other timings: the stream is held for up to 1 s: the hardware is stopped, the buffers stay queued, no frames arrive. If the input is lost or locks in the stream's timings within that second, the stream restarts as above. If the other timings last the whole second, the stream fails: its buffers are returned with an error and the queue is marked failed.
+- Why the hold: a source that changes its mode can lock briefly in another mode first. After an EDID change the PC source came up in the EDID's preferred mode, 1080p60, until the harness set 720p. The driver locked at 1080p for 138 ms (host soak, `tests/logs/20261125-215755_6.8.0-151-generic_live.log`, 23:11:06Z), and `tests/live.sh blip` reproduces it (224 ms). Failing the stream at that lock ended OBS's capture for good. The lock in a passing mode comes 1.1–1.7 s after the mode is set, so a 1 s hold rides out a second mode set up to 2.1–2.7 s after the first. (`E`; C for the measurements)
+- The hold does not free-run: free-running is documented with no input (`video-dma.md`). With a locked input in other timings it is untested.
