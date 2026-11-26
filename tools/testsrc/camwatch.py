@@ -6,7 +6,7 @@ microphones) must never be opened by a test. Root (fanotify), Python's
 standard library only (ctypes), notification events only: nothing is ever
 blocked or delayed.
 
-  camwatch.py --log FILE [--pid PID] [--guard] [--test PATH ...] [--only-tests] [--dry-run]
+  camwatch.py --log FILE [--pid PID] [--guard | --serials] [--test PATH ...] [--only-tests] [--dry-run]
 
 Marks (fanotify FAN_OPEN, inode marks, re-made for new nodes):
 - every /dev/video*, /dev/vbi*, /dev/radio*, /dev/swradio*, /dev/v4l-subdev*,
@@ -14,20 +14,26 @@ Marks (fanotify FAN_OPEN, inode marks, re-made for new nodes):
 - every /dev/snd node (controlC*, pcmC*, hwC*, midiC*, comprC*) of a sound
   card that is neither the GC573 nor the NVIDIA HDMI audio function.
 Nodes come from sysfs (/sys/class/video4linux, /sys/bus/media/devices,
-/sys/class/sound) and serials from udev's database (/run/udev/data): no
-node is opened to find them. The group reports file handles
-(FAN_REPORT_FID), not file descriptors: in fd mode the kernel would open
-each node for this watch at every event (a camera's open() would run).
+/sys/class/sound), and with --serials the serials from udev's database
+(/run/udev/data): no node is opened to find them. The group reports file
+handles (FAN_REPORT_FID), not file descriptors: in fd mode the kernel would
+open each node for this watch at every event (a camera's open() would run).
 An inotify watch on /dev and /dev/snd marks nodes that appear later (the
 KVM switch brings a camera and takes it away).
 
-Each open is a line in FILE (UTC, ms) with the node and what it is (the
-video4linux name or the sound card's id, and ID_SERIAL_SHORT). Whose open
-it is decides the level and how much of the opener is logged. An opener is
-ours when CLAUDECODE=1 is in its environment or an ancestor's: Claude Code
-sets it for every command it runs, and it survives daemonizing (OBS from
-tests/obs-run.sh has it). The user's own programs (a video call on this
-PC) must never stop a run or have their command lines logged.
+Each open is a line in FILE (UTC, ms) with the node and what it is: the
+video4linux name, the media device's model, or the sound card's number and
+id. Never a serial unless asked: --serials (standalone use only) adds each
+device's ID_SERIAL_SHORT. With --guard it is refused: the guard's lines go
+into the run's event log, which is committed with the run, and a serial
+names the user's own device.
+
+Whose open it is decides the level and how much of the opener is logged.
+An opener is ours when CLAUDECODE=1 is in its environment or an
+ancestor's: Claude Code sets it for every command it runs, and it survives
+daemonizing (OBS from tests/obs-run.sh has it). The user's own programs (a
+video call on this PC) must never stop a run or have their command lines
+logged.
   camwatch BREACH  ours: pid, comm, command line, parents. Printed on
                    stdout too: tools/testsrc/guard.py starts this watch
                    through sudo (--guard) on host runs and stops the run on a
@@ -288,8 +294,9 @@ def snapshot(pid):
 
 
 class Watch:
-    def __init__(self, log, tests, out=print, only_tests=False, guard=False):
+    def __init__(self, log, tests, out=print, only_tests=False, guard=False, serials=False):
         self.log, self.out, self.only_tests, self.guard = log, out, only_tests, guard
+        self.serials = serials and not guard
         self.gc = gc573_devices()
         self.fd = -1
         self.marks = {}		# handle -> (path, what, kind, monotonic time it appeared or None)
@@ -299,6 +306,10 @@ class Watch:
 
     def counts(self):
         return ', '.join(f'{v} {k.lower()}' for k, v in self.n.items())
+
+    def describe(self, what, path, name):
+        """WHAT for a marked node: with --serials, and the device's serial"""
+        return f'{what}, serial {serial(path, sysdev(name))}' if self.serials else what
 
     def say(self, level, text):
         line = f'{now()} camwatch {level} {text}'
@@ -313,7 +324,7 @@ class Watch:
         for name in candidates():
             path, what = wanted(name, self.gc)
             if path:
-                on.append((path, f'{what}, serial {serial(path, sysdev(name))}', 'watch'))
+                on.append((path, self.describe(what, path, name), 'watch'))
             elif not what.startswith('not '):
                 off.append((name, what))
         if self.only_tests:
@@ -403,9 +414,10 @@ class Watch:
         if self.only_tests:
             self.say('INFO', f'new node {path} ({what}): not marked (--only-tests)')
             return
-        # udev may still be writing its database: the serial at the open
+        # udev may still be writing its database: with --serials, the
+        # serial is read again at the open
         try:
-            self.mark(path, f'{what}, serial {serial(path, sysdev(rel))}', 'watch', time.monotonic())
+            self.mark(path, self.describe(what, path, rel), 'watch', time.monotonic())
             self.say('INFO', f'new node marked: {path} ({what})')
         except OSError as e:
             self.say('BREACH', f'new node {path} ({what}) could not be marked: {e}')
@@ -467,7 +479,7 @@ class Watch:
     def report(self, h, pid, t, snap):
         path, what, kind, born = self.marks.get(h, ('(unknown node)', f'handle {h}', 'watch', None))
         level, who = self.classify(pid, t, born, snap)
-        if what.endswith('serial -'):
+        if self.serials and what.endswith('serial -'):
             what = what[:-1] + serial(path)
         if kind == 'test':
             self.n['TEST'] += 1
@@ -498,12 +510,17 @@ def main():
     ap.add_argument('--pid', type=int, help='end when this process ends')
     ap.add_argument('--guard', action='store_true',
                     help="guard.py's runs: an opener that cannot be looked up is a BREACH, not UNKNOWN")
+    ap.add_argument('--serials', action='store_true',
+                    help="log each device's ID_SERIAL_SHORT too (standalone only; refused with --guard, "
+                         "whose lines go into the committed event logs)")
     ap.add_argument('--test', action='append', default=[], help='a path to watch as a test (never a camera)')
     ap.add_argument('--only-tests', action='store_true', help='mark the --test paths alone')
     ap.add_argument('--dry-run', action='store_true', help='print the marks and exit')
     a = ap.parse_args()
+    if a.serials and a.guard:
+        ap.error('--serials is for standalone use: --guard lines go into the committed event logs')
     if a.dry_run:
-        w = Watch(sys.stdout, a.test, only_tests=a.only_tests)
+        w = Watch(sys.stdout, a.test, only_tests=a.only_tests, serials=a.serials)
         on, off = w.plan()
         for path, what, kind in on:
             print(f'mark {path} ({what}){" [test]" if kind == "test" else ""}')
@@ -514,7 +531,7 @@ def main():
     signal.signal(signal.SIGTERM, lambda *_: stopping.append(1))
     signal.signal(signal.SIGINT, lambda *_: stopping.append(1))
     with open(a.log, 'a') as log:
-        w = Watch(log, a.test, only_tests=a.only_tests, guard=a.guard)
+        w = Watch(log, a.test, only_tests=a.only_tests, guard=a.guard, serials=a.serials)
         try:
             w.start()
         except OSError as e:
