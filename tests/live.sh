@@ -2699,7 +2699,7 @@ ECP=$ROOT/tools/roku/ecp.py
 ROKU_DIR=${GC573_ROKU_DIR:-$HOME/gc573-roku}
 ROKU_SECS=${GC573_ROKU_SECS:-60}
 Q25_SECS=${GC573_Q25_SECS:-180}
-ROKU_URL_FILE="" roku_serve_pid="" roku_served="" roku_played=0
+ROKU_URL_FILE="" roku_serve_pid="" roku_served="" roku_played=0 roku_halt=0
 ecp() { python3 "$ECP" "$@"; }
 roku_go() { [ "${GC573_ROKU_GO:-0}" = 1 ]; }
 roku_skip() { result "$1" SKIP "(needs GC573_ROKU_GO=1: it $2)"; }
@@ -2752,17 +2752,25 @@ roku_counters() {
 	vm "sudo $W/gc573-aud -D $pcm -t 1 -v -V $vdev -P -o /dev/null 2>/dev/null" | grep -c '^V .* c=[0-9]'
 }
 # SECS: the pattern video (of SECS seconds) playing and on the card
+# The safety net: if our video does not show on the card (the counters
+# read), the Roku acted on may not be the cabled one, or Play on Roku
+# does not work. The run then sends nothing more to the Roku (roku_halt)
+# but stop-ours at its end
 roku_source_on() {
 	local f i
+	[ "$roku_halt" = 0 ] ||
+		{ echo "  no action on the Roku: our video did not show on the card earlier in this run"; return 1; }
 	f=$(roku_video "$1") || return 1
 	# a step that needs a longer video than the one served gets it
 	[ "$roku_served" = "$f" ] || { roku_serve_stop; roku_serve_start "$f"; } || return 1
 	roku_wake
-	roku_play || return 1
+	roku_play || { roku_halt=1; return 1; }
 	for i in $(seq 40); do
 		locked && [ "$(roku_counters)" -gt 30 ] && return 0
 		sleep 1
 	done
+	roku_halt=1
+	echo "  our video did not show on the card within 40 s ($(roku_input); $(roku_counters) of 60 counters read in 1 s): no more actions on the Roku in this run"
 	return 1
 }
 # the end of a Roku run: the server stopped; with the go, our video
