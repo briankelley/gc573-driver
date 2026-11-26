@@ -146,18 +146,25 @@ open(st, 'w').write('app=\nkind=home\npower=PowerOn\n')
 LOG.clear()
 rc, out = run(ecp.restore_state, st)
 check('restore-home', LOG == [] and 'nothing to do' in out, repr(out))
-# 9. an action on a saved Roku that is not identified: refused
+# 9. an action on a saved Roku that is not identified: refused; info
+# says it is not identified
 os.environ.pop('GC573_ROKU', None)
 ecp.STATE = os.path.join(tmp, 'roku-state')
 open(ecp.CONF, 'w').write('address=127.0.0.2\n')
 os.chmod(ecp.CONF, 0o600)
+sys.argv = ['ecp.py', 'info']
+rc, out = run(ecp.main)
+check('info-not-identified', rc == 0 and '4802X' in out and 'not yet identified' in out, repr(out))
 try:
     ecp.keypress('Home')
     check('needs-identified', False)
 except ecp.EcpError as e:
     check('needs-identified', 'rokuwhich' in str(e), str(e))
-# 10. identified: the first action saves the state, then acts
+# 10. identified: info without the note; the first action saves the
+# state, then acts
 open(ecp.CONF, 'w').write('address=127.0.0.2\nidentified=edid-720p x\n')
+rc, out = run(ecp.main)
+check('info-identified', rc == 0 and '4802X' in out and 'identified' not in out, repr(out))
 LOG.clear()
 rc, out = run(ecp.keypress, 'Home')
 check('lazy-save', os.path.exists(ecp.STATE) and 'model=4802X' in open(ecp.STATE).read()

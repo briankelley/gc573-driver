@@ -60,7 +60,9 @@ Usage:
                                Suspend, else the app launched again if it
                                was neither ours nor the home screen;
                                not for a state of another model
-  ecp.py info                  model and software version
+  ecp.py info                  model and software version (and, for a
+                               saved Roku not identified as the cabled
+                               one, that it is not)
   ecp.py state                 media player state, position, duration
   ecp.py power                 power mode (PowerOn, DisplayOff, ...)
   ecp.py key KEY...            keypresses (GC573_ROKU_GO=1)
@@ -479,7 +481,13 @@ def main():
                       f'{", identified: " + a.identified if a.identified else ""}')
         elif a.cmd == 'info':
             ev('query device-info')
-            print(model_text(device_info()))
+            # the saved Roku is one of two on the LAN: say when nothing
+            # has shown it is the one on the card's input
+            unknown = not (TARGET_MODEL or os.environ.get('GC573_ROKU', '').strip()
+                           or identified())
+            print(model_text(device_info()) +
+                  (' (the saved Roku, not yet identified as the one cabled to '
+                   'the card)' if unknown else ''))
         elif a.cmd == 'state':
             ev('query media-player')
             st, pos, dur, ours = media_state()
