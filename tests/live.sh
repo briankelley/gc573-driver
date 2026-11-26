@@ -180,7 +180,11 @@
 #             default): the Roku's mode after each hot-plug (INFO when it
 #             does not follow), the lock, 10 s of gc573-aud -V
 #   rokustart (any picture) streams started at a fresh 720p or 1080p lock:
-#             intervals, untouched bytes, band signatures, the ring
+#             every interval within 10 % of IN_FRAME_PERIOD, the first 40 at
+#             its rate (the delivery settle); untouched blocks, band
+#             signatures, the ring, the HDMI worker
+#   rokurelock  (any picture) a stream across a same-timings relock: the
+#             same checks from the driver's live restart on
 #   rokuobsany  (any picture) OBS: screenshots, meters, a 60 s recording
 #             (deleted), the driver's stream, intervals and counters
 #   rokureboot  the Roku restarted (GC573_ROKU_REBOOT_KEYS: ECP has no
@@ -1147,6 +1151,18 @@ change_while_streaming() {
 	esac
 	[ "$rc" = 0 ] || ok=1
 	check "$tag" "$ok" "($want: $line$(grep -q -- -r <<< "$opts" && echo "; restart: $(echo "$out" | grep '^RESULT capture ' | grep -oE 'fmt=[^ ]+ [0-9x]+ frames=[0-9]+')"))"
+	# the restart starts at the lock: every interval within 10 % of the
+	# input's (hdmi-chips.md "Lock policy", delivery settle)
+	if grep -q -- -r <<< "$opts"; then
+		local cl fps
+		cl=$(grep '^RESULT capture ' <<< "$out" | tail -1)
+		fps=$(grep '^LOCK ' <<< "$out" | tail -1 | sed -nE 's/.* fps=([0-9.]+) .*/\1/p')
+		check "$tag-restart-intervals" "$(awk -v fps="${fps:-0}" -v l="$cl" 'BEGIN {
+			n = split(l, f, " "); for (i = 1; i <= n; i++) { split(f[i], kv, "="); v[kv[1]] = kv[2] }
+			want = fps ? 1000 / fps : 0
+			exit !(want && v["min"] >= want * 0.9 && v["max"] <= want * 1.1) }'; echo $?)" \
+			"(the restart at the lock: intervals $(grep -oE 'min=[0-9.]+ max=[0-9.]+' <<< "$cl") ms, the input's $(awk -v f="${fps:-0}" 'BEGIN { if (f) printf "%.3f", 1000 / f; else print "?" }') ms, within 10 %)"
+	fi
 }
 
 # A frame gc573-cap -o kept ($2, YUYV 1920x1080) against pattern.py; $1: tag
@@ -3600,8 +3616,12 @@ soak_samples() {
 # sequence runs, the IT6805's and the splitter's states, with their
 # CLOCK_MONOTONIC times, so that a step lines up with the worker's work
 # or not. Then the same at 1080p
-# (the default EDID set again). Per stream: its frame intervals against the
-# median; for each one more than 10 % off, the phase of the frames around
+# (the default EDID set again). A stream passes (hdmi-chips.md "Lock policy",
+# delivery settle) when every frame interval is within 10 % of
+# IN_FRAME_PERIOD and its first 40 intervals' mean within 0.05 % of it:
+# the input's frames from the first frame after the published lock, not
+# the card's own 60.000 Hz. Per stream, for each interval more than 10 %
+# off, the phase of the frames around
 # it, their untouched bytes, which bands of the off frame match the frame
 # before (<), the frame after (>), both (=) or neither (x), and the ring of
 # that time. No Roku action but the EDID sets; numbers only
@@ -3644,9 +3664,11 @@ roku_start_one() {	# TAG EDIDFILE [DELAY: s from the lock to the stream]
 			m = n - 1
 			for (i = 2; i <= m; i++) { t = x[i]; for (j = i - 1; j >= 1 && x[j] > t; j--) x[j + 1] = x[j]; x[j + 1] = t }
 			med = x[int((m + 1) / 2)]
-			for (i = 2; i <= n; i++) if (d[i] > med * 1.1 || d[i] < med * 0.9) {
+			# the reference: the input period the FPGA measures (else the median)
+			ref = pmin ? pmin / 1e5 : med
+			for (i = 2; i <= n; i++) if (d[i] > ref * 1.1 || d[i] < ref * 0.9) {
 				off++
-				printf "  %s interval off: frame %d of %d (%.3f s in), seq %d -> %d, %.3f ms (median %.3f)\n", tag, i, n, (ts[i] - ts[1]) / 1e3, seq[i - 1], seq[i], d[i], med
+				printf "  %s interval off: frame %d of %d (%.3f s in), seq %d -> %d, %.3f ms (input period %.3f, median %.3f)\n", tag, i, n, (ts[i] - ts[1]) / 1e3, seq[i - 1], seq[i], d[i], ref, med
 				ph = ""
 				for (k = i - 2; k <= i + 1; k++) ph = ph (k >= 1 && k <= n ? sprintf(" %+.3f", ts[k] - ts[1] - (k - 1) * med) : " -")
 				printf "    phase against the median cadence, frames %d to %d:%s ms; untouched 32-byte blocks%s\n", i - 2, i + 1, ph,
@@ -3674,12 +3696,15 @@ roku_start_one() {	# TAG EDIDFILE [DELAY: s from the lock to the stream]
 			}
 			printf "  %s IN_FRAME_PERIOD over the stream: %d to %d ticks (%.4f to %.4f ms)\n", tag, pmin, pmax, pmin / 1e5, pmax / 1e5
 			# the delivery rate before and after: the first and last 40 intervals
+			slow = 0
 			if (n > 81) {
 				a1 = (ts[41] - ts[1]) / 40; a2 = (ts[n] - ts[n - 40]) / 40
 				printf "  %s mean interval of the first 40: %.4f ms (%.3f Hz); of the last 40: %.4f ms (%.3f Hz)\n", tag, a1, 1000 / a1, a2, 1000 / a2
+				slow = a1 < ref * 0.9995 || a1 > ref * 1.0005
 			}
-			printf "RESULT %s %s (%d frames, interval median %.3f ms, %d more than 10 %% off; %d frames with 32-byte blocks the DMA did not write; %s)\n",
-				tag, off || nun ? "FAIL" : "PASS", n, med, off, nun, lk }' "$W/start-ring.u" "$W/start-watch.txt" "$W/start.txt")
+			printf "RESULT %s %s (%d frames, input period %.4f ms, %d intervals more than 10 %% off it, the first 40 %s; %d frames with 32-byte blocks the DMA did not write; %s)\n",
+				tag, (off || nun || slow) ? "FAIL" : "PASS", n, ref, off,
+				(n > 81 ? sprintf("at %.4f ms (%s 0.05 %%)", a1, slow ? "not within" : "within") : "not measured"), nun, lk }' "$W/start-ring.u" "$W/start-watch.txt" "$W/start.txt")
 	av_results roku-start "$(sed 's/^RESULT /RESULT /' <<< "$out")"
 	grep -E '^(INFO start_to_first|RESULT capture)' "$W/start.txt" | sed 's/ ch0_bytes.*//; s/^/  /'
 	grep -v '^W ' "$W/start-watch.txt" | head -3 | sed 's/^/  dbg-watch: /'
@@ -3701,6 +3726,66 @@ step_rokustart() {
 	done
 	roku_edid_set "$e/default.bin"
 	time_to_lock 60 > /dev/null
+	vm "rm -rf $e"
+}
+
+# rokurelock: a stream across a relock in the same timings, the restart the
+# stream policy makes (hdmi-chips.md "Stream policy on input changes").
+# GC573_ROKU_TRIALS (3) times: gc573-cap -L (720 YUYV frames, -p -F -M) on
+# the locked input; 3 s in, the default EDID set again, a hot-plug the Roku
+# answers in the same mode. The driver restarts the stream free-running at
+# the loss and live at the relock; tests/dbg-watch.py reads debugfs video's
+# "stream:" line every 25 ms for the time of the live restart. From 0.1 s
+# after it to the end every interval within 10 % of IN_FRAME_PERIOD, and
+# the first 40 within 0.05 % of it on average (the delivery settle). Numbers
+# only; no Roku action but the EDID set
+step_rokurelock() {
+	local e i wp cp out
+	e=$W/roku-edid
+	time_to_lock 30 > /dev/null || { result roku-relock SKIP "(no input: $(roku_card))"; return; }
+	roku_edids "$e" || { result roku-relock FAIL "(G_EDID or edid-variant.py)"; return; }
+	for i in $(seq "${GC573_ROKU_TRIALS:-3}"); do
+		vm "sudo python3 $ROOT/tests/dbg-watch.py --secs 15 --every 25 '$dbgdir/video=^stream:'" \
+			> "$W/relock-watch.txt" 2>&1 &
+		wp=$!
+		vm "sudo $W/gc573-cap -d $vdev -L 10 -f YUYV -b 4 -n 720 -p -F -M /sys/bus/pci/devices/${dbgdir##*/gc573-}/resource0 > $W/relock.txt 2>&1" &
+		cp=$!
+		sleep 3
+		kmsg_mark "rokurelock-$i-"
+		roku_edid_set "$e/default.bin"
+		wait "$cp"
+		wait "$wp"
+		out=$(awk -v tag="$i" 'FILENAME == ARGV[1] {
+				if ($1 != "W") next
+				lv = ($0 ~ / live 1 /)
+				if (!lv) was0 = 1
+				else if (was0 && !tl) tl = $2 / 1e6
+				next }
+			/^REGS / { split($2, rq, "="); per[rq[2]] = strtonum("0x" $71) }
+			/^FRAME / { for (k = 2; k <= NF; k++) { split($k, kv, "="); v[kv[1]] = kv[2] }
+				if (!tl || v["ts_ms"] < tl + 100) next
+				n++; ts[n] = v["ts_ms"]; seq[n] = v["seq"]; p = per[v["seq"]]
+				if (p && (!pmin || p < pmin)) pmin = p
+				if (v["untouched"] > 0) nun++ }
+			END {
+				if (!tl) { printf "RESULT %s FAIL (no live restart seen in debugfs video)\n", tag; exit }
+				if (n < 42) { printf "RESULT %s FAIL (%d frames after the live restart)\n", tag, n; exit }
+				ref = pmin / 1e5
+				for (k = 2; k <= n; k++) { d = ts[k] - ts[k - 1]
+					if (d > ref * 1.1 || d < ref * 0.9) {
+						off++
+						printf "  %s interval off: frame %d after the restart (%.3f s after it), seq %d -> %d, %.3f ms (input period %.3f)\n", tag, k, (ts[k] - tl) / 1e3, seq[k - 1], seq[k], d, ref
+					} }
+				a1 = (ts[41] - ts[1]) / 40
+				slow = a1 < ref * 0.9995 || a1 > ref * 1.0005
+				printf "RESULT %s %s (%d frames from 0.1 s after the live restart, input period %.4f ms: %d intervals more than 10 %% off it, the first 40 at %.4f ms (%s 0.05 %%); %d frames with 32-byte blocks the DMA did not write)\n",
+					tag, off || slow || nun ? "FAIL" : "PASS", n, ref, off, a1, slow ? "not within" : "within", nun }' \
+			"$W/relock-watch.txt" "$W/relock.txt")
+		av_results roku-relock "$out"
+		echo "  $(lock_rates "$(kmsg_since "rokurelock-$i-")"); $(grep -E '^RESULT capture' "$W/relock.txt" | sed 's/ ch0_bytes.*//')"
+		vm "rm -f $W/relock.txt $W/relock-watch.txt"
+		sleep 3
+	done
 	vm "rm -rf $e"
 }
 
@@ -3832,7 +3917,7 @@ fi
 all="bringup lock relock fpgawait fpgaheal capture modes change blip loss colour colorimetry audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
 [ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change blip loss audio exact avsync audioloss compliance"
-ROKU_STEPS="rokuwhich rokuwhichkey rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes rokustart rokuobsany rokureboot rokuobssoak rokusoakany q25 q25back"
+ROKU_STEPS="rokuwhich rokuwhichkey rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes rokustart rokurelock rokuobsany rokureboot rokuobssoak rokusoakany q25 q25back"
 [ "$SOURCE" != roku ] || { all="rokulock rokucompliance rokusleep rokumodes rokuobsany"; LOCAL_STEPS=$ROKU_STEPS; }
 [ $# -gt 0 ] || set -- $all
 for s in "$@"; do
