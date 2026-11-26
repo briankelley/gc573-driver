@@ -971,15 +971,55 @@ avi_check() {
 		"(splitter AVI PB1 $pb1 PB3 $pb3 PB5 $pb5: colour $y full_range $full; published: $got)"
 }
 
+# ---- colour changes on the output (colour, avchange) ----
+# Only on the output, at runtime (nvidia-settings --no-write-config). The
+# output goes back to RGB full range (0/0) on every exit path: at the end
+# of each step and in the EXIT trap (a failed or stopped run too: bash runs
+# it at once at the guard's SIGTERM), read back and retried; the run stops
+# if that does not take. The steps run in the pipeline's subshell, the
+# trap in the script itself: a file marks a change not yet put back ($$
+# is the script's PID in both).
+COLOUR_MARK=/tmp/gc573-live-colour-$$
+colour_set() {	# ColorSpace ColorRange, on the output only, never the primary
+	local primary
+	primary=$(xrandr --query | awk '/ connected primary/ { print $1; exit }')
+	if [ -z "$primary" ] || [ "$primary" = "$OUT" ]; then
+		echo "live.sh: no colour change: $OUT is the primary output, or there is none" >&2
+		return 1
+	fi
+	touch "$COLOUR_MARK"
+	ev "colour ColorSpace=$1 ColorRange=$2"
+	nvidia-settings --no-write-config -a "[DPY:$OUT]/ColorSpace=$1" -a "[DPY:$OUT]/ColorRange=$2" > /dev/null 2>&1
+}
+# the output back to RGB full range (0/0), read back; three tries
+colour_restore() {
+	local i q
+	[ -e "$COLOUR_MARK" ] || return 0
+	for i in 1 2 3; do
+		nvidia-settings --no-write-config -a "[DPY:$OUT]/ColorSpace=0" -a "[DPY:$OUT]/ColorRange=0" > /dev/null 2>&1
+		q=$(nvidia-settings -t -q "[DPY:$OUT]/ColorSpace" -q "[DPY:$OUT]/ColorRange" 2>/dev/null | paste -sd/)
+		ev "colour ColorSpace=0 ColorRange=0 (put back, try $i: reads $q)"
+		[ "$q" = 0/0 ] && { rm -f "$COLOUR_MARK"; return 0; }
+		sleep 1
+	done
+	ev "COLOUR NOT PUT BACK: $OUT reads ColorSpace/ColorRange $q"
+	echo "COLOUR NOT PUT BACK: $OUT reads ColorSpace/ColorRange $q, not 0/0" >&2
+	return 1
+}
+# the output's colour could not be put back: stop the run ($1: tag)
+colour_stop() {
+	result "$1" FAIL "($OUT's colour is not back at RGB full range: the run stops; the EXIT trap tries again)"
+	echo "SUMMARY stopped: $OUT's colour could not be put back"
+	exit 3
+}
+
 step_colour() {
 	local cs cr name
 	src_mode 1920x1080 60
 	for cs_cr in "0 1 rgb-limited" "2 1 ycbcr444" "1 1 ycbcr422"; do
 		set -- $cs_cr
 		cs=$1 cr=$2 name=$3
-		ev "colour ColorSpace=$cs ColorRange=$cr"
-		nvidia-settings --no-write-config -a "[DPY:$OUT]/ColorSpace=$cs" \
-			-a "[DPY:$OUT]/ColorRange=$cr" >/dev/null 2>&1
+		colour_set "$cs" "$cr"
 		sleep 2
 		settle
 		hdmi_dbg | grep -E '^(it6805: mode|splitter: avi|input:)' | sed 's/^/  /'
@@ -987,9 +1027,7 @@ step_colour() {
 		live_capture "colour-$name" 60 1920x1080 60
 		result "colour-$name-note" SKIP "(report only, not gating)"
 	done
-	ev "colour ColorSpace=0 ColorRange=0"
-	nvidia-settings --no-write-config -a "[DPY:$OUT]/ColorSpace=0" \
-		-a "[DPY:$OUT]/ColorRange=0" >/dev/null 2>&1
+	colour_restore || colour_stop colour-restore
 	sleep 3
 }
 
@@ -1430,7 +1468,7 @@ step_soak() {
 # with buffering on adds every such gap to its video delay (README); the
 # driver's timestamps must not
 step_avchange() {
-	local out p t0 k st n dmax offs
+	local out p t0 k st n dmax offs rc
 	av_on || { result avchange-source FAIL "(avsync.sh or the IT6805 audio state ON)"; av_off; return; }
 	sleep 3
 	vm "sudo $W/gc573-aud -D $pcm -t 80 -v -V $vdev -o $W/avc.raw > $W/avc.txt 2>&1" &
@@ -1439,11 +1477,12 @@ step_avchange() {
 	for k in "20 2 1" "40 0 1" "60 0 0"; do
 		set -- $k
 		while [ $(($(date +%s) - t0)) -lt "$1" ]; do sleep 0.1; done
-		ev "colour ColorSpace=$2 ColorRange=$3"
-		nvidia-settings --no-write-config -a "[DPY:$OUT]/ColorSpace=$2" -a "[DPY:$OUT]/ColorRange=$3" > /dev/null 2>&1
+		colour_set "$2" "$3"
 	done
 	wait $p
-	check avchange-capture $? "($(vm "grep -E '^(PARAMS|RESULT)' $W/avc.txt" | tr '\n' ' '))"
+	rc=$?
+	colour_restore || colour_stop avchange-restore
+	check avchange-capture $rc "($(vm "grep -E '^(PARAMS|RESULT)' $W/avc.txt" | tr '\n' ' '))"
 	out=$(vm "python3 $W/live-av.py $W/avc.txt $W/avc.raw --segments 20,40,60")
 	vm "rm -f $W/avc.raw"
 	grep -E '^SEGMENT|raw offsets|^RESULT (video|gaps)' <<< "$out" | sed 's/^/  /'
@@ -2191,9 +2230,10 @@ mkdir -p "$ROOT/tests/logs"
 export GC573_EVENT_LOG=${log%.log}-events.log GC573_GUARDED=1
 python3 "$ROOT/tools/testsrc/guard.py" --pid $$ --log "$GC573_EVENT_LOG" --output "$OUT" &
 if [ "$LOCAL" = 1 ]; then
-	trap '"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off' EXIT
+	trap 'colour_restore; "$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off' EXIT
 else
-	trap 'vm "[ ! -e $PW_RULE.off ] || { rm -f ~/$PW_WP; sudo mv $PW_RULE.off $PW_RULE; sudo udevadm control --reload;
+	trap 'colour_restore
+		vm "[ ! -e $PW_RULE.off ] || { rm -f ~/$PW_WP; sudo mv $PW_RULE.off $PW_RULE; sudo udevadm control --reload;
 			sudo udevadm trigger -s sound -c change; systemctl --user restart wireplumber; }"
 		"$ROOT/tools/testsrc/show.sh" --off; "$ROOT/tools/testsrc/avsync.sh" --off
 		ssh -O exit -o ControlPath="$SSHCTL" "$VM" 2>/dev/null' EXIT
