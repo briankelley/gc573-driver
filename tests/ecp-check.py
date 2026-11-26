@@ -2,8 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0
 """Offline check of tools/roku/ecp.py: survey (--watch, --until, --model),
 the --model target, discover --save --model --identified, save-state and
-restore-state, and the gates on actions (the go; a saved Roku identified
-as the cabled one; its state saved before the first action). Two fake
+restore-state, stop-ours, and the gates on actions (the go; a saved Roku
+identified as the cabled one; its state saved before the first action).
+Ours is Play on Roku alone: the sideloaded dev channel (the user's own
+app) is never launched but by restore-state, and of it only the player
+state is printed. Two fake
 Rokus answer on 127.0.0.1 and 127.0.0.2 port 8060, and SSDP is replaced:
 no network, no real Roku. The config, the state file and the event log
 are in a temporary directory, never ~/.config/gc573. Checks too that no
@@ -29,8 +32,10 @@ for v in ('GC573_ROKU', 'GC573_ROKU_GO', 'GC573_EVENT_LOG'):
 T0 = time.monotonic()
 LOG = []
 ROKUS = {
-    '127.0.0.1': dict(model='4850X', power='PowerOn', ecpm='enabled', app='', after720=4.0),
-    '127.0.0.2': dict(model='4802X', power='Suspend', ecpm='permissive', app='12', after720=None),
+    '127.0.0.1': dict(model='4850X', power='PowerOn', ecpm='enabled', app='', after720=4.0,
+                      plugin='dev', mstate='play'),
+    '127.0.0.2': dict(model='4802X', power='Suspend', ecpm='permissive', app='12', after720=None,
+                      plugin='15985', mstate='play'),
 }
 SECRET = 'SERIALX123456'
 
@@ -53,6 +58,9 @@ class H(http.server.BaseHTTPRequestHandler):
                     f'<software-version>16.0.4</software-version><software-build>853</software-build>'
                     f'<power-mode>{r["power"]}</power-mode><ui-resolution>{ui}</ui-resolution>'
                     f'<ecp-setting-mode>{r["ecpm"]}</ecp-setting-mode></device-info>')
+        elif self.path == '/query/media-player':
+            body = (f'<player error="false" state="{r["mstate"]}"><plugin id="{r["plugin"]}" '
+                    f'name="X"/><position>4321 ms</position><duration>98765 ms</duration></player>')
         elif self.path == '/query/active-app':
             body = ('<active-app>' + (f'<app id="{r["app"]}" type="appl" version="1">Netflix</app>'
                                       if r['app'] else '<app>Roku</app>') + '</active-app>')
@@ -189,6 +197,41 @@ LOG.clear()
 rc, out = run(ecp.keypress, 'Info')
 check('target-no-gate', LOG == [('127.0.0.1', '/keypress/Info')] and not os.path.exists(ecp.STATE), repr(out))
 ecp.TARGET_MODEL, ecp._target[:] = '', []
+# 14. ours is Play on Roku alone; dev is never launched or played
+check('ours-15985-only', ecp.OURS == {'15985'}, repr(ecp.OURS))
+for name, f in (('launch-dev-refused', lambda: ecp.launch('dev')),
+                ('play-dev-refused', lambda: ecp.play('http://x/y.mp4', 'dev'))):
+    LOG.clear()
+    try:
+        f()
+        check(name, False)
+    except ecp.EcpError as e:
+        check(name, LOG == [] and ('user' in str(e) or 'pol' in str(e)), str(e))
+# 15. state: of dev (not ours) the state only; of ours position and duration
+os.environ['GC573_ROKU'] = '127.0.0.1'
+sys.argv = ['ecp.py', 'state']
+rc, out = run(ecp.main)
+check('state-not-ours', out.strip() == 'state play app not ours', repr(out))
+os.environ['GC573_ROKU'] = '127.0.0.2'
+rc, out = run(ecp.main)
+check('state-ours', 'position 4.321 s duration 98.765 s app ours' in out, repr(out))
+# 16. stop-ours: Home for ours playing; nothing for dev
+for addr, want in (('127.0.0.2', [('127.0.0.2', '/keypress/Home')]), ('127.0.0.1', [])):
+    os.environ['GC573_ROKU'] = addr
+    LOG.clear()
+    rc, out = run(lambda: print(ecp.stop_ours()))
+    check(f'stop-ours-{ROKUS[addr]["plugin"]}', LOG == want, repr(out))
+# 17. dev in front at the first action: kind other; restore-state (by
+# hand) is the one path that may launch it again
+os.environ['GC573_ROKU'] = '127.0.0.1'
+ROKUS['127.0.0.1']['app'] = 'dev'
+if os.path.exists(ecp.STATE):
+    os.remove(ecp.STATE)
+rc, out = run(ecp.save_state, ecp.STATE)
+check('save-dev-other', 'kind=other' in open(ecp.STATE).read() and 'dev' not in out, repr(out))
+LOG.clear()
+rc, out = run(ecp.restore_state, ecp.STATE)
+check('restore-dev', LOG == [('127.0.0.1', '/launch/dev')], repr(LOG))
 evlog = open(os.environ['GC573_EVENT_LOG']).read()
 check('event-log-private', '127.0.0' not in evlog and 'launch 12' not in evlog and '/12' not in evlog, '')
 print(evlog)

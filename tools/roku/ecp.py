@@ -26,8 +26,10 @@ Privacy (AGENTS.md "Roku"): the Roku's identifiers never leave memory.
   printed.
 - The SSDP reply's USN carries the serial: never printed.
 - query/media-player names the app playing, which shows what the user
-  watches: only its state, position and duration are printed, and
-  whether the app is one of ours.
+  watches: only its state is printed, and whether the app is ours; the
+  position and duration too for ours only. Ours is Play on Roku (15985)
+  alone: the sideloaded developer channel (dev) on the user's Roku is
+  their own app, never launched here (restore-state alone could).
 
 - query/active-app names the app in the foreground: save-state keeps its
   id in a 0600 file for restore-state, and never prints or logs it.
@@ -38,7 +40,9 @@ GC573_EVENT_LOG (without the address). On the saved Roku an action also
 needs it identified as the one cabled to the card (an "identified=" line
 in the config: tests/live.sh rokuwhich), unless GC573_ROKU names it, and
 the first action records its state (save-state) unless a state is saved
-already; tests/live.sh puts it back at the run's end (restore-state).
+already, for the record. tests/live.sh does not restore it (the user
+does, from their workstation): at the run's end it only stops our own
+video if it still plays (stop-ours).
 --model M (before the command) talks to the Roku of model number M,
 found by SSDP, instead of the saved one: no identification needed, no
 state saved.
@@ -56,23 +60,24 @@ Usage:
   ecp.py save-state [--file F] the foreground app, the power mode and the
                                model, in F (~/.config/gc573/roku-state,
                                0600); a file that is there already is kept
-  ecp.py restore-state [--file F]  (GC573_ROKU_GO=1) PowerOff if it was in
+  ecp.py stop-ours             (GC573_ROKU_GO=1) Home if our video (Play on
+                               Roku) is in the media player, else nothing
+  ecp.py restore-state [--file F]  (GC573_ROKU_GO=1; by hand only) PowerOff if it was in
                                Suspend, else the app launched again if it
                                was neither ours nor the home screen;
                                not for a state of another model
   ecp.py info                  model and software version (and, for a
                                saved Roku not identified as the cabled
                                one, that it is not)
-  ecp.py state                 media player state, position, duration
+  ecp.py state                 media player state (position and duration
+                               for ours only)
   ecp.py power                 power mode (PowerOn, DisplayOff, ...)
   ecp.py key KEY...            keypresses (GC573_ROKU_GO=1)
   ecp.py launch APP [K=V...]   launch an app (GC573_ROKU_GO=1)
-  ecp.py play URL [--via V]    play a video URL (GC573_ROKU_GO=1):
-      pol   input/15985 with t=v, u=URL (Play on Roku, as phones cast to
-            it; not in Roku's ECP documentation)
-      dev   launch/dev with url=URL and streamformat=mp4: a sideloaded
-            developer channel that plays the url it is given (Roku's ECP
-            documentation, its sample program; developer mode)
+  ecp.py play URL              play a video URL (GC573_ROKU_GO=1) with
+                               Play on Roku: input/15985 with t=v, u=URL,
+                               as phones cast to it (not in Roku's ECP
+                               documentation)
 """
 import argparse
 import os
@@ -101,8 +106,10 @@ MSEARCH = ('M-SEARCH * HTTP/1.1\r\n'
            'Man: "ssdp:discover"\r\n'
            'ST: roku:ecp\r\n'
            '\r\n')
-# apps whose state may be printed: ours (Play on Roku, a sideloaded one)
-OURS = {'15985', 'dev'}
+# ours: Play on Roku. Not dev: the sideloaded channel on the user's Roku
+# is their own app
+OURS = {'15985'}
+PLAYING = {'open', 'startup', 'buffer', 'play', 'pause'}
 KEYS = {'Home', 'Rev', 'Fwd', 'Play', 'Select', 'Left', 'Right', 'Down',
         'Up', 'Back', 'InstantReplay', 'Info', 'Backspace', 'Search',
         'Enter', 'PowerOff'}
@@ -350,23 +357,34 @@ def keypress(key):
 
 
 def launch(app, params=None):
+    if app == 'dev':
+        raise EcpError('launch dev: the sideloaded channel is the user\'s own '
+                       'app, never launched here')
     action(f'launch {app}')
     ev(f'launch {app}' + (f' ({", ".join(params)})' if params else ''))
     request('POST', f'launch/{app}', params)
 
 
 def play(url, via='pol'):
+    if via != 'pol':
+        raise EcpError(f'play: no way "{via}" (Play on Roku, pol, only)')
     action(f'play ({via})')
     # the URL's host is this machine's LAN address: the path only
     ev(f'play {urllib.parse.urlsplit(url).path} via {via}')
-    if via == 'pol':
-        request('POST', 'input/15985',
-                {'t': 'v', 'u': url, 'videoName': 'gc573-pattern',
-                 'k': '(null)', 'videoFormat': 'mp4'})
-    elif via == 'dev':
-        request('POST', 'launch/dev', {'url': url, 'streamformat': 'mp4'})
-    else:
-        raise EcpError(f'play: no way "{via}"')
+    request('POST', 'input/15985',
+            {'t': 'v', 'u': url, 'videoName': 'gc573-pattern',
+             'k': '(null)', 'videoFormat': 'mp4'})
+
+
+def stop_ours():
+    """Home if our video is in the media player; what was done"""
+    need_go('stop-ours')
+    ev('query media-player (is ours playing?)')
+    st, _, _, ours = media_state()
+    if ours and st in PLAYING:
+        keypress('Home')
+        return f'our video was in the media player ({st}): Home'
+    return f"nothing of ours playing (media player {st}{'' if ours else ', not ours'})"
 
 
 def ssdp(timeout=3.0):
@@ -428,7 +446,8 @@ def main():
     la.add_argument('params', nargs='*', help='K=V')
     p = sub.add_parser('play')
     p.add_argument('url')
-    p.add_argument('--via', default='pol', choices=('pol', 'dev'))
+    p.add_argument('--via', default='pol', choices=('pol',))
+    sub.add_parser('stop-ours')
     ap.add_argument('--model', dest='target', default='',
                     help='the Roku of this model number (SSDP), not the saved one')
     a = ap.parse_args()
@@ -491,8 +510,10 @@ def main():
         elif a.cmd == 'state':
             ev('query media-player')
             st, pos, dur, ours = media_state()
-            print(f'state {st} position {pos} s duration {dur} s app '
-                  f'{"ours" if ours else "not ours"}')
+            print(f'state {st}' + (f' position {pos} s duration {dur} s app ours'
+                                   if ours else ' app not ours'))
+        elif a.cmd == 'stop-ours':
+            print(stop_ours())
         elif a.cmd == 'power':
             ev('query device-info (power mode)')
             print(device_info().get('power-mode', '?'))
