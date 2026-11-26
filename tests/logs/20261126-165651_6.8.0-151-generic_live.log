@@ -1,0 +1,27 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 16:56:51 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     b343a8a747b9
+source:  the Roku (model Roku Ultra 4802X, software 16.0.4 build 853), go 0
+steps:   q25back
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## q25back
+RESULT q25-back-lock              PASS (locked 3 ms into the step: Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 0 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT q25-back-lock              PASS (locked 3 ms into the step: Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=4 fail=0 skip=1
