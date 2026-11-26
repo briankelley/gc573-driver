@@ -101,6 +101,10 @@
 #             kernel's memory (MemAvailable, Slab, SUnreclaim) and the CPU
 #             time of the capture and of the driver's IRQ thread: memory
 #             stable, CPU use reported (not in the default steps)
+#   apps      ffmpeg, GStreamer and VLC (each present; GStreamer not on the
+#             host): captures checked against the pattern, the audio and
+#             the A/V offset, and each source change with what the app did
+#             and what brings it back (step_apps; not in the default steps)
 #   unload    unload while streaming video and audio
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
@@ -159,7 +163,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=/tmp/gc573-live		# work directory in the VM (here, in local mode)
 # local mode: the steps that leave the driver's binding, the GPU's colour
 # settings and OBS's configuration alone
-LOCAL_STEPS="bringup lock relock capture modes change blip loss audio exact avsync audioloss soak obssoak compliance"
+LOCAL_STEPS="bringup lock relock capture modes change blip loss audio exact avsync audioloss soak obssoak apps compliance"
 REC_DIR=${GC573_REC_DIR:-$HOME/gc573-rec}
 OBSSOAK_ROTATION=${GC573_OBSSOAK_ROTATION:-sleep,rate-59.94,edid-same,rate-60,res-720p,edid-new,sleep,res-1080p,edid-default}
 if [ "$LOCAL" = 1 ]; then
@@ -391,7 +395,7 @@ setup() {
 		"$ROOT/tests/live-compare.py" "$ROOT/tests/live-av.py" \
 		"$ROOT/tests/obsws.py" "$ROOT/tests/obs-check.py" \
 		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" \
-		"$ROOT/tests/obsbridge.py" "$W/"
+		"$ROOT/tests/obsbridge.py" "$ROOT/tests/app-check.py" "$W/"
 }
 
 # The frame interval G_PARM must report for the timings in a gc573-cap
@@ -1846,6 +1850,260 @@ kml() {
 	[ -z "$leaks" ] || sed 's/^/  | /' <<< "$leaks" | head -60
 	check kmemleak "$([ -z "$leaks" ]; echo $?)" \
 		"($(grep -c 'unreferenced object' <<< "$leaks") unreferenced objects)"
+}
+
+# ---- apps: ffmpeg, GStreamer and VLC on the card (app neutrality) ----
+# The driver favours no application: each one present is checked headless,
+# into a file (no display sink, no audio playback), on the GC573's nodes
+# named explicitly (nothing that lists or probes other devices):
+# - captures of avsync.sh --pattern with the card's audio, GC573_APPS_SECS
+#   (10) s each: 1080p60 and 720p59.94 YUYV, and 1080p60 NV12, checked by
+#   tests/app-check.py (frames against the counter, the pattern, channel
+#   order, rate, the A/V offset where the file keeps timestamps, against
+#   the driver's own in the same source session: gc573-aud first);
+# - one of each source change while it records 30 s, 8 s in: sleep/wake
+#   (output off 5 s), a same-mode relock (EDID re-set with a hot-plug),
+#   60 -> 59.94 Hz, 1080p60 -> 720p59.94. What it did (an APP line: it
+#   subscribed to V4L2_EVENT_SOURCE_CHANGE or not, from strace; carried on,
+#   errored out or froze; app-check.py --change), and whether a restart at
+#   the new mode brings it back (a 6 s capture, live frames).
+# GStreamer's v4l2 plugin opens every /dev/video* node whenever it loads
+# (its M2M probe, "Probing devices"), cameras too: on the host (local mode)
+# it is skipped; GST_REGISTRY_UPDATE=no keeps registry rebuilds out too.
+# The files go to GC573_APPS_DIR (default /var/tmp/gc573-apps), deleted
+# after each check.
+APPS_DIR=${GC573_APPS_DIR:-/var/tmp/gc573-apps}
+APPS_SECS=${GC573_APPS_SECS:-10}
+APPS=${GC573_APPS:-ffmpeg gst vlc}
+
+app_missing() {	# app: empty if it can run here, else why not
+	case $1 in
+	ffmpeg)
+		vm "command -v ffmpeg >/dev/null" || { echo "no ffmpeg"; return; }
+		vm "ffmpeg -hide_banner -devices 2>/dev/null | grep -qE '[ ,]v4l2 ' &&
+			ffmpeg -hide_banner -devices 2>/dev/null | grep -q ' alsa ' &&
+			ffmpeg -hide_banner -encoders 2>/dev/null | grep -q ' libx264 '" ||
+			echo "ffmpeg without v4l2, alsa or libx264" ;;
+	gst)
+		[ "$LOCAL" = 0 ] || { echo "not on this host: GStreamer's v4l2 plugin opens every /dev/video* node when it loads (cameras too)"; return; }
+		vm "command -v gst-launch-1.0 >/dev/null" || { echo "no gst-launch-1.0"; return; }
+		vm "for e in v4l2src alsasrc matroskamux videoconvert; do GST_REGISTRY_UPDATE=no gst-inspect-1.0 --exists \$e || exit 1; done" ||
+			echo "GStreamer without v4l2src, alsasrc, matroskamux or videoconvert" ;;
+	vlc)
+		# by its plugin files: VLC's own listings (--list, -H, -p) load
+		# every module, and some list devices (AGENTS.md: never on the
+		# host). Matroska goes through libavformat (VLC 3 has no muxer of
+		# its own: std{mux=mkv} falls back to avformat{mux=matroska})
+		vm "command -v cvlc >/dev/null" || { echo "no cvlc"; return; }
+		vm "p=\$(dirname \$(ls -d /usr/lib*/vlc/plugins/access /usr/lib*/*/vlc/plugins/access 2>/dev/null | head -1)) &&
+			[ -f \$p/access/libv4l2_plugin.so ] && [ -f \$p/access/libaccess_alsa_plugin.so ] &&
+			[ -f \$p/codec/libx264_plugin.so ] && [ -f \$p/demux/libavformat_plugin.so ]" ||
+			echo "VLC without its v4l2, ALSA, x264 or avformat plugin" ;;
+	esac
+}
+app_version() {
+	case $1 in
+	ffmpeg) vm "ffmpeg -version | awk 'NR == 1 { print \$3 }'" ;;
+	gst) vm "gst-launch-1.0 --version | sed -n 's/^GStreamer \\([0-9.]*\\).*/\\1/p' | head -1" ;;
+	vlc) vm "dpkg-query -W -f '\${Version}' vlc-bin 2>/dev/null || rpm -q --qf '%{VERSION}' vlc 2>/dev/null" ;;
+	esac
+}
+# The command that records SECS s of MODE at RATE in FMT (yuyv, nv12) with
+# the card's audio into FILE; WRAP (e.g. strace) goes in front
+app_cmd() {	# app fmt mode rate secs file [wrap]
+	local app=$1 fmt=$2 mode=$3 rate=$4 secs=$5 f=$6 wrap=${7:-} fr w h
+	fr=$rate; [ "$rate" = 59.94 ] && fr=60000/1001
+	w=${mode%x*} h=${mode#*x}
+	case $app in
+	ffmpeg)
+		echo "$wrap ffmpeg -nostdin -hide_banner -loglevel error -f v4l2 -ts mono2abs" \
+			"-input_format $([ "$fmt" = nv12 ] && echo nv12 || echo yuyv422) -video_size $mode -framerate $fr" \
+			"-i $vdev -f alsa -channels 2 -sample_rate 48000 -i $pcm -t $secs -map 0:v -map 1:a" \
+			"-c:v libx264 -preset ultrafast -qp 0 -c:a pcm_s16le -copyts -start_at_zero -y '$f'" ;;
+	gst)
+		echo "GST_REGISTRY_UPDATE=no $wrap timeout -s INT $secs gst-launch-1.0 -q -e v4l2src device=$vdev !" \
+			"video/x-raw,format=$([ "$fmt" = nv12 ] && echo NV12 || echo YUY2),width=$w,height=$h,framerate=$fr$([ "$rate" = 59.94 ] || echo /1) !" \
+			"$([ "$fmt" = nv12 ] && echo 'videoconvert ! video/x-raw,format=I420 !')" \
+			"queue max-size-buffers=0 max-size-bytes=0 max-size-time=3000000000 ! mux." \
+			"alsasrc device=$pcm ! audio/x-raw,format=S16LE,rate=48000,channels=2 ! queue ! mux." \
+			"matroskamux name=mux ! filesink location='$f'" ;;
+	vlc)
+		# VLC takes a v4l2:// location up to its first ':' as the device
+		# (modules/access/v4l2/v4l2.c ParseMRL, 3.0.20), and the by-path
+		# name has ':' in it; with no device before the ':' it would open
+		# its default, /dev/video0. So the node the by-path link resolves
+		# to, in the location and as --v4l2-dev
+		echo "$wrap timeout -s INT $((secs + 15)) cvlc -I dummy -q \"v4l2://\$(readlink -f $vdev)\" --v4l2-dev=\"\$(readlink -f $vdev)\"" \
+			"--v4l2-chroma=$([ "$fmt" = nv12 ] && echo NV12 || echo YUYV) --v4l2-width=$w --v4l2-height=$h --v4l2-fps=$rate" \
+			"--input-slave='alsa://$pcm' --sout '#transcode{vcodec=h264,venc=x264{qp=0,preset=ultrafast},acodec=s16l,channels=2,samplerate=48000}:std{access=file,mux=mkv,dst=$f}'" \
+			"--run-time=$secs vlc://quit" ;;
+	esac
+}
+# the test source in MODE at RATE with its bursts, and the card's audio on
+apps_source() {
+	local i d
+	wait_connected 15 || return 1
+	src_on "$1" "$2" || return 1
+	for i in $(seq 30); do
+		"$ROOT/tools/testsrc/avsync.sh" --pattern "$OUT" "$1" "$2" >/dev/null 2>&1 && break
+		sleep 0.5
+	done
+	[ "$i" -lt 30 ] || return 1
+	for i in $(seq 40); do
+		d=$(aud_dbg)
+		grep -q 'it6805 audio on' <<< "$d" && grep -q '(48000 Hz)' <<< "$d" && return 0
+		sleep 0.25
+	done
+	return 1
+}
+# one capture checked: app fmt mode rate [ref]
+apps_capture() {
+	local app=$1 fmt=$2 mode=$3 rate=$4 ref=${5:-} f out rc name st
+	name=apps-$app-${mode#*x}p$rate-$fmt
+	f=$APPS_DIR/$name.mkv
+	ev "apps: $app records $mode@$rate $fmt"
+	vm "$(app_cmd "$app" "$fmt" "$mode" "$rate" "$APPS_SECS" "$f") > $APPS_DIR/$name.err 2>&1"
+	rc=$?
+	# ffmpeg and VLC end by themselves; gst-launch by timeout's SIGINT (EOS)
+	[ "$app" = gst ] && [ "$rc" = 124 ] && rc=0
+	# the driver's counters for the app's stream (kept after its stop):
+	# underruns, the times no buffer was queued, so the frame went
+	# uncaptured: the application returned its buffers late
+	st=$(vm "sudo cat $dbgdir/video" 2>/dev/null | sed -n 's/^stats: //p')
+	out=$(vm "python3 $W/app-check.py '$f' $mode --fps $rate ${ref:+--ref $ref}" 2>&1)
+	echo "  $name: exit $rc$(vm "[ -s $APPS_DIR/$name.err ] && echo ': ' && tail -c 300 $APPS_DIR/$name.err | tr '\n' ' '")"
+	av_results "$name" "$out"
+	[ -z "$st" ] || echo "  INFO $name-driver the driver's stream: $(grep -oE '(frames|underruns) [0-9]+' <<< "$st" | paste -sd' ') (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)"
+	vm "rm -f '$f' $APPS_DIR/$name.err"
+}
+# one change while the app records 30 s, 8 s in: app kind. An APP line
+# says what it did; RESULT FAIL when it does not carry on through a change
+# in the same timings (sleep, relock, rate: the driver restarts the stream
+# itself), or a restart at the new mode does not bring it back
+apps_change() {
+	local app=$1 kind=$2 name f pid t0 t_ch t_back t_end rc sub out left verdict back ok i el
+	local mode0=1920x1080 rate0=60 mode1=1920x1080 rate1=60
+	name=apps-$app-change-$kind
+	f=$APPS_DIR/$name.mkv
+	case $kind in
+	rate) rate1=59.94 ;;
+	res) mode1=1280x720 rate1=59.94 ;;
+	esac
+	apps_source $mode0 $rate0 || { result "$name" FAIL "(the test source did not start)"; return; }
+	ev "apps: $app records 30 s across a change: $kind"
+	t0=$(date +%s.%N)
+	vm "$(app_cmd "$app" yuyv $mode0 $rate0 30 "$f" "strace -f -qq -o $APPS_DIR/$name.strace -e trace=ioctl") \
+		> $APPS_DIR/$name.err 2>&1" &
+	pid=$!
+	sleep 8
+	t_ch=$(date +%s.%N)
+	ev "apps: change $kind"
+	case $kind in
+	sleep) src_off; sleep 5; apps_source $mode1 $rate1 ;;
+	relock)
+		# vm() closes the test players before an EDID set
+		vm "v4l2-ctl -d $vdev --set-edid=file=$APPS_DIR/edid-other.bin,format=raw" > /dev/null
+		sleep 1; wait_connected 15; apps_source $mode1 $rate1 ;;
+	*) apps_source $mode1 $rate1 ;;
+	esac
+	# the source shows again (or in its new mode) from here: the frames
+	# from 3 s on tell whether the app carried on (after a sleep the output
+	# was off 5 s, and the source takes a few seconds more to show)
+	t_back=$(date +%s.%N)
+	# to the end of its 30 s, 5 s more at most
+	for i in $(seq 400); do
+		kill -0 $pid 2>/dev/null || break
+		[ "$(echo "$(date +%s.%N) - $t0 > 35" | bc)" = 1 ] && break
+		sleep 0.1
+	done
+	t_end=$(date +%s.%N)
+	el=$(echo "$t_end - $t0" | bc)
+	if kill -0 $pid 2>/dev/null; then
+		left="still running after ${el%.*} s: stopped"
+		vm "pkill -INT -f '$f'"; sleep 3; vm "pkill -KILL -f '$f'"
+		wait $pid; rc=$?
+	else
+		wait $pid; rc=$?
+		if [ "$(echo "$el < 28" | bc)" = 1 ]; then
+			left="ended $(printf '%+.1f' "$(echo "$t_end - $t_ch" | bc)") s after the change, exit $rc"
+		else
+			left="ran its 30 s (exit $rc)"
+		fi
+	fi
+	sub=$(vm "grep -c 'VIDIOC_SUBSCRIBE_EVENT.*V4L2_EVENT_SOURCE_CHANGE' $APPS_DIR/$name.strace;
+		grep -c 'VIDIOC_DQEVENT' $APPS_DIR/$name.strace" | paste -sd' ')
+	out=$(vm "python3 $W/app-check.py '$f' $mode0 --change $(echo "$t_back - $t0 - 0.5" | bc)" 2>&1 |
+		grep -E '^CHANGE|^RESULT media')
+	case "$out" in
+	*"(settled)"*": live"*) verdict="carried on" ;;
+	*": frozen"*) verdict="froze (one frame repeated)" ;;
+	*": black"*) verdict="black after the change" ;;
+	*": jumpy"*) verdict="jumpy frames after the change" ;;
+	*": other"*) verdict="another picture after the change" ;;
+	*) verdict="no frames after the change" ;;
+	esac
+	case $left in ended*) [ "$verdict" = "carried on" ] || verdict="errored out ($verdict)" ;; esac
+	back=""
+	if [ "$verdict" != "carried on" ]; then
+		vm "$(app_cmd "$app" yuyv $mode1 $rate1 6 "$APPS_DIR/$name-again.mkv") > /dev/null 2>&1"
+		back=$(vm "python3 $W/app-check.py '$APPS_DIR/$name-again.mkv' $mode1 --change 0" 2>&1 | grep '^CHANGE')
+		case "$back" in
+		*"(settled)"*": live"*) back="a restart at $mode1@$rate1 brings it back" ;;
+		*) back="a restart at $mode1@$rate1 does NOT bring it back (${back:-no file})" ;;
+		esac
+	fi
+	echo "  APP $app $kind: SOURCE_CHANGE subscribed ${sub%% *}x, events dequeued ${sub##* }; $left; $verdict${back:+; $back}"
+	echo "    $(tr '\n' ' ' <<< "$out")"
+	echo "    stderr: $(vm "tail -c 400 $APPS_DIR/$name.err" | tr '\n' ' ')"
+	echo "    driver: $(hdmi_dbg | grep -E '^input:' | head -1)"
+	if [ "$kind" = res ]; then
+		ok=$([ "$verdict" = "carried on" ] || [[ $back == *"brings it back"* ]]; echo $?)
+	else
+		ok=$([ "$verdict" = "carried on" ]; echo $?)
+	fi
+	check "$name" "$ok" "($left; $verdict${back:+; $back}; SOURCE_CHANGE subscribed: $([ "${sub%% *}" -gt 0 ] 2>/dev/null && echo yes || echo no))"
+	vm "rm -f '$f' '$APPS_DIR/$name-again.mkv' $APPS_DIR/$name.strace $APPS_DIR/$name.err"
+	if [ "$kind" = relock ]; then
+		vm "v4l2-ctl -d $vdev --set-edid=file=$APPS_DIR/edid-default.bin,format=raw" > /dev/null
+		sleep 1; wait_connected 15
+	fi
+}
+step_apps() {
+	local app why ver m mode rate fmt ref
+	vm "mkdir -p $APPS_DIR" || { result apps FAIL "(cannot create $APPS_DIR)"; return; }
+	vm "v4l2-ctl -d $vdev --get-edid=file=$APPS_DIR/edid-default.bin,format=raw >/dev/null &&
+		python3 -c \"import sys; d=bytearray(open(sys.argv[1],'rb').read()); d[0x0c]^=0x5a; d[0x7f]=-sum(d[0:0x7f]) & 0xff; open(sys.argv[2],'wb').write(d)\" $APPS_DIR/edid-default.bin $APPS_DIR/edid-other.bin"
+	for app in $APPS; do
+		why=$(app_missing "$app")
+		if [ -n "$why" ]; then
+			result "apps-$app" SKIP "($why)"
+			continue
+		fi
+		echo "  $app $(app_version "$app")"
+	done
+	# the captures: per mode one source session, the driver's offset first
+	for m in "1920x1080 60 yuyv nv12" "1280x720 59.94 yuyv"; do
+		read -r mode rate fmt <<< "${m% nv12}"
+		apps_source "$mode" "$rate" || { result "apps-source-${mode#*x}p$rate" FAIL "(avsync.sh --pattern)"; continue; }
+		sleep 3
+		driver_ref "apps-driver-${mode#*x}p$rate" "$APPS_SECS"
+		for app in $APPS; do
+			[ -z "$(app_missing "$app")" ] || continue
+			for fmt in yuyv $([ "${m##* }" = nv12 ] && echo nv12); do
+				apps_capture "$app" "$fmt" "$mode" "$rate" "$ref"
+			done
+		done
+	done
+	# the changes
+	for app in $APPS; do
+		[ -z "$(app_missing "$app")" ] || continue
+		for kind in sleep relock rate res; do
+			apps_change "$app" "$kind"
+		done
+	done
+	vm "rm -f $APPS_DIR/edid-default.bin $APPS_DIR/edid-other.bin; rmdir $APPS_DIR" 2>/dev/null
+	"$ROOT/tools/testsrc/avsync.sh" --off
+	src_on 1920x1080 60
 }
 
 # ---- main ----
