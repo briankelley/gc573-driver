@@ -1,0 +1,44 @@
+vm: gc573-mint223  ref: 25ddb9250db2  date: 2026-11-26T21:32:18Z
+distro: Linux Mint 22.3
+running: 6.14.0-37-generic
+cc: gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
+=== build 6.14.0-37-generic
+make -C /lib/modules/6.14.0-37-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc-13 modules
+make[1]: Entering directory '/usr/src/linux-headers-6.14.0-37-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/linux-headers-6.14.0-37-generic'
+RESULT	6.14.0-37-generic	build	PASS	6.14.0-37-generic
+=== load 6.14.0-37-generic
+gc573                 176128  0
+snd_pcm               192512  1 gc573
+v4l2_dv_timings        40960  1 gc573
+videobuf2_v4l2         36864  1 gc573
+videobuf2_common       86016  2 videobuf2_v4l2,gc573
+videodev              360448  2 videobuf2_v4l2,gc573
+snd                   143360  8 snd_seq,snd_seq_device,snd_timer,gc573,snd_pcm,snd_rawmidi
+RESULT	6.14.0-37-generic	load	PASS	init/exit (no card)
+=== dkms gc573/0.1
+Building module:
+Cleaning build area...
+make -j4 KERNELRELEASE=6.14.0-37-generic KDIR=/lib/modules/6.14.0-37-generic/build modules...
+Signing module /var/lib/dkms/gc573/0.1/build/gc573.ko
+Cleaning build area...
+RESULT	6.14.0-37-generic	dkms	PASS	build

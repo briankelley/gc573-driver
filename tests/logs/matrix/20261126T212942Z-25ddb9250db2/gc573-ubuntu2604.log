@@ -1,0 +1,74 @@
+vm: gc573-ubuntu2604  ref: 25ddb9250db2  date: 2026-11-26T21:32:47Z
+distro: Ubuntu 26.04.1 LTS
+running: 7.0.0-44-generic
+cc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+=== build 7.0.0-43-generic
+make -C /lib/modules/7.0.0-43-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-43-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-43-generic'
+RESULT	7.0.0-43-generic	build	PASS	7.0.0-43-generic
+=== build 7.0.0-44-generic
+make -C /lib/modules/7.0.0-44-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-44-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-44-generic'
+RESULT	7.0.0-44-generic	build	PASS	7.0.0-44-generic
+=== load 7.0.0-44-generic
+gc573                 184320  0
+v4l2_dv_timings        45056  1 gc573
+snd_pcm               212992  1 gc573
+videobuf2_v4l2         36864  1 gc573
+videobuf2_common       90112  2 videobuf2_v4l2,gc573
+videodev              376832  2 videobuf2_v4l2,gc573
+snd                   147456  3 snd_timer,gc573,snd_pcm
+RESULT	7.0.0-44-generic	load	PASS	init/exit (no card)
+=== dkms gc573/0.1
+Signing key: /var/lib/shim-signed/mok/MOK.priv
+Public certificate (MOK): /var/lib/shim-signed/mok/MOK.der
+
+Building module(s)... done.
+Signing module /var/lib/dkms/gc573/0.1/build/gc573.ko
+RESULT	7.0.0-43-generic	dkms	PASS	build
+Signing key: /var/lib/shim-signed/mok/MOK.priv
+Public certificate (MOK): /var/lib/shim-signed/mok/MOK.der
+
+Building module(s)... done.
+Signing module /var/lib/dkms/gc573/0.1/build/gc573.ko
+RESULT	7.0.0-44-generic	dkms	PASS	build
