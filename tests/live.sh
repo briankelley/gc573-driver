@@ -3802,7 +3802,10 @@ step_rokurelock() {
 					d0 = v["ts_ms"] - lt; nfr++
 					if (!fmin || d0 < fmin) fmin = d0
 					if (d0 > fmax) fmax = d0
-					if (d0 > 1000 / 60 * 1.1 || d0 < 1000 / 60 * 0.9) froff++
+					if (d0 > 1000 / 60 * 1.1 || d0 < 1000 / 60 * 0.9) {
+						froff++
+						if (nfo < 4) fo = fo sprintf("%s%.1f ms ending at %+.0f ms", nfo++ ? ", " : "", d0, v["ts_ms"] - te)
+					}
 				}
 				lt = v["ts_ms"]
 				if (tl && !t1 && lt >= tl) t1 = lt
@@ -3817,7 +3820,7 @@ step_rokurelock() {
 				fs = ""
 				for (k = 1; k <= nfc; k++) fs = fs sprintf("%s%s %s", k > 1 ? ", " : "", fv[k], rel(fc[k], b))
 				printf "  %s FPGA status/frame period (0x1004/0x1010) from frame reads: %s\n", tag, fs
-				if (nfr) printf "  %s free-run frames from the stable entry to the live restart: %d intervals, %.3f to %.3f ms, %d more than 10 %% off 16.667\n", tag, nfr, fmin, fmax, froff + 0
+				if (nfr) printf "  %s free-run frames from the stable entry to the live restart: %d intervals, %.3f to %.3f ms, %d more than 10 %% off 16.667%s\n", tag, nfr, fmin, fmax, froff + 0, fo != "" ? " (" fo ")" : ""
 				else printf "  %s free-run frames from the stable entry to the live restart: none\n", tag
 				if (!tl) { printf "RESULT %s FAIL (no live restart seen in debugfs video)\n", tag; exit }
 				if (n < 42) { printf "RESULT %s FAIL (%d frames after the live restart)\n", tag, n; exit }
