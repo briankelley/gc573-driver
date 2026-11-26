@@ -217,14 +217,37 @@ int gc573_hdmi_get_edid(struct gc573 *gc, struct v4l2_edid *e)
 }
 
 /*
+ * The hot-plug of an EDID change, for h->edid as it is: the source HPD
+ * low, both RAMs loaded (IT6805: hdmi-it6805.md section 4 with its HPD
+ * low; splitter: hdmi-splitter.md 8.3 with RD's change toggle, 500 ms
+ * low), both HPDs high again with 5 V present (port 1: once the IT6805 is
+ * out of SAVING, hdmi-it6805.md section 5). VIDIOC_S_EDID uses it on a
+ * change. h->lock held, bus not.
+ */
+static int gc573_hdmi_edid_load(struct gc573_hdmi *h)
+{
+	unsigned int n = h->edid_blocks;
+	int ret;
+
+	gc573_chip_begin(h);
+	ret = gc573_sp_hpd_low(h);
+	gc573_hdmi_hpd(h, false);
+	if (!ret && n)
+		ret = gc573_seq_run(h, &gc573_seq_it_edid, 0);
+	if (!ret)
+		ret = gc573_sp_edid(h, true);
+	gc573_chip_end(h);
+	if (!ret && n && h->it.power != GC573_IT_SAVING)
+		gc573_hdmi_hpd(h, true);
+	return ret;
+}
+
+/*
  * VIDIOC_S_EDID (hdmi-chips.md EDID policy; e->pad checked): at most two
- * blocks. On a change the source HPD goes low, both RAMs are reloaded
- * (IT6805: hdmi-it6805.md section 4 with its HPD low; splitter:
- * hdmi-splitter.md 8.3 with RD's change toggle, 500 ms low), and both
- * HPDs return high with 5 V present (port 1: once the IT6805 is out of
- * SAVING, hdmi-it6805.md section 5). The same image again is a no-op, so
- * the source sees no hot-plug. 0 blocks: no EDID, both HPDs stay low.
- * The checksums the chips serve are their own (registers c9/ca).
+ * blocks. On a change the source HPD goes low, both RAMs are reloaded and
+ * both HPDs return high (gc573_hdmi_edid_load()). The same image again is
+ * a no-op, so the source sees no hot-plug. 0 blocks: no EDID, both HPDs
+ * stay low. The checksums the chips serve are their own (registers c9/ca).
  */
 int gc573_hdmi_set_edid(struct gc573 *gc, struct v4l2_edid *e)
 {
@@ -248,16 +271,7 @@ int gc573_hdmi_set_edid(struct gc573 *gc, struct v4l2_edid *e)
 	h->edid_blocks = n;
 	gc573_hdmi_edid_parse(h);
 
-	gc573_chip_begin(h);
-	ret = gc573_sp_hpd_low(h);
-	gc573_hdmi_hpd(h, false);
-	if (!ret && n)
-		ret = gc573_seq_run(h, &gc573_seq_it_edid, 0);
-	if (!ret)
-		ret = gc573_sp_edid(h, true);
-	gc573_chip_end(h);
-	if (!ret && n && h->it.power != GC573_IT_SAVING)
-		gc573_hdmi_hpd(h, true);
+	ret = gc573_hdmi_edid_load(h);
 	if (ret)
 		dev_err(&gc->pdev->dev, "HDMI: EDID update failed: %d\n", ret);
 	else
