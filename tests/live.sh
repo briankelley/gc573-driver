@@ -2330,7 +2330,10 @@ apps_change() {
 	echo "    $(tr '\n' ' ' <<< "$out")"
 	echo "    stderr: $(vm "tail -c 400 $APPS_DIR/$name.err" | tr '\n' ' ')"
 	echo "    driver: $(hdmi_dbg | grep -E '^input:' | head -1)"
-	if [ "$kind" = res ]; then
+	# a new resolution ends every app's stream (the driver ends it); a new
+	# frame rate is a caps change for GStreamer's fixed-caps pipeline into
+	# Matroska, which cannot take one: then a restart must bring it back
+	if [ "$kind" = res ] || { [ "$kind" = rate ] && [ "$app" = gst ]; }; then
 		ok=$([ "$verdict" = "carried on" ] || [[ $back == *"brings it back"* ]]; echo $?)
 	else
 		ok=$([ "$verdict" = "carried on" ]; echo $?)
