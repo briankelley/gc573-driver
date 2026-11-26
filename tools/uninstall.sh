@@ -131,7 +131,7 @@ if [ "$inuse" = 1 ]; then
 	if gc573_unload_wait; then
 		say "unloaded $NAME"
 	else
-		say "warning: $NAME is still in use; it stays loaded until the next reboot (its files are removed below)"
+		say "warning: $NAME is still in use; it stays loaded until the next reboot, or until this script runs again once nothing has the card open (its files are removed below)"
 	fi
 fi
 
