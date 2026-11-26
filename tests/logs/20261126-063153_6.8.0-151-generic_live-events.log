@@ -1,0 +1,326 @@
+2026-11-26T06:31:53.777Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-26T06:31:53.796Z guard start: run pid 3959407, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-26T06:31:53.852Z camwatch start pid 3959438 (guard): 13 nodes marked: /dev/media0 (HD Pro Webcam C920, serial <serial>); /dev/snd/controlC0 (card 0 C920, serial <serial>); /dev/snd/controlC1 (card 1 Device, serial <serial>); /dev/snd/controlC2 (card 2 PCH, serial -); /dev/snd/hwC2D0 (card 2 PCH, serial -); /dev/snd/pcmC0D0c (card 0 C920, serial <serial>); /dev/snd/pcmC1D0c (card 1 Device, serial <serial>); /dev/snd/pcmC1D0p (card 1 Device, serial <serial>); /dev/snd/pcmC2D0c (card 2 PCH, serial -); /dev/snd/pcmC2D0p (card 2 PCH, serial -); /dev/snd/pcmC2D2c (card 2 PCH, serial -); /dev/video0 (HD Pro Webcam C920, serial <serial>); /dev/video1 (HD Pro Webcam C920, serial <serial>). Not watched: snd/controlC3 (card 3 NVidia: NVIDIA HDMI); snd/hwC3D0 (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D3p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D7p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D8p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D9p (card 3 NVidia: NVIDIA HDMI)
+2026-11-26T06:31:53.908Z guard x11 start: DVI-D-0 1920x1080+1920+0; outputs DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:31:54.026Z guard audio links: none
+2026-11-26T06:31:54.202Z live stream stop (exit 0)
+2026-11-26T06:31:54.326Z live driver load
+2026-11-26T06:31:54.529Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:31:54.891Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 3959562 ""
+2026-11-26T06:31:55.075Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 3959562 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:31:55.177Z show player start 1920x1080@60 (pid 3959562)
+2026-11-26T06:31:55.204Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20  -D /sys/kerne
+2026-11-26T06:31:59.240Z show player stop (pid 3959562)
+2026-11-26T06:31:59.271Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:31:59.272Z guard x11 destroy 0x3400007
+2026-11-26T06:31:59.343Z live output DVI-D-0 1280x720@60 (blip)
+2026-11-26T06:31:59.561Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:32:00.979Z live output DVI-D-0 1920x1080@60 (blip back 1425 ms after the mode set; timings: 1280x720p pixelclock 74250000 flags 0x296 vic 4 h 110/40/220 v 5/5/20 pol 0x3)
+2026-11-26T06:32:01.159Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:32:07.947Z live stream stop (exit 0)
+2026-11-26T06:32:08.224Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:32:08.507Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 3968101 "ffplay"
+2026-11-26T06:32:08.670Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 3968101 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:32:08.783Z show player start 1920x1080@60 (pid 3968101)
+2026-11-26T06:32:08.820Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20  -D /sys/kerne
+2026-11-26T06:32:12.855Z show player stop (pid 3968101)
+2026-11-26T06:32:12.882Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:32:12.882Z guard x11 destroy 0x3400007
+2026-11-26T06:32:13.091Z show mode DVI-D-0 1280x720@60
+2026-11-26T06:32:13.288Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:32:13.794Z guard x11 create 0x3400007 1280x720+1920+0 override 1 ffplay/ffplay pid 3976062 "ffplay"
+2026-11-26T06:32:13.945Z guard x11 map 0x3400007 1280x720+1920+0 ffplay/ffplay pid 3976062 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-26T06:32:14.080Z show player start 1280x720@60 (pid 3976062)
+2026-11-26T06:32:15.907Z live stream stop (exit 0)
+2026-11-26T06:32:15.967Z show player stop (pid 3976062)
+2026-11-26T06:32:15.978Z guard x11 unmap 0x3400007 1280x720+1920+0
+2026-11-26T06:32:15.978Z guard x11 destroy 0x3400007
+2026-11-26T06:32:16.213Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:32:16.384Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:32:16.685Z guard x11 create 0x3400002 1920x1080+1920+0 override 1 ffplay/ffplay pid 3981258 ""
+2026-11-26T06:32:16.685Z guard x11 destroy 0x3400002
+2026-11-26T06:32:16.859Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 3981258 "ffplay"
+2026-11-26T06:32:16.994Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 3981258 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:32:17.102Z show player start 1920x1080@60 (pid 3981258)
+2026-11-26T06:32:17.788Z show player stop (pid 3981258)
+2026-11-26T06:32:17.808Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:32:17.808Z guard x11 destroy 0x3400007
+2026-11-26T06:32:18.025Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:32:18.299Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 3982948 "ffplay"
+2026-11-26T06:32:18.437Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 3982948 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:32:18.545Z show player start 1920x1080@60 (pid 3982948)
+2026-11-26T06:32:18.573Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20 -r -D /sys/ker
+2026-11-26T06:32:22.613Z show player stop (pid 3982948)
+2026-11-26T06:32:22.631Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:32:22.631Z guard x11 destroy 0x3400007
+2026-11-26T06:32:22.846Z show mode DVI-D-0 1280x720@60
+2026-11-26T06:32:23.030Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:32:23.334Z guard x11 create 0x3400002 1280x720+1920+0 override 1 ffplay/ffplay pid 3990987 ""
+2026-11-26T06:32:23.334Z guard x11 destroy 0x3400002
+2026-11-26T06:32:23.518Z guard x11 create 0x3400007 1280x720+1920+0 override 1 ffplay/ffplay pid 3990987 "ffplay"
+2026-11-26T06:32:23.669Z guard x11 map 0x3400007 1280x720+1920+0 ffplay/ffplay pid 3990987 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-26T06:32:23.686Z show player start 1280x720@60 (pid 3990987)
+2026-11-26T06:32:26.937Z live stream stop (exit 0)
+2026-11-26T06:32:26.984Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20 -r -D /sys/ker
+2026-11-26T06:32:31.017Z show player stop (pid 3990987)
+2026-11-26T06:32:31.042Z guard x11 unmap 0x3400007 1280x720+1920+0
+2026-11-26T06:32:31.042Z guard x11 destroy 0x3400007
+2026-11-26T06:32:31.276Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:32:31.484Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:32:31.858Z guard x11 create 0x3400002 1920x1080+1920+0 override 1 ffplay/ffplay pid 4007137 ""
+2026-11-26T06:32:31.858Z guard x11 destroy 0x3400002
+2026-11-26T06:32:32.084Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 4007137 "ffplay"
+2026-11-26T06:32:32.222Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 4007137 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:32:32.323Z show player start 1920x1080@60 (pid 4007137)
+2026-11-26T06:32:35.450Z live stream stop (exit 0)
+2026-11-26T06:32:35.500Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20 -r -D /sys/ker
+2026-11-26T06:32:39.505Z show player stop (pid 4007137)
+2026-11-26T06:32:39.517Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:32:39.517Z guard x11 destroy 0x3400007
+2026-11-26T06:32:39.738Z show mode DVI-D-0 1920x1080@59.94
+2026-11-26T06:32:40.234Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 4023457 ""
+2026-11-26T06:32:40.363Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 4023457 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:32:40.453Z show player start 1920x1080@59.94 (pid 4023457)
+2026-11-26T06:32:47.825Z live stream stop (exit 0)
+2026-11-26T06:32:47.847Z show player stop (pid 4023457)
+2026-11-26T06:32:47.858Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:32:47.858Z guard x11 destroy 0x3400007
+2026-11-26T06:32:48.077Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:32:48.624Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 4042487 "ffplay"
+2026-11-26T06:32:48.736Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 4042487 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:32:48.835Z show player start 1920x1080@60 (pid 4042487)
+2026-11-26T06:32:49.850Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:32:51.590Z live stream stop (exit 0)
+2026-11-26T06:32:51.595Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:32:53.341Z live stream stop (exit 0)
+2026-11-26T06:32:53.348Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20 -H 6 -D /sys/k
+2026-11-26T06:32:53.912Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T06:32:54.030Z guard ok: audio 1198 polls, longest interval 50 ms; windows: test windows created 12 (0 created outside DVI-D-0, unmapped), maps 9, maps inside DVI-D-0 9, unmapped geometries outside 0, output changes 6, breaches 0, X events 156
+2026-11-26T06:32:57.356Z show player stop (pid 4042487)
+2026-11-26T06:32:57.380Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:32:57.380Z guard x11 destroy 0x3400007
+2026-11-26T06:32:57.588Z show mode DVI-D-0 1280x720@60
+2026-11-26T06:32:57.787Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:32:58.279Z guard x11 create 0x3400007 1280x720+1920+0 override 1 ffplay/ffplay pid 4065574 "ffplay"
+2026-11-26T06:32:58.447Z guard x11 map 0x3400007 1280x720+1920+0 ffplay/ffplay pid 4065574 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-26T06:32:58.541Z show player start 1280x720@60 (pid 4065574)
+2026-11-26T06:33:06.433Z live stream stop (exit 0)
+2026-11-26T06:33:06.454Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:33:07.192Z live stream stop (exit 0)
+2026-11-26T06:33:07.207Z show player stop (pid 4065574)
+2026-11-26T06:33:07.217Z guard x11 unmap 0x3400007 1280x720+1920+0
+2026-11-26T06:33:07.217Z guard x11 destroy 0x3400007
+2026-11-26T06:33:07.438Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:33:07.606Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:33:08.083Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 4092464 "ffplay"
+2026-11-26T06:33:08.218Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 4092464 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:33:08.300Z show player start 1920x1080@60 (pid 4092464)
+2026-11-26T06:33:09.316Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:33:11.073Z live stream stop (exit 0)
+2026-11-26T06:33:11.078Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:33:12.823Z live stream stop (exit 0)
+2026-11-26T06:33:12.837Z show player stop (pid 4092464)
+2026-11-26T06:33:12.864Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:33:12.864Z guard x11 destroy 0x3400007
+2026-11-26T06:33:13.068Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:33:13.225Z guard x11 create 0x3400002 1920x1080+1920+0 override 1 ffplay/ffplay pid 4105324 ""
+2026-11-26T06:33:13.225Z guard x11 destroy 0x3400002
+2026-11-26T06:33:13.344Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 4105324 ""
+2026-11-26T06:33:13.455Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 4105324 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:33:13.575Z show player start 1920x1080@60 (pid 4105324)
+2026-11-26T06:33:15.151Z show player stop (pid 4105324)
+2026-11-26T06:33:15.181Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:33:15.181Z guard x11 destroy 0x3400007
+2026-11-26T06:33:15.254Z live output off DVI-D-0
+2026-11-26T06:33:15.415Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T06:33:15.492Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:33:16.812Z live stream stop (exit 0)
+2026-11-26T06:33:18.530Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:33:18.638Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:33:19.023Z guard x11 create 0x4400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 4110608 "ffplay"
+2026-11-26T06:33:19.117Z guard x11 map 0x4400007 1920x1080+1920+0 ffplay/ffplay pid 4110608 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:33:19.130Z show player start 1920x1080@60 (pid 4110608)
+2026-11-26T06:33:19.830Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20 -o /tmp/gc573-
+2026-11-26T06:33:23.841Z show player stop (pid 4110608)
+2026-11-26T06:33:23.854Z guard x11 unmap 0x4400007 1920x1080+1920+0
+2026-11-26T06:33:23.854Z guard x11 destroy 0x4400007
+2026-11-26T06:33:23.944Z live output off DVI-D-0
+2026-11-26T06:33:24.088Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T06:33:29.346Z live stream stop (exit 0)
+2026-11-26T06:33:29.508Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20 -o /tmp/gc573-
+2026-11-26T06:33:33.653Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:33:33.785Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:33:34.448Z guard x11 create 0x4400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 4124497 ""
+2026-11-26T06:33:34.581Z guard x11 map 0x4400007 1920x1080+1920+0 ffplay/ffplay pid 4124497 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:33:34.622Z show player start 1920x1080@60 (pid 4124497)
+2026-11-26T06:33:40.187Z live stream stop (exit 0)
+2026-11-26T06:33:40.492Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20 -X 30 -A 12000
+2026-11-26T06:33:44.502Z show player stop (pid 4124497)
+2026-11-26T06:33:44.515Z guard x11 unmap 0x4400007 1920x1080+1920+0
+2026-11-26T06:33:44.515Z guard x11 destroy 0x4400007
+2026-11-26T06:33:44.605Z live output off DVI-D-0
+2026-11-26T06:33:44.716Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T06:33:48.861Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:33:48.981Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:33:49.436Z guard x11 create 0x4400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 4148629 "ffplay"
+2026-11-26T06:33:49.653Z guard x11 map 0x4400007 1920x1080+1920+0 ffplay/ffplay pid 4148629 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:33:49.758Z show player start 1920x1080@60 (pid 4148629)
+2026-11-26T06:33:53.970Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T06:33:54.039Z guard ok: audio 2396 polls, longest interval 50 ms; windows: test windows created 19 (0 created outside DVI-D-0, unmapped), maps 15, maps inside DVI-D-0 15, unmapped geometries outside 0, output changes 14, breaches 0, X events 341
+2026-11-26T06:34:02.366Z live stream stop (exit 0)
+2026-11-26T06:34:02.578Z show player stop (pid 4148629)
+2026-11-26T06:34:02.591Z guard x11 unmap 0x4400007 1920x1080+1920+0
+2026-11-26T06:34:02.592Z guard x11 destroy 0x4400007
+2026-11-26T06:34:02.809Z show mode DVI-D-0 1920x1080@59.94
+2026-11-26T06:34:03.336Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 4182834 "ffplay"
+2026-11-26T06:34:03.451Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 4182834 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:34:03.548Z show player start 1920x1080@59.94 (pid 4182834)
+2026-11-26T06:34:05.325Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:34:07.073Z live stream stop (exit 0)
+2026-11-26T06:34:07.078Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:34:20.508Z live stream stop (exit 0)
+2026-11-26T06:34:21.641Z show player stop (pid 4182834)
+2026-11-26T06:34:21.662Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:34:21.662Z guard x11 destroy 0x3400007
+2026-11-26T06:34:21.872Z show mode DVI-D-0 1920x1080@50.00
+2026-11-26T06:34:22.414Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 38565 "ffplay"
+2026-11-26T06:34:22.535Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 38565 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:34:22.626Z show player start 1920x1080@50.00 (pid 38565)
+2026-11-26T06:34:24.445Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:34:26.204Z live stream stop (exit 0)
+2026-11-26T06:34:26.216Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:34:39.672Z live stream stop (exit 0)
+2026-11-26T06:34:40.828Z show player stop (pid 38565)
+2026-11-26T06:34:40.846Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:34:40.846Z guard x11 destroy 0x3400007
+2026-11-26T06:34:41.058Z show mode DVI-D-0 1920x1080@29.97
+2026-11-26T06:34:41.816Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 83992 "ffplay"
+2026-11-26T06:34:42.014Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 83992 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:34:42.130Z show player start 1920x1080@29.97 (pid 83992)
+2026-11-26T06:34:43.716Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:34:45.491Z live stream stop (exit 0)
+2026-11-26T06:34:45.498Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:34:54.030Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T06:34:54.047Z guard ok: audio 3594 polls, longest interval 50 ms; windows: test windows created 22 (0 created outside DVI-D-0, unmapped), maps 18, maps inside DVI-D-0 18, unmapped geometries outside 0, output changes 14, breaches 0, X events 377
+2026-11-26T06:34:59.109Z live stream stop (exit 0)
+2026-11-26T06:35:00.206Z show player stop (pid 83992)
+2026-11-26T06:35:00.244Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:35:00.244Z guard x11 destroy 0x3400007
+2026-11-26T06:35:00.486Z show mode DVI-D-0 1920x1080@25.00
+2026-11-26T06:35:01.340Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 125925 "ffplay"
+2026-11-26T06:35:01.580Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 125925 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:35:01.716Z show player start 1920x1080@25.00 (pid 125925)
+2026-11-26T06:35:03.180Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:35:04.989Z live stream stop (exit 0)
+2026-11-26T06:35:04.994Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:35:18.711Z live stream stop (exit 0)
+2026-11-26T06:35:19.873Z show player stop (pid 125925)
+2026-11-26T06:35:19.916Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:35:19.916Z guard x11 destroy 0x3400007
+2026-11-26T06:35:20.185Z show mode DVI-D-0 1920x1080@23.98
+2026-11-26T06:35:21.182Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 161525 ""
+2026-11-26T06:35:21.412Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 161525 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:35:21.526Z show player start 1920x1080@23.98 (pid 161525)
+2026-11-26T06:35:22.954Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:35:24.749Z live stream stop (exit 0)
+2026-11-26T06:35:24.754Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:35:38.517Z live stream stop (exit 0)
+2026-11-26T06:35:39.684Z show player stop (pid 161525)
+2026-11-26T06:35:39.714Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T06:35:39.714Z guard x11 destroy 0x3400007
+2026-11-26T06:35:39.986Z show mode DVI-D-0 1280x720@59.94
+2026-11-26T06:35:40.259Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:35:40.783Z guard x11 create 0x4200007 1280x720+1920+0 override 1 ffplay/ffplay pid 195837 "ffplay"
+2026-11-26T06:35:40.933Z guard x11 map 0x4200007 1280x720+1920+0 ffplay/ffplay pid 195837 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-26T06:35:41.034Z show player start 1280x720@59.94 (pid 195837)
+2026-11-26T06:35:42.508Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:35:44.268Z live stream stop (exit 0)
+2026-11-26T06:35:44.286Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:35:46.049Z live stream stop (exit 0)
+2026-11-26T06:35:46.069Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:35:54.054Z guard ok: audio 4792 polls, longest interval 50 ms; windows: test windows created 25 (0 created outside DVI-D-0, unmapped), maps 21, maps inside DVI-D-0 21, unmapped geometries outside 0, output changes 15, breaches 0, X events 422
+2026-11-26T06:35:54.090Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T06:35:59.536Z live stream stop (exit 0)
+2026-11-26T06:36:00.521Z show player stop (pid 195837)
+2026-11-26T06:36:00.536Z guard x11 unmap 0x4200007 1280x720+1920+0
+2026-11-26T06:36:00.536Z guard x11 destroy 0x4200007
+2026-11-26T06:36:00.769Z show mode DVI-D-0 1280x720@50.00
+2026-11-26T06:36:01.514Z guard x11 create 0x3400007 1280x720+1920+0 override 1 ffplay/ffplay pid 252339 "ffplay"
+2026-11-26T06:36:01.633Z guard x11 map 0x3400007 1280x720+1920+0 ffplay/ffplay pid 252339 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-26T06:36:01.730Z show player start 1280x720@50.00 (pid 252339)
+2026-11-26T06:36:03.478Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:36:05.236Z live stream stop (exit 0)
+2026-11-26T06:36:05.243Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:36:18.691Z live stream stop (exit 0)
+2026-11-26T06:36:19.624Z show player stop (pid 252339)
+2026-11-26T06:36:19.639Z guard x11 unmap 0x3400007 1280x720+1920+0
+2026-11-26T06:36:19.639Z guard x11 destroy 0x3400007
+2026-11-26T06:36:19.865Z show mode DVI-D-0 720x576@50.00
+2026-11-26T06:36:20.080Z guard x11 outputs: DVI-D-0 720x576+1920+0; DVI-D-0 720x576+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:36:20.578Z guard x11 create 0x3400007 720x576+1920+0 override 1 ffplay/ffplay pid 292499 "ffplay"
+2026-11-26T06:36:20.837Z guard x11 map 0x3400007 720x576+1920+0 ffplay/ffplay pid 292499 "gc573-pattern": inside DVI-D-0 720x576+1920+0
+2026-11-26T06:36:20.983Z show player start 720x576@50.00 (pid 292499)
+2026-11-26T06:36:22.600Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:36:24.347Z live stream stop (exit 0)
+2026-11-26T06:36:24.352Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:36:35.508Z live stream stop (exit 0)
+2026-11-26T06:36:36.272Z show player stop (pid 292499)
+2026-11-26T06:36:36.290Z guard x11 unmap 0x3400007 720x576+1920+0
+2026-11-26T06:36:36.290Z guard x11 destroy 0x3400007
+2026-11-26T06:36:36.505Z show mode DVI-D-0 720x480@59.94
+2026-11-26T06:36:36.613Z guard x11 outputs: DVI-D-0 720x480+1920+0; DVI-D-0 720x480+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:36:36.906Z guard x11 create 0x2400002 720x480+1920+0 override 1 ffplay/ffplay pid 329237 ""
+2026-11-26T06:36:36.906Z guard x11 destroy 0x2400002
+2026-11-26T06:36:37.109Z guard x11 create 0x2400007 720x480+1920+0 override 1 ffplay/ffplay pid 329237 "ffplay"
+2026-11-26T06:36:37.292Z guard x11 map 0x2400007 720x480+1920+0 ffplay/ffplay pid 329237 "gc573-pattern": inside DVI-D-0 720x480+1920+0
+2026-11-26T06:36:37.359Z show player start 720x480@59.94 (pid 329237)
+2026-11-26T06:36:39.059Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:36:40.808Z live stream stop (exit 0)
+2026-11-26T06:36:40.826Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:36:42.594Z live stream stop (exit 0)
+2026-11-26T06:36:42.618Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:36:53.843Z live stream stop (exit 0)
+2026-11-26T06:36:54.062Z guard ok: audio 5990 polls, longest interval 50 ms; windows: test windows created 29 (0 created outside DVI-D-0, unmapped), maps 24, maps inside DVI-D-0 24, unmapped geometries outside 0, output changes 17, breaches 0, X events 467
+2026-11-26T06:36:54.150Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T06:36:54.569Z show player stop (pid 329237)
+2026-11-26T06:36:54.581Z guard x11 unmap 0x2400007 720x480+1920+0
+2026-11-26T06:36:54.581Z guard x11 destroy 0x2400007
+2026-11-26T06:36:54.810Z show mode DVI-D-0 640x480@59.94
+2026-11-26T06:36:55.012Z guard x11 outputs: DVI-D-0 640x480+1920+0; DVI-D-0 640x480+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:36:55.648Z guard x11 create 0x2400007 640x480+1920+0 override 1 ffplay/ffplay pid 369158 "ffplay"
+2026-11-26T06:36:55.763Z guard x11 map 0x2400007 640x480+1920+0 ffplay/ffplay pid 369158 "gc573-pattern": inside DVI-D-0 640x480+1920+0
+2026-11-26T06:36:55.829Z show player start 640x480@59.94 (pid 369158)
+2026-11-26T06:36:57.394Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:36:59.144Z live stream stop (exit 0)
+2026-11-26T06:36:59.160Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:37:12.612Z live stream stop (exit 0)
+2026-11-26T06:37:13.421Z show player stop (pid 369158)
+2026-11-26T06:37:13.443Z guard x11 unmap 0x2400007 640x480+1920+0
+2026-11-26T06:37:13.443Z guard x11 destroy 0x2400007
+2026-11-26T06:37:13.656Z show mode DVI-D-0 640x480@59.93
+2026-11-26T06:37:14.161Z guard x11 create 0x2400007 640x480+1920+0 override 1 ffplay/ffplay pid 410227 "ffplay"
+2026-11-26T06:37:14.257Z guard x11 map 0x2400007 640x480+1920+0 ffplay/ffplay pid 410227 "gc573-pattern": inside DVI-D-0 640x480+1920+0
+2026-11-26T06:37:14.308Z show player start 640x480@59.93 (pid 410227)
+2026-11-26T06:37:16.171Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:37:17.923Z live stream stop (exit 0)
+2026-11-26T06:37:17.941Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:37:31.410Z live stream stop (exit 0)
+2026-11-26T06:37:32.193Z show player stop (pid 410227)
+2026-11-26T06:37:32.248Z guard x11 unmap 0x2400007 640x480+1920+0
+2026-11-26T06:37:32.248Z guard x11 destroy 0x2400007
+2026-11-26T06:37:32.456Z show mode DVI-D-0 1920x1080@60
+2026-11-26T06:37:32.629Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T06:37:33.078Z guard x11 create 0x2400002 1920x1080+1920+0 override 1 ffplay/ffplay pid 452871 ""
+2026-11-26T06:37:33.078Z guard x11 destroy 0x2400002
+2026-11-26T06:37:33.318Z guard x11 create 0x2400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 452871 "ffplay"
+2026-11-26T06:37:33.524Z guard x11 map 0x2400007 1920x1080+1920+0 ffplay/ffplay pid 452871 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T06:37:33.560Z show player start 1920x1080@60 (pid 452871)
+2026-11-26T06:37:35.125Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:37:36.888Z live stream stop (exit 0)
+2026-11-26T06:37:36.905Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-26T06:37:50.429Z live stream stop (exit 0)
+2026-11-26T06:37:51.567Z show player stop (pid 452871)
+2026-11-26T06:37:51.590Z guard x11 unmap 0x2400007 1920x1080+1920+0
+2026-11-26T06:37:51.590Z guard x11 destroy 0x2400007
+2026-11-26T06:37:52.069Z guard end: run pid 3959407 gone; audio 7145 polls, longest interval 51 ms; windows: test windows created 33 (0 created outside DVI-D-0, unmapped), maps 27, maps inside DVI-D-0 27, unmapped geometries outside 0, output changes 19, breaches 0, X events 519; no breach
+2026-11-26T06:37:52.208Z camwatch end run pid 3959407 gone; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test

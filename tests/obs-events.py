@@ -28,26 +28,78 @@ the screenshot after it must be good too.
       bursts (a peak over -30 dBFS on both channels, then silence below
       -60 dBFS) and their spacing
   obs-events.py [--host H] events [--reps N] [--only NAME,...] [--record]
+                [--no-bridge]
       each source change in turn, N times (default 2); one EVENT line each
       and a RESULT line per kind (below). --record: OBS records across the
       changes (in the format OBS was started with: tests/obs-run.sh)
-  obs-events.py [--host H] soak SECS [--every S] [--shot S]
+  obs-events.py [--host H] soak SECS [--every S] [--shot S] [--rotation A,B,..]
+                [--keep-source] [--no-restore] [--rec-dir DIR] [--no-bridge]
+                [--inject T:MODE:RATE]
       the event soak: a recording across SECS seconds, a screenshot every
       --shot seconds (default 2), and every --every seconds (default 180)
-      the next change from a rotation of all kinds; one EVENT line per
-      change, SHOT lines for every screenshot that is not good, and RESULT
-      lines at the end. Prints RECORDING <file> (the recording, in the VM)
+      the next change from a rotation (default: of all kinds; --rotation
+      gives it); one EVENT line per change, SHOT lines for every screenshot
+      that is not good, and RESULT lines at the end. Prints RECORDING
+      <file> (the recording, where OBS runs). No change is ever skipped:
+      if the picture is not good before one, it is recovered first, and
+      the change runs anyway. Between changes a watchdog recovers it after
+      WATCHDOG seconds without a good screenshot (and none since the
+      bridge's last reopen, below). A recovery reopens the
+      source while the driver reports a lock, and again after 5, 10, 20,
+      40, then every 60 s while the picture stays not good, until it is
+      good or its time runs out (60 s before a change; the watchdog's: to
+      the next change); one RECOVER line per attempt. RESULT
+      obsev-recoveries fails if any was needed.
+      --keep-source: the test
+      source that runs (avsync.sh --pattern at 1080p60) is not restarted
+      before the recording, and --no-restore leaves the last one running
+      after it, so that the driver's A/V offset can be measured in the
+      same source sessions as the recording's first and last segments.
+      --rec-dir: OBS records to DIR (SetRecordDirectory), and gets its
+      directory back after the recording. The V4L2 source's color_range
+      is put back as it was (the reopens toggle it). --inject: T seconds
+      into the recording, a change the harness is not told of (a trial of
+      the recovery): avsync.sh --pattern in MODE at RATE, from a thread,
+      retried until its player has started (window mapped by place.so,
+      audio linked: avsync.sh exits 0) as for every source start. An
+      INJECT line says on which attempt, or that it never did; each
+      failed attempt is in the event log with avsync.sh's reason
   obs-events.py recheck FILE [--every S] [--across]
-      in the VM, on a recording of the counter pattern: a frame every S
-      seconds (default 10) against the pattern, and the counter's steps
-      from one recorded frame to the next in three runs of 120 frames.
-      --across: the recording spans source changes; the first and last
-      samples must be the pattern, the others are listed
+      where OBS runs, on a recording of the counter pattern: every S
+      seconds (default 10) a frame against the pattern and the counter's
+      progress over the next 0.5 s of recording ('live': it moved by
+      about as many frames as were recorded, 80-120 %; 'frozen': it did
+      not move; 'jumpy': anything else), and the counter's steps from one
+      recorded frame to the next in three runs of 120 frames. Every frame
+      is decoded once (-fps_mode passthrough). A frozen pattern is not a
+      good picture. Each frame is read at its own size, else as each other
+      size of SIZES stretched to it (OBS stretches a 720p source to its
+      1080p canvas) --across: the recording spans source changes; the
+      first and last samples must be live, and no two samples in a row
+      anything else
   obs-events.py selftest
-      the classifier on frames rendered offline from counter-graph.sh
+      the classifier on frames rendered offline from counter-graph.sh, and
+      their timestamps: frame n at n/FPS within 1 us (the player shows each
+      frame at its time; a coarse time base bunches them)
 Every run of events or soak writes an event log (UTC, ms; --events-log or
 GC573_EVENT_LOG) and runs tools/testsrc/guard.py on itself, unless
 GC573_GUARDED says a caller's guard (live.sh) already watches it.
+
+The bridge (events and soak; --no-bridge: without it): tests/obsbridge.py
+where the driver runs (here in host-local mode; in gc573-dev over ssh from
+GC573_BRIDGE_PATH, default /tmp/gc573-live/obsbridge.py, where live.sh puts
+it with tests/obsws.py). It reopens
+the source from the input's timings, not from the picture: once the input
+has been still for 2 s, when its timings differ from the stream's or the
+driver has failed the stream. It is the first trigger; the screenshots
+only fall back to a reopen (res-*: after WAIT_SELF s, the watchdog, before
+a change). Its lines go to the event log ("bridge ..."); each EVENT line
+lists its reopens in that change, and
+  RESULT obsev-bridge  PASS: the bridge reopened in every res-* change,
+                       in no change of the same timings, and each reopen
+                       for new timings was adopted (G_DV_TIMINGS took the
+                       input's: OBS closed the device). Its reopens
+                       outside the changes count in obsev-recoveries
 
 Changes (host side, on the loopback output; the VM side through ssh):
   sleep        output off for 8 s, then on in the same mode (a source
@@ -55,12 +107,27 @@ Changes (host side, on the loopback output; the VM side through ssh):
   rate-59.94   1080p60 -> 1080p59.94; rate-60 back
   res-720p     1080p -> 720p (59.94 Hz, the only 720p rates the EDID
                lists are 59.94 and 50); res-1080p back. OBS cannot follow
-               a change of the frame size by itself: after WAIT_SELF
-               seconds without a good frame the step reopens the source
-               (reopen below) and reports TTFGF from that
+               a change of the frame size by itself: the bridge reopens the
+               source; without good frames at the new size after WAIT_SELF
+               seconds the step reopens it itself (reopen below) and
+               reports TTFGF from that
   colour-*     the GPU's colour format at the same timings: rgb-limited,
                ycbcr444, ycbcr422, then rgb-full (nvidia-settings
                ColorSpace and ColorRange, runtime only)
+  idle         nothing (a control for the next two)
+  reopen-video OBS's V4L2 source reopened (reopen below), the input and the
+               test source left as they are
+  reopen-audio OBS's ALSA source reopened: custom_pcm (device_id
+               __custom__) between two names of the same PCM, with and
+               without ",DEV=0" (hw:CARD=/dev/snd/by-path/pci-BDF,DEV=0),
+               so OBS closes and opens the device. A name by the card's id
+               (hw:CARD=GC573) is refused: alsa-lib would open the control
+               node of every card before it (snd_card_get_index);
+               its settings are put back after a soak. With only these
+               three in a soak's rotation and --keep-source, one source
+               session runs from the driver's first capture to its last,
+               so OBS's own part of the A/V offset is known in every
+               segment
   edid-same    VIDIOC_S_EDID with the image in place: no hot-plug
   edid-new     VIDIOC_S_EDID with another serial number: a hot-plug pulse.
                The GPU drops the link; the test source is started again
@@ -70,13 +137,25 @@ reopen: SetInputSettings toggling color_range between 0 (Default) and 1
 (Partial), the same for YUV formats. OBS 32 sets its V4L2 source up again
 (closes and reopens the device) only when a setting it compares changes;
 the device then has the new timings.
+
+Host-local mode (GC573_VM=local): the driver runs on this machine, and OBS
+too (--host defaults to 127.0.0.1; tests/obsws.py takes the websocket
+password from OBS's own settings). The driver's side then runs here and
+not over ssh: v4l2-ctl for the EDID, and the debugfs reads through sudo -A
+(SUDO_ASKPASS) or sudo -n. Changes that only work with the driver in the
+VM have no host-local form; leave the colour changes out of --rotation
+where the GPU's settings must stay as they are.
 """
 import argparse
 import base64
 import io
+import math
 import os
+import re
+import shlex
 import subprocess
 import sys
+import threading
 import time
 
 from PIL import Image, ImageChops, ImageStat
@@ -90,10 +169,12 @@ SHOW = os.path.join(ROOT, 'tools', 'testsrc', 'show.sh')
 VSRC, ASRC = 'GC573 video', 'GC573 audio'
 OUT = os.environ.get('GC573_OUT', 'DVI-D-0')
 VM = os.environ.get('GC573_VM', 'gc573-dev')
+LOCAL = VM == 'local'
 VDEV = os.environ.get('GC573_VDEV', '/dev/v4l/by-path/pci-0000:07:00.0-video-index0')
 TOL = 8
 WAIT_SELF = 12
 TIMEOUT = 20
+WATCHDOG = 10	# s without a good screenshot between changes: reopen
 
 BARS = [(255, 255, 255), (255, 255, 0), (0, 255, 255), (0, 255, 0),
         (255, 0, 255), (255, 0, 0), (0, 0, 255), (0, 0, 0)]
@@ -132,16 +213,56 @@ def geometry(W, H):
     return bits, gaps, flash
 
 
+# the source sizes of the changes: a recording of OBS's 1920x1080 canvas
+# holds a 1280x720 source stretched to it (obs-check.py: OBS_BOUNDS_STRETCH)
+SIZES = [(1920, 1080), (1280, 720)]
+
+
+def scale_box(b, sx, sy):
+    """a box at the source's size in the frame's pixels, rounded inwards"""
+    x0, y0, x1, y1 = b[:4]
+    return (math.ceil(x0 * sx), math.ceil(y0 * sy), math.floor(x1 * sx), math.floor(y1 * sy)) + tuple(b[4:])
+
+
+def regions_for(W, H, src=None):
+    w, h = src or (W, H)
+    return [scale_box(r, W / w, H / h) for r in regions(w, h)]
+
+
+def geometry_for(W, H, src=None):
+    w, h = src or (W, H)
+    bits, gaps, flash = geometry(w, h)
+    sx, sy = W / w, H / h
+    return ([scale_box(b, sx, sy) for b in bits], [scale_box(g, sx, sy) for g in gaps],
+            scale_box(flash, sx, sy))
+
+
 def luma(img, box):
     return ImageStat.Stat(img.crop(box).convert('L')).mean[0]
 
 
-def classify(img):
+def classify_any(img):
+    """classify() at the frame's own size, else at each other size of
+    SIZES with the frame's aspect, stretched to it: the first that reads a
+    counter, else the frame's own result; and the size used (None: its own)"""
+    first = classify(img)
+    if first[0] == 'pattern' and first[2] is not None:
+        return first + (None,)
+    W, H = img.size
+    for w, h in SIZES:
+        if (w, h) != (W, H) and w * H == h * W:
+            r = classify(img, (w, h))
+            if r[0] == 'pattern' and r[2] is not None:
+                return r + ((w, h),)
+    return first + (None,)
+
+
+def classify(img, src=None):
     """kind (pattern, black, bad), max error, counter (None: unreadable),
-    flash"""
+    flash. SRC: the pattern's own size, if the frame is it stretched"""
     W, H = img.size
     err = 0
-    for x0, y0, x1, y1, c in regions(W, H):
+    for x0, y0, x1, y1, c in regions_for(W, H, src):
         crop = img.crop((x0, y0, x1, y1))
         ex = ImageChops.difference(crop, Image.new('RGB', crop.size, c)).getextrema()
         err = max(err, max(e[1] for e in ex))
@@ -149,7 +270,7 @@ def classify(img):
         if ImageStat.Stat(img.convert('L')).mean[0] < 12:
             return 'black', err, None, False
         return 'bad', err, None, False
-    bits, gaps, flash = geometry(W, H)
+    bits, gaps, flash = geometry_for(W, H, src)
     counter = 0
     for k, b in enumerate(bits):
         y = luma(img, b)
@@ -204,6 +325,38 @@ class Source:
         self.obs.call('SetInputSettings', inputName=VSRC, inputSettings={'color_range': cr})
 
 
+def scan_free(pcm):
+    """True if alsa-lib opens PCM's card alone: hw:N,..., hw:CARD=N or
+    hw:CARD=/dev/snd/...; a card id (hw:CARD=GC573, hw:GC573,0) is looked
+    up by opening the control node of every card before it
+    (snd_card_get_index), a webcam's among them"""
+    m = re.match(r'^(?:plug)?hw:(?:CARD=)?([^,]+)', pcm or '')
+    return bool(m) and (m.group(1).isdigit() or m.group(1).startswith('/'))
+
+
+def other_name(pcm):
+    """the same PCM by another name: hw:N,M as hw:CARD=N,DEV=M, else with
+    or without ',DEV=0'"""
+    m = re.match(r'^hw:(\d+),(\d+)$', pcm)
+    if m:
+        return f'hw:CARD={m.group(1)},DEV={m.group(2)}'
+    return pcm[:-len(',DEV=0')] if pcm.endswith(',DEV=0') else pcm + ',DEV=0'
+
+
+def reopen_audio(obs):
+    """OBS closes and opens its ALSA device: custom_pcm between two names
+    of the same PCM (device_id __custom__)"""
+    s = obs.call('GetInputSettings', inputName=ASRC)['inputSettings']
+    cur = s.get('custom_pcm') if s.get('device_id') == '__custom__' else s.get('device_id')
+    if not scan_free(cur):
+        raise RuntimeError(f'the ALSA source names its PCM {cur!r}: not reopened (a card id makes '
+                           f'alsa-lib open every card before it; use hw:CARD=/dev/snd/by-path/pci-BDF,DEV=0)')
+    new = other_name(cur)
+    ev(f'obs audio reopen: device_id __custom__, custom_pcm {new} (was {cur})')
+    obs.call('SetInputSettings', inputName=ASRC, inputSettings={'device_id': '__custom__', 'custom_pcm': new})
+    return f'custom_pcm {cur} -> {new}'
+
+
 def wait_good(src, t_ref, secs, log=None):
     """Screenshots until two good ones in a row, or secs after t_ref.
     Returns (TTFGF or None, states as 'state duration' runs, last size)"""
@@ -236,6 +389,10 @@ def fmt_runs(runs, t_ref):
 ENV = dict(os.environ, DISPLAY=os.environ.get('DISPLAY', ':0'),
            XAUTHORITY=os.environ.get('XAUTHORITY', os.path.expanduser('~/.Xauthority')))
 GUARD = os.path.join(ROOT, 'tools', 'testsrc', 'guard.py')
+BRIDGE = os.path.join(ROOT, 'tests', 'obsbridge.py')
+# in gc573-dev: where live.sh puts it (its work directory)
+BRIDGE_VM = os.environ.get('GC573_BRIDGE_PATH', '/tmp/gc573-live/obsbridge.py')
+EV_LOCK = threading.Lock()	# the bridge's reader thread logs too
 
 
 def ev(text):
@@ -246,7 +403,7 @@ def ev(text):
     if f:
         import datetime
         t = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
-        with open(f, 'a') as fh:
+        with EV_LOCK, open(f, 'a') as fh:
             fh.write(f'{t} obs-events {text}\n')
 
 
@@ -264,6 +421,13 @@ def sh(*cmd, timeout=60):
 
 
 def vm(cmd, timeout=60):
+    """CMD where the driver runs: gc573-dev over ssh, or here (GC573_VM=local),
+    where sudo asks SUDO_ASKPASS or uses cached credentials, never a tty"""
+    if LOCAL:
+        how = '-A' if os.environ.get('SUDO_ASKPASS') else '-n'
+        return subprocess.run(['bash', '-c', f'sudo() {{ command sudo {how} "$@"; }}; {cmd}'],
+                              stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                              timeout=timeout)
     return subprocess.run(['ssh', '-n', '-o', 'BatchMode=yes', VM, cmd],
                           capture_output=True, text=True, timeout=timeout)
 
@@ -281,14 +445,19 @@ def src_on(mode, rate):
     return False
 
 
-def av_on(mode, rate):
+def av_on(mode, rate, tries=30):
     """avsync.sh --pattern, the picture with the bursts, once the HDMI audio
-    port has a valid ELD again (a moment after a mode change)"""
-    for _ in range(30):
-        if sh(AVSYNC, '--pattern', OUT, mode, rate).returncode == 0:
-            return True
+    port has a valid ELD again (a moment after a mode change). Each failed
+    start goes to the event log with avsync.sh's reason. Returns the
+    attempt that started (1 ...), or 0"""
+    for i in range(tries):
+        r = sh(AVSYNC, '--pattern', OUT, mode, rate)
+        if r.returncode == 0:
+            return i + 1
+        ev(f'avsync.sh --pattern {mode} {rate}: attempt {i + 1} failed (exit {r.returncode}): '
+           + ' '.join(r.stderr.split())[:400])
         time.sleep(0.5)
-    return False
+    return 0
 
 
 def src_stop():
@@ -349,6 +518,103 @@ def driver_state():
     return ', '.join(x for x in r.stdout.split('\n') if x)
 
 
+def driver_locked():
+    """The driver's input locked (HDMI debugfs), or None if unreadable"""
+    r = vm("sudo sh -c 'd=$(ls -d /sys/kernel/debug/gc573-* | head -1); "
+           "grep -E \"^input:\" $d/hdmi'")
+    m = re.search(r' locked ([01])', r.stdout)
+    return None if not m else m.group(1) == '1'
+
+
+class BridgeProc:
+    """tests/obsbridge.py where the driver runs, its lines read as they
+    come: (monotonic arrival time, text) and into the event log"""
+
+    def __init__(self):
+        args = ['--device', VDEV, '--source', VSRC]
+        if LOCAL:
+            cmd = [sys.executable, '-u', BRIDGE, '--host', HOST] + args
+        else:
+            cmd = ['ssh', '-o', 'BatchMode=yes', VM, f'exec python3 -u {shlex.quote(BRIDGE_VM)} '
+                   '--host 127.0.0.1 ' + ' '.join(shlex.quote(a) for a in args)]
+        self.p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, text=True, bufsize=1, start_new_session=True)
+        self.lines = []
+        self.lock = threading.Lock()
+        self.up = threading.Event()
+        threading.Thread(target=self._read, daemon=True).start()
+
+    def _read(self):
+        for line in self.p.stdout:
+            line = line.rstrip('\n')
+            text = line.split(' ', 2)[2] if line.startswith('BRIDGE ') and line.count(' ') >= 2 else line
+            with self.lock:
+                self.lines.append((time.monotonic(), text))
+            if text.startswith('start '):
+                self.up.set()
+            ev(f'bridge {text}')
+        self.up.set()
+
+    def started(self, timeout=10):
+        self.up.wait(timeout)
+        with self.lock:
+            return any(x.startswith('start ') for _, x in self.lines) and self.p.poll() is None
+
+    def since(self, t0, t1=None, prefix=''):
+        with self.lock:
+            return [(t, x) for t, x in self.lines
+                    if t >= t0 and (t1 is None or t <= t1) and x.startswith(prefix)]
+
+    def reopens(self, t0=0.0, t1=None):
+        """the reopen attempts (times)"""
+        return [t for t, _ in self.since(t0, t1, 'reopen: ')]
+
+    def last_reopen(self):
+        r = self.reopens()
+        return r[-1] if r else 0.0
+
+    def stop(self):
+        if self.p.poll() is None:
+            self.p.terminate()
+            try:
+                self.p.wait(5)
+            except subprocess.TimeoutExpired:
+                self.p.kill()
+        if not LOCAL:
+            vm('pkill -f tests/obsbridge.py')
+
+
+def bridge_summary(bridge, windows, out=print):
+    """RESULT obsev-bridge (see the header); returns its verdict and the
+    reopens outside the changes as (time, the settle line)"""
+    if bridge is None:
+        return True, []
+    lines = bridge.since(0.0)
+    settles = [(t, x) for t, x in lines if x.startswith('settled ') and ': reopen (' in x]
+    per, outside = {}, []
+    for t, x in settles:
+        w = next((name for t0, t1, name in reversed(windows) if t0 <= t <= t1 + 3), None)
+        if w is None:
+            outside.append((t, x))
+        else:
+            per.setdefault(w, []).append(x)
+    res = sorted({name for _, _, name in windows if name.startswith('res-')})
+    missing = [name for name in res if not any(n == name for n in per)
+               or sum(1 for t0, t1, n in windows if n == name) > len(per.get(name, []))]
+    wrong = {n: v for n, v in per.items() if not n.startswith('res-') and n != 'restore'}
+    unadopted = sum(1 for _, x in lines if x.startswith('not adopted'))
+    errors = [x for _, x in lines if x.startswith(('reopen failed', 'Traceback')) or 'Error' in x]
+    ok = bridge.started(0) or bool(lines)
+    ok = ok and not missing and not wrong and not errors
+    out(f"RESULT obsev-bridge {'PASS' if ok else 'FAIL'} (reopens in the changes: "
+        + (', '.join(f'{n} x{len(v)}' for n, v in sorted(per.items())) or 'none')
+        + f"; res-* changes without one: {', '.join(missing) or 'none'}; in changes of the same timings: "
+        + (', '.join(f'{n}: {v[0]}' for n, v in wrong.items()) or 'none')
+        + f'; not adopted at first: {unadopted}; outside the changes: {len(outside)}'
+        + (f"; errors: {'; '.join(errors[:3])}" if errors else '') + ')', flush=True)
+    return ok, outside
+
+
 EDID_TMP = '/tmp/gc573-obs-events'
 
 
@@ -373,14 +639,19 @@ class Runner:
     measures that alone. audio: the soak's source, avsync.sh --pattern with
     the bursts, started once the picture is back"""
 
-    def __init__(self, obs, audio=False, out=print):
+    def __init__(self, obs, audio=False, out=print, colours=True, bridge=None):
         self.src = Source(obs)
+        self.bridge = bridge
+        self.windows = []	# (start, end, name) of each change
+        self.t_change = None
         self.obs = obs
         self.audio = audio
         self.out = out
+        self.colours = colours	# False: the GPU's colour settings are left alone
         self.mode = ('1920x1080', '60')
         self.edid = 'default'
         self.results = {}
+        self.recoveries = []	# (why, attempts, good, seconds to good or None)
 
     def audio_on(self):
         if self.audio:
@@ -399,6 +670,10 @@ class Runner:
 
     def record(self, name, ttf, detail, ok=None):
         good = ttf is not None if ok is None else ok
+        if self.bridge and self.t_change is not None:
+            r = self.bridge.reopens(self.t_change)
+            detail += (' bridge: reopen at ' + ', '.join(f'{t - self.t_change:+.2f} s' for t in r)
+                       if r else ' bridge: no reopen')
         if not good:
             detail += f' [{host_live()}; driver: {driver_state()}]'
         self.results.setdefault(name, []).append((good, ttf))
@@ -442,7 +717,8 @@ class Runner:
         ttf, runs, size = wait_good(self.src, t0, WAIT_SELF)
         if ttf is not None and size == want:
             self.audio_on()
-            self.record(name, ttf, f'(by itself: {fmt_runs(runs, t0)}; source {size[0]}x{size[1]})')
+            how = "after the bridge's reopen" if self.bridge and self.bridge.reopens(t0) else 'by itself'
+            self.record(name, ttf, f'({how}: {fmt_runs(runs, t0)}; source {size[0]}x{size[1]})')
             return
         self_runs = fmt_runs(runs, t0)
         t1 = time.monotonic()
@@ -452,6 +728,18 @@ class Runner:
         ok = ttf is not None and size == want
         self.record(name, ttf, f'(not by itself in {WAIT_SELF} s: {self_runs}; TTFGF from the reopen at '
                     f'{t1 - t0:+.2f}: {fmt_runs(runs, t1)}; source {size[0]}x{size[1]})', ok=ok)
+
+    def ev_obs_side(self, name):
+        """idle, reopen-video, reopen-audio: the picture through it"""
+        t0 = time.monotonic()
+        what = 'nothing'
+        if name == 'reopen-video':
+            self.src.reopen()
+            what = 'video source reopened'
+        elif name == 'reopen-audio':
+            what = 'audio source reopened: ' + reopen_audio(self.obs)
+        ttf, runs, size = wait_good(self.src, t0, TIMEOUT)
+        self.record(name, ttf, f'({what}: {fmt_runs(runs, t0)}; source {size[0]}x{size[1]})')
 
     def ev_colour(self, name, cs, cr):
         """The picture is not restarted: every screenshot for 5 s; TTFGF is
@@ -502,12 +790,56 @@ class Runner:
         self.record(name, ttf, f'({"hot-plug" if changed else "no change"}: {fmt_runs(runs, t0)}; '
                     f'source {size[0]}x{size[1]})')
 
+    def recover(self, why, detail, budget=60):
+        """The picture is not good. With the driver locked, OBS has lost
+        the stream (it does not reopen by itself): reopen the source and
+        wait for good frames, 5 s; while it stays not good, again after
+        10, 20, 40, then 60 s, until it is good or BUDGET seconds are
+        used. Without a lock nothing is reopened; the next attempt looks
+        again. One RECOVER line per attempt; the episode counts in
+        RESULT obsev-recoveries"""
+        t0 = time.monotonic()
+        wait, n, ttf = 5, 0, None
+        while True:
+            n += 1
+            locked = driver_locked()
+            t1 = time.monotonic()
+            if locked:
+                ev(f'recover {why}: reopen (attempt {n})')
+                self.src.reopen()
+            ttf, runs, size = wait_good(self.src, t1, wait)
+            how = 'reopened' if locked else \
+                ('not locked' if locked is False else 'lock unreadable') + ', no reopen'
+            self.out(f'RECOVER {why} attempt {n} at +{t1 - t0:.1f} s: '
+                     f'{detail if n == 1 else "still not good"}; {how}, '
+                     f'{"good after %.2f s" % ttf if ttf is not None else "not good in %d s" % wait} '
+                     f'({fmt_runs(runs, t1)}; source {size[0]}x{size[1]}) [{driver_state()}]', flush=True)
+            if ttf is not None or time.monotonic() - t0 + min(wait * 2, 60) > budget:
+                break
+            wait = min(wait * 2, 60)
+        took = time.monotonic() - t0 if ttf is not None else None
+        self.recoveries.append((why, n, ttf is not None, took))
+        if ttf is None:
+            self.out(f'RECOVER {why}: still not good after {n} attempts, {time.monotonic() - t0:.0f} s',
+                     flush=True)
+        return ttf is not None
+
     def run(self, name):
+        """One change. Never skipped: a picture that is not good before it
+        is recovered first if it can be (a skipped change leaves the input
+        as it is, and every later change would be skipped too)"""
         ev(f'change {name}')
+        self.t_change = time.monotonic()
+        try:
+            self._run(name)
+        finally:
+            self.windows.append((self.t_change, time.monotonic(), name))
+            self.t_change = None
+
+    def _run(self, name):
         ok, base = self.baseline()
         if not ok:
-            self.record(name, None, f'(no good frames before the change: {base})', ok=False)
-            return
+            self.recover(f'before {name}', f'no good frames ({base})')
         {
             'restart': self.ev_restart,
             'sleep': self.ev_sleep,
@@ -522,10 +854,21 @@ class Runner:
             'edid-same': lambda: self.ev_edid('edid-same'),
             'edid-new': lambda: self.ev_edid('edid-new'),
             'edid-default': lambda: self.ev_edid('edid-default'),
+            'idle': lambda: self.ev_obs_side('idle'),
+            'reopen-video': lambda: self.ev_obs_side('reopen-video'),
+            'reopen-audio': lambda: self.ev_obs_side('reopen-audio'),
         }[name]()
 
     def restore(self):
-        colour(0, 0)
+        t0 = time.monotonic()
+        try:
+            self._restore()
+        finally:
+            self.windows.append((t0, time.monotonic(), 'restore'))
+
+    def _restore(self):
+        if self.colours:
+            colour(0, 0)
         if self.edid != 'default':
             src_stop()
             edid_set('default')
@@ -538,11 +881,22 @@ class Runner:
 
 ORDER = ['restart', 'sleep', 'rate-59.94', 'rate-60', 'res-720p', 'res-1080p',
          'colour-rgb-limited', 'colour-ycbcr444', 'colour-ycbcr422', 'colour-rgb-full',
-         'edid-same', 'edid-new', 'edid-default']
+         'edid-same', 'edid-new', 'edid-default', 'idle', 'reopen-video', 'reopen-audio']
 
 
-def summary(results, out=print):
-    ok = True
+def summary(results, out=print, recoveries=None, bridge=None, windows=(), t_start=None):
+    ok, outside = bridge_summary(bridge, windows, out)
+    if recoveries is not None:
+        good = not recoveries and not outside
+        what = '; '.join([f'{w}: {n} attempt{"s" if n > 1 else ""}, '
+                          + (f'good after {t:.2f} s' if g else 'not good')
+                          for w, n, g, t in recoveries]
+                         + [f"bridge at {t - (t_start or t):.1f} s: {x.split(': ', 1)[-1]}"
+                            for t, x in outside])
+        recoveries = list(recoveries) + outside
+        ok &= good
+        out(f"RESULT obsev-recoveries {'PASS' if good else 'FAIL'} ({len(recoveries)} times the "
+            f"picture was not good outside a change's own recovery" + (f': {what}' if what else '') + ')')
     for name in ORDER:
         if name not in results:
             continue
@@ -640,15 +994,31 @@ def record_start(obs):
 
 
 def record_stop(obs):
+    """StopRecord, and the output's end: the file is complete, and the
+    profile's output settings can change (OBS refuses while it stops)"""
     out = obs.call('StopRecord')
     ev('recording stop (StopRecord)')
+    for _ in range(300):
+        if not obs.call('GetRecordStatus').get('outputActive'):
+            break
+        time.sleep(0.1)
     print(f"RECORDING {out.get('outputPath', '')}", flush=True)
 
 
-def cmd_events(obs, reps, only, record=False):
+def start_bridge(use):
+    if not use:
+        return None
+    b = BridgeProc()
+    if not b.started():
+        print(f'BRIDGE did not start: {"; ".join(x for _, x in b.since(0.0))[:300]}', flush=True)
+    return b
+
+
+def cmd_events(obs, reps, only, record=False, bridge=True):
     ev(f'events start: reps {reps}, {",".join(only) if only else "all"}'
        + (', recording' if record else ''))
-    r = Runner(obs)
+    bridge = start_bridge(bridge)
+    r = Runner(obs, bridge=bridge)
     r.restore()
     edid_prepare()
     names = only or ORDER
@@ -663,47 +1033,120 @@ def cmd_events(obs, reps, only, record=False):
     finally:
         if record:
             record_stop(obs)
-    r.restore()
-    return summary(r.results)
+        r.restore()
+        if bridge:
+            time.sleep(3)	# its settle after the restore
+            bridge.stop()
+    return summary(r.results, recoveries=r.recoveries, bridge=bridge, windows=r.windows)
 
 
-def cmd_soak(obs, secs, every, shot_every):
-    r = Runner(obs, audio=True)
-    r.restore()
+SOAK_ROT = ['sleep', 'rate-59.94', 'colour-ycbcr444', 'edid-same', 'rate-60', 'colour-rgb-limited',
+            'res-720p', 'colour-rgb-full', 'edid-new', 'sleep', 'res-1080p', 'colour-ycbcr422',
+            'edid-default', 'colour-rgb-full']
+
+
+class Inject(threading.Thread):
+    """soak --inject: the outside change, its player checked"""
+
+    def __init__(self, spec):
+        super().__init__(daemon=True)
+        t, self.mode, self.rate = spec.split(':')
+        self.at = float(t)
+        self.result = None
+
+    def run(self):
+        ev(f'inject: avsync.sh --pattern {self.mode} {self.rate} (the harness is not told)')
+        t0 = time.monotonic()
+        n = av_on(self.mode, self.rate)
+        self.result = (f'avsync.sh --pattern {self.mode} {self.rate}: '
+                       + (f'player started on attempt {n}, {time.monotonic() - t0:.1f} s' if n else
+                          f'no player in 30 attempts ({time.monotonic() - t0:.0f} s): see the event log'))
+        print(f'INJECT at {self.at:.1f} s: {self.result}', flush=True)
+
+
+def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=True,
+             rec_dir=None, bridge=True, inject=None):
+    rot = rot or SOAK_ROT
+    inject = Inject(inject) if inject else None
+    bridge = start_bridge(bridge)
+    r = Runner(obs, audio=True, colours=any(k.startswith('colour-') for k in rot), bridge=bridge)
+    if not keep_source:
+        r.restore()
     edid_prepare()
-    rot = ['sleep', 'rate-59.94', 'colour-ycbcr444', 'edid-same', 'rate-60', 'colour-rgb-limited',
-           'res-720p', 'colour-rgb-full', 'edid-new', 'sleep', 'res-1080p', 'colour-ycbcr422',
-           'edid-default', 'colour-rgb-full']
     ok, base = r.baseline()
     print(f'BASELINE {"good" if ok else "NOT GOOD"} ({base})')
-    t_start = record_start(obs)
-    next_ev = t_start + every
-    k = 0
+    cr0 = obs.call('GetInputSettings', inputName=VSRC)['inputSettings'].get('color_range', 0)
+    a0 = obs.call('GetInputSettings', inputName=ASRC)['inputSettings']
+    a0 = {k: a0.get(k) for k in ('device_id', 'custom_pcm')}
+    old_dir = None
+    if rec_dir:
+        old_dir = obs.call('GetRecordDirectory')['recordDirectory']
+        obs.call('SetRecordDirectory', recordDirectory=rec_dir)
+        print(f'RECDIR {rec_dir} (OBS had {old_dir})', flush=True)
     counts = {}
-    while time.monotonic() - t_start < secs:
-        now = time.monotonic()
-        if now >= next_ev:
-            print(f'MARK {now - t_start:.1f}', flush=True)
-            ev(f'event {rot[k % len(rot)]}')
-            r.run(rot[k % len(rot)])
-            k += 1
-            next_ev += every
-            continue
-        t, state, err, counter, size = r.src.sample()
-        counts[state] = counts.get(state, 0) + 1
-        if state != 'good':
-            print(f'SHOT {t - t_start:.1f} {state} err={err} counter={counter} size={size[0]}x{size[1]}',
-                  flush=True)
-        time.sleep(max(0, shot_every - (time.monotonic() - now)))
-    record_stop(obs)
+    try:
+        t_start = record_start(obs)
+        try:
+            next_ev = t_start + every
+            k = 0
+            t_good = time.monotonic()
+            while time.monotonic() - t_start < secs:
+                now = time.monotonic()
+                if inject and not inject.is_alive() and inject.result is None and \
+                        now - t_start >= inject.at:
+                    inject.start()
+                if now >= next_ev:
+                    if inject and inject.is_alive():
+                        inject.join()	# no change while its player starts
+                    print(f'MARK {now - t_start:.1f}', flush=True)
+                    ev(f'event {rot[k % len(rot)]}')
+                    r.run(rot[k % len(rot)])
+                    k += 1
+                    next_ev += every
+                    t_good = time.monotonic()
+                    continue
+                t, state, err, counter, size = r.src.sample()
+                counts[state] = counts.get(state, 0) + 1
+                if state != 'good':
+                    print(f'SHOT {t - t_start:.1f} {state} err={err} counter={counter} '
+                          f'size={size[0]}x{size[1]}', flush=True)
+                if state == 'good':
+                    t_good = t
+                elif t - max(t_good, bridge.last_reopen() if bridge else 0.0) > WATCHDOG:
+                    # the watchdog: OBS stopped getting frames between
+                    # changes; attempts until good or the next change
+                    r.recover(f'watchdog at {t - t_start:.1f} s',
+                              f'no good screenshot for {t - t_good:.0f} s (last: {state})',
+                              budget=max(10, next_ev - time.monotonic() - 5))
+                    t_good = time.monotonic()
+                time.sleep(max(0, shot_every - (time.monotonic() - now)))
+        finally:
+            record_stop(obs)
+    finally:
+        if old_dir is not None:
+            obs.call('SetRecordDirectory', recordDirectory=old_dir)
     print(f'SHOTS {counts}')
-    r.restore()
-    return summary(r.results)
+    cr = obs.call('GetInputSettings', inputName=VSRC)['inputSettings'].get('color_range', 0)
+    if cr != cr0:
+        ev(f'obs: SetInputSettings color_range {cr0} (as before the soak; OBS reopens the device)')
+        obs.call('SetInputSettings', inputName=VSRC, inputSettings={'color_range': cr0})
+    a1 = obs.call('GetInputSettings', inputName=ASRC)['inputSettings']
+    if {k: a1.get(k) for k in a0} != a0:
+        ev(f'obs: SetInputSettings {a0} on the audio source (as before the soak; OBS reopens the PCM)')
+        obs.call('SetInputSettings', inputName=ASRC, inputSettings={k: v for k, v in a0.items() if v is not None})
+    if restore:
+        r.restore()
+    if bridge:
+        time.sleep(3)
+        bridge.stop()
+    return summary(r.results, recoveries=r.recoveries, bridge=bridge, windows=r.windows,
+                   t_start=t_start)
 
 
-def counter_band(img, W, H):
-    """The counter from a frame cropped to its bottom fifth (rows 4H/5..H)"""
-    bits, gaps, _ = geometry(W, H)
+def counter_band(img, W, H, src=None):
+    """The counter from a frame cropped to its bottom fifth (rows 4H/5..H);
+    SRC as for classify()"""
+    bits, gaps, _ = geometry_for(W, H, src)
     dy = H * 4 // 5
     counter = 0
     for k, (x0, y0, x1, y1) in enumerate(bits):
@@ -714,17 +1157,31 @@ def counter_band(img, W, H):
     return counter
 
 
+def band_counters(path, start, n, W, H, src=None):
+    """The counter of each of N recorded frames from START (s), each frame
+    decoded once; None where unreadable; SRC as for classify()"""
+    r = subprocess.run(['ffmpeg', '-v', 'quiet', '-ss', f'{start:.3f}', '-i', path, '-frames:v', str(n),
+                        '-fps_mode', 'passthrough',
+                        '-vf', f'crop={W}:{H - H * 4 // 5}:0:{H * 4 // 5}', '-pix_fmt', 'rgb24',
+                        '-f', 'rawvideo', '-'], capture_output=True)
+    k = W * (H - H * 4 // 5) * 3
+    return [counter_band(Image.frombytes('RGB', (W, H - H * 4 // 5), r.stdout[i * k:(i + 1) * k]), W, H,
+                         src) for i in range(len(r.stdout) // k)]
+
+
 def cmd_recheck(path, every, across=False):
-    """A recording of the counter pattern (run in the VM, next to it): a
-    frame every EVERY seconds against the pattern, and three runs of 120
-    frames for the counter's steps from one recorded frame to the next.
-    ACROSS: the recording spans source changes, so frames between them may
-    be black or other pictures; the first and last samples must be the
-    pattern"""
+    """A recording of the counter pattern (where OBS runs, next to it): a
+    sample every EVERY seconds, judged by the picture and by the counter's
+    progress, and three runs of 120 frames for the counter's steps from
+    one recorded frame to the next. ACROSS: the recording spans source
+    changes, so samples between them may be black or other pictures; the
+    first and last samples must be live, and no two in a row anything
+    else"""
     import json
     info = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-show_entries',
-                                      'format=duration:stream=width,height,duration', '-select_streams', 'v:0',
-                                      '-of', 'json', path], capture_output=True, text=True, check=True).stdout)
+                                      'format=duration:stream=width,height,duration,avg_frame_rate',
+                                      '-select_streams', 'v:0', '-of', 'json', path],
+                                     capture_output=True, text=True, check=True).stdout)
     st = info['streams'][0]
     dur = float(info.get('format', {}).get('duration') or st.get('duration') or 0)
     if not dur:
@@ -733,58 +1190,80 @@ def cmd_recheck(path, every, across=False):
                                     'packet=pts_time', '-of', 'csv=p=0', path], capture_output=True,
                                    text=True, check=True).stdout.split()[-1])
     W, H = st['width'], st['height']
-    kinds, errs, seq = {}, [], []
+    num, den = (int(x) for x in st.get('avg_frame_rate', '60/1').split('/'))
+    fps = num / den if den and num else 60.0
+    n_prog = max(2, round(fps / 2)) + 1	# frames over 0.5 s
+    kinds, errs, seq, sizes = {}, [], [], {}
     t = 1.0
-    while t < dur - 1:
+    while t < dur - 1.5:
         r = subprocess.run(['ffmpeg', '-v', 'quiet', '-ss', f'{t:.3f}', '-i', path, '-frames:v', '1',
                             '-f', 'image2pipe', '-vcodec', 'png', '-'], capture_output=True)
         if r.stdout:
-            kind, err, counter, _ = classify(Image.open(io.BytesIO(r.stdout)).convert('RGB'))
-            kinds[kind] = kinds.get(kind, 0) + 1
-            seq.append(kind)
+            kind, err, counter, _, src = classify_any(Image.open(io.BytesIO(r.stdout)).convert('RGB'))
+            if src:
+                sizes[src] = sizes.get(src, 0) + 1
             if kind == 'pattern':
                 errs.append(err)
-            elif not across:
+                # the first and last readable counters (a torn frame can
+                # leave one unreadable): progress against the frames between
+                c = [(i, x) for i, x in enumerate(band_counters(path, t, n_prog, W, H, src))
+                     if x is not None]
+                if len(c) >= 2 and c[-1][0] - c[0][0] >= (n_prog - 1) // 2:
+                    moved = (c[-1][1] - c[0][1]) % 65536
+                    frames = c[-1][0] - c[0][0]
+                    if moved == 0:
+                        kind = 'frozen'
+                    elif 0.8 * frames <= moved <= 1.2 * frames:
+                        kind = 'live'
+                    else:
+                        kind = 'jumpy'
+                else:
+                    kind = 'unreadable'
+            kinds[kind] = kinds.get(kind, 0) + 1
+            seq.append(kind)
+            if kind != 'live' and not across:
                 print(f'SAMPLE {t:.1f} {kind} err={err}')
         t += every
     steps = {}
     for start in (dur * 0.1, dur * 0.5, max(0, dur * 0.9 - 2.5)):
-        r = subprocess.run(['ffmpeg', '-v', 'quiet', '-ss', f'{start:.3f}', '-i', path, '-frames:v', '120',
-                            '-vf', f'crop={W}:{H - H * 4 // 5}:0:{H * 4 // 5}', '-pix_fmt', 'rgb24',
-                            '-f', 'rawvideo', '-'], capture_output=True)
-        n = W * (H - H * 4 // 5) * 3
         prev = None
-        for i in range(len(r.stdout) // n):
-            img = Image.frombytes('RGB', (W, H - H * 4 // 5), r.stdout[i * n:(i + 1) * n])
-            c = counter_band(img, W, H)
+        # the run at the size that reads more of its counters
+        runs = [band_counters(path, start, 120, W, H, src) for src in
+                [None] + [x for x in SIZES if x != (W, H) and x[0] * H == x[1] * W]]
+        for c in max(runs, key=lambda cs: sum(x is not None for x in cs)):
             if c is not None and prev is not None:
                 d = (c - prev) % 65536
                 steps[d] = steps.get(d, 0) + 1
             prev = c
     if across:
-        good = len(seq) >= 2 and seq[0] == 'pattern' and seq[-1] == 'pattern'
+        good = len(seq) >= 2 and seq[0] == 'live' and seq[-1] == 'live' and \
+            not any(a != 'live' and b != 'live' for a, b in zip(seq, seq[1:]))
         runs = []
         for k in seq:
             if runs and runs[-1][0] == k:
                 runs[-1][1] += 1
             else:
                 runs.append([k, 1])
-        what = ('first and last samples the pattern' if good else 'NOT the pattern at the start and end') + \
+        what = ('first and last samples live, never two in a row not' if good else
+                'NOT live at the start and end, or two samples in a row not live') + \
             '; in order: ' + ', '.join(f'{k} x{n}' for k, n in runs)
     else:
-        good = kinds.get('pattern', 0) and not set(kinds) - {'pattern'}
+        good = kinds.get('live', 0) and not set(kinds) - {'live'}
         what = f'{kinds}'
     good = bool(good) and max(errs, default=0) <= TOL
-    print(f"RESULT obsrec-image {'PASS' if good else 'FAIL'} ({sum(kinds.values())} frames sampled every "
-          f"{every} s over {dur:.0f} s at {W}x{H}: {what}; max error in the pattern frames "
-          f"{max(errs, default=-1)} (limit {TOL})")
+    print(f"RESULT obsrec-image {'PASS' if good else 'FAIL'} ({sum(kinds.values())} samples every "
+          f"{every} s over {dur:.0f} s at {W}x{H}, the counter's progress over {n_prog - 1} frames each: "
+          f"{what}; max error in the pattern frames {max(errs, default=-1)} (limit {TOL})"
+          + ''.join(f'; {n} read as {w}x{h} stretched' for (w, h), n in sizes.items()) + ')')
     print(f'INFO obsrec-counter steps from one recorded frame to the next (step: count): '
           + ', '.join(f'{k}: {v}' for k, v in sorted(steps.items())))
     return bool(good)
 
 
 def cmd_selftest():
-    """The classifier on frames from counter-graph.sh, rendered by ffmpeg"""
+    """The classifier on frames from counter-graph.sh, rendered by ffmpeg,
+    and the frames' timestamps"""
+    import fractions
     import tempfile
     ok = True
     for w, h, fps in ((1920, 1080, '60'), (1280, 720, '60000/1001')):
@@ -804,8 +1283,64 @@ def cmd_selftest():
                     bad += 1
                     print(f'{w}x{h} frame {i}: {kind} err {err} counter {counter} flash {flash}')
             ok &= bad == 0
+            # the times ffplay shows the frames at: n / fps
+            r = subprocess.run(['ffprobe', '-v', 'error', '-f', 'lavfi', '-i', g, '-read_intervals', '%+#130',
+                                '-show_entries', 'frame=pts_time', '-of', 'csv=p=0'],
+                               capture_output=True, text=True, check=True)
+            t = [float(x) for x in r.stdout.split()]
+            f = fractions.Fraction(fps)
+            late = [(i, x) for i, x in enumerate(t) if abs(x - i / f) > 1e-6]
+            if len(t) < 130 or late:
+                ok = False
+                print(f'{w}x{h} at {fps}: {len(t)} frames, {len(late)} not at n/{fps} s: '
+                      + ', '.join(f'{i}: {x:.6f}' for i, x in late[:6]))
+    # 1280x720 stretched to 1920x1080 (bilinear), as OBS records a 720p
+    # source in its canvas: read as that size, the counter in the band too
+    with tempfile.TemporaryDirectory() as d:
+        png = os.path.join(d, 'pattern.png')
+        subprocess.run([os.path.join(ROOT, 'tools', 'testsrc', 'pattern.py'), png, '1280', '720'],
+                       check=True, capture_output=True)
+        g = subprocess.run([os.path.join(ROOT, 'tools', 'testsrc', 'counter-graph.sh'), png, '1280', '720',
+                            '60000/1001', '60'], check=True, capture_output=True, text=True).stdout.strip()
+        subprocess.run(['ffmpeg', '-v', 'quiet', '-f', 'lavfi', '-i', g, '-vf', 'scale=1920:1080:flags=bilinear',
+                        '-fps_mode', 'passthrough', '-frames:v', '70', os.path.join(d, 'f%04d.png')], check=True)
+        bad = 0
+        for i in range(70):
+            img = Image.open(os.path.join(d, f'f{i + 1:04d}.png')).convert('RGB')
+            kind, err, counter, flash, src = classify_any(img)
+            band = counter_band(img.crop((0, 1080 * 4 // 5, 1920, 1080)), 1920, 1080, src)
+            if not (kind == 'pattern' and err <= TOL and counter == i and band == i
+                    and flash == (i % 60 == 0)):
+                bad += 1
+                print(f'1280x720 stretched, frame {i}: {kind} err {err} counter {counter} band {band} '
+                      f'as {src} flash {flash}')
+        # high counters (bits the canvas geometry misses), drawn on frame 1
+        # at 1280x720 the way counter-graph.sh draws them (B x B squares)
+        from PIL import ImageDraw
+        base = Image.open(os.path.join(d, 'f0002.png')).convert('RGB').resize((1280, 720), Image.BILINEAR)
+        bits720, _, _ = geometry(1280, 720)
+        B = 720 // 27
+        q = B // 4
+        for v in (0xffff, 0xa5c3, 0x8000, 0x7ffe):
+            img = base.copy()
+            dr = ImageDraw.Draw(img)
+            for k, (x0, y0, x1, y1) in enumerate(bits720):
+                dr.rectangle((x0 - q, y0 - q, x0 - q + B - 1, y0 - q + B - 1),
+                             fill=(255, 255, 255) if v >> k & 1 else (0, 0, 0))
+            big = img.resize((1920, 1080), Image.BILINEAR)
+            kind, err, counter, flash, src = classify_any(big)
+            native = classify(big)[2]
+            band = counter_band(big.crop((0, 1080 * 4 // 5, 1920, 1080)), 1920, 1080, src)
+            if not (kind == 'pattern' and counter == v and band == v and src == (1280, 720)
+                    and native in (None, v)):
+                bad += 1
+                print(f'1280x720 stretched, counter {v:#06x}: {kind} err {err} counter {counter} band {band} '
+                      f'as {src}; at the canvas geometry {native}')
+        ok &= bad == 0
     print(f"RESULT selftest {'PASS' if ok else 'FAIL'} (70 frames at 1920x1080 and 1280x720: pattern exact, "
-          "counter = frame index, flash on frames 0 and 60)")
+          "counter = frame index, flash on frames 0 and 60; 130 frames each at n/fps within 1 us; 70 frames "
+          "of 1280x720 stretched to 1920x1080 and 4 high counters drawn on one: counter and band right, "
+          "high counters only as 1280x720 stretched, never misread at the canvas geometry)")
     return ok
 
 
@@ -815,7 +1350,8 @@ HOST = '127.0.0.1'
 def main():
     global HOST
     ap = argparse.ArgumentParser()
-    ap.add_argument('--host', default=os.environ.get('OBS_HOST', '192.168.122.40'))
+    ap.add_argument('--host', default=os.environ.get('OBS_HOST',
+                                                     '127.0.0.1' if LOCAL else '192.168.122.40'))
     ap.add_argument('--events-log', default=os.environ.get('GC573_EVENT_LOG'),
                     help='the event log (UTC, ms); also the guard\'s log (events, soak)')
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -827,10 +1363,18 @@ def main():
     p.add_argument('--reps', type=int, default=2)
     p.add_argument('--only', default='')
     p.add_argument('--record', action='store_true', help='record across the changes')
+    p.add_argument('--no-bridge', action='store_true', help='without tests/obsbridge.py')
     p = sub.add_parser('soak')
     p.add_argument('secs', type=int)
     p.add_argument('--every', type=int, default=180)
     p.add_argument('--shot', type=float, default=2)
+    p.add_argument('--rotation', default='', help='the changes, in order (default: all kinds)')
+    p.add_argument('--keep-source', action='store_true',
+                   help='record the test source that runs; do not restart it first')
+    p.add_argument('--no-restore', action='store_true', help='leave the last source running')
+    p.add_argument('--rec-dir', default='', help='OBS records here, for this soak only')
+    p.add_argument('--no-bridge', action='store_true', help='without tests/obsbridge.py')
+    p.add_argument('--inject', default='', help='T:MODE:RATE, an outside change T s into the recording')
     sub.add_parser('selftest')
     p = sub.add_parser('recheck')
     p.add_argument('file')
@@ -857,9 +1401,14 @@ def main():
         if a.cmd == 'shots':
             ok = cmd_shots(obs, a.n)
         elif a.cmd == 'events':
-            ok = cmd_events(obs, a.reps, [x for x in a.only.split(',') if x], a.record)
+            ok = cmd_events(obs, a.reps, [x for x in a.only.split(',') if x], a.record, not a.no_bridge)
         else:
-            ok = cmd_soak(obs, a.secs, a.every, a.shot)
+            rot = [x for x in a.rotation.split(',') if x]
+            bad = [x for x in rot if x not in ORDER]
+            if bad:
+                sys.exit(f'unknown changes in --rotation: {bad} (known: {ORDER})')
+            ok = cmd_soak(obs, a.secs, a.every, a.shot, rot, a.keep_source, not a.no_restore,
+                          a.rec_dir or None, not a.no_bridge, a.inject or None)
     finally:
         obs.close()
         if guard:

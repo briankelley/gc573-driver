@@ -1,0 +1,274 @@
+2026-11-26T04:45:26.603Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap /home/brian/dev/gc573-driver/.claude/worktrees/ag
+2026-11-26T04:45:26.626Z guard start: run pid 1677005, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-26T04:45:26.672Z camwatch start pid 1677033 (guard): 13 nodes marked: /dev/media0 (HD Pro Webcam C920, serial <serial>); /dev/snd/controlC0 (card 0 C920, serial <serial>); /dev/snd/controlC1 (card 1 Device, serial <serial>); /dev/snd/controlC2 (card 2 PCH, serial -); /dev/snd/hwC2D0 (card 2 PCH, serial -); /dev/snd/pcmC0D0c (card 0 C920, serial <serial>); /dev/snd/pcmC1D0c (card 1 Device, serial <serial>); /dev/snd/pcmC1D0p (card 1 Device, serial <serial>); /dev/snd/pcmC2D0c (card 2 PCH, serial -); /dev/snd/pcmC2D0p (card 2 PCH, serial -); /dev/snd/pcmC2D2c (card 2 PCH, serial -); /dev/video0 (HD Pro Webcam C920, serial <serial>); /dev/video1 (HD Pro Webcam C920, serial <serial>). Not watched: snd/controlC3 (card 3 NVidia: NVIDIA HDMI); snd/controlC4 (card 4 GC573: the GC573); snd/hwC3D0 (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D3p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D7p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D8p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D9p (card 3 NVidia: NVIDIA HDMI); snd/pcmC4D0c (card 4 GC573: the GC573); video2 (the GC573)
+2026-11-26T04:45:26.682Z guard x11 start: DVI-D-0 1920x1080+1920+0; outputs DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T04:45:26.693Z guard audio links: none
+2026-11-26T04:45:26.997Z live stream stop (exit 0)
+2026-11-26T04:45:27.427Z show mode DVI-D-0 1920x1080@60
+2026-11-26T04:45:27.732Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1677175 "ffplay"
+2026-11-26T04:45:27.844Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1677175 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:45:27.928Z show player start 1920x1080@60 (pid 1677175)
+2026-11-26T04:45:27.964Z show player stop (pid 1677175)
+2026-11-26T04:45:27.985Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:45:27.985Z guard x11 destroy 0x3400007
+2026-11-26T04:45:28.230Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:45:28.230Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:45:28.232Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:45:28.232Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:45:28.232Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:45:28.252Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:45:28.389Z avsync mode DVI-D-0 1920x1080@60
+2026-11-26T04:45:28.619Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1677655 ""
+2026-11-26T04:45:28.695Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1677655 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:45:28.697Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:45:28.797Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1677655)
+2026-11-26T04:45:32.163Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -t 10 -v -V /dev/v4l/by-path/pci-0000:
+2026-11-26T04:45:42.403Z live stream stop (exit 0)
+2026-11-26T04:45:42.630Z live apps: ffmpeg records 1920x1080@60 yuyv
+2026-11-26T04:45:54.848Z live apps: ffmpeg records 1920x1080@60 nv12
+2026-11-26T04:46:07.125Z avsync player stop (pid 1677655)
+2026-11-26T04:46:07.189Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:46:07.189Z guard x11 destroy 0x3400007
+2026-11-26T04:46:07.209Z guard audio links: none
+2026-11-26T04:46:07.259Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:46:07.393Z show mode DVI-D-0 1280x720@59.94
+2026-11-26T04:46:07.599Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T04:46:08.133Z guard x11 create 0x3400007 1280x720+1920+0 override 1 ffplay/ffplay pid 1681133 "ffplay"
+2026-11-26T04:46:08.297Z guard x11 map 0x3400007 1280x720+1920+0 ffplay/ffplay pid 1681133 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-26T04:46:08.411Z show player start 1280x720@59.94 (pid 1681133)
+2026-11-26T04:46:08.471Z show player stop (pid 1681133)
+2026-11-26T04:46:08.533Z guard x11 unmap 0x3400007 1280x720+1920+0
+2026-11-26T04:46:08.533Z guard x11 destroy 0x3400007
+2026-11-26T04:46:08.790Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:08.792Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:08.793Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:08.801Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:46:08.923Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-26T04:46:09.220Z guard x11 create 0x3400007 1280x720+1920+0 override 1 ffplay/ffplay pid 1681772 "ffplay"
+2026-11-26T04:46:09.331Z guard x11 map 0x3400007 1280x720+1920+0 ffplay/ffplay pid 1681772 "gc573-avsync": inside DVI-D-0 1280x720+1920+0
+2026-11-26T04:46:09.357Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:46:09.437Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 1681772)
+2026-11-26T04:46:12.502Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -t 10 -v -V /dev/v4l/by-path/pci-0000:
+2026-11-26T04:46:22.752Z live stream stop (exit 0)
+2026-11-26T04:46:22.969Z live apps: ffmpeg records 1280x720@59.94 yuyv
+2026-11-26T04:46:26.702Z guard ok: audio 1197 polls, longest interval 51 ms; windows: test windows created 4 (0 created outside DVI-D-0, unmapped), maps 4, maps inside DVI-D-0 4, unmapped geometries outside 0, output changes 1, breaches 0, X events 49
+2026-11-26T04:46:26.810Z camwatch ok 13 nodes marked; opens: 8 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:46:34.587Z avsync player stop (pid 1681772)
+2026-11-26T04:46:34.606Z guard x11 unmap 0x3400007 1280x720+1920+0
+2026-11-26T04:46:34.606Z guard x11 destroy 0x3400007
+2026-11-26T04:46:34.626Z guard audio links: none
+2026-11-26T04:46:34.710Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:46:34.844Z show mode DVI-D-0 1920x1080@60
+2026-11-26T04:46:35.015Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T04:46:35.531Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1684064 "ffplay"
+2026-11-26T04:46:35.750Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1684064 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:46:35.867Z show player start 1920x1080@60 (pid 1684064)
+2026-11-26T04:46:35.918Z show player stop (pid 1684064)
+2026-11-26T04:46:35.984Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:46:35.984Z guard x11 destroy 0x3400007
+2026-11-26T04:46:36.200Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:36.202Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:36.203Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:36.224Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:46:36.366Z avsync mode DVI-D-0 1920x1080@60
+2026-11-26T04:46:36.673Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1684645 "ffplay"
+2026-11-26T04:46:36.730Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:46:36.749Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1684645 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:46:36.837Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1684645)
+2026-11-26T04:46:37.187Z live apps: ffmpeg records 30 s across a change: sleep
+2026-11-26T04:46:45.193Z live apps: change sleep
+2026-11-26T04:46:45.221Z avsync player stop (pid 1684645)
+2026-11-26T04:46:45.261Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:46:45.261Z guard x11 destroy 0x3400007
+2026-11-26T04:46:45.297Z guard audio links: none
+2026-11-26T04:46:45.358Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:46:45.369Z live output off DVI-D-0
+2026-11-26T04:46:45.502Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T04:46:50.670Z show mode DVI-D-0 1920x1080@60
+2026-11-26T04:46:50.813Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T04:46:51.404Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1685793 "ffplay"
+2026-11-26T04:46:51.552Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1685793 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:46:51.650Z show player start 1920x1080@60 (pid 1685793)
+2026-11-26T04:46:51.664Z show player stop (pid 1685793)
+2026-11-26T04:46:51.737Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:46:51.737Z guard x11 destroy 0x3400007
+2026-11-26T04:46:51.968Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:51.969Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:51.970Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:51.970Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:46:51.977Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:46:52.104Z avsync mode DVI-D-0 1920x1080@60
+2026-11-26T04:46:52.529Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1686296 "ffplay"
+2026-11-26T04:46:52.695Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1686296 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:46:52.711Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:46:52.790Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1686296)
+2026-11-26T04:47:10.930Z avsync player stop (pid 1686296)
+2026-11-26T04:47:10.982Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:47:10.982Z guard x11 destroy 0x3400007
+2026-11-26T04:47:11.000Z guard audio links: none
+2026-11-26T04:47:11.056Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:47:11.189Z show mode DVI-D-0 1920x1080@60
+2026-11-26T04:47:11.464Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1688491 "ffplay"
+2026-11-26T04:47:11.646Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1688491 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:47:11.763Z show player start 1920x1080@60 (pid 1688491)
+2026-11-26T04:47:11.803Z show player stop (pid 1688491)
+2026-11-26T04:47:11.820Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:47:11.820Z guard x11 destroy 0x3400007
+2026-11-26T04:47:12.048Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:12.051Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:12.051Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:12.059Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:47:12.197Z avsync mode DVI-D-0 1920x1080@60
+2026-11-26T04:47:12.358Z guard x11 create 0x3400002 1920x1080+1920+0 override 1 ffplay/ffplay pid 1688976 ""
+2026-11-26T04:47:12.359Z guard x11 destroy 0x3400002
+2026-11-26T04:47:12.483Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1688976 ""
+2026-11-26T04:47:12.652Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:47:12.661Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1688976 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:47:12.757Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1688976)
+2026-11-26T04:47:12.796Z live apps: ffmpeg records 30 s across a change: relock
+2026-11-26T04:47:20.807Z live apps: change relock
+2026-11-26T04:47:20.833Z avsync player stop (pid 1688976)
+2026-11-26T04:47:20.869Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:47:20.869Z guard x11 destroy 0x3400007
+2026-11-26T04:47:20.869Z guard audio links: none
+2026-11-26T04:47:20.973Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:47:20.983Z live edid set
+2026-11-26T04:47:21.650Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T04:47:21.947Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T04:47:22.751Z show mode DVI-D-0 1920x1080@60
+2026-11-26T04:47:23.114Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1689951 "ffplay"
+2026-11-26T04:47:23.253Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 1689951 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:47:23.364Z show player start 1920x1080@60 (pid 1689951)
+2026-11-26T04:47:23.392Z show player stop (pid 1689951)
+2026-11-26T04:47:25.428Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-26T04:47:25.428Z guard x11 destroy 0x4000007
+2026-11-26T04:47:25.527Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:25.527Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:25.527Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:25.527Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:25.540Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:47:25.620Z avsync mode DVI-D-0 1920x1080@60
+2026-11-26T04:47:25.910Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1690572 "ffplay"
+2026-11-26T04:47:26.063Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 1690572 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:47:26.080Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:47:26.138Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1690572)
+2026-11-26T04:47:26.711Z guard ok: audio 2395 polls, longest interval 51 ms; windows: test windows created 13 (0 created outside DVI-D-0, unmapped), maps 12, maps inside DVI-D-0 12, unmapped geometries outside 0, output changes 6, breaches 0, X events 187
+2026-11-26T04:47:27.529Z camwatch ok 13 nodes marked; opens: 22 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:47:46.462Z avsync player stop (pid 1690572)
+2026-11-26T04:47:46.507Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-26T04:47:46.507Z guard x11 destroy 0x4000007
+2026-11-26T04:47:46.523Z guard audio links: none
+2026-11-26T04:47:46.591Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:47:46.620Z live edid set
+2026-11-26T04:47:47.296Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T04:47:47.540Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T04:47:48.419Z show mode DVI-D-0 1920x1080@60
+2026-11-26T04:47:48.772Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1693074 "ffplay"
+2026-11-26T04:47:48.924Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1693074 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:47:49.027Z show player start 1920x1080@60 (pid 1693074)
+2026-11-26T04:47:49.051Z show player stop (pid 1693074)
+2026-11-26T04:47:49.126Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:47:49.126Z guard x11 destroy 0x3400007
+2026-11-26T04:47:49.363Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:49.364Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:49.365Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:49.365Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:49.366Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:49.387Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:47:49.522Z avsync mode DVI-D-0 1920x1080@60
+2026-11-26T04:47:49.811Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1693564 ""
+2026-11-26T04:47:49.956Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1693564 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:47:49.980Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:47:50.068Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1693564)
+2026-11-26T04:47:50.107Z live apps: ffmpeg records 30 s across a change: rate
+2026-11-26T04:47:58.114Z live apps: change rate
+2026-11-26T04:47:58.164Z avsync player stop (pid 1693564)
+2026-11-26T04:47:58.206Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:47:58.206Z guard x11 destroy 0x3400007
+2026-11-26T04:47:58.246Z guard audio links: none
+2026-11-26T04:47:58.288Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:47:58.424Z show mode DVI-D-0 1920x1080@59.94
+2026-11-26T04:47:58.949Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1694457 "ffplay"
+2026-11-26T04:47:59.067Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1694457 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:47:59.183Z show player start 1920x1080@59.94 (pid 1694457)
+2026-11-26T04:47:59.233Z show player stop (pid 1694457)
+2026-11-26T04:47:59.253Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:47:59.253Z guard x11 destroy 0x3400007
+2026-11-26T04:47:59.490Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:59.490Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:59.492Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:59.492Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:59.492Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:47:59.498Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:47:59.597Z avsync mode DVI-D-0 1920x1080@59.94
+2026-11-26T04:47:59.858Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1694940 "ffplay"
+2026-11-26T04:47:59.999Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:48:00.001Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1694940 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:48:00.094Z avsync player start 1920x1080@59.94 pattern amplitude 0.5 (pid 1694940)
+2026-11-26T04:48:23.631Z avsync player stop (pid 1694940)
+2026-11-26T04:48:23.712Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:48:23.712Z guard x11 destroy 0x3400007
+2026-11-26T04:48:23.751Z guard audio links: none
+2026-11-26T04:48:23.767Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:48:23.906Z show mode DVI-D-0 1920x1080@60
+2026-11-26T04:48:24.294Z guard x11 create 0x3400002 1920x1080+1920+0 override 1 ffplay/ffplay pid 1697689 ""
+2026-11-26T04:48:24.294Z guard x11 destroy 0x3400002
+2026-11-26T04:48:24.409Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1697689 "ffplay"
+2026-11-26T04:48:24.535Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1697689 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:48:24.619Z show player start 1920x1080@60 (pid 1697689)
+2026-11-26T04:48:24.633Z show player stop (pid 1697689)
+2026-11-26T04:48:24.663Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:48:24.663Z guard x11 destroy 0x3400007
+2026-11-26T04:48:24.848Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:48:24.848Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:48:24.848Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:48:24.848Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:48:24.851Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:48:24.933Z avsync mode DVI-D-0 1920x1080@60
+2026-11-26T04:48:25.220Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1698189 "ffplay"
+2026-11-26T04:48:25.364Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:48:25.383Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1698189 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:48:25.476Z avsync player start 1920x1080@60 pattern amplitude 0.5 (pid 1698189)
+2026-11-26T04:48:25.514Z live apps: ffmpeg records 30 s across a change: res
+2026-11-26T04:48:26.719Z guard ok: audio 3593 polls, longest interval 51 ms; windows: test windows created 20 (0 created outside DVI-D-0, unmapped), maps 18, maps inside DVI-D-0 18, unmapped geometries outside 0, output changes 8, breaches 0, X events 267
+2026-11-26T04:48:27.851Z camwatch ok 13 nodes marked; opens: 36 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T04:48:33.523Z live apps: change res
+2026-11-26T04:48:33.568Z avsync player stop (pid 1698189)
+2026-11-26T04:48:33.605Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:48:33.605Z guard x11 destroy 0x3400007
+2026-11-26T04:48:33.622Z guard audio links: none
+2026-11-26T04:48:33.691Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:48:33.824Z show mode DVI-D-0 1280x720@59.94
+2026-11-26T04:48:34.006Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T04:48:34.511Z guard x11 create 0x4400007 1280x720+1920+0 override 1 ffplay/ffplay pid 1699058 "ffplay"
+2026-11-26T04:48:34.677Z guard x11 map 0x4400007 1280x720+1920+0 ffplay/ffplay pid 1699058 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-26T04:48:34.779Z show player start 1280x720@59.94 (pid 1699058)
+2026-11-26T04:48:34.792Z show player stop (pid 1699058)
+2026-11-26T04:48:34.866Z guard x11 unmap 0x4400007 1280x720+1920+0
+2026-11-26T04:48:34.866Z guard x11 destroy 0x4400007
+2026-11-26T04:48:35.054Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:48:35.054Z camwatch INFO open /dev/snd/controlC0 (card 0 C920, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:48:35.055Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:48:35.055Z camwatch INFO open /dev/snd/controlC1 (card 1 Device, serial <serial>) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:48:35.055Z camwatch INFO open /dev/snd/controlC2 (card 2 PCH, serial -) by pid 2201 pipewire (PipeWire)
+2026-11-26T04:48:35.058Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:48:35.138Z avsync mode DVI-D-0 1280x720@59.94
+2026-11-26T04:48:35.495Z guard x11 create 0x3400007 1280x720+1920+0 override 1 ffplay/ffplay pid 1699650 "ffplay"
+2026-11-26T04:48:35.615Z guard x11 map 0x3400007 1280x720+1920+0 ffplay/ffplay pid 1699650 "gc573-avsync": inside DVI-D-0 1280x720+1920+0
+2026-11-26T04:48:35.624Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-26T04:48:35.720Z avsync player start 1280x720@59.94 pattern amplitude 0.5 (pid 1699650)
+2026-11-26T04:49:04.093Z avsync player stop (pid 1699650)
+2026-11-26T04:49:04.122Z guard x11 unmap 0x3400007 1280x720+1920+0
+2026-11-26T04:49:04.122Z guard x11 destroy 0x3400007
+2026-11-26T04:49:04.150Z guard audio links: none
+2026-11-26T04:49:04.216Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-26T04:49:04.356Z show mode DVI-D-0 1920x1080@60
+2026-11-26T04:49:04.510Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T04:49:05.018Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1702860 "ffplay"
+2026-11-26T04:49:05.171Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1702860 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T04:49:05.295Z show player start 1920x1080@60 (pid 1702860)
+2026-11-26T04:49:05.318Z show player stop (pid 1702860)
+2026-11-26T04:49:05.391Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T04:49:05.391Z guard x11 destroy 0x3400007
+2026-11-26T04:49:05.725Z guard end: run pid 1677005 gone; audio 4368 polls, longest interval 51 ms; windows: test windows created 23 (0 created outside DVI-D-0, unmapped), maps 21, maps inside DVI-D-0 21, unmapped geometries outside 0, output changes 10, breaches 0, X events 316; no breach
+2026-11-26T04:49:06.086Z camwatch end run pid 1677005 gone; opens: 41 info, 0 breach, 0 other, 0 unknown, 0 test

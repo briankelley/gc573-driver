@@ -1,0 +1,37 @@
+2026-11-26T05:02:53.208Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-26T05:02:53.212Z guard start: run pid 1741503, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-26T05:02:53.262Z camwatch start pid 1741530 (guard): 13 nodes marked: /dev/media0 (HD Pro Webcam C920, serial <serial>); /dev/snd/controlC0 (card 0 C920, serial <serial>); /dev/snd/controlC1 (card 1 Device, serial <serial>); /dev/snd/controlC2 (card 2 PCH, serial -); /dev/snd/hwC2D0 (card 2 PCH, serial -); /dev/snd/pcmC0D0c (card 0 C920, serial <serial>); /dev/snd/pcmC1D0c (card 1 Device, serial <serial>); /dev/snd/pcmC1D0p (card 1 Device, serial <serial>); /dev/snd/pcmC2D0c (card 2 PCH, serial -); /dev/snd/pcmC2D0p (card 2 PCH, serial -); /dev/snd/pcmC2D2c (card 2 PCH, serial -); /dev/video0 (HD Pro Webcam C920, serial <serial>); /dev/video1 (HD Pro Webcam C920, serial <serial>). Not watched: snd/controlC3 (card 3 NVidia: NVIDIA HDMI); snd/hwC3D0 (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D3p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D7p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D8p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D9p (card 3 NVidia: NVIDIA HDMI)
+2026-11-26T05:02:53.288Z guard x11 start: DVI-D-0 1280x720+1920+0; outputs DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T05:02:53.321Z guard audio links: none
+2026-11-26T05:02:53.650Z live stream stop (exit 0)
+2026-11-26T05:02:53.692Z live driver load
+2026-11-26T05:02:53.892Z show mode DVI-D-0 1920x1080@60
+2026-11-26T05:02:54.106Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T05:02:54.702Z guard x11 create 0x3400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1741673 ""
+2026-11-26T05:02:54.870Z guard x11 map 0x3400007 1920x1080+1920+0 ffplay/ffplay pid 1741673 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T05:02:54.955Z show player start 1920x1080@60 (pid 1741673)
+2026-11-26T05:02:55.477Z show player stop (pid 1741673)
+2026-11-26T05:02:55.530Z guard x11 unmap 0x3400007 1920x1080+1920+0
+2026-11-26T05:02:55.530Z guard x11 destroy 0x3400007
+2026-11-26T05:02:55.580Z live output off DVI-D-0
+2026-11-26T05:02:55.766Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T05:02:55.980Z show mode DVI-D-0 1920x1080@60
+2026-11-26T05:02:56.059Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T05:02:56.574Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1743411 "ffplay"
+2026-11-26T05:02:56.737Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 1743411 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T05:02:56.849Z show player start 1920x1080@60 (pid 1743411)
+2026-11-26T05:03:11.058Z show player stop (pid 1743411)
+2026-11-26T05:03:11.079Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-26T05:03:11.079Z guard x11 destroy 0x4200007
+2026-11-26T05:03:11.161Z live output off DVI-D-0
+2026-11-26T05:03:11.309Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-26T05:03:11.522Z show mode DVI-D-0 1920x1080@60
+2026-11-26T05:03:11.609Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-26T05:03:12.120Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 1780297 "ffplay"
+2026-11-26T05:03:12.350Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 1780297 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-26T05:03:12.457Z show player start 1920x1080@60 (pid 1780297)
+2026-11-26T05:03:16.693Z show player stop (pid 1780297)
+2026-11-26T05:03:16.714Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-26T05:03:16.714Z guard x11 destroy 0x4200007
+2026-11-26T05:03:17.285Z camwatch end run pid 1741503 gone; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T05:03:17.321Z guard end: run pid 1741503 gone; audio 472 polls, longest interval 52 ms; windows: test windows created 3 (0 created outside DVI-D-0, unmapped), maps 3, maps inside DVI-D-0 3, unmapped geometries outside 0, output changes 5, breaches 0, X events 60; no breach

@@ -1,0 +1,10 @@
+gc573-dev	prepare	PASS	override 0000:07:00.0 -> vfio-pci saved, card not bound to gc573, nothing installed
+gc573-dev	pw-install	PASS	the udev rule lifted, no override: gc573 has the card and WirePlumber holds it (14105 wireplumber )
+gc573-dev	pw-update	PASS	install.sh again while WirePlumber held the card: the card taken from the old gc573, which unloaded; the new one has the card, WirePlumber holds it again
+gc573-dev	holder-refused	PASS	sleep (pid 18984) with /dev/video0 open: install.sh and uninstall.sh without --yes exit 1 and name it; the card stays with gc573, still installed
+gc573-dev	holder-yes	FAIL	exit 0; sleep running: yes; rmmod: rmmod: ERROR: Module gc573 is in use
+gc573-dev	pw-uninstall	PASS	uninstall.sh without --yes while WirePlumber held the card: the card taken from gc573, gc573 unloaded, nothing left
+gc573-dev	pw-stream-refused	FAIL	refused without --yes: no (exit 0/0, PCM RUNNING/closed/closed, pid 1150); --yes: exit 0/0, PCM RUNNING; left ''; driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573 / driver:  override: (null) persisted:  loaded: no noload: no state:  dkms:  video:  alsa: 
+gc573-dev	pw-this-boot	PASS	override saved, --this-boot while WirePlumber held the card, then again (an update): taken from the old gc573, the new one has the card for this boot, held again
+gc573-dev	pw-uninstall-this-boot	PASS	uninstall.sh while WirePlumber held the card: the card taken from gc573, the saved override loaded again, nothing left
+gc573-dev	cleanup	PASS	no override, driverctl purged, rebooted

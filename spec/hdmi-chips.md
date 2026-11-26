@@ -139,5 +139,30 @@ A host GPU output (GT 710, DVI-D, through a DVI-to-HDMI cable) feeds HDMI IN. Fa
 - One polling work item per chip (or one combined), every 50 ms. Event registers are write-1-to-clear: read, then write back the value read (exceptions per chip chapter).
 - All observed I2C timeouts were on the IT6805 bank register; retry and bank-resync rules in `i2c.md`.
 - On unload RD writes nothing to the chips or the GPIO register: the chips keep running and HPD stays as it was. (`T3/S36`; C) Whether a driver should drop HPD or enter power saving on remove is a design choice; untested.
-- Report lock and unlock as `V4L2_EVENT_SOURCE_CHANGE`. Report DV timings from the IT6805 timing registers plus FPGA 0x1010. Stop streaming on unlock.
+- Report lock and unlock as `V4L2_EVENT_SOURCE_CHANGE`. Report DV timings from the IT6805 timing registers plus FPGA 0x1010. What a running stream does is driver policy (below).
 - The chips are separate I2C devices on the bus-1 adapter. Implement them as v4l2 subdevices or internal helpers. All their I2C goes through the bus-1 adapter.
+
+## Lock policy
+Driver policy (design decision, not a hardware fact; `src/gc573_hdmi.c` gc573_hdmi_publish):
+- The input is locked, and DV timings are reported, only when the IT6805 is STABLE with the AV mute released (`hdmi-it6805.md` §7.7, §7.10) and the FPGA's own measurement is valid and agrees with the IT6805:
+  - 0x1004[1:0] = 3 (`regmap.md`);
+  - 0x1008 = the IT6805's active width (halved for a dual-pixel bus and again for DDR), and 0x100c[15:0] = its active height for a progressive input;
+  - 0x1010 in range (5 to 121 Hz), within 0.02 % of its value one poll earlier (two polls in a row agree), and within 5 % of the period the IT6805's coarse clock gives for the measured frame (§8.3 of `hdmi-it6805.md`: those counters are good for coarse decisions only).
+- There is no lock without it, however long the IT6805 has been stable. The rate comes from 0x1010 only, never from the IT6805's clock counters, which are about 1 % off (one count is 1.2 % at 1080p).
+- Why: at a host boot (2026-11-25, PC source arriving while X started), 0x1004 read 1 with 0x1008/0x100c valid, so the check failed for the 20 polls the earlier policy waited, and went on failing until the source set its mode again (0x1010's own value was not logged). That policy then locked on the IT6805's clock alone and reported 1080p60 as a 146.823 MHz custom mode, 59.32 Hz. 0x1004 = 1 is not documented (`regmap.md` has 3 and 2), nor is a way to re-arm the measurement: open question 40.
+- After 40 polls (about 2.3 s) without a valid measurement the driver logs it once per stable entry (`dev_warn`, FPGA registers included) and counts it (debugfs hdmi `fpga_waits`).
+- A lock holds while the IT6805 stays stable at the same active size. Its timings change only when a valid frame period moves by more than 0.05 %, half the 1000/1001 step.
+- Test: the experiment parameter `exp_fpga_invalid` (polls after each stable entry for which the poll sees 0x1004[1:0] = 1, as at that boot, and 0x1010 = 0) and `tests/live.sh fpgawait`.
+
+## Stream policy on input changes
+Driver policy (design decision, not a hardware fact; also in the header comment of `src/gc573_video.c`):
+- Every lock, loss and mode change raises `V4L2_EVENT_SOURCE_CHANGE` at once. An application that handles it stops streaming, queries and sets the timings, and starts again.
+- A running stream also follows the input by itself, for applications that ignore the event:
+  - input lost: the stream restarts free-running (black at 60 Hz, `video-dma.md`);
+  - input locked in the stream's timings: the stream restarts live;
+  - input locked in other timings: the stream is held for up to 1 s: the hardware is stopped, the buffers stay queued, no frames arrive. If the input is lost or locks in the stream's timings within that second, the stream restarts as above. If the other timings last the whole second, the stream fails: its buffers are returned with an error and the queue is marked failed.
+- Why the hold: a source that changes its mode can lock briefly in another mode first. After an EDID change the PC source came up in the EDID's preferred mode, 1080p60, until the harness set 720p. The driver locked at 1080p for 138 ms (host soak, `tests/logs/20261125-215755_6.8.0-151-generic_live.log`, 23:11:06Z), and `tests/live.sh blip` reproduces it (224 ms). Failing the stream at that lock ended OBS's capture for good. The lock in a passing mode comes 1.1–1.7 s after the mode is set, so a 1 s hold rides out a second mode set up to 2.1–2.7 s after the first. (`E`; C for the measurements)
+- The hold does not free-run: free-running is documented with no input (`video-dma.md`). With a locked input in other timings it is untested.
+- Colorimetry: G_FMT, TRY_FMT and S_FMT report, for each pixel format, the colorimetry of the last input that locked since the module loaded. Its colour space and range come from the AVI InfoFrame (`hdmi-it6805.md` AVI table). The YUV outputs' encoding is the input's for YCbCr input, and by size for RGB input (BT.601 below 720 lines). The RGB→YUV CSC uses that encoding. All of it follows that input through a loss and a hold. A lock in another colorimetry switches it at that lock, with the lock's `V4L2_EVENT_SOURCE_CHANGE`. Before the first lock since load it is the M2 setup: BT.709, limited-range YUV, full-range RGB.
+  - Free-run frames during a loss are black in any of these. The no-input YUV→RGB CSC stays limited-range BT.709, as in RD's no-input setup (`T1/S02`), and the free-run black comes out of it as RGB 0 (`video-dma.md`). The RGB→YUV CSC maps RGB 0 to Y 16, Cb/Cr 128 in any encoding, tested with BT.601 at 720x480 (`tests/live.sh colorimetry`). RGB outputs carry 0 even where a limited-range RGB input made their range limited.
+  - Why: GStreamer's v4l2src (1.24.2) sets its format again at every event: STREAMOFF, REQBUFS 0, QUERY_DV_TIMINGS, then TRY_FMT and S_FMT. It turns a changed colorimetry into new caps, which matroskamux refuses ("Caps changes are not supported by Matroska"). With the M2 colorimetry during a loss, its recording ended at the source's sleep (`tests/logs/20261126-052557_6.8.0-151-generic_live.log`). A real change of size or rate still ends it. (`E`; C)

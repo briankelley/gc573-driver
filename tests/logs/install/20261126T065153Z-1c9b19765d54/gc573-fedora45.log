@@ -1,0 +1,35 @@
+vm: gc573-fedora45  ref: 1c9b19765d54  date: 2026-11-26T06:56:03Z
+distro: Fedora Linux 45 (Cloud Edition)
+running: 7.3.4-300.fc45.x86_64
+kernels with headers: 7.3.4-300.fc45.x86_64
+=== headers-missing
+install.sh: no headers for the running kernel 7.3.4-300.fc45.x86_64 (/lib/modules/7.3.4-300.fc45.x86_64/build). Install them with: sudo dnf install kernel-devel-7.3.4-300.fc45.x86_64, then run this again
+RESULT	headers-missing	PASS	exit 1; Install them with: sudo dnf install kernel-devel-7.3.4-300.fc45.x86_64; nothing installed
+=== dkms-missing
+RESULT	dkms-missing	SKIP	dkms is in /usr/bin here
+=== install
+building gc573 0.1 for 7.3.4-300.fc45.x86_64 with DKMS (this takes a minute)
+installed: /lib/modules/7.3.4-300.fc45.x86_64/extra/gc573.ko.xz
+no GC573 card found: the driver loads by itself once the card is present
+gc573/0.1, 7.3.4-300.fc45.x86_64, x86_64: installed
+RESULT	install	PASS	installed for 1 of 1 kernels with headers: /lib/modules/7.3.4-300.fc45.x86_64/extra/gc573.ko.xz
+RESULT	install-noload	PASS	not loaded: no card
+RESULT	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/7.3.4-300.fc45.x86_64/extra/gc573.ko.xz
+=== autoinstall
+RESULT	autoinstall	SKIP	no second kernel with headers, or no Debian-style kernel hook
+running: 7.3.4-300.fc45.x86_64
+=== reboot
+RESULT	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+=== modprobe
+gc573                 192512  0
+videobuf2_v4l2         45056  1 gc573
+videobuf2_common      106496  2 videobuf2_v4l2,gc573
+v4l2_dv_timings        49152  1 gc573
+videodev              450560  2 videobuf2_v4l2,gc573
+snd_pcm               221184  1 gc573
+snd                   159744  5 snd_seq,snd_seq_device,snd_timer,gc573,snd_pcm
+RESULT	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+=== uninstall
+removing gc573 0.1 from DKMS (all kernels)
+done
+RESULT	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing

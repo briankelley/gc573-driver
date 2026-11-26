@@ -5,9 +5,13 @@
  * gc573-aud.c -lasound -lm (needs libasound2-dev).
  *
  * gc573-aud [-D PCM] [-t SECS] [-p FRAMES] [-b FRAMES] [-o FILE] [-v]
- *           [-M FILE] [-V DEV] [-x SECS] [-s]
+ *           [-M FILE] [-V DEV [-P]] [-x SECS] [-s]
  *
- *   -D PCM     ALSA PCM (default hw:CARD=GC573,DEV=0)
+ *   -D PCM     ALSA PCM (default hw:CARD=/dev/snd/by-path/pci-BDF,DEV=0 for
+ *              the device gc573 has, from sysfs). Never hw:CARD=GC573:
+ *              alsa-lib finds a card by its id by opening the control node
+ *              of every card before it (snd_card_get_index), a webcam's
+ *              among them; a path or an index it opens alone
  *   -t SECS    capture time (default 5)
  *   -p FRAMES  period size (default 480, one hardware period: every
  *              period then updates the timestamp), -b buffer (default 9600)
@@ -21,7 +25,11 @@
  *   -V DEV     also capture video from DEV: the current DV timings, YUYV,
  *              4 buffers; one line per frame "V seq=N ts_ns=T y=MEAN"
  *              (mean luma of a 16 x 9 grid; vb2 timestamp, CLOCK_MONOTONIC)
- *   -x SECS    on an overrun (-EPIPE) recover and go on, at most SECS
+ *   -P         with -V, the picture of avsync.sh --pattern and show.sh
+ *              --counter (tools/testsrc/counter-graph.sh): y is the mean
+ *              luma of the flash box, and "c=N" the frame counter, -1 when
+ *              a bit is neither black nor white (a torn or blended frame)
+ *   -x SECS   on an overrun (-EPIPE) recover and go on, at most SECS
  *              apart, instead of failing at once
  *   -s SECS    stop/start: drop and restart the stream every SECS; each
  *              start prints "START at=SECS frames=N" (frames read so far)
@@ -31,6 +39,7 @@
  * 0 = ran, 1 = a read failed, 2 = usage or setup error.
  */
 #include <alsa/asoundlib.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -53,6 +62,7 @@ static int vfd = -1;
 static void *vbuf[NBUFS];
 static size_t vlen[NBUFS];
 static unsigned int vw, vh, vstride;
+static int pattern;
 
 static uint64_t now_ns(void)
 {
@@ -130,6 +140,45 @@ static int video_open(const char *dev)
 	return 0;
 }
 
+/* Mean luma of [x0, x1) x [y0, y1) in a YUYV frame, every other pixel */
+static unsigned int box_luma(const uint8_t *p, unsigned int x0,
+			     unsigned int y0, unsigned int x1, unsigned int y1)
+{
+	unsigned long sum = 0, n = 0;
+	unsigned int x, y;
+
+	for (y = y0; y < y1; y += 2)
+		for (x = x0; x < x1; x += 2, n++)
+			sum += p[y * vstride + x * 2];
+	return n ? sum / n : 0;
+}
+
+/*
+ * The counter picture (counter-graph.sh; tests/obs-events.py geometry()):
+ * bit k a square of B = H/27 pixels at x = W/16 + k * 3B/2, y = 4H/5 +
+ * (H/5 - B)/2, read B/4 inside its edges; the flash box from 11W/16 to
+ * 15W/16 on the same rows. Returns the counter, or -1 if a bit is neither
+ * black nor white; *flash: the box's mean luma
+ */
+static int read_counter(const uint8_t *p, unsigned int *flash)
+{
+	unsigned int b = vh / 27, step = b * 3 / 2, x0 = vw / 16, q = b / 4;
+	unsigned int y0 = vh * 4 / 5 + (vh - vh * 4 / 5 - b) / 2;
+	int k, c = 0;
+
+	*flash = box_luma(p, vw * 11 / 16 + 2 * q, y0, vw * 15 / 16 - 2 * q,
+			  y0 + b);
+	for (k = 0; k < 16; k++) {
+		unsigned int y = box_luma(p, x0 + k * step + q, y0 + q,
+					  x0 + k * step + b - q, y0 + b - q);
+
+		if (y >= 64 && y <= 192)
+			return -1;
+		c |= (y > 128) << k;
+	}
+	return c;
+}
+
 /* Dequeue every completed frame, print it, requeue it */
 static int video_service(void)
 {
@@ -140,6 +189,7 @@ static int video_service(void)
 		};
 		const uint8_t *p;
 		unsigned int x, y, sum = 0;
+		unsigned long long ts;
 
 		if (xioctl(vfd, VIDIOC_DQBUF, &b)) {
 			if (errno == EAGAIN)
@@ -148,13 +198,22 @@ static int video_service(void)
 			return -1;
 		}
 		p = vbuf[b.index];
-		for (y = 0; y < 9; y++)
-			for (x = 0; x < 16; x++)
-				sum += p[(vh * (2 * y + 1) / 18) * vstride +
-					 (vw * (2 * x + 1) / 32) * 2];
-		printf("V seq=%u ts_ns=%llu y=%u\n", b.sequence,
-		       b.timestamp.tv_sec * 1000000000ull +
-		       b.timestamp.tv_usec * 1000ull, sum / 144);
+		ts = b.timestamp.tv_sec * 1000000000ull +
+		     b.timestamp.tv_usec * 1000ull;
+		if (pattern) {
+			int c = read_counter(p, &y);
+
+			printf("V seq=%u ts_ns=%llu y=%u c=%d\n", b.sequence,
+			       ts, y, c);
+		} else {
+			for (y = 0; y < 9; y++)
+				for (x = 0; x < 16; x++)
+					sum += p[(vh * (2 * y + 1) / 18) *
+						 vstride +
+						 (vw * (2 * x + 1) / 32) * 2];
+			printf("V seq=%u ts_ns=%llu y=%u\n", b.sequence, ts,
+			       sum / 144);
+		}
 		if (xioctl(vfd, VIDIOC_QBUF, &b)) {
 			perror("video: QBUF");
 			return -1;
@@ -175,6 +234,28 @@ static int bar_open(const char *path)
 		return -1;
 	bar = p;
 	return 0;
+}
+
+/* hw:CARD=/dev/snd/by-path/pci-BDF,DEV=0 for the first device bound to
+ * gc573 (sysfs only: no device node is opened to find it) */
+static const char *default_pcm(void)
+{
+	static char name[300];
+	struct dirent *d;
+	DIR *dir = opendir("/sys/bus/pci/drivers/gc573");
+
+	if (!dir)
+		return NULL;
+	while ((d = readdir(dir))) {
+		if (strncmp(d->d_name, "0000:", 5) == 0) {
+			snprintf(name, sizeof(name),
+				 "hw:CARD=/dev/snd/by-path/pci-%s,DEV=0", d->d_name);
+			closedir(dir);
+			return name;
+		}
+	}
+	closedir(dir);
+	return NULL;
 }
 
 static snd_pcm_t *pcm_open(const char *dev, snd_pcm_uframes_t period,
@@ -230,7 +311,7 @@ static snd_pcm_t *pcm_open(const char *dev, snd_pcm_uframes_t period,
 
 int main(int argc, char **argv)
 {
-	const char *dev = "hw:CARD=GC573,DEV=0", *out = NULL, *vdev = NULL;
+	const char *dev = NULL, *out = NULL, *vdev = NULL;
 	snd_pcm_uframes_t period = 480, buffer = 9600;
 	double secs = 5, xrun_gap = -1, last_xrun = -1e9;
 	unsigned long long read_total = 0, nxrun = 0, nrestart = 0;
@@ -243,7 +324,7 @@ int main(int argc, char **argv)
 	FILE *of = NULL;
 	double next_restart;
 
-	while ((opt = getopt(argc, argv, "D:t:p:b:o:vM:V:x:s:")) != -1) {
+	while ((opt = getopt(argc, argv, "D:t:p:b:o:vM:V:Px:s:")) != -1) {
 		switch (opt) {
 		case 'D': dev = optarg; break;
 		case 't': secs = atof(optarg); break;
@@ -258,12 +339,19 @@ int main(int argc, char **argv)
 			}
 			break;
 		case 'V': vdev = optarg; break;
+		case 'P': pattern = 1; break;
 		case 'x': xrun_gap = atof(optarg); break;
 		case 's': stress = atof(optarg); break;
 		default:
 			fprintf(stderr, "usage: see the comment in gc573-aud.c\n");
 			return 2;
 		}
+	}
+	if (!dev)
+		dev = default_pcm();
+	if (!dev) {
+		fprintf(stderr, "no device bound to gc573: give -D PCM\n");
+		return 2;
 	}
 	if (out) {
 		of = fopen(out, "w");

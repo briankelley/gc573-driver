@@ -28,6 +28,8 @@ packages:
   - libasound2-dev           # alsa-lib headers: tests/gc573-aud.c
   - trace-cmd
   - ffmpeg
+  - gstreamer1.0-tools       # gst-launch-1.0: tests/live.sh apps (GStreamer only in the VM)
+  - gstreamer1.0-alsa        # alsasrc, for the same
   - python3-numpy
   - xubuntu-core
   - spice-vdagent

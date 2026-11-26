@@ -31,6 +31,24 @@ next (PipeWire backend: +24 to +45 ms, audio late), so "offset" then judges
 the recording's mean minus MS, OBS's own part, against the same limits.
 --box: the flash is a box at these fractions of the frame (avsync.sh
 --pattern: 0.70,0.88,0.92,0.92), not the whole frame.
+  audio-timeline  the bursts' intervals in the file, per source session
+            (from where the pairs come back after a change, + 3 s): each a
+            whole number of media periods (n/fps: 1 s at 60 Hz, 1.001 s at
+            59.94) within 4 ms. OBS lays an ALSA source's samples back to
+            back while their timestamps stay within 70 ms of where it
+            expects them (libobs TS_SMOOTHING_THRESHOLD), so the bursts keep
+            the media period exactly, while the source's audio clock runs
+            against the host's (the HDMI audio clock, about +25 ppm here)
+            and OBS's own A/V offset grows by that difference. Once it is
+            70 ms, libobs places a packet at its own timestamp again: 70 ms
+            of audio are overwritten, and one interval comes 70 ms short (a
+            reset, reported; at 60 to 80 ms short). Any other interval off
+            the media period FAILs: audio lost or added in a session, which
+            the driver must not do (its stream keeps time through input
+            changes). Per session a line
+  AUDIO K P=S bursts=N ppm=+X resets=T:MS,.. other=T:MS,..
+            (ppm: the bursts' period against the media period; 0 when OBS
+            lays the samples back to back)
 With --segments (seconds from the first video frame): per segment a line
   SEGMENT K START END flashes=N bursts=N back=+S pairs_after=N offset=MS ok
 (back: where flashes and bursts pair again after the change) and a RESULT
@@ -117,6 +135,51 @@ def sample_time(i, pts, start, rate=48000):
     return pts[k] + (i - start[k]) / rate
 
 
+def timeline(bt, spans):
+    """[(K, media period, bursts, ppm, resets, other)] for each span (K,
+    t0, t1) of burst times BT (s): the media period (1 s or 1.001 s, by
+    the median interval), the bursts' period against it over the regular
+    intervals (ppm), and the intervals off a whole number of media periods
+    by 4 ms or more, as (time, deviation in ms): resets (60 to 80 ms short:
+    libobs placing a packet at its own timestamp again) and other"""
+    out = []
+    for k, t0, t1 in spans:
+        b = bt[(bt >= t0) & (bt < t1)]
+        if len(b) < 10:
+            continue
+        P = 1.001 if abs(float(np.median(np.diff(b))) - 1.001) < 0.0005 else 1.0
+        n = np.round(np.diff(b) / P)
+        d = np.diff(b) - P * n
+        reg = np.abs(d) < 0.004
+        ppm = float(d[reg].sum() / (P * n[reg].sum()) * 1e6) if n[reg].sum() else 0.0
+        odd = [(float(b[i + 1]), float(d[i] * 1e3)) for i in np.flatnonzero(~reg)]
+        resets = [x for x in odd if -80 <= x[1] <= -60]
+        other = [x for x in odd if not -80 <= x[1] <= -60]
+        out.append((k, P, len(b), ppm, resets, other))
+    return out
+
+
+def timeline_result(result, tl):
+    """the AUDIO lines and RESULT audio-timeline from timeline()'s list"""
+    for k, P, n, ppm, resets, other in tl:
+        print(f'AUDIO {k} P={P:.3f} bursts={n} ppm={ppm:+.2f} '
+              f'resets={",".join(f"{t:.1f}:{x:+.1f}" for t, x in resets) or "-"} '
+              f'other={",".join(f"{t:.1f}:{x:+.1f}" for t, x in other) or "-"}')
+    if not tl:
+        print('RESULT audio-timeline SKIP (no source session with 10 bursts or more)')
+        return
+    allr = [x for *_, r, _o in tl for x in r]
+    allo = [x for *_, o in tl for x in o]
+    ppms = [x[3] for x in tl]
+    result('audio-timeline', not allo,
+           f'{len(tl)} source session{"s" if len(tl) > 1 else ""}: the bursts\' period against the media '
+           f'period {min(ppms):+.2f} to {max(ppms):+.2f} ppm (0: OBS lays the samples back to back); '
+           f'OBS\'s own resets at its 70 ms threshold: {len(allr)}'
+           + (f" ({', '.join(f'{t:.1f} s {x:+.1f} ms' for t, x in allr)})" if allr else '')
+           + (f"; other intervals off the media period: "
+              f"{', '.join(f'{t:.1f} s {x:+.1f} ms' for t, x in allo[:10])}" if allo else ''))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('file')
@@ -165,7 +228,7 @@ def main():
         # +125 ms. The source restarts at each change with an offset of its own
         end = vt[-1] - vt[0]
         edges = [0.0] + [float(x) for x in a.segments.split(',')] + [end]
-        bad_segs, rec = [], []
+        bad_segs, rec, spans = [], [], []
         for k in range(len(edges) - 1):
             lo, hi = vt[0] + edges[k], vt[0] + edges[k + 1]
             f = ft[(ft >= lo) & (ft < hi)] - vt[0]
@@ -174,25 +237,37 @@ def main():
             back = None
             if pk:
                 times = [edges[k]] + [t for t, _ in pk]
-                g = int(np.argmax(np.diff(times)))
-                back = times[g + 1]
+                gaps = np.diff(times)
+                g = int(np.argmax(gaps))
+                # the longest gap is the change's only if it is longer than
+                # one missed flash: OBS's 60 Hz canvas skips a frame of a
+                # 60.0016 Hz source every 10.75 min, now and then a flash
+                # (the obsside run of 2026-11-26: seg 4 "back" +58.9 s)
+                back = times[g + 1] if g == 0 or gaps[g] > 2.5 else times[1]
                 pk = [x for x in pk if x[0] >= back]
             po = [o for _, o in pk]
             steady = edges[k + 1] - back if back is not None else 0
             good = bool(pk) and len(pk) >= steady / 2 and -45 <= np.mean(po) * 1e3 <= 125
             if k > 0 and back is not None:
                 rec.append(back - edges[k])
+            # the audio timeline from 15 s after the change (the source has
+            # restarted by then), whether or not flashes pair yet
+            spans.append((k, vt[0] + edges[k] + (15 if k else 3), vt[0] + edges[k + 1] - 1))
             if not good:
                 bad_segs.append(k)
             print(f'SEGMENT {k} {edges[k]:.1f} {edges[k + 1]:.1f} flashes={len(f)} bursts={len(b)} '
                   f'back={f"+{back - edges[k]:.2f}" if back is not None else "-"} pairs_after={len(po)} '
                   f'offset={f"{np.mean(po) * 1e3:+.1f}" if po else "-"} {"ok" if good else "NOT OK"}')
+        timeline_result(result, timeline(bt - vt[0], [(k, a0 - vt[0], a1 - vt[0]) for k, a0, a1 in spans]))
         result('segments', not bad_segs,
                f'{len(edges) - 1} segments between changes, each paired again, with at least every other '
                f'second\'s flash paired from there and a mean offset from -45 to +125 ms (BT.1359)' +
                (f'; not: segments {", ".join(map(str, bad_segs))}' if bad_segs else '') +
                (f'; paired again after a change: median +{np.median(rec):.2f} s, max +{max(rec):.2f} s '
                 f'from the change' if rec else ''))
+    if not a.segments:
+        # one source session: from 3 s in to 1 s before the end
+        timeline_result(result, timeline(bt - vt[0], [(0, 3.0, vt[-1] - vt[0] - 1)]))
     if len(pairs) < 3:
         result('offset', False, 'too few flash/burst pairs')
         return 1

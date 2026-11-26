@@ -20,6 +20,7 @@
 #include <linux/sizes.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
+#include <linux/workqueue.h>
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-dev.h>
 #include <media/v4l2-device.h>
@@ -290,10 +291,16 @@ struct gc573_video {
 	struct v4l2_pix_format pix;
 	const struct gc573_fmt *fmt;
 	struct gc573_input in;		/* input as last seen by the device */
+	struct gc573_input col_in;	/* last input locked since load */
+	bool col_valid;			/* col_in is set */
 	bool adopt_pending;		/* input changed while the queue was busy */
 	bool start_pending;		/* restart waits for a queued buffer */
 	bool failed;			/* queue marked failed (vb2_queue_error) */
+	bool held;			/* stream held: input in other timings */
+	unsigned long hold_until;	/* jiffies: a hold lasting to here fails */
+	struct delayed_work hold_work;	/* fails a hold that lasts */
 	u32 input_restarts;		/* streams restarted by an input change */
+	u32 input_holds;		/* streams held by an input change */
 	bool dead;			/* quiesced: never start again */
 	struct completion term;		/* INT bit 0: stream terminated */
 	u64 irq_ns;			/* time of the last INT bit 1 */
@@ -411,6 +418,23 @@ int gc573_hdmi_set_edid(struct gc573 *gc, struct v4l2_edid *e);
 void gc573_hdmi_debugfs(struct gc573 *gc);
 
 extern const struct vb2_mem_ops gc573_vb2_mem_ops;
+
+/*
+ * The driver's own video buffer memory live now, over all cards: vb2
+ * buffers (gc573_vb2.c) with their pages and kernel mappings, and the DMA
+ * descriptor lists (gc573_video.c). debugfs "video" prints them ("mem:").
+ * With no buffers requested they are all 0: a leak check that other
+ * programs' memory cannot move (tests/live.sh obssoak).
+ */
+struct gc573_mem_live {
+	atomic_t bufs;
+	atomic_long_t pages;
+	atomic_t vmaps;
+	atomic_t dlists;
+	atomic_long_t dl_bytes;
+};
+
+extern struct gc573_mem_live gc573_mem_live;
 
 void gc573_video_early_init(struct gc573 *gc);
 int gc573_video_init(struct gc573 *gc);

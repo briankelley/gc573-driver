@@ -1,0 +1,26 @@
+# the card's audio through PipeWire: which clock (host, 2026-11-26 04:23:57 UTC)
+pipewire 1.0.5-1ubuntu3.3, wireplumber 0.4.17-1ubuntu4.1
+node: alsa_input.pci-0000_07_00.0.stereo-fallback: id serial state api.alsa.path priority.driver = 73 187054 suspended hw:4 2000
+capture: pw-record from alsa_input.pci-0000_07_00.0.stereo-fallback for 180 s, 04:24:04.672
+  links: alsa_input.pci-0000_07_00.0.stereo-fallback:capture_FL alsa_input.pci-0000_07_00.0.stereo-fallback:capture_FR
+  pw-top: S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+  pw-top: C   73      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_07_00.0.stereo-fallback
+  pw-top: C   91      0      0    ---     ---   ---   ---     0                  pwrate-check
+  pw-top: S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+  pw-top: S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+  pw-top: S   39      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+  pw-top: S   55      0      0    ---     ---   ---   ---     0                  v4l2_input.pci-0000_00_14.0-usb-0_9_1.0
+  pw-top: S   64      0      0    ---     ---   ---   ---     0                  alsa_output.usb-Generic_USB2.0_Device_<serial>-00.analog-stereo
+state: default-profile and default-nodes unchanged
+  restore-stream: 17a18,21
+  restore-stream: > Input/Audio:media.role:Music:channelMap=FL;FR;
+  restore-stream: > Input/Audio:media.role:Music:channelVolumes=1.0;1.0;
+  restore-stream: > Input/Audio:media.role:Music:mute=false
+  restore-stream: > Input/Audio:media.role:Music:volume=1.0
+wav: 8606720 frames at 48000 Hz, 179.3 s
+bursts: 177, period 48000.000 samples (+0.00 ppm against 48000), residual rms 0.00 max 0.0 samples; intervals off by more than 4 samples: 0
+RESULT pwrate card-clock (48000.000 samples a burst)
+log: /home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/logs/20261126T0423Z-pwrate.log
+# afterwards (04:28Z): WirePlumber's restore-stream had gained the key Input/Audio:media.role:Music
+# (pw-record's default role) with default values; the file was put back as it was before the run.
+# WirePlumber keeps the key in memory and may write it again at its next save.

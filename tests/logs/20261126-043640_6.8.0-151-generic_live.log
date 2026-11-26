@@ -1,0 +1,192 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 04:36:40 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     eb69cb5fa1d5-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   apps
+module:  srcversion 8FC633C76E1A9301322AF83 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 292FD1A2D4D0C4210A150E8, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## apps
+  ffmpeg 6.1.1-3ubuntu5
+  vlc 3.0.20-3build6
+RESULT apps-driver-1080p60-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=480000 secs=9.990 rate=48001.438 xruns=0 restarts=0 )
+RESULT apps-driver-1080p60-duration PASS (10.0 s, 480000 frames, minimum 9 s)
+RESULT apps-driver-1080p60-xruns  PASS (0 overruns)
+RESULT apps-driver-1080p60-gaps   PASS (per-second medians move <= 0.00 ms from one second to the next; within 0.01 ms of one line over the run; single reads within 0.07 ms of it; 1000 reads)
+RESULT apps-driver-1080p60-video  PASS (597 frames, 0 sequence gaps, interval 16.667 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT apps-driver-1080p60-avsync PASS (10 flashes over 0.1 min: offset +43.723 ms (std 0.028, min +43.674, max +43.748), drift +0.1979 ms/min = +0.030 ms over the run, residual <= 0.047 ms)
+  INFO counter   597 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 596; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 10 between the first and last frame: 10 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +43.72 ms, min +43.67, max +43.75, std 0.03; frames from the most common (count): +0: 10
+  apps-ffmpeg-1080p60-yuyv: exit 0
+RESULT apps-ffmpeg-1080p60-yuyv-media PASS (matroska,webm: video h264 1920x1080 yuv422p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-ffmpeg-1080p60-yuyv-frames PASS (600 frames, period 17.000 ms; 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 0 frames twice and skipped 0; 0 unreadable)
+RESULT apps-ffmpeg-1080p60-yuyv-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-ffmpeg-1080p60-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-ffmpeg-1080p60-yuyv-rate PASS (48000.0 samples from one burst to the next (median of 9; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-ffmpeg-1080p60-yuyv-avsync PASS (burst onset - flash frame over 10 flashes: median +42.9 ms, mean +42.9, std 0.0, min +42.9, max +42.9 (positive: audio late); the driver +43.7 ms in the same source session: the application -0.8 ms; BT.1359: -45 to +125 ms)
+  INFO apps-ffmpeg-1080p60-yuyv-driver the driver's stream: frames 605 underruns 0 (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)
+  apps-ffmpeg-1080p60-nv12: exit 0
+RESULT apps-ffmpeg-1080p60-nv12-media PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-ffmpeg-1080p60-nv12-frames PASS (600 frames, period 17.000 ms; 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 0 frames twice and skipped 0; 0 unreadable)
+RESULT apps-ffmpeg-1080p60-nv12-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-ffmpeg-1080p60-nv12-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-ffmpeg-1080p60-nv12-rate PASS (48000.0 samples from one burst to the next (median of 9; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-ffmpeg-1080p60-nv12-avsync PASS (burst onset - flash frame over 10 flashes: median +43.3 ms, mean +43.3, std 0.0, min +43.3, max +43.3 (positive: audio late); the driver +43.7 ms in the same source session: the application -0.4 ms; BT.1359: -45 to +125 ms)
+  INFO apps-ffmpeg-1080p60-nv12-driver the driver's stream: frames 603 underruns 0 (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)
+  apps-vlc-1080p60-yuyv: exit 124: 
+x264 [error]: high profile doesn't support lossless x264 [error]: high profile doesn't support lossless 
+RESULT apps-vlc-1080p60-yuyv-media PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-vlc-1080p60-yuyv-frames FAIL (1454 frames, period 17.000 ms; 9 timestamp gaps over 1.5 periods, 6 under half; counter steps at regular intervals: 5 other than 0, 1, 2; the source showed 0 frames twice and skipped 1; 0 unreadable)
+RESULT apps-vlc-1080p60-yuyv-pattern PASS (frames at 10/50/90 %: pattern 3, pattern 3, pattern 3 (limit 8))
+RESULT apps-vlc-1080p60-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 25 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-vlc-1080p60-yuyv-rate PASS (48000.0 samples from one burst to the next (median of 24; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-vlc-1080p60-yuyv-avsync PASS (burst onset - flash frame over 25 flashes: median +57.8 ms, mean +54.0, std 12.9, min +7.8, max +64.8 (positive: audio late); the driver +43.7 ms in the same source session: the application +14.1 ms; BT.1359: -45 to +125 ms)
+  INFO apps-vlc-1080p60-yuyv-driver the driver's stream: frames 1490 underruns 0 (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)
+  apps-vlc-1080p60-nv12: exit 124: 
+x264 [error]: high profile doesn't support lossless x264 [error]: high profile doesn't support lossless 
+RESULT apps-vlc-1080p60-nv12-media PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-vlc-1080p60-nv12-frames FAIL (1469 frames, period 17.000 ms; 9 timestamp gaps over 1.5 periods, 6 under half; counter steps at regular intervals: 5 other than 0, 1, 2; the source showed 2 frames twice and skipped 2; 0 unreadable)
+RESULT apps-vlc-1080p60-nv12-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-vlc-1080p60-nv12-channels PASS (left 999.8 Hz, right 2000.2 Hz over 25 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-vlc-1080p60-nv12-rate PASS (48000.0 samples from one burst to the next (median of 24; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-vlc-1080p60-nv12-avsync PASS (burst onset - flash frame over 25 flashes: median +57.9 ms, mean +54.5, std 10.3, min +16.9, max +65.9 (positive: audio late); the driver +43.7 ms in the same source session: the application +14.2 ms; BT.1359: -45 to +125 ms)
+  INFO apps-vlc-1080p60-nv12-driver the driver's stream: frames 1490 underruns 0 (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)
+RESULT apps-driver-720p59.94-capture PASS (PARAMS video 1280x720 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=480480 secs=10.000 rate=48001.538 xruns=0 restarts=0 )
+RESULT apps-driver-720p59.94-duration PASS (10.0 s, 480480 frames, minimum 9 s)
+RESULT apps-driver-720p59.94-xruns PASS (0 overruns)
+RESULT apps-driver-720p59.94-gaps PASS (per-second medians move <= 0.01 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.14 ms of it; 1001 reads)
+RESULT apps-driver-720p59.94-video PASS (596 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT apps-driver-720p59.94-avsync PASS (10 flashes over 0.2 min: offset +33.739 ms (std 0.150, min +33.495, max +33.943), drift +3.1056 ms/min = +0.466 ms over the run, residual <= 0.035 ms)
+  INFO counter   596 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 595; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 10 between the first and last frame: 10 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +33.74 ms, min +33.49, max +33.94, std 0.15; frames from the most common (count): +0: 10
+  apps-ffmpeg-720p59.94-yuyv: exit 0
+RESULT apps-ffmpeg-720p59.94-yuyv-media PASS (matroska,webm: video h264 1280x720 yuv422p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-ffmpeg-720p59.94-yuyv-frames PASS (600 frames, period 17.000 ms; 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 0 frames twice and skipped 0; 0 unreadable)
+RESULT apps-ffmpeg-720p59.94-yuyv-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-ffmpeg-720p59.94-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-ffmpeg-720p59.94-yuyv-rate PASS (48048.0 samples from one burst to the next (median of 9; 48048.0 for a source at 59.94 Hz), -1 ppm)
+RESULT apps-ffmpeg-720p59.94-yuyv-avsync PASS (burst onset - flash frame over 10 flashes: median +33.5 ms, mean +33.5, std 0.0, min +33.5, max +33.5 (positive: audio late); the driver +33.7 ms in the same source session: the application -0.2 ms; BT.1359: -45 to +125 ms)
+  INFO apps-ffmpeg-720p59.94-yuyv-driver the driver's stream: frames 605 underruns 0 (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)
+  apps-vlc-720p59.94-yuyv: exit 124: 
+x264 [error]: high profile doesn't support lossless x264 [error]: high profile doesn't support lossless 
+RESULT apps-vlc-720p59.94-yuyv-media PASS (matroska,webm: video h264 1280x720 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-vlc-720p59.94-yuyv-frames PASS (1482 frames, period 17.000 ms; 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 0 frames twice and skipped 0; 0 unreadable)
+RESULT apps-vlc-720p59.94-yuyv-pattern PASS (frames at 10/50/90 %: pattern 3, pattern 3, pattern 3 (limit 8))
+RESULT apps-vlc-720p59.94-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 24 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-vlc-720p59.94-yuyv-rate PASS (48048.0 samples from one burst to the next (median of 23; 48048.0 for a source at 59.94 Hz), -1 ppm)
+RESULT apps-vlc-720p59.94-yuyv-avsync PASS (burst onset - flash frame over 24 flashes: median +47.9 ms, mean +47.4, std 0.9, min +45.9, max +48.9 (positive: audio late); the driver +33.7 ms in the same source session: the application +14.2 ms; BT.1359: -45 to +125 ms)
+  INFO apps-vlc-720p59.94-yuyv-driver the driver's stream: frames 1490 underruns 0 (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)
+  APP ffmpeg sleep: SOURCE_CHANGE subscribed 0x, events dequeued 0; ran its 30 s (exit 0); jumpy frames after the change; a restart at 1920x1080@60 brings it back
+    RESULT media     PASS (matroska,webm: video h264 1920x1080 yuv422p; audio pcm_s16le 48000 Hz 2 ch) CHANGE 451 frames before the change at 7.5 s, 1157 from 10.5 s (settled), the last at 29.98 s; longest gap after the change 0.90 s; from 10.5 s: jumpy (880 over 1156 frames) 
+    stderr: 
+    driver: input: power 1 signal 1 locked 1 period 0x196dac fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-ffmpeg-change-sleep   FAIL (ran its 30 s (exit 0); jumpy frames after the change; a restart at 1920x1080@60 brings it back; SOURCE_CHANGE subscribed: no)
+  APP ffmpeg relock: SOURCE_CHANGE subscribed 0x, events dequeued 0; ran its 30 s (exit 0); carried on
+    RESULT media     PASS (matroska,webm: video h264 1920x1080 yuv422p; audio pcm_s16le 48000 Hz 2 ch) CHANGE 451 frames before the change at 7.5 s, 1169 from 10.5 s (settled), the last at 29.98 s; longest gap after the change 0.95 s; from 10.5 s: live 
+    stderr: 
+    driver: input: power 1 signal 1 locked 1 period 0x196dad fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-ffmpeg-change-relock  PASS (ran its 30 s (exit 0); carried on; SOURCE_CHANGE subscribed: no)
+  APP ffmpeg rate: SOURCE_CHANGE subscribed 0x, events dequeued 0; ran its 30 s (exit 0); carried on
+    RESULT media     PASS (matroska,webm: video h264 1920x1080 yuv422p; audio pcm_s16le 48000 Hz 2 ch) CHANGE 451 frames before the change at 7.5 s, 1168 from 10.5 s (settled), the last at 29.98 s; longest gap after the change 0.90 s; from 10.5 s: live 
+    stderr: 
+    driver: input: power 1 signal 1 locked 1 period 0x197441 fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-ffmpeg-change-rate    PASS (ran its 30 s (exit 0); carried on; SOURCE_CHANGE subscribed: no)
+  APP ffmpeg res: SOURCE_CHANGE subscribed 0x, events dequeued 0; ran its 30 s (exit 0); no frames after the change; a restart at 1280x720@59.94 brings it back
+    RESULT media     PASS (matroska,webm: video h264 1920x1080 yuv422p; audio pcm_s16le 48000 Hz 2 ch) CHANGE 451 frames before the change at 7.5 s, 0 from 10.5 s (settled), the last at 9.60 s; longest gap after the change 0.93 s; from 10.5 s: none 
+    stderr: [video4linux2,v4l2 @ 0x651d5b525180] ioctl(VIDIOC_DQBUF): Input/output error [in#0/video4linux2,v4l2 @ 0x651d5b525080] Error during demuxing: Input/output error [in#0/video4linux2,v4l2 @ 0x651d5b525080] Error retrieving a packet from demuxer: Input/output error 
+    driver: input: power 1 signal 1 locked 1 period 0x1973d1 fpga 0x3 0x500 0x2d0 colour 0 vic 4 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-ffmpeg-change-res     PASS (ran its 30 s (exit 0); no frames after the change; a restart at 1280x720@59.94 brings it back; SOURCE_CHANGE subscribed: no)
+  APP vlc sleep: SOURCE_CHANGE subscribed 0x, events dequeued 0; still running after 35 s: stopped; carried on
+    RESULT media     PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch) CHANGE 449 frames before the change at 7.5 s, 1437 from 10.5 s (settled), the last at 34.65 s; longest gap after the change 0.92 s; from 10.5 s: live 
+    stderr: x264 [error]: high profile doesn't support lossless x264 [error]: high profile doesn't support lossless 
+    driver: input: power 1 signal 1 locked 1 period 0x196dac fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-vlc-change-sleep      PASS (still running after 35 s: stopped; carried on; SOURCE_CHANGE subscribed: no)
+  APP vlc relock: SOURCE_CHANGE subscribed 0x, events dequeued 0; still running after 35 s: stopped; carried on
+    RESULT media     PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch) CHANGE 432 frames before the change at 7.5 s, 1454 from 10.5 s (settled), the last at 34.72 s; longest gap after the change 0.93 s; from 10.5 s: live 
+    stderr: x264 [error]: high profile doesn't support lossless x264 [error]: high profile doesn't support lossless 
+    driver: input: power 1 signal 1 locked 1 period 0x196dac fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-vlc-change-relock     PASS (still running after 35 s: stopped; carried on; SOURCE_CHANGE subscribed: no)
+  APP vlc rate: SOURCE_CHANGE subscribed 0x, events dequeued 0; still running after 35 s: stopped; carried on
+    RESULT media     PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch) CHANGE 435 frames before the change at 7.5 s, 1452 from 10.5 s (settled), the last at 34.71 s; longest gap after the change 0.90 s; from 10.5 s: live 
+    stderr: x264 [error]: high profile doesn't support lossless x264 [error]: high profile doesn't support lossless 
+    driver: input: power 1 signal 1 locked 1 period 0x197441 fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-vlc-change-rate       PASS (still running after 35 s: stopped; carried on; SOURCE_CHANGE subscribed: no)
+  APP vlc res: SOURCE_CHANGE subscribed 0x, events dequeued 0; still running after 35 s: stopped; no frames after the change; a restart at 1280x720@59.94 brings it back
+    RESULT media     PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch) CHANGE 448 frames before the change at 7.5 s, 0 from 10.5 s (settled), the last at 9.62 s; longest gap after the change 0.91 s; from 10.5 s: none 
+    stderr: t error libv4l2: error dequeuing buf: Input/output error libv4l2: error dequeuing buf: Input/output error libv4l2: error dequeuing buf: Input/output error libv4l2: error dequeuing buf: Input/output error libv4l2: error dequeuing buf: Input/output error libv4l2: error dequeuing buf: Input/output error libv4l2: error dequeuing buf: Input/output error libv4l2: error dequeuing buf: Input/output error 
+    driver: input: power 1 signal 1 locked 1 period 0x1973d1 fpga 0x3 0x500 0x2d0 colour 0 vic 4 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-vlc-change-res        PASS (still running after 35 s: stopped; no frames after the change; a restart at 1280x720@59.94 brings it back; SOURCE_CHANGE subscribed: no)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 SKIP (the loaded gc573 has no live-memory line in debugfs video: built before it)
+
+## kernel log
+  kernel log: 50 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT apps-driver-1080p60-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=480000 secs=9.990 rate=48001.438 xruns=0 restarts=0 )
+RESULT apps-driver-1080p60-duration PASS (10.0 s, 480000 frames, minimum 9 s)
+RESULT apps-driver-1080p60-xruns  PASS (0 overruns)
+RESULT apps-driver-1080p60-gaps   PASS (per-second medians move <= 0.00 ms from one second to the next; within 0.01 ms of one line over the run; single reads within 0.07 ms of it; 1000 reads)
+RESULT apps-driver-1080p60-video  PASS (597 frames, 0 sequence gaps, interval 16.667 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT apps-driver-1080p60-avsync PASS (10 flashes over 0.1 min: offset +43.723 ms (std 0.028, min +43.674, max +43.748), drift +0.1979 ms/min = +0.030 ms over the run, residual <= 0.047 ms)
+RESULT apps-ffmpeg-1080p60-yuyv-media PASS (matroska,webm: video h264 1920x1080 yuv422p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-ffmpeg-1080p60-yuyv-frames PASS (600 frames, period 17.000 ms; 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 0 frames twice and skipped 0; 0 unreadable)
+RESULT apps-ffmpeg-1080p60-yuyv-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-ffmpeg-1080p60-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-ffmpeg-1080p60-yuyv-rate PASS (48000.0 samples from one burst to the next (median of 9; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-ffmpeg-1080p60-yuyv-avsync PASS (burst onset - flash frame over 10 flashes: median +42.9 ms, mean +42.9, std 0.0, min +42.9, max +42.9 (positive: audio late); the driver +43.7 ms in the same source session: the application -0.8 ms; BT.1359: -45 to +125 ms)
+RESULT apps-ffmpeg-1080p60-nv12-media PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-ffmpeg-1080p60-nv12-frames PASS (600 frames, period 17.000 ms; 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 0 frames twice and skipped 0; 0 unreadable)
+RESULT apps-ffmpeg-1080p60-nv12-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-ffmpeg-1080p60-nv12-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-ffmpeg-1080p60-nv12-rate PASS (48000.0 samples from one burst to the next (median of 9; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-ffmpeg-1080p60-nv12-avsync PASS (burst onset - flash frame over 10 flashes: median +43.3 ms, mean +43.3, std 0.0, min +43.3, max +43.3 (positive: audio late); the driver +43.7 ms in the same source session: the application -0.4 ms; BT.1359: -45 to +125 ms)
+RESULT apps-vlc-1080p60-yuyv-media PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-vlc-1080p60-yuyv-frames FAIL (1454 frames, period 17.000 ms; 9 timestamp gaps over 1.5 periods, 6 under half; counter steps at regular intervals: 5 other than 0, 1, 2; the source showed 0 frames twice and skipped 1; 0 unreadable)
+RESULT apps-vlc-1080p60-yuyv-pattern PASS (frames at 10/50/90 %: pattern 3, pattern 3, pattern 3 (limit 8))
+RESULT apps-vlc-1080p60-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 25 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-vlc-1080p60-yuyv-rate PASS (48000.0 samples from one burst to the next (median of 24; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-vlc-1080p60-yuyv-avsync PASS (burst onset - flash frame over 25 flashes: median +57.8 ms, mean +54.0, std 12.9, min +7.8, max +64.8 (positive: audio late); the driver +43.7 ms in the same source session: the application +14.1 ms; BT.1359: -45 to +125 ms)
+RESULT apps-vlc-1080p60-nv12-media PASS (matroska,webm: video h264 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-vlc-1080p60-nv12-frames FAIL (1469 frames, period 17.000 ms; 9 timestamp gaps over 1.5 periods, 6 under half; counter steps at regular intervals: 5 other than 0, 1, 2; the source showed 2 frames twice and skipped 2; 0 unreadable)
+RESULT apps-vlc-1080p60-nv12-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-vlc-1080p60-nv12-channels PASS (left 999.8 Hz, right 2000.2 Hz over 25 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-vlc-1080p60-nv12-rate PASS (48000.0 samples from one burst to the next (median of 24; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-vlc-1080p60-nv12-avsync PASS (burst onset - flash frame over 25 flashes: median +57.9 ms, mean +54.5, std 10.3, min +16.9, max +65.9 (positive: audio late); the driver +43.7 ms in the same source session: the application +14.2 ms; BT.1359: -45 to +125 ms)
+RESULT apps-driver-720p59.94-capture PASS (PARAMS video 1280x720 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=480480 secs=10.000 rate=48001.538 xruns=0 restarts=0 )
+RESULT apps-driver-720p59.94-duration PASS (10.0 s, 480480 frames, minimum 9 s)
+RESULT apps-driver-720p59.94-xruns PASS (0 overruns)
+RESULT apps-driver-720p59.94-gaps PASS (per-second medians move <= 0.01 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.14 ms of it; 1001 reads)
+RESULT apps-driver-720p59.94-video PASS (596 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT apps-driver-720p59.94-avsync PASS (10 flashes over 0.2 min: offset +33.739 ms (std 0.150, min +33.495, max +33.943), drift +3.1056 ms/min = +0.466 ms over the run, residual <= 0.035 ms)
+RESULT apps-ffmpeg-720p59.94-yuyv-media PASS (matroska,webm: video h264 1280x720 yuv422p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-ffmpeg-720p59.94-yuyv-frames PASS (600 frames, period 17.000 ms; 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 0 frames twice and skipped 0; 0 unreadable)
+RESULT apps-ffmpeg-720p59.94-yuyv-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-ffmpeg-720p59.94-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-ffmpeg-720p59.94-yuyv-rate PASS (48048.0 samples from one burst to the next (median of 9; 48048.0 for a source at 59.94 Hz), -1 ppm)
+RESULT apps-ffmpeg-720p59.94-yuyv-avsync PASS (burst onset - flash frame over 10 flashes: median +33.5 ms, mean +33.5, std 0.0, min +33.5, max +33.5 (positive: audio late); the driver +33.7 ms in the same source session: the application -0.2 ms; BT.1359: -45 to +125 ms)
+RESULT apps-vlc-720p59.94-yuyv-media PASS (matroska,webm: video h264 1280x720 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-vlc-720p59.94-yuyv-frames PASS (1482 frames, period 17.000 ms; 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 0 frames twice and skipped 0; 0 unreadable)
+RESULT apps-vlc-720p59.94-yuyv-pattern PASS (frames at 10/50/90 %: pattern 3, pattern 3, pattern 3 (limit 8))
+RESULT apps-vlc-720p59.94-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 24 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-vlc-720p59.94-yuyv-rate PASS (48048.0 samples from one burst to the next (median of 23; 48048.0 for a source at 59.94 Hz), -1 ppm)
+RESULT apps-vlc-720p59.94-yuyv-avsync PASS (burst onset - flash frame over 24 flashes: median +47.9 ms, mean +47.4, std 0.9, min +45.9, max +48.9 (positive: audio late); the driver +33.7 ms in the same source session: the application +14.2 ms; BT.1359: -45 to +125 ms)
+RESULT apps-ffmpeg-change-sleep   FAIL (ran its 30 s (exit 0); jumpy frames after the change; a restart at 1920x1080@60 brings it back; SOURCE_CHANGE subscribed: no)
+RESULT apps-ffmpeg-change-relock  PASS (ran its 30 s (exit 0); carried on; SOURCE_CHANGE subscribed: no)
+RESULT apps-ffmpeg-change-rate    PASS (ran its 30 s (exit 0); carried on; SOURCE_CHANGE subscribed: no)
+RESULT apps-ffmpeg-change-res     PASS (ran its 30 s (exit 0); no frames after the change; a restart at 1280x720@59.94 brings it back; SOURCE_CHANGE subscribed: no)
+RESULT apps-vlc-change-sleep      PASS (still running after 35 s: stopped; carried on; SOURCE_CHANGE subscribed: no)
+RESULT apps-vlc-change-relock     PASS (still running after 35 s: stopped; carried on; SOURCE_CHANGE subscribed: no)
+RESULT apps-vlc-change-rate       PASS (still running after 35 s: stopped; carried on; SOURCE_CHANGE subscribed: no)
+RESULT apps-vlc-change-res        PASS (still running after 35 s: stopped; no frames after the change; a restart at 1280x720@59.94 brings it back; SOURCE_CHANGE subscribed: no)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 SKIP (the loaded gc573 has no live-memory line in debugfs video: built before it)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=55 fail=3 skip=2

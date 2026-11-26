@@ -1,0 +1,301 @@
+# install.sh / uninstall.sh with the card, gc573-dev
+date: 2026-11-26 06:53:50 UTC  ref: HEAD (1c9b19765d54)
+vm: Ubuntu 24.04.5 LTS, kernel 6.8.0-151-generic
+card: 0000:07:00.0
+=== prepare
+  no gc573 in DKMS
+  done
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+Processing triggers for man-db (2.12.0-4build2) ...
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: no state:  dkms:  video:  alsa: 
+RESULT	prepare	PASS	override 0000:07:00.0 -> vfio-pci saved, card not bound to gc573, nothing installed
+=== install-notty
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override gives the card (0000:07:00.0) to vfio-pci.
+  This is how the card is passed to a virtual machine (VFIO).
+  (no terminal, and none of --this-boot, --permanent or --no-bind given: the card is left alone)
+  the card stays with vfio-pci. gc573 is installed, and does not load by itself while the override is saved. To use the card with gc573:
+    for this boot (a reboot undoes it): sudo tools/install.sh --this-boot
+    for good: sudo tools/install.sh --permanent
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: yes state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+RESULT	install-notty	PASS	exit 0; installed (dkms: gc573/0.1, 6.8.0-151-generic); the card left alone, gc573 not loaded, autoload off; the options printed
+=== permanent-refused
+  install.sh: --permanent removes the driverctl override for good: without a terminal to ask on, add --yes
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: yes state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+RESULT	permanent-refused	PASS	exit 1 in 1 s, before the build; the override still saved
+=== install-3
+Connection to 192.168.122.40 closed.
+  3
+  3
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override gives the card (0000:07:00.0) to vfio-pci.
+  This is how the card is passed to a virtual machine (VFIO).
+    1) gc573 takes the card for this boot only. The override stays saved,
+       and a reboot gives the card back to vfio-pci.
+    2) gc573 takes the card for good: the override is removed.
+    3) Leave the card alone for now.
+  Choose 1, 2 or 3 [1]: the card stays with vfio-pci. gc573 is installed, and does not load by itself while the override is saved. To use the card with gc573:
+    for this boot (a reboot undoes it): sudo tools/install.sh --this-boot
+    for good: sudo tools/install.sh --permanent
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: yes state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+RESULT	install-3	PASS	asked; 3: the card left alone, autoload off
+=== boot-race
+  driver:  override: vfio-pci persisted: vfio-pci loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+  [    2.996728] gc573 0000:07:00.0: using MSI, irq 60
+  [    3.099584] gc573 0000:07:00.0: FPGA version 20200811
+  [    3.231704] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+       Active: failed (Result: exit-code) since Thu 2026-11-26 06:54:19 UTC; 7s ago
+      Process: 1000 ExecStart=/usr/sbin/driverctl load-override pci/0000:07:00.0 (code=exited, status=1/FAILURE)
+RESULT	boot-race	PASS	without the entry gc573 probed the card at boot ([    2.996728] gc573 0000:07:00.0: using MSI, irq 60); driverctl's unit then set the saved override
+=== install-1
+Connection to 192.168.122.40 closed.
+  
+  
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override gives the card (0000:07:00.0) to vfio-pci.
+  This is how the card is passed to a virtual machine (VFIO).
+    1) gc573 takes the card for this boot only. The override stays saved,
+       and a reboot gives the card back to vfio-pci.
+    2) gc573 takes the card for good: the override is removed.
+    3) Leave the card alone for now.
+  Choose 1, 2 or 3 [1]: the card is up: video /dev/video0, ALSA card GC573
+  gc573 has the card for this boot. A reboot gives it back to vfio-pci: the override stays saved.
+  To switch for good: sudo tools/install.sh --permanent. uninstall.sh gives the card back at once.
+  driver: gc573 override: gc573 persisted: vfio-pci loaded: yes noload: yes state: bind this-boot 0000:07:00.0 vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+RESULT	install-1	PASS	asked; Enter (1): gc573 has the card for this boot, the override still saved, recorded; the card is up: video /dev/video0, ALSA card GC573
+=== reboot-this-boot
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: yes state: bind this-boot 0000:07:00.0 vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+  kernel log lines from gc573 since the boot: 0
+RESULT	reboot-this-boot	PASS	after the reboot gc573 is not loaded and never probed (no kernel log line); the saved override holds the card (driver_override vfio-pci)
+=== install-this-boot
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override gives the card (0000:07:00.0) to vfio-pci.
+  This is how the card is passed to a virtual machine (VFIO).
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 has the card for this boot. A reboot gives it back to vfio-pci: the override stays saved.
+  To switch for good: sudo tools/install.sh --permanent. uninstall.sh gives the card back at once.
+  driver: gc573 override: gc573 persisted: vfio-pci loaded: yes noload: yes state: bind this-boot 0000:07:00.0 vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+  lock: 1920x1080; capture: BT timings set rc=0 
+RESULT	install-this-boot	PASS	no terminal, --this-boot: gc573 has the card; input locked at 1920x1080; 30 frames streamed
+=== uninstall-this-boot
+  unloaded gc573
+  the saved override is loaded again: 0000:07:00.0 -> vfio-pci (bound now: no driver; vfio-pci takes it when a virtual machine starts with it or at the next boot)
+  removing gc573 0.1 from DKMS (all kernels)
+  removed /etc/modprobe.d/gc573-no-autoload.conf
+  done
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: no state:  dkms:  video:  alsa: 
+RESULT	uninstall-this-boot	PASS	no terminal: the saved override loaded again (driver_override vfio-pci), gc573 unloaded, nothing left
+=== install-permanent
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override gives the card (0000:07:00.0) to vfio-pci.
+  This is how the card is passed to a virtual machine (VFIO).
+  override removed. To give the card back to vfio-pci (and virtual machines): sudo driverctl set-override 0000:07:00.0 vfio-pci
+  uninstall.sh offers to put it back.
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 loads by itself from now on whenever the card is present
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state: bind permanent 0000:07:00.0 vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+RESULT	install-permanent	PASS	--permanent --yes: the override removed and recorded, gc573 has the card, autoload on after the first probe
+=== reboot-permanent
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state: bind permanent 0000:07:00.0 vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+  lock: 1920x1080; capture: BT timings set rc=0 
+RESULT	reboot-permanent	PASS	gc573 loaded by its alias and bound after the boot; input locked at 1920x1080; 30 frames streamed
+=== uninstall-permanent
+Connection to 192.168.122.40 closed.
+  
+  
+  unloaded gc573
+  
+  install.sh removed a driverctl override that bound 0000:07:00.0 to vfio-pci.
+  Put it back now (the card goes back to vfio-pci)? [Y/n] override restored: 0000:07:00.0 -> vfio-pci (the card is bound to no driver now; vfio-pci takes it at the next boot or when a virtual machine starts with it)
+  removing gc573 0.1 from DKMS (all kernels)
+  done
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: no state:  dkms:  video:  alsa: 
+RESULT	uninstall-permanent	PASS	asked; Enter (yes): the override back as it was, gc573 unloaded, nothing left in DKMS, /lib/modules, /usr/src
+=== no-override
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 loads by itself from now on whenever the card is present
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+  unloaded gc573
+  removing gc573 0.1 from DKMS (all kernels)
+  done
+  driver:  override: (null) persisted:  loaded: no noload: no state:  dkms:  video:  alsa: 
+RESULT	no-override	PASS	no override: gc573 took the card at once, autoload on after that first probe; uninstall --yes left nothing
+=== pw-install
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 loads by itself from now on whenever the card is present
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+  holders: 5945 wireplumber 
+RESULT	pw-install	PASS	the udev rule lifted, no override: gc573 has the card and WirePlumber holds it (5945 wireplumber )
+=== pw-update
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: gc573
+  taking the card from gc573 (open now by wireplumber (pid 5945))
+  reloading gc573
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 loads by itself from now on whenever the card is present
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+  holders: 5945 wireplumber 
+RESULT	pw-update	PASS	install.sh again while WirePlumber held the card: the card taken from the old gc573, which unloaded; the new one has the card, WirePlumber holds it again
+=== holder-refused
+  holders: 5945 wireplumber 10798 sleep 
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: gc573
+  the card is in use by sleep (pid 10798): close it and run this again, or run this with --yes, and it loses the card
+  the older gc573 keeps the card: the new one takes over after a reboot, or when this runs again with the card free
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+  the card is in use by sleep (pid 10798): close it and run this again, or run this with --yes, and it loses the card
+  uninstall.sh: nothing was changed
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+RESULT	holder-refused	PASS	sleep (pid 10798) with /dev/video0 open: install.sh and uninstall.sh without --yes exit 1 and name it; the card stays with gc573, still installed
+=== holder-yes
+  the card is in use by sleep (pid 10798): --yes, so it loses the card now
+  taking the card from gc573 (open now by wireplumber (pid 5945), sleep (pid 10798))
+  warning: gc573 is still in use 5 s after the card was taken from it, so it cannot be unloaded; the card goes back to it
+  warning: gc573 is still in use; it stays loaded until the next reboot, or until this script runs again once nothing has the card open (its files are removed below)
+  removing gc573 0.1 from DKMS (all kernels)
+  done
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms:  video: video1  alsa: GC573
+  taking the card from gc573 (open now by wireplumber (pid 5945))
+  unloaded gc573
+  no gc573 in DKMS
+  done
+  sleep still running before the kill: yes; left after the second uninstall.sh: ''
+RESULT	holder-yes	PASS	uninstall.sh --yes: sleep lost the card's node; gc573 could not unload while sleep kept it open, so it has the card again (its files removed); once sleep ended, uninstall.sh again unloaded it; nothing left
+=== pw-uninstall
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 loads by itself from now on whenever the card is present
+  holders: 5945 wireplumber 
+  taking the card from gc573 (open now by wireplumber (pid 5945))
+  unloaded gc573
+  removing gc573 0.1 from DKMS (all kernels)
+  done
+  driver:  override: (null) persisted:  loaded: no noload: no state:  dkms:  video:  alsa: 
+RESULT	pw-uninstall	PASS	uninstall.sh without --yes while WirePlumber held the card: the card taken from gc573, gc573 unloaded, nothing left
+=== pw-stream-refused
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 loads by itself from now on whenever the card is present
+  holders: 5945 wireplumber 
+  the GC573's PipeWire node: alsa_input.pci-0000_07_00.0.stereo-fallback
+  pw-record pid 19552; the card's PCM RUNNING, open by pid 1090; holders: 1090 pipewire 5945 wireplumber 
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: gc573
+  the card is in use by PipeWire, streaming the card's audio (pid 1090): close it (for PipeWire: stop what records the card's audio through it) and run this again, or run this with --yes, and it loses the card
+  the older gc573 keeps the card: the new one takes over after a reboot, or when this runs again with the card free
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573; PCM RUNNING
+  the card is in use by PipeWire, streaming the card's audio (pid 1090): close it (for PipeWire: stop what records the card's audio through it) and run this again, or run this with --yes, and it loses the card
+  uninstall.sh: nothing was changed
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573; PCM RUNNING
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: gc573
+  the card is in use by PipeWire, streaming the card's audio (pid 1090): --yes, so it loses the card now
+  taking the card from gc573 (open now by pipewire (pid 1090), wireplumber (pid 5945))
+  reloading gc573
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 loads by itself from now on whenever the card is present
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state:  dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573; holders: 5945 wireplumber 
+  a new pw-record (pid 25629) from alsa_input.pci-0000_07_00.0.stereo-fallback: the card's PCM RUNNING, open by pid 1090
+  the card is in use by PipeWire, streaming the card's audio (pid 1090): --yes, so it loses the card now
+  taking the card from gc573 (open now by pipewire (pid 1090), wireplumber (pid 5945))
+  unloaded gc573
+  removing gc573 0.1 from DKMS (all kernels)
+  done
+  driver:  override: (null) persisted:  loaded: no noload: no state:  dkms:  video:  alsa: ; left: ''
+RESULT	pw-stream-refused	PASS	pw-record from alsa_input.pci-0000_07_00.0.stereo-fallback: PipeWire held the card's PCM (pid 1090); install.sh and uninstall.sh without --yes exit 1, name it as PipeWire streaming the card's audio, and the stream runs on; with --yes the update went through, and uninstall.sh --yes on a new recording left nothing
+=== pw-this-boot
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override gives the card (0000:07:00.0) to vfio-pci.
+  This is how the card is passed to a virtual machine (VFIO).
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 has the card for this boot. A reboot gives it back to vfio-pci: the override stays saved.
+  To switch for good: sudo tools/install.sh --permanent. uninstall.sh gives the card back at once.
+  holders: 5945 wireplumber 
+  removing the installed gc573 0.1 from DKMS
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: gc573, driver_override: gc573
+  
+  A persistent driverctl override gives the card (0000:07:00.0) to vfio-pci.
+  This is how the card is passed to a virtual machine (VFIO).
+  taking the card from gc573 (open now by wireplumber (pid 5945))
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 has the card for this boot. A reboot gives it back to vfio-pci: the override stays saved.
+  To switch for good: sudo tools/install.sh --permanent. uninstall.sh gives the card back at once.
+  driver: gc573 override: gc573 persisted: vfio-pci loaded: yes noload: yes state: bind this-boot 0000:07:00.0 vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+  holders: 5945 wireplumber 
+RESULT	pw-this-boot	PASS	override saved, --this-boot while WirePlumber held the card, then again (an update): taken from the old gc573, the new one has the card for this boot, held again
+=== pw-uninstall-this-boot
+  taking the card from gc573 (open now by wireplumber (pid 5945))
+  unloaded gc573
+  the saved override is loaded again: 0000:07:00.0 -> vfio-pci (bound now: no driver; vfio-pci takes it when a virtual machine starts with it or at the next boot)
+  removing gc573 0.1 from DKMS (all kernels)
+  removed /etc/modprobe.d/gc573-no-autoload.conf
+  done
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: no state:  dkms:  video:  alsa: 
+RESULT	pw-uninstall-this-boot	PASS	uninstall.sh while WirePlumber held the card: the card taken from gc573, the saved override loaded again, nothing left
+=== cleanup
+Processing triggers for man-db (2.12.0-4build2) ...
+  driver:  override: (null) persisted:  loaded: no noload: no state:  dkms:  video:  alsa: 
+RESULT	cleanup	PASS	no override, driverctl purged, rebooted

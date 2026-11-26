@@ -35,6 +35,8 @@
 /* largest block tried: GC573_DMA_SEG_MAX (2 MiB) */
 #define GC573_MEM_MAX_ORDER	(ilog2(GC573_DMA_SEG_MAX) - PAGE_SHIFT)
 
+struct gc573_mem_live gc573_mem_live;
+
 struct gc573_mem {
 	struct device *dev;
 	struct page **pages;
@@ -113,6 +115,8 @@ static void *gc573_mem_alloc(struct vb2_buffer *vb, struct device *dev,
 
 	m->dev = get_device(dev);
 	refcount_set(&m->refcount, 1);
+	atomic_inc(&gc573_mem_live.bufs);
+	atomic_long_add(m->n_pages, &gc573_mem_live.pages);
 	return m;
 
 err_free_pages:
@@ -131,10 +135,14 @@ static void gc573_mem_put(void *buf_priv)
 	if (!refcount_dec_and_test(&m->refcount))
 		return;
 
-	if (m->vaddr)
+	if (m->vaddr) {
 		vunmap(m->vaddr);
+		atomic_dec(&gc573_mem_live.vmaps);
+	}
 	sg_free_table(&m->sgt);
 	gc573_mem_free_pages(m->pages, m->n_pages);
+	atomic_long_sub(m->n_pages, &gc573_mem_live.pages);
+	atomic_dec(&gc573_mem_live.bufs);
 	kvfree(m->pages);
 	put_device(m->dev);
 	kfree(m);
@@ -150,6 +158,8 @@ static void *gc573_mem_vaddr(struct vb2_buffer *vb, void *buf_priv)
 		va = vmap(m->pages, m->n_pages, VM_MAP, PAGE_KERNEL);
 		if (va && cmpxchg(&m->vaddr, NULL, va))
 			vunmap(va);
+		else if (va)
+			atomic_inc(&gc573_mem_live.vmaps);
 	}
 	return READ_ONCE(m->vaddr);
 }

@@ -1,0 +1,79 @@
+# SUnreclaim growth in the host OBS soak: attribution
+date:    2026-11-25 22:49 - 2026-11-26 00:19 UTC
+host:    Linux Mint 22, 6.8.0-151-generic (CONFIG_RANDOM_KMALLOC_CACHES, memcg kmem
+         accounting on), gc573 bound (DKMS 0.1); home on eCryptfs over ext4 on dm-crypt
+soak:    tests/logs/20261125-215755_6.8.0-151-generic_live.log (RESULT obssoak-memory FAIL:
+         SUnreclaim +22780 kB from minute 5; OBS recorded 5.2 GB of hybrid MP4 into
+         ~/gc573-rec at about 0.72 MB/s)
+
+## 1. Which cache: /proc/slabinfo, 22:49:02 against 23:03:57 UTC (during the soak)
+Unreclaimable caches that grew: kmalloc-rnd-08-512 +2144 kB (26176 objects); everything
+else under +200 kB. buffer_head (+17 MB) and radix_tree_node (+3 MB) also grew, both
+reclaimable (the recording's page cache). kmalloc-rnd-08-512 grew 4-5 objects/s,
+steadily, through every kind of source change.
+
+## 2. When it stops and when it goes (30 s samples: active objects, SUnreclaim kB)
+23:59:06Z the recording stopped, 23:59:08Z OBS exited: the growth stopped, nothing was
+freed. 00:08:25-55Z the soak deleted the recording: 32495 objects freed at once, with
+the file's buffer heads.
+  UTC      buffer_head  radix_tree_node  kmalloc-rnd-08-512  SUnreclaim
+  23:58:25     1414842            70056               42240      270900
+  23:58:55     1420536            70252               42368      271320
+  23:59:25     1425021            70329               42453      264848
+  23:59:55     1426425            70317               42453      264548
+  00:08:25     1425557            70531               42442      265156
+  00:08:55       70226            28606                9947      252364
+  00:09:25       70226            28683                9946      252036
+
+## 3. Which call site: 2 GiB written with dd (conv=fsync) into each file system, the
+## 512-byte kmalloc allocations traced (tracefs hist triggers on kmem:kmalloc with
+## bytes_alloc == 512, matched to kmem:kfree by ptr through a synthetic event that
+## carries the allocating site; outstanding = allocated - freed within 40 s), and the
+## cache counted again after the file was deleted
+== /home/brian/gc573-memtest: ecryptfs (/home/brian/.Private ecryptfs)
+  kmalloc-rnd-08-512: 9930 before; 22238 after writing 2 GiB in 2.6 s (+12308, 601.0 per 100 MiB); 9949 after deleting the file (-12289)
+  == 512-byte kmalloc objects from 00:17:40 to 00:18:20 UTC (40 s)
+  caches before: kmalloc-rnd-12-512=3077 kmalloc-cg-512=2657 kmalloc-rnd-04-512=864 kmalloc-512=992 kmalloc-rnd-02-512=768 kmalloc-rnd-08-512=9930 kmalloc-rnd-11-512=544 kmalloc-rnd-06-512=672 kmalloc-rnd-01-512=672 kmalloc-rnd-15-512=896 kmalloc-rnd-13-512=768 kmalloc-rnd-05-512=640 kmalloc-rnd-03-512=800 kmalloc-rnd-09-512=768 kmalloc-rnd-07-512=768 kmalloc-rnd-10-512=6304 kmalloc-rnd-14-512=544 
+  caches after:  kmalloc-rnd-12-512=3077 kmalloc-cg-512=2657 kmalloc-rnd-04-512=864 kmalloc-512=992 kmalloc-rnd-02-512=768 kmalloc-rnd-08-512=22238 kmalloc-rnd-11-512=544 kmalloc-rnd-06-512=672 kmalloc-rnd-01-512=672 kmalloc-rnd-15-512=896 kmalloc-rnd-13-512=768 kmalloc-rnd-05-512=640 kmalloc-rnd-03-512=800 kmalloc-rnd-09-512=768 kmalloc-rnd-07-512=768 kmalloc-rnd-10-512=6368 kmalloc-rnd-14-512=544 
+  outstanding  per s allocated     freed  call site
+        12299 307.48     12299         0  memcg_alloc_slab_cgroups+0x3d/0x90
+            0   0.00       592       592  io_alloc_async_data+0x2c/0x60
+            0   0.00       193       193  ecryptfs_parse_tag_70_packet+0x9f/0x6f0
+            0   0.00        96        96  alloc_fair_sched_group+0xfb/0x240
+            0   0.00        96        96  alloc_fair_sched_group+0x165/0x240
+            0   0.00        40        40  io_uring_alloc_task_context+0x6e/0x2a0
+            0   0.00        30        30  ecryptfs_write_tag_70_packet+0x8b/0x710
+           -4  -0.10        86        90  alloc_bprm+0x6f/0x210
+          -19  -0.47      5870      5889  __alloc_skb+0x8a/0x1b0
+  all sites: allocated 19302, freed 7026, outstanding 12276
+== /var/tmp/gc573-memtest: ext2/ext3 (/dev/mapper/nvme0n1p3_crypt ext4)
+  kmalloc-rnd-08-512: 9949 before; 22128 after writing 2 GiB in 0.9 s (+12179, 594.7 per 100 MiB); 9993 after deleting the file (-12135)
+  == 512-byte kmalloc objects from 00:18:26 to 00:19:06 UTC (40 s)
+  caches before: kmalloc-rnd-12-512=3077 kmalloc-cg-512=2657 kmalloc-rnd-04-512=864 kmalloc-512=992 kmalloc-rnd-02-512=768 kmalloc-rnd-08-512=9949 kmalloc-rnd-11-512=544 kmalloc-rnd-06-512=672 kmalloc-rnd-01-512=672 kmalloc-rnd-15-512=896 kmalloc-rnd-13-512=768 kmalloc-rnd-05-512=640 kmalloc-rnd-03-512=800 kmalloc-rnd-09-512=768 kmalloc-rnd-07-512=768 kmalloc-rnd-10-512=6368 kmalloc-rnd-14-512=544 
+  caches after:  kmalloc-rnd-12-512=3077 kmalloc-cg-512=2657 kmalloc-rnd-04-512=864 kmalloc-512=992 kmalloc-rnd-02-512=768 kmalloc-rnd-08-512=22128 kmalloc-rnd-11-512=544 kmalloc-rnd-06-512=672 kmalloc-rnd-01-512=672 kmalloc-rnd-15-512=896 kmalloc-rnd-13-512=768 kmalloc-rnd-05-512=640 kmalloc-rnd-03-512=800 kmalloc-rnd-09-512=768 kmalloc-rnd-07-512=768 kmalloc-rnd-10-512=6400 kmalloc-rnd-14-512=544 
+  outstanding  per s allocated     freed  call site
+        12300 307.50     12301         1  memcg_alloc_slab_cgroups+0x3d/0x90
+            0   0.00       740       740  io_alloc_async_data+0x2c/0x60
+            0   0.00       335       335  ecryptfs_parse_tag_70_packet+0x9f/0x6f0
+            0   0.00       120       120  alloc_fair_sched_group+0xfb/0x240
+            0   0.00       120       120  alloc_fair_sched_group+0x165/0x240
+            0   0.00        50        50  io_uring_alloc_task_context+0x6e/0x2a0
+            0   0.00        42        42  ecryptfs_write_tag_70_packet+0x8b/0x710
+           -4  -0.10       109       113  alloc_bprm+0x6f/0x210
+           -8  -0.20      8084      8092  __alloc_skb+0x8a/0x1b0
+  all sites: allocated 21901, freed 9613, outstanding 12288
+
+## Result
+The objects are memcg_alloc_slab_cgroups()'s obj_cgroup vectors (mm/memcontrol.c): with
+kmem accounting, every new slab page of an accounted cache gets a vector of one pointer
+per object, here buffer_head's (39 per page, 312 bytes, so kmalloc-512) as the page cache
+of written data grows. About 600 per 100 MiB written, the same on eCryptfs and on plain
+ext4 (the soak's 0.72 MB/s gives 4.5/s), all freed when the file's page cache goes (file
+deleted, or the page cache reclaimed). In the soak all of the growth went with the
+recording (section 2), at the rate its write rate gives. Not gc573: the driver allocates
+a few objects per buffer at REQBUFS (src/gc573_vb2.c) and nothing per frame. Recording
+into a directory outside eCryptfs does not change it.
+
+For the soak's memory check this means SUnreclaim grows with the recording on any file
+system. A leak check has to compare SUnreclaim before OBS starts with SUnreclaim after
+OBS has exited and the recording is deleted.

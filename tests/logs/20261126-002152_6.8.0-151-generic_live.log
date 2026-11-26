@@ -1,0 +1,47 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 00:21:52 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     2093b97b6bfd-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   blip
+module:  srcversion 292FD1A2D4D0C4210A150E8 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 292FD1A2D4D0C4210A150E8, /dev/video4
+
+## blip
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4405 ms, 243 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5852 ms, 284 frames
+  INFO change: DQBUF Input/output error at 5852 ms, 284 frames, last frame at 5742 ms
+    | stream: running 0 live 0 input_restarts 45 input_stops 9 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 286 frames 284 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=284 event_ms=4405 events=2 last_event_ms=5852 frames_after_event=41 frames_after_last_event=0 last_frame_ms=5742 dqbuf_error_ms=5852 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT blip-continue              FAIL (continue: fmt=YUYV 1920x1080 frames=284 event_ms=4405 events=2 last_event_ms=5852 frames_after_event=41 frames_after_last_event=0 last_frame_ms=5742 dqbuf_error_ms=5852 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-other-lock            PASS (the driver locked at 1280x720 before the mode went back: timings: 1280x720p pixelclock 74250000 flags 0x296 vic 4 h 110/40/220 v 5/5/20 pol 0x3)
+RESULT blip-held                  FAIL (a hold and no stop: before input_restarts 44 input_stops 8; after input_restarts 45 input_stops 9)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4474 ms, 248 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5900 ms, 286 frames
+  INFO change: DQBUF Input/output error at 5900 ms, 286 frames, last frame at 5794 ms
+    | stream: running 0 live 0 input_restarts 46 input_stops 10 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 1 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 288 frames 286 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=286 event_ms=4474 events=2 last_event_ms=5900 frames_after_event=38 frames_after_last_event=0 last_frame_ms=5794 dqbuf_error_ms=5900 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT blip-stays                 PASS (error: fmt=YUYV 1920x1080 frames=286 event_ms=4474 events=2 last_event_ms=5900 frames_after_event=38 frames_after_last_event=0 last_frame_ms=5794 dqbuf_error_ms=5900 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-hold-ms               FAIL (DQBUF error 0 ms after the last SOURCE_CHANGE, the lock at 720p; hold 0.9-1.6 s)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 12 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT blip-continue              FAIL (continue: fmt=YUYV 1920x1080 frames=284 event_ms=4405 events=2 last_event_ms=5852 frames_after_event=41 frames_after_last_event=0 last_frame_ms=5742 dqbuf_error_ms=5852 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-other-lock            PASS (the driver locked at 1280x720 before the mode went back: timings: 1280x720p pixelclock 74250000 flags 0x296 vic 4 h 110/40/220 v 5/5/20 pol 0x3)
+RESULT blip-held                  FAIL (a hold and no stop: before input_restarts 44 input_stops 8; after input_restarts 45 input_stops 9)
+RESULT blip-stays                 PASS (error: fmt=YUYV 1920x1080 frames=286 event_ms=4474 events=2 last_event_ms=5900 frames_after_event=38 frames_after_last_event=0 last_frame_ms=5794 dqbuf_error_ms=5900 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-hold-ms               FAIL (DQBUF error 0 ms after the last SOURCE_CHANGE, the lock at 720p; hold 0.9-1.6 s)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=4 fail=3 skip=1

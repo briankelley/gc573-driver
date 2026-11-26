@@ -1,0 +1,4 @@
+SHOT 43.1 black err=255 counter=None size=1920x1080
+SHOT 45.0 black err=255 counter=None size=1920x1080
+SHOT 47.1 bad err=255 counter=None size=1280x720
+SHOT 185.6 bad err=250 counter=None size=1280x720

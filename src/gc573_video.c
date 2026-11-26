@@ -17,13 +17,31 @@
  * buffers still fit, for applications that ignore the event (OBS):
  * - input lost: the stream restarts free-running (black at 60 Hz);
  * - input locked in the stream's timings: the stream restarts from it;
- * - input locked in other timings: the stream stops, its buffers are
- *   returned with an error and the queue is marked failed
- *   (vb2_queue_error()).
+ * - input locked in other timings: the stream is held. The hardware
+ *   stops and the buffers wait in the queue; no frames arrive. If within
+ *   GC573_VID_HOLD_MS of the hold's start the input is lost or locks in
+ *   the stream's timings, the stream restarts as above. If the other
+ *   timings last that long, the stream stops: its buffers are returned
+ *   with an error and the queue is marked failed (vb2_queue_error()).
+ *   A source that changes its mode can lock briefly in another one first:
+ *   after a hot-plug a GPU shows its preferred mode until the desktop
+ *   sets its own (spec/hdmi-chips.md "Stream policy on input changes").
+ *   The hold does not free-run: free-running is documented with no input
+ *   (spec/video-dma.md), not with a locked input in other timings.
  * A restart is the hardware stop and start of STREAMOFF and STREAMON on
  * the same buffers: those in flight are queued again, the sequence counts
- * on, the first frame after it is dropped as after STREAMON, and the
- * colorimetry G_FMT reports follows the input.
+ * on, and the first frame after it is dropped as after STREAMON.
+ *
+ * Colorimetry (spec/hdmi-chips.md "Stream policy on input changes"): what
+ * G_FMT, TRY_FMT and S_FMT report for each format, and the RGB->YUV CSC,
+ * follow the last input that locked since load, from its AVI InfoFrame
+ * (gc573_vid_col_input()). They follow it through a loss and a hold, so
+ * that an application which sets its format again at the event
+ * (GStreamer) gets the colorimetry it had; the free-run frames are black
+ * in any of them. A lock in another colorimetry switches them at that
+ * lock, with its event. Before the first lock since load: the M2 setup
+ * (BT.709, limited-range YUV, full-range RGB).
+ *
  * When the queue is not busy the device adopts the new input's timings; a
  * change while it was busy is adopted once it is free (REQBUFS 0, close).
  * STREAMON with a locked input whose timings differ fails with -EPIPE.
@@ -54,6 +72,7 @@
 #include <linux/seq_file.h>
 #include <linux/string.h>
 #include <linux/v4l2-dv-timings.h>
+#include <linux/workqueue.h>
 #include <media/v4l2-dv-timings.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-fh.h>
@@ -78,6 +97,15 @@
  * carry stale lines from an earlier session. It is never delivered.
  */
 #define GC573_VID_SKIP			1
+/*
+ * How long a stream is held while the input is locked in other timings
+ * (policy: header comment). The driver locks in a passing mode 1.1-1.7 s
+ * after the source sets it, so the hold rides out a second mode set that
+ * comes up to 2.1-2.7 s after the first; measured blips lasted 138 and
+ * 224 ms. Applications that ignore SOURCE_CHANGE see a lasting change
+ * (the failed queue) that much later.
+ */
+#define GC573_VID_HOLD_MS		1000
 
 static int exp_slot_mode;
 module_param(exp_slot_mode, int, 0644);
@@ -268,22 +296,49 @@ static bool gc573_vid_input_matches(const struct gc573_video *v)
 	       v4l2_match_dv_timings(&v->in.timings, &v->timings, 0, false);
 }
 
+/*
+ * The input whose colorimetry the device reports and the RGB->YUV CSC
+ * uses (spec/hdmi-chips.md "Stream policy on input changes"): the last one
+ * that locked since load, through a loss and a hold. NULL before the first
+ * lock. While an input is locked it is that input.
+ */
+static const struct gc573_input *
+gc573_vid_col_input(const struct gc573_video *v)
+{
+	return v->col_valid ? &v->col_in : NULL;
+}
+
+/* The input as the device sees it now, and the last one locked */
+static void gc573_vid_note_input(struct gc573_video *v,
+				 const struct gc573_input *in)
+{
+	v->in = *in;
+	if (in->locked) {
+		v->col_in = *in;
+		v->col_valid = true;
+	}
+}
+
 /* Y'CbCr encoding of the YUV outputs: the input's, or by size for RGB */
 static enum gc573_enc gc573_vid_out_enc(const struct gc573_video *v)
 {
-	if (!gc573_vid_input_matches(v))
+	const struct gc573_input *in = gc573_vid_col_input(v);
+
+	if (!in)
 		return GC573_ENC_709;
-	if (v->in.colour)
-		return v->in.enc;
+	if (in->colour)
+		return in->enc;
 	return v->timings.bt.height >= 720 ? GC573_ENC_709 : GC573_ENC_601;
 }
 
 /*
- * Colorimetry of the captured data. Without a matching input the M2 setup
- * applies: BT.709, limited-range YUV, full-range RGB. With one: the
- * input's colour space; YUV outputs are limited range in the encoding of
- * gc573_vid_out_enc(); RGB outputs are full range, except that RGB input
- * reaches RGB output unconverted and keeps its range.
+ * Colorimetry of the captured data, from gc573_vid_col_input(). Before any
+ * lock the M2 setup applies: BT.709, limited-range YUV, full-range RGB.
+ * Then that input's colour space; YUV outputs are limited range in the
+ * encoding of gc573_vid_out_enc(); RGB outputs are full range, except that
+ * RGB input reaches RGB output unconverted and keeps its range. During a
+ * loss the frames are the free-run black (video-dma.md), which is black in
+ * any of these (RGB outputs: 0, under a limited-range RGB input too).
  */
 static void gc573_vid_colorimetry(const struct gc573_video *v,
 				  const struct gc573_fmt *f,
@@ -299,22 +354,22 @@ static void gc573_vid_colorimetry(const struct gc573_video *v,
 		[GC573_ENC_601] = V4L2_COLORSPACE_SMPTE170M,
 		[GC573_ENC_2020] = V4L2_COLORSPACE_BT2020,
 	};
-	bool live = gc573_vid_input_matches(v);
+	const struct gc573_input *in = gc573_vid_col_input(v);
 
 	pix->colorspace = V4L2_COLORSPACE_REC709;
 	pix->xfer_func = V4L2_XFER_FUNC_709;
 	pix->ycbcr_enc = encs[gc573_vid_out_enc(v)];
 	pix->quantization = f->rgb ? V4L2_QUANTIZATION_FULL_RANGE :
 				     V4L2_QUANTIZATION_LIM_RANGE;
-	if (!live)
+	if (!in)
 		return;
-	if (!v->in.colour) {
+	if (!in->colour) {
 		pix->colorspace = V4L2_COLORSPACE_SRGB;
 		pix->xfer_func = V4L2_XFER_FUNC_SRGB;
-		if (f->rgb && !v->in.full_range)
+		if (f->rgb && !in->full_range)
 			pix->quantization = V4L2_QUANTIZATION_LIM_RANGE;
 	} else {
-		pix->colorspace = spaces[v->in.enc];
+		pix->colorspace = spaces[in->enc];
 	}
 }
 
@@ -418,6 +473,8 @@ static int gc573_dl_build(struct gc573 *gc, struct sg_table *sgt, u32 off,
 	dl->desc = dma_alloc_coherent(dev, dl->size, &dl->dma, GFP_KERNEL);
 	if (!dl->desc)
 		return -ENOMEM;
+	atomic_inc(&gc573_mem_live.dlists);
+	atomic_long_add(dl->size, &gc573_mem_live.dl_bytes);
 
 	memset(&x, 0, sizeof(x));
 	x.desc = dl->desc;
@@ -433,9 +490,12 @@ static void gc573_dl_free(struct gc573 *gc, struct gc573_vbuf *b)
 	for (c = 0; c < GC573_VCH_NUM; c++) {
 		struct gc573_dlist *dl = &b->dl[c];
 
-		if (dl->desc)
+		if (dl->desc) {
 			dma_free_coherent(&gc->pdev->dev, dl->size, dl->desc,
 					  dl->dma);
+			atomic_dec(&gc573_mem_live.dlists);
+			atomic_long_sub(dl->size, &gc573_mem_live.dl_bytes);
+		}
 		memset(dl, 0, sizeof(*dl));
 	}
 }
@@ -533,7 +593,10 @@ static void gc573_csc_write(struct gc573 *gc, u32 base,
  * reset and bypassed (output size = input size).
  *
  * No matching input: RD's no-input setup (PIX_MODE 2, input taken as YUV,
- * rate limit 5). Locked input (spec/hdmi-chips.md "FPGA hand-off",
+ * rate limit 5, YUV->RGB CSC limited-range BT.709). The RGB->YUV CSC is in
+ * the encoding the device reports (gc573_vid_out_enc(), the last locked
+ * input's): it maps the free-run black to black in any encoding.
+ * Locked input (spec/hdmi-chips.md "FPGA hand-off",
  * hdmi-it6805.md 10.4): PIX_MODE and COLOR_CTRL bits 0/5/19 mirror the
  * IT6805 bus and the AVI colour format. CSCs: YUV input goes through the
  * YUV->RGB CSC (to full-range RGB), YUV outputs through the RGB->YUV CSC;
@@ -1038,6 +1101,7 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 	struct gc573_video *v = &gc->vid;
 
 	v->failed = false;
+	v->held = false;
 	v->start_pending = false;
 	if (v->dead) {
 		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
@@ -1061,6 +1125,7 @@ static void gc573_stop_streaming(struct vb2_queue *q)
 	if (!v->dead)
 		gc573_video_hw_stop(gc);
 	v->start_pending = false;
+	v->held = false;
 	gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
 
 	dev_dbg(&gc->pdev->dev,
@@ -1399,10 +1464,11 @@ static int gc573_log_status(struct file *file, void *priv)
 		  gc573_rd(gc, GC573_IN_STATUS), gc573_rd(gc, GC573_IN_WIDTH),
 		  gc573_rd(gc, GC573_IN_HEIGHT),
 		  gc573_rd(gc, GC573_IN_FRAME_PERIOD));
-	v4l2_info(&gc->v4l2_dev, "stream: %s%s, frames %u, skipped %u; input changes: %u restarts, %u stops\n",
+	v4l2_info(&gc->v4l2_dev, "stream: %s%s, frames %u, skipped %u; input changes: %u restarts, %u holds, %u stops\n",
 		  vb2_is_streaming(&v->queue) ? "on" : "off",
-		  v->live ? " (live)" : "", v->st.frames, v->st.skipped,
-		  v->input_restarts, v->input_stops);
+		  v->held ? " (held)" : v->live ? " (live)" : "",
+		  v->st.frames, v->st.skipped, v->input_restarts,
+		  v->input_holds, v->input_stops);
 	v4l2_info(&gc->v4l2_dev, "input: power %d signal %d locked %d period %#x\n",
 		  v->in.power, v->in.signal, v->in.locked, v->in.period);
 	if (v->in.locked)
@@ -1543,12 +1609,18 @@ static int gc573_vid_debugfs_show(struct seq_file *m, void *unused)
 	seq_printf(m, "ch0: STATUS %#010x CTRL %#010x\n",
 		   gc573_rd(gc, GC573_VCH0_BASE + GC573_VCH_STATUS),
 		   gc573_rd(gc, GC573_VCH0_BASE + GC573_VCH_CTRL));
+	seq_printf(m, "mem (live, all cards): bufs %d pages %ld vmaps %d dlists %d dl_bytes %ld\n",
+		   atomic_read(&gc573_mem_live.bufs),
+		   atomic_long_read(&gc573_mem_live.pages),
+		   atomic_read(&gc573_mem_live.vmaps),
+		   atomic_read(&gc573_mem_live.dlists),
+		   atomic_long_read(&gc573_mem_live.dl_bytes));
 
 	/* seq_printf() does not sleep: print the shared state under slock */
 	spin_lock(&v->slock);
-	seq_printf(m, "stream: running %d live %d input_restarts %u input_stops %u start_pending %d fmt %p4cc %ux%u sizeimage %u exp_slot_mode %d next_arm %u ch_ctrl written: ch1 %#x ch2 %#x\n",
+	seq_printf(m, "stream: running %d live %d input_restarts %u input_stops %u input_holds %u held %d start_pending %d fmt %p4cc %ux%u sizeimage %u exp_slot_mode %d next_arm %u ch_ctrl written: ch1 %#x ch2 %#x\n",
 		   v->running, v->live, v->input_restarts, v->input_stops,
-		   v->start_pending, &v->pix.pixelformat,
+		   v->input_holds, v->held, v->start_pending, &v->pix.pixelformat,
 		   v->pix.width, v->pix.height, v->pix.sizeimage, v->exp_mode,
 		   v->next_arm, v->ch_ctrl[1], v->ch_ctrl[2]);
 	seq_puts(m, "slots (buffer index):");
@@ -1665,6 +1737,42 @@ static void gc573_vid_unarm(struct gc573_video *v)
 }
 
 /*
+ * The stream stops for good: its buffers return with an error and the
+ * queue is marked failed. vid.lock held.
+ */
+static void gc573_vid_fail(struct gc573 *gc)
+{
+	struct gc573_video *v = &gc->vid;
+
+	if (v->running)
+		gc573_video_hw_stop(gc);
+	v->start_pending = false;
+	v->held = false;
+	gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
+	vb2_queue_error(&v->queue);
+	v->failed = true;
+	v->input_stops++;
+}
+
+/* The end of a hold: the input still in other timings fails the stream */
+static void gc573_vid_hold_expired(struct work_struct *work)
+{
+	struct gc573_video *v = container_of(to_delayed_work(work),
+					     struct gc573_video, hold_work);
+	struct gc573 *gc = container_of(v, struct gc573, vid);
+
+	mutex_lock(&v->lock);
+	/* a newer hold has its own deadline, and work queued for it */
+	if (v->held && !v->dead && !time_before(jiffies, v->hold_until)) {
+		gc573_vid_fail(gc);
+		dev_dbg(&gc->pdev->dev,
+			"video: input in other timings for %u ms, stream stopped\n",
+			GC573_VID_HOLD_MS);
+	}
+	mutex_unlock(&v->lock);
+}
+
+/*
  * A streaming queue follows a change of the input (policy: header
  * comment). vid.lock held; v->in is the new input.
  */
@@ -1676,15 +1784,23 @@ static void gc573_vid_follow_input(struct gc573 *gc)
 	if (v->failed)
 		return;
 	if (v->in.locked && !gc573_vid_input_matches(v)) {
+		/* held already: the hold counts from its start */
+		if (v->held)
+			return;
 		gc573_video_hw_stop(gc);
+		spin_lock(&v->slock);
+		gc573_vid_unarm(v);
+		spin_unlock(&v->slock);
 		v->start_pending = false;
-		gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
-		vb2_queue_error(&v->queue);
-		v->failed = true;
-		v->input_stops++;
-		dev_dbg(dev, "video: input in other timings, stream stopped\n");
+		v->held = true;
+		v->hold_until = jiffies + msecs_to_jiffies(GC573_VID_HOLD_MS);
+		mod_delayed_work(system_wq, &v->hold_work,
+				 msecs_to_jiffies(GC573_VID_HOLD_MS));
+		v->input_holds++;
+		dev_dbg(dev, "video: input in other timings, stream held\n");
 		return;
 	}
+	v->held = false;
 	/* free-running already, and still no input */
 	if (!v->in.locked && !v->live && (v->running || v->start_pending))
 		return;
@@ -1722,7 +1838,7 @@ void gc573_video_input_changed(struct gc573 *gc)
 		goto unlock;
 	gc573_hdmi_input(gc, &in);
 	same = gc573_input_same(&in, &v->in);
-	v->in = in;
+	gc573_vid_note_input(v, &in);
 	v4l2_ctrl_s_ctrl(v->power_ctrl, in.power);
 	if (same)
 		goto unlock;
@@ -1748,6 +1864,7 @@ void gc573_video_early_init(struct gc573 *gc)
 	spin_lock_init(&v->slock);
 	INIT_LIST_HEAD(&v->queued);
 	init_completion(&v->term);
+	INIT_DELAYED_WORK(&v->hold_work, gc573_vid_hold_expired);
 	v->timings = gc573_timings_def;
 	v->fmt = &gc573_fmts[0];
 	gc573_fill_pix(gc, v->fmt, &v->pix);
@@ -1771,6 +1888,7 @@ int gc573_video_init(struct gc573 *gc)
 	struct gc573_video *v = &gc->vid;
 	struct video_device *vdev = &v->vdev;
 	struct vb2_queue *q = &v->queue;
+	struct gc573_input in;
 	int ret;
 
 	q->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -1795,7 +1913,8 @@ int gc573_video_init(struct gc573 *gc)
 					  0, 0);
 	if (v->ctrls.error)
 		return v->ctrls.error;
-	gc573_hdmi_input(gc, &v->in);
+	gc573_hdmi_input(gc, &in);
+	gc573_vid_note_input(v, &in);
 	v4l2_ctrl_s_ctrl(v->power_ctrl, v->in.power);
 
 	strscpy(vdev->name, "GC573 HDMI capture", sizeof(vdev->name));
