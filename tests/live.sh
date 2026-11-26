@@ -2780,7 +2780,7 @@ roku_serve_stop() {
 }
 roku_play() {
 	: > "$ROKU_RUN/played"
-	ecp play "$(cat "$ROKU_URL_FILE")" --via "${GC573_ROKU_VIA:-pol}"
+	ecp play "$(cat "$ROKU_URL_FILE")"
 }
 # awake: a Home keypress unless its power mode is PowerOn
 roku_wake() {
@@ -2820,7 +2820,7 @@ roku_source_on() {
 roku_end() {
 	roku_serve_stop
 	! roku_go || [ ! -e "$ROKU_RUN/played" ] ||
-		ecp stop-ours --via "${GC573_ROKU_VIA:-pol}" 2>&1 | sed 's/^/  /'
+		ecp stop-ours 2>&1 | sed 's/^/  /'
 	! roku_go || [ ! -e "$ROKU_RUN/asleep" ] ||
 		{ echo "  the Roku was left asleep by this run: Home"; ecp key Home 2>&1 | sed 's/^/  /'; }
 	[ -z "$ROKU_RUN" ] || rm -rf "$ROKU_RUN"

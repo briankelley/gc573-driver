@@ -487,7 +487,7 @@ def roku_play():
     with the URL tools/roku/serve.py wrote"""
     with open(os.environ['GC573_ROKU_URL_FILE']) as f:
         url = f.read().strip()
-    r = roku('play', url, '--via', os.environ.get('GC573_ROKU_VIA', 'pol'))
+    r = roku('play', url)
     if r.returncode:
         ev('roku play: ' + ' '.join(r.stderr.split())[:200])
     return r.returncode == 0
