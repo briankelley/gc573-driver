@@ -625,7 +625,12 @@ step_relock() {
 FPGA_PARAM=/sys/module/gc573/parameters/exp_fpga_invalid
 fpga_param() { vm "echo $1 | sudo tee $FPGA_PARAM > /dev/null"; }
 kmsg_mark() { vm "echo 'gc573-live: $1' | sudo tee /dev/kmsg > /dev/null"; }
-kmsg_since() { vm "sudo dmesg | awk -v m='gc573-live: $1' 'f; index(\$0, m) { f = 1 }'"; }
+# the kernel log after the LAST mark $1 (nothing without one): a step that
+# runs twice in one boot (fpgawait for two modules) writes each mark twice
+kmsg_since() {
+	vm "sudo dmesg | awk -v m='gc573-live: $1' 'index(\$0, m) { n = NR } { l[NR] = \$0 }
+		END { if (n) for (i = n + 1; i <= NR; i++) print l[i] }'"
+}
 fpga_waits() { hdmi_dbg | grep -oE 'fpga_waits [0-9]+' | cut -d' ' -f2; }
 lock_lines() { grep -c 'HDMI: locked' <<< "$1"; }
 lock_rates() { grep -oE 'frame period [0-9a-fx]+ \([0-9.]+ Hz\)' <<< "$1" | paste -sd, - | sed 's/,/, /g'; }

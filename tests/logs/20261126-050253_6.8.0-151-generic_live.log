@@ -1,0 +1,38 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 05:02:53 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     42512e1f818e
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   fpgawait
+module:  srcversion D67F681C53B0B21C8E3CEEB loaded, D67F681C53B0B21C8E3CEEB in ~/gc573-driver, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## fpgawait
+  | [   47.375955] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 147184000 Hz pixel clock, frame period 0x0 (0.000 Hz), RGB, full range; FPGA 1004 0x1 1008 0x780 100c 0x438
+  input: power 1 signal 1 locked 1 period 0x0 fpga 0x1 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT fpgawait-no-lock           FAIL (the FPGA measurement held not valid for good: locked 1 period 0x0, QUERY_DV_TIMINGS locked, 1 lock lines: frame period 0x0 (0.000 Hz))
+RESULT fpgawait-warning           FAIL (the warning once: 0; fpga_waits none -> none)
+  | [   59.268352] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgawait-lock              FAIL (the measurement valid again: locked after 8 ms; 1 lock lines: frame period 0x196dab (60.006 Hz))
+  | [   62.902262] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock x 1000/1001, frame period 0x0 (0.000 Hz), RGB, full range; FPGA 1004 0x1 1008 0x780 100c 0x438
+  | [   63.555874] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgawait-late              FAIL (the measurement valid 30 polls after the stable entry: locked 1165 ms after the output came on; 2 lock lines: frame period 0x0 (0.000 Hz), frame period 0x196dab (60.006 Hz))
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 16 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT fpgawait-no-lock           FAIL (the FPGA measurement held not valid for good: locked 1 period 0x0, QUERY_DV_TIMINGS locked, 1 lock lines: frame period 0x0 (0.000 Hz))
+RESULT fpgawait-warning           FAIL (the warning once: 0; fpga_waits none -> none)
+RESULT fpgawait-lock              FAIL (the measurement valid again: locked after 8 ms; 1 lock lines: frame period 0x196dab (60.006 Hz))
+RESULT fpgawait-late              FAIL (the measurement valid 30 polls after the stable entry: locked 1165 ms after the output came on; 2 lock lines: frame period 0x0 (0.000 Hz), frame period 0x196dab (60.006 Hz))
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=3 fail=4 skip=1
