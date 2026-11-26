@@ -1,0 +1,98 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 18:39:14 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     c2d6aa909f62
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 0
+steps:   rokumodes rokuobsany
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokumodes
+  before: the Roku: 4850X: Ultra, software 16.0.4 build 853, PowerOn, ui-resolution 1080p, ecp enabled; the card: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00
+  720p EDID: locked 333 ms after the set; then: power 1 signal 1 locked 1 colour 2 vic 4 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1280,Active height: 720,Pixelclock: 74250000 Hz; AVI 00 40 a8 04 04 00
+  the Roku: 4850X: Ultra, software 16.0.4 build 853, PowerOn, ui-resolution 720p, ecp enabled; the kernel log's locks: frame period 0x19745c (59.945 Hz)
+RESULT roku-edid-720p-lock        PASS (locked 333 ms after the EDID set; locked 20 s on at Active width: 1280,Active height: 720,Pixelclock: 74250000 Hz, 59.94 Hz)
+RESULT roku-edid-720p-capture     PASS (PARAMS video 1280x720 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.929 xruns=0 restarts=0 )
+RESULT roku-edid-720p-duration    PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-edid-720p-xruns       PASS (0 overruns)
+RESULT roku-edid-720p-rate        PASS (47999.929 Hz against CLOCK_MONOTONIC, -1.5 ppm)
+RESULT roku-edid-720p-gaps        PASS (per-second medians move <= 0.05 ms from one second to the next; within 0.06 ms of one line over the run; single reads within 0.09 ms of it; 6000 reads)
+RESULT roku-edid-720p-video       FAIL (3592 frames, 0 sequence gaps, interval 16.684 ms, 2 off by more than half a period, 2 by more than 10 %)
+  interval off: frame 28 of 3592 (0.441 s in), seq 26 -> 27, 7.301 ms (median 16.684), neighbours 16.655 and 31.641 ms
+  interval off: frame 29 of 3592 (0.472 s in), seq 27 -> 28, 31.641 ms (median 16.684), neighbours 7.301 and 16.730 ms
+  INFO roku-edid-720p-picture 3592 frames; their grid luma took 13 values and changed between 62 of 3591 frame pairs
+  serial EDID: locked 462 ms after the set; then: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00
+  the Roku: 4850X: Ultra, software 16.0.4 build 853, PowerOn, ui-resolution 1080p, ecp enabled; the kernel log's locks: frame period 0x19745d (59.945 Hz)
+RESULT roku-edid-serial-lock      PASS (locked 462 ms after the EDID set; locked 20 s on at Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz, 59.94 Hz)
+RESULT roku-edid-serial-capture   PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.865 xruns=0 restarts=0 )
+RESULT roku-edid-serial-duration  PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-edid-serial-xruns     PASS (0 overruns)
+RESULT roku-edid-serial-rate      PASS (47999.865 Hz against CLOCK_MONOTONIC, -2.8 ppm)
+RESULT roku-edid-serial-gaps      PASS (per-second medians move <= 0.05 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.14 ms of it; 6000 reads)
+RESULT roku-edid-serial-video     PASS (3593 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO roku-edid-serial-picture 3593 frames; their grid luma took 2 values and changed between 4 of 3592 frame pairs
+  default EDID: locked 20 ms after the set; then: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00
+  the Roku: 4850X: Ultra, software 16.0.4 build 853, PowerOn, ui-resolution 1080p, ecp enabled; the kernel log's locks: frame period 0x19745d (59.945 Hz)
+RESULT roku-edid-default-lock     PASS (locked 20 ms after the EDID set; locked 20 s on at Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz, 59.94 Hz)
+RESULT roku-edid-default-capture  PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.860 xruns=0 restarts=0 )
+RESULT roku-edid-default-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-edid-default-xruns    PASS (0 overruns)
+RESULT roku-edid-default-rate     PASS (47999.860 Hz against CLOCK_MONOTONIC, -2.9 ppm)
+RESULT roku-edid-default-gaps     PASS (per-second medians move <= 0.05 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.13 ms of it; 6000 reads)
+RESULT roku-edid-default-video    PASS (3592 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO roku-edid-default-picture 3592 frames; their grid luma took 2 values and changed between 18 of 3591 frame pairs
+
+## rokuobsany
+  OBS started minimized to the tray (pid 2548046, profile gc573, recording format hybrid_mp4; 0 windows visible)
+  OBS sources: GC573 video on /dev/v4l/by-path/pci-0000:07:00.0-video-index0, GC573 audio on hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0, scene 'Scene', canvas 1920x1080 at 60/1 fps; no other inputs
+RESULT roku-obsany-stream         PASS (the driver's stream with OBS reading it: frames delivered over 2 s; power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00)
+RESULT roku-obsany-any-shots      PASS (10 of 10 screenshots 1920x1080, 0 failed; luma 75-75; 0 of 9 differ from the one before (mean 0.1 codes))
+RESULT roku-obsany-any-meters     PASS (399 InputVolumeMeters events in 20 s, 399 with the audio source; peak L -90.3 R -90.3 dBFS, mean L -90.3 R -90.3 dBFS)
+  STATS renderSkippedFrames=0 renderTotalFrames=3613 outputSkippedFrames=0 outputTotalFrames=3611
+  INFO recording: 1920x1080, 60.2 s, 3611 video frames at 60.000 fps (+0 against length x rate)
+RESULT roku-obsany-record         PASS (record-stop exit 0; STATS renderSkippedFrames=0 renderTotalFrames=3613 outputSkippedFrames=0 outputTotalFrames=3611;INFO recording: 1920x1080, 60.2 s, 3611 video frames at 60.000 fps (+0 against length x rate))
+RESULT roku-obsany-intervals      PASS (the driver's last frame interrupts while OBS read it: 31 intervals, median 16.682 ms, 16.611 to 16.755, 0 off by more than half a period)
+RESULT roku-obsany-counters       PASS (the driver's video counters: before irqs 490 frames 489 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0; after irqs 6238 frames 6237 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0)
+  OBS: STATS activeFps=60.0000024000001 renderTotalFrames=6266 renderSkippedFrames=0 outputTotalFrames=3661 outputSkippedFrames=0 cpuUsage=6.4393939393939394 memoryUsage=397.9453125
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 15 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-edid-720p-lock        PASS (locked 333 ms after the EDID set; locked 20 s on at Active width: 1280,Active height: 720,Pixelclock: 74250000 Hz, 59.94 Hz)
+RESULT roku-edid-720p-capture     PASS (PARAMS video 1280x720 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.929 xruns=0 restarts=0 )
+RESULT roku-edid-720p-duration    PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-edid-720p-xruns       PASS (0 overruns)
+RESULT roku-edid-720p-rate        PASS (47999.929 Hz against CLOCK_MONOTONIC, -1.5 ppm)
+RESULT roku-edid-720p-gaps        PASS (per-second medians move <= 0.05 ms from one second to the next; within 0.06 ms of one line over the run; single reads within 0.09 ms of it; 6000 reads)
+RESULT roku-edid-720p-video       FAIL (3592 frames, 0 sequence gaps, interval 16.684 ms, 2 off by more than half a period, 2 by more than 10 %)
+RESULT roku-edid-serial-lock      PASS (locked 462 ms after the EDID set; locked 20 s on at Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz, 59.94 Hz)
+RESULT roku-edid-serial-capture   PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.865 xruns=0 restarts=0 )
+RESULT roku-edid-serial-duration  PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-edid-serial-xruns     PASS (0 overruns)
+RESULT roku-edid-serial-rate      PASS (47999.865 Hz against CLOCK_MONOTONIC, -2.8 ppm)
+RESULT roku-edid-serial-gaps      PASS (per-second medians move <= 0.05 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.14 ms of it; 6000 reads)
+RESULT roku-edid-serial-video     PASS (3593 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT roku-edid-default-lock     PASS (locked 20 ms after the EDID set; locked 20 s on at Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz, 59.94 Hz)
+RESULT roku-edid-default-capture  PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.860 xruns=0 restarts=0 )
+RESULT roku-edid-default-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-edid-default-xruns    PASS (0 overruns)
+RESULT roku-edid-default-rate     PASS (47999.860 Hz against CLOCK_MONOTONIC, -2.9 ppm)
+RESULT roku-edid-default-gaps     PASS (per-second medians move <= 0.05 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.13 ms of it; 6000 reads)
+RESULT roku-edid-default-video    PASS (3592 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT roku-obsany-stream         PASS (the driver's stream with OBS reading it: frames delivered over 2 s; power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00)
+RESULT roku-obsany-any-shots      PASS (10 of 10 screenshots 1920x1080, 0 failed; luma 75-75; 0 of 9 differ from the one before (mean 0.1 codes))
+RESULT roku-obsany-any-meters     PASS (399 InputVolumeMeters events in 20 s, 399 with the audio source; peak L -90.3 R -90.3 dBFS, mean L -90.3 R -90.3 dBFS)
+RESULT roku-obsany-record         PASS (record-stop exit 0; STATS renderSkippedFrames=0 renderTotalFrames=3613 outputSkippedFrames=0 outputTotalFrames=3611;INFO recording: 1920x1080, 60.2 s, 3611 video frames at 60.000 fps (+0 against length x rate))
+RESULT roku-obsany-intervals      PASS (the driver's last frame interrupts while OBS read it: 31 intervals, median 16.682 ms, 16.611 to 16.755, 0 off by more than half a period)
+RESULT roku-obsany-counters       PASS (the driver's video counters: before irqs 490 frames 489 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0; after irqs 6238 frames 6237 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=29 fail=1 skip=1

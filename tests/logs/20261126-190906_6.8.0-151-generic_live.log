@@ -1,0 +1,323 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 19:09:06 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     ef8d09768cb2
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 1
+steps:   rokusoakany
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokusoakany
+  the card: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; the lock: HDMI: locked: 1920x1080p, 148500000 Hz; rotation edid-same,edid-new,idle,reopen-video,edid-default,reopen-audio
+RESULT roku-soak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=48000.031 xruns=0 restarts=0 )
+RESULT roku-soak-driver-first-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-first-xruns PASS (0 overruns)
+RESULT roku-soak-driver-first-rate PASS (48000.031 Hz against CLOCK_MONOTONIC, +0.6 ppm)
+RESULT roku-soak-driver-first-gaps PASS (per-second medians move <= 0.01 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.14 ms of it; 6000 reads)
+RESULT roku-soak-driver-first-video PASS (3592 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO roku-soak-driver-first-picture 3592 frames; their grid luma took 2 values and changed between 4 of 3591 frame pairs
+  OBS started minimized to the tray (pid 2607513, profile gc573, recording format hybrid_mp4; 0 windows visible)
+  OBS sources: GC573 video on /dev/v4l/by-path/pci-0000:07:00.0-video-index0, GC573 audio on hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0, scene 'Scene', canvas 1920x1080 at 60/1 fps; no other inputs
+RESULT roku-soak-record-start     PASS (STARTED )
+  rokusoak: 7200 s from 19:10:17 UTC, a change every 180 s
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795720217081734304-30022 rokusoak-change-0-
+  POINT 0 start: locked (15 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.622 to 16.748, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 96-96; 0 of 2 differ from the one before (mean 0.1 codes); a still picture: a freeze would look the same, so these shots cannot catch one)
+  POINT 1 before edid-same: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.682 ms, 16.620 to 16.750, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 96-96; 0 of 2 differ from the one before (mean 0.3 codes); a still picture: a freeze would look the same, so these shots cannot catch one)
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795720237858092806-12768 rokusoak-change-1-
+  CHANGE 1 edid-same: the input held 10 s
+  POINT 1 after edid-same: locked (9 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.674 to 16.695, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 96-96; 0 of 2 differ from the one before (mean 0.1 codes); a still picture: a freeze would look the same, so these shots cannot catch one)
+  POINT 2 before edid-new: locked (16 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.622 to 16.741, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 96-96; 0 of 2 differ from the one before (mean 0.1 codes); a still picture: a freeze would look the same, so these shots cannot catch one)
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795720407488774531-15715 rokusoak-change-2-
+  CHANGE 2 edid-new: the input lost
+  POINT 2 after edid-new: locked (1986 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.682 ms, 16.607 to 16.757, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 96-96; 0 of 2 differ from the one before (mean 0.1 codes); a still picture: a freeze would look the same, so these shots cannot catch one)
+  POINT 3 before idle: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.621 to 16.744, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 96-96; 0 of 2 differ from the one before (mean 0.3 codes); a still picture: a freeze would look the same, so these shots cannot catch one)
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795720587923590875-28424 rokusoak-change-3-
+  CHANGE 3 idle
+  POINT 3 after idle: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.615 to 16.748, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 96-96; 0 of 2 differ from the one before (mean 0.1 codes); a still picture: a freeze would look the same, so these shots cannot catch one)
+  POINT 4 before reopen-video: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.615 to 16.751, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 12.6 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795720768001544928-27185 rokusoak-change-4-
+  CHANGE 4 reopen-video
+  POINT 4 after reopen-video: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.625 to 16.741, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 13.4 codes))
+  POINT 5 before edid-default: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.685 ms, 16.571 to 16.745, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-38; 2 of 2 differ from the one before (mean 12.1 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795720948619807112-13311 rokusoak-change-5-
+  CHANGE 5 edid-default: the input lost
+  POINT 5 after edid-default: locked (1974 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.618 to 16.752, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-36; 2 of 2 differ from the one before (mean 12.8 codes))
+  POINT 6 before reopen-audio: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.618 to 16.772, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 33-34; 2 of 2 differ from the one before (mean 12.5 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795721128040921473-20688 rokusoak-change-6-
+  CHANGE 6 reopen-audio: INFO custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -> hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 
+  POINT 6 after reopen-audio: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.612 to 16.744, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 34-35; 2 of 2 differ from the one before (mean 12.8 codes))
+  POINT 7 before edid-same: locked (8 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.617 to 16.745, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-39; 2 of 2 differ from the one before (mean 13.6 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795721308627495355-21873 rokusoak-change-7-
+  CHANGE 7 edid-same: the input held 10 s
+  POINT 7 after edid-same: locked (14 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.620 to 16.745, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 39-39; 2 of 2 differ from the one before (mean 13.9 codes))
+  POINT 8 before edid-new: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.606 to 16.760, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 40-40; 2 of 2 differ from the one before (mean 16.0 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795721488246925923-14600 rokusoak-change-8-
+  CHANGE 8 edid-new: the input lost
+  POINT 8 after edid-new: locked (1934 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.601 to 16.750, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-38; 2 of 2 differ from the one before (mean 15.9 codes))
+  POINT 9 before idle: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.612 to 16.753, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 15.1 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795721668846973086-31778 rokusoak-change-9-
+  CHANGE 9 idle
+  POINT 9 after idle: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.619 to 16.746, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-39; 2 of 2 differ from the one before (mean 13.6 codes))
+  POINT 10 before reopen-video: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.627 to 16.732, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-37; 2 of 2 differ from the one before (mean 12.3 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795721848342764030-18725 rokusoak-change-10-
+  CHANGE 10 reopen-video
+  POINT 10 after reopen-video: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.611 to 16.755, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 13.4 codes))
+  POINT 11 before edid-default: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.610 to 16.748, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 40-42; 2 of 2 differ from the one before (mean 15.4 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795722028001651085-27544 rokusoak-change-11-
+  CHANGE 11 edid-default: the input lost
+  POINT 11 after edid-default: locked (1987 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.581 to 16.785, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 41-42; 2 of 2 differ from the one before (mean 16.7 codes))
+  POINT 12 before reopen-audio: locked (11 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.570 to 16.755, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 11.1 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795722208287069552-17226 rokusoak-change-12-
+  CHANGE 12 reopen-audio: INFO custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 -> hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 
+  POINT 12 after reopen-audio: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.626 to 16.746, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 11.0 codes))
+  POINT 13 before edid-same: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.685 ms, 16.617 to 16.755, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-36; 2 of 2 differ from the one before (mean 12.8 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795722388751500839-22055 rokusoak-change-13-
+  CHANGE 13 edid-same: the input held 10 s
+  POINT 13 after edid-same: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.608 to 16.752, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-37; 2 of 2 differ from the one before (mean 12.5 codes))
+  POINT 14 before edid-new: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.682 ms, 16.542 to 16.833, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-38; 2 of 2 differ from the one before (mean 13.0 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795722568127048134-32522 rokusoak-change-14-
+  CHANGE 14 edid-new: the input lost
+  POINT 14 after edid-new: locked (2030 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.607 to 16.757, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 12.3 codes))
+  POINT 15 before idle: locked (18 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.616 to 16.747, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-38; 2 of 2 differ from the one before (mean 12.8 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795722748202144180-24604 rokusoak-change-15-
+  CHANGE 15 idle
+  POINT 15 after idle: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.619 to 16.745, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-38; 2 of 2 differ from the one before (mean 14.0 codes))
+  POINT 16 before reopen-video: locked (13 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.614 to 16.744, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-39; 2 of 2 differ from the one before (mean 14.8 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795722928797112199-28427 rokusoak-change-16-
+  CHANGE 16 reopen-video
+  POINT 16 after reopen-video: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.613 to 16.757, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-38; 2 of 2 differ from the one before (mean 13.8 codes))
+  POINT 17 before edid-default: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.611 to 16.750, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 13.5 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795723108728370722-5287 rokusoak-change-17-
+  CHANGE 17 edid-default: the input lost
+  POINT 17 after edid-default: locked (1925 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.685 ms, 16.619 to 16.741, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-36; 2 of 2 differ from the one before (mean 13.6 codes))
+  POINT 18 before reopen-audio: locked (7 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.614 to 16.748, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 12.3 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795723288221237814-20666 rokusoak-change-18-
+  CHANGE 18 reopen-audio: INFO custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -> hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 
+  POINT 18 after reopen-audio: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.620 to 16.748, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-38; 2 of 2 differ from the one before (mean 13.5 codes))
+  POINT 19 before edid-same: locked (15 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.685 ms, 16.613 to 16.747, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 12.2 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795723467710875694-11636 rokusoak-change-19-
+  CHANGE 19 edid-same: the input held 10 s
+  POINT 19 after edid-same: locked (15 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.579 to 16.746, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-36; 2 of 2 differ from the one before (mean 12.2 codes))
+  POINT 20 before edid-new: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.617 to 16.748, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 34-35; 2 of 2 differ from the one before (mean 13.7 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795723648112179786-14354 rokusoak-change-20-
+  CHANGE 20 edid-new: the input lost
+  POINT 20 after edid-new: locked (1973 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.681 ms, 16.617 to 16.749, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 34-36; 2 of 2 differ from the one before (mean 13.1 codes))
+  POINT 21 before idle: locked (17 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.625 to 16.738, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-39; 2 of 2 differ from the one before (mean 13.8 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795723828457736163-25738 rokusoak-change-21-
+  CHANGE 21 idle
+  POINT 21 after idle: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.685 ms, 16.620 to 16.744, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 41-41; 2 of 2 differ from the one before (mean 16.3 codes))
+  POINT 22 before reopen-video: locked (7 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.606 to 16.759, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 34-35; 2 of 2 differ from the one before (mean 11.4 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795724007907492834-32250 rokusoak-change-22-
+  CHANGE 22 reopen-video
+  POINT 22 after reopen-video: locked (76 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.583 to 16.747, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 34-35; 2 of 2 differ from the one before (mean 11.4 codes))
+  POINT 23 before edid-default: locked (15 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.610 to 16.751, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 12.9 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795724188497197180-8775 rokusoak-change-23-
+  CHANGE 23 edid-default: the input lost
+  POINT 23 after edid-default: locked (1993 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.630 to 16.702, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-37; 2 of 2 differ from the one before (mean 11.3 codes))
+  POINT 24 before reopen-audio: locked (7 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.621 to 16.743, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 41-41; 2 of 2 differ from the one before (mean 15.9 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795724368834835236-28626 rokusoak-change-24-
+  CHANGE 24 reopen-audio: INFO custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 -> hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 
+  POINT 24 after reopen-audio: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.618 to 16.754, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-39; 2 of 2 differ from the one before (mean 13.4 codes))
+  POINT 25 before edid-same: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.624 to 16.748, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 13.0 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795724548656572478-23573 rokusoak-change-25-
+  CHANGE 25 edid-same: the input held 10 s
+  POINT 25 after edid-same: locked (12 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.618 to 16.761, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-36; 2 of 2 differ from the one before (mean 13.3 codes))
+  POINT 26 before edid-new: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.620 to 16.745, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 40-40; 2 of 2 differ from the one before (mean 16.3 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795724728090710020-20626 rokusoak-change-26-
+  CHANGE 26 edid-new: the input lost
+  POINT 26 after edid-new: locked (1954 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.592 to 16.757, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 39-39; 2 of 2 differ from the one before (mean 14.2 codes))
+  POINT 27 before idle: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.610 to 16.756, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 15.6 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795724908480703846-21605 rokusoak-change-27-
+  CHANGE 27 idle
+  POINT 27 after idle: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.682 ms, 16.620 to 16.755, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-38; 2 of 2 differ from the one before (mean 14.0 codes))
+  POINT 28 before reopen-video: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.609 to 16.741, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 12.7 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795725088034595151-925 rokusoak-change-28-
+  CHANGE 28 reopen-video
+  POINT 28 after reopen-video: locked (76 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.620 to 16.742, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 12.8 codes))
+  POINT 29 before edid-default: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.682 ms, 16.612 to 16.761, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 41-41; 2 of 2 differ from the one before (mean 16.9 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795725268068276149-28946 rokusoak-change-29-
+  CHANGE 29 edid-default: the input lost
+  POINT 29 after edid-default: locked (1980 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.620 to 16.748, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 40-41; 2 of 2 differ from the one before (mean 16.0 codes))
+  POINT 30 before reopen-audio: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.612 to 16.748, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 13.0 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795725448481166062-14748 rokusoak-change-30-
+  CHANGE 30 reopen-audio: INFO custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -> hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 
+  POINT 30 after reopen-audio: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.621 to 16.746, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-37; 2 of 2 differ from the one before (mean 13.4 codes))
+  POINT 31 before edid-same: locked (11 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.622 to 16.751, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-40; 2 of 2 differ from the one before (mean 14.6 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795725628095553155-13573 rokusoak-change-31-
+  CHANGE 31 edid-same: the input held 10 s
+  POINT 31 after edid-same: locked (7 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.608 to 16.753, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 12.9 codes))
+  POINT 32 before edid-new: locked (12 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.685 ms, 16.614 to 16.746, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 41-42; 2 of 2 differ from the one before (mean 16.8 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795725808566497615-32275 rokusoak-change-32-
+  CHANGE 32 edid-new: the input lost
+  POINT 32 after edid-new: locked (1962 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.615 to 16.743, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 40-41; 2 of 2 differ from the one before (mean 18.1 codes))
+  POINT 33 before idle: locked (9 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.603 to 16.763, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 13.3 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795725988300548208-31282 rokusoak-change-33-
+  CHANGE 33 idle
+  POINT 33 after idle: locked (6 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.601 to 16.768, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-38; 2 of 2 differ from the one before (mean 12.2 codes))
+  POINT 34 before reopen-video: locked (14 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.540 to 16.831, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 14.5 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795726168235087770-29243 rokusoak-change-34-
+  CHANGE 34 reopen-video
+  POINT 34 after reopen-video: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.620 to 16.772, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 15.1 codes))
+  POINT 35 before edid-default: locked (7 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.615 to 16.754, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 12.0 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795726348119930350-27001 rokusoak-change-35-
+  CHANGE 35 edid-default: the input lost
+  POINT 35 after edid-default: locked (1928 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.621 to 16.747, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-38; 2 of 2 differ from the one before (mean 12.8 codes))
+  POINT 36 before reopen-audio: locked (9 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.682 ms, 16.601 to 16.753, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 12.7 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795726528201127657-11870 rokusoak-change-36-
+  CHANGE 36 reopen-audio: INFO custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 -> hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 
+  POINT 36 after reopen-audio: locked (7 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.619 to 16.746, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-36; 2 of 2 differ from the one before (mean 11.2 codes))
+  POINT 37 before edid-same: locked (8 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.605 to 16.752, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-37; 2 of 2 differ from the one before (mean 13.5 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795726708943766793-29870 rokusoak-change-37-
+  CHANGE 37 edid-same: the input held 10 s
+  POINT 37 after edid-same: locked (16 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.613 to 16.755, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-36; 2 of 2 differ from the one before (mean 11.4 codes))
+  POINT 38 before edid-new: locked (18 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.625 to 16.743, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-35; 2 of 2 differ from the one before (mean 12.5 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795726888491592976-2293 rokusoak-change-38-
+  CHANGE 38 edid-new: the input lost
+  POINT 38 after edid-new: locked (1979 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.601 to 16.741, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 34-34; 2 of 2 differ from the one before (mean 12.7 codes))
+  POINT 39 before idle: locked (7 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.622 to 16.744, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 12.9 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795727067825952374-1627 rokusoak-change-39-
+  CHANGE 39 idle
+  POINT 39 after idle: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.686 ms, 16.622 to 16.753, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 12.2 codes))
+  POINT 40 before reopen-video: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.623 to 16.751, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-35; 2 of 2 differ from the one before (mean 12.3 codes))
+/home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/lib.sh: line 57: /dev/kmsg: Permission denied
+1795727248267688440-32031 rokusoak-change-40-
+  CHANGE 40 reopen-video
+  POINT 40 after reopen-video: locked (76 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.620 to 16.744, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 12.6 codes))
+  POINT end: locked (17 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.682 ms, 16.615 to 16.757, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 13.9 codes))
+  OBS at the start: STATS activeFps=60.0000024000001 renderTotalFrames=523 renderSkippedFrames=0 outputTotalFrames=10 outputSkippedFrames=0 cpuUsage=2.083333333333333 memoryUsage=454.3671875
+  OBS at the end:   STATS activeFps=60.0000024000001 renderTotalFrames=433190 renderSkippedFrames=25 outputTotalFrames=432677 outputSkippedFrames=0 cpuUsage=9.298877799549677 memoryUsage=1354.796875
+  STATS renderSkippedFrames=25 renderTotalFrames=432681 outputSkippedFrames=0 outputTotalFrames=432680
+  INFO recording: 1920x1080, 7211.3 s, 432680 video frames at 60.000 fps (+0 against length x rate)
+RESULT roku-soak-record           PASS (record-stop exit 0; OBS over the recording: STATS renderSkippedFrames=25 renderTotalFrames=432681 outputSkippedFrames=0 outputTotalFrames=432680;INFO recording: 1920x1080, 7211.3 s, 432680 video frames at 60.000 fps (+0 against length x rate))
+RESULT roku-soak-driver-last-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.838 xruns=0 restarts=0 )
+RESULT roku-soak-driver-last-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-last-xruns PASS (0 overruns)
+RESULT roku-soak-driver-last-rate PASS (47999.838 Hz against CLOCK_MONOTONIC, -3.4 ppm)
+RESULT roku-soak-driver-last-gaps PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.10 ms of it; 6000 reads)
+RESULT roku-soak-driver-last-video FAIL (3593 frames, 0 sequence gaps, interval 16.683 ms, 2 off by more than half a period, 2 by more than 10 %)
+  the first frame at 0; the first audio read at -0.060 s
+  interval off: frame 46 of 3593 (0.739 s in), seq 44 -> 45, 6.064 ms (median 16.683), neighbours 16.664 and 29.755 ms
+    phase against the median cadence, frames 44 to 47: -0.742 -0.761 -11.380 +1.692 ms
+    ring: -33.332 ms from frame 45, status 0x00011024 ctrl 0x00000007 done 1 armed 3
+    ring: -16.664 ms from frame 45, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+    ring: +0.001 ms from frame 45, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+    ring: +6.064 ms from frame 45, status 0x00011023 ctrl 0x00000013 done 1 armed 3
+    ring: +35.820 ms from frame 45, status 0x00011024 ctrl 0x00000007 done 1 armed 3
+    ring: +52.514 ms from frame 45, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+  interval off: frame 47 of 3593 (0.769 s in), seq 45 -> 46, 29.755 ms (median 16.683), neighbours 6.064 and 16.694 ms
+    phase against the median cadence, frames 45 to 48: -0.761 -11.380 +1.692 +1.703 ms
+    ring: -22.728 ms from frame 46, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+    ring: -6.063 ms from frame 46, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+    ring: +0.000 ms from frame 46, status 0x00011023 ctrl 0x00000013 done 1 armed 3
+    ring: +29.756 ms from frame 46, status 0x00011024 ctrl 0x00000007 done 1 armed 3
+    ring: +46.450 ms from frame 46, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+    ring: +63.199 ms from frame 46, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+  the driver after: stream: running 0 live 1 input_restarts 26 input_stops 0 input_holds 0 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 1 ch_ctrl written: ch1 0x0 ch2 0x0;stats: irqs 3594 frames 3593 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  INFO roku-soak-driver-last-picture 3593 frames; their grid luma took 12 values and changed between 1064 of 3592 frame pairs
+RESULT roku-soak-length           PASS (the whole 7200 s: 40 changes; 21:11:35 UTC now)
+RESULT roku-soak-lock             PASS (82 check points: 0 without a lock within 60 s while the Roku sent a signal; 0 without a signal from the Roku (INFO))
+RESULT roku-soak-stream           PASS (the driver's stream delivering to OBS at every point but 0: 0 of them with no lock in other timings, 0 not back after OBS's reopen)
+RESULT roku-soak-intervals        PASS (the driver's last 32 frame intervals at each point within half a period of their median: 0 points not; medians 16.681-16.686 ms)
+RESULT roku-soak-obs-shots        PASS (OBS's screenshots at every point: 0 points with one failed or of another size)
+  INFO roku-soak-picture OBS's picture moved between screenshots 2 s apart at 75 points (the screen saver animating: OBS not frozen there) and stood still at 7 (a still screen or a freeze: not told apart; the driver's frames moved at every point unless roku-soak-stream says otherwise)
+  obs: 62 select timeouts, 0 dequeue failures, 7 device opens
+  obs log: 12:10:16.897: ==== Recording Start ===============================================
+  obs log: 14:10:29.124: Output 'simple_file_output': Total frames output: 432682
+  obs log: 14:10:29.124: Output 'simple_file_output': Total drawn frames: 432709 (432734 attempted)
+  obs log: 14:10:29.124: Output 'simple_file_output': Number of lagged frames due to rendering lag/stalls: 25 (0.0%)
+  obs log: 14:10:29.125: ==== Recording Stop ================================================
+  INFO memory-kmalloc live objects in the kmalloc caches: 234253 kB before OBS started, 235391 kB after OBS exited and the recording was deleted, +1138 kB (every program's); SUnreclaim 468912 -> 477000 kB (+8088)
+RESULT roku-soak-memory           PASS (the driver's own buffer memory, debugfs video "mem": before OBS bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0; after OBS exited bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT roku-soak-cpu              PASS (report only: OBS 223.0 % of one CPU, the IRQ thread 0.42 %, the host 10.9 % of its CPUs, over 7219 s)
+RESULT roku-soak-driver-counters  PASS (over the soak, 121 samples: v_skipped +33 a_silent +2480 v_terms +26 sp_level_changes +2 v_input_restarts +26 a_stops +6 it_losses +13 it_releases +13 it_entries +13 v_frames +418351 h_runs +22346 h_fpga_rejects +28 a_periods +721898 a_starts +6 a_pauses +13; kernel log: 1081 lines, 1081 of the driver, 0 bad)
+  mem: 1795720211 62539836 1899672 472228 185328 25824 296760 82 4473 12506385:179367601 0 0 0
+  mem: 1795720754 61430296 1914192 474948 186472 25824 1316992 92235 4708 12627296:180539924 88 88 0
+  mem: 1795721357 61553644 1930096 477036 185744 25824 1360296 228277 4958 12784370:181821283 176 176 0
+  mem: 1795721960 61499384 1944416 477636 185808 25824 1361980 365499 5211 12942794:183101471 264 264 0
+  mem: 1795722563 61498400 1960740 480204 185984 25824 1366952 502768 5462 13101811:184381286 331 331 0
+  mem: 1795723166 61565064 1974172 479780 185856 25824 1371820 639816 5714 13260606:185661130 507 507 0
+  mem: 1795723769 61547568 1989892 481808 185856 25824 1373300 776926 5966 13419291:186941361 574 574 0
+  mem: 1795724372 61555008 2005864 484104 185888 25824 1376600 912645 6214 13576990:188222813 662 662 0
+  mem: 1795724975 61510828 2020108 484584 185904 25824 1378856 1049929 6466 13735994:189502076 729 729 0
+  mem: 1795725578 61572704 2035816 486580 185712 25824 1380888 1187389 6717 13894388:190782205 817 817 0
+  mem: 1795726181 61574872 2052012 489028 186248 25824 1384280 1324885 6969 14053681:192061210 905 905 0
+  mem: 1795726784 61444612 2070208 490036 186336 25824 1384004 1462759 7222 14213554:193339694 993 993 0
+  mem: 1795727387 61462140 2084660 490772 185760 25824 1385500 1600301 7475 14372403:194619470 1081 1081 0
+  INFO memory from minute 5 to the end: SUnreclaim +8456 kB (the recording's page cache counts), Slab +11316 kB, VmallocUsed -608 kB, MemAvailable +161780 kB, OBS RSS -839544 kB
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 1085 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-soak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=48000.031 xruns=0 restarts=0 )
+RESULT roku-soak-driver-first-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-first-xruns PASS (0 overruns)
+RESULT roku-soak-driver-first-rate PASS (48000.031 Hz against CLOCK_MONOTONIC, +0.6 ppm)
+RESULT roku-soak-driver-first-gaps PASS (per-second medians move <= 0.01 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.14 ms of it; 6000 reads)
+RESULT roku-soak-driver-first-video PASS (3592 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT roku-soak-record-start     PASS (STARTED )
+RESULT roku-soak-record           PASS (record-stop exit 0; OBS over the recording: STATS renderSkippedFrames=25 renderTotalFrames=432681 outputSkippedFrames=0 outputTotalFrames=432680;INFO recording: 1920x1080, 7211.3 s, 432680 video frames at 60.000 fps (+0 against length x rate))
+RESULT roku-soak-driver-last-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.838 xruns=0 restarts=0 )
+RESULT roku-soak-driver-last-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-last-xruns PASS (0 overruns)
+RESULT roku-soak-driver-last-rate PASS (47999.838 Hz against CLOCK_MONOTONIC, -3.4 ppm)
+RESULT roku-soak-driver-last-gaps PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.10 ms of it; 6000 reads)
+RESULT roku-soak-driver-last-video FAIL (3593 frames, 0 sequence gaps, interval 16.683 ms, 2 off by more than half a period, 2 by more than 10 %)
+RESULT roku-soak-length           PASS (the whole 7200 s: 40 changes; 21:11:35 UTC now)
+RESULT roku-soak-lock             PASS (82 check points: 0 without a lock within 60 s while the Roku sent a signal; 0 without a signal from the Roku (INFO))
+RESULT roku-soak-stream           PASS (the driver's stream delivering to OBS at every point but 0: 0 of them with no lock in other timings, 0 not back after OBS's reopen)
+RESULT roku-soak-intervals        PASS (the driver's last 32 frame intervals at each point within half a period of their median: 0 points not; medians 16.681-16.686 ms)
+RESULT roku-soak-obs-shots        PASS (OBS's screenshots at every point: 0 points with one failed or of another size)
+RESULT roku-soak-memory           PASS (the driver's own buffer memory, debugfs video "mem": before OBS bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0; after OBS exited bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT roku-soak-cpu              PASS (report only: OBS 223.0 % of one CPU, the IRQ thread 0.42 %, the host 10.9 % of its CPUs, over 7219 s)
+RESULT roku-soak-driver-counters  PASS (over the soak, 121 samples: v_skipped +33 a_silent +2480 v_terms +26 sp_level_changes +2 v_input_restarts +26 a_stops +6 it_losses +13 it_releases +13 it_entries +13 v_frames +418351 h_runs +22346 h_fpga_rejects +28 a_periods +721898 a_starts +6 a_pauses +13; kernel log: 1081 lines, 1081 of the driver, 0 bad)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=24 fail=1 skip=1

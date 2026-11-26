@@ -1,0 +1,40 @@
+2026-11-26T18:55:43.538Z guard start: run pid 2577305, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-26T18:55:43.546Z roku query device-info
+2026-11-26T18:55:43.578Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap /home/brian/dev/gc573-driver/.claude/worktrees/ag
+2026-11-26T18:55:43.589Z camwatch start pid 2577328 (guard): 13 nodes marked: /dev/media0 (HD Pro Webcam C920); /dev/snd/controlC0 (card 0 C920); /dev/snd/controlC1 (card 1 Device); /dev/snd/controlC2 (card 2 PCH); /dev/snd/hwC2D0 (card 2 PCH); /dev/snd/pcmC0D0c (card 0 C920); /dev/snd/pcmC1D0c (card 1 Device); /dev/snd/pcmC1D0p (card 1 Device); /dev/snd/pcmC2D0c (card 2 PCH); /dev/snd/pcmC2D0p (card 2 PCH); /dev/snd/pcmC2D2c (card 2 PCH); /dev/video0 (HD Pro Webcam C920); /dev/video1 (HD Pro Webcam C920). Not watched: snd/controlC3 (card 3 NVidia: NVIDIA HDMI); snd/controlC4 (card 4 GC573: the GC573); snd/hwC3D0 (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D3p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D7p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D8p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D9p (card 3 NVidia: NVIDIA HDMI); snd/pcmC4D0c (card 4 GC573: the GC573); video2 (the GC573)
+2026-11-26T18:55:43.599Z guard x11 start: DVI-D-0 none; outputs HDMI-0 1920x1200+0+0
+2026-11-26T18:55:43.610Z guard audio links: none
+2026-11-26T18:55:43.983Z live stream stop (exit 0)
+2026-11-26T18:55:44.122Z live edid set
+2026-11-26T18:55:49.176Z live edid set
+2026-11-26T18:55:49.766Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -L 10 -f YUYV -b 4 -n 120 -p -F -B -M /
+2026-11-26T18:55:54.455Z live stream stop (exit 0)
+2026-11-26T18:55:59.538Z live edid set
+2026-11-26T18:56:00.144Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -L 10 -f YUYV -b 4 -n 120 -p -F -B -M /
+2026-11-26T18:56:04.968Z live stream stop (exit 0)
+2026-11-26T18:56:07.077Z live edid set
+2026-11-26T18:56:12.158Z live edid set
+2026-11-26T18:56:12.752Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -L 10 -f YUYV -b 4 -n 120 -p -F -B -M /
+2026-11-26T18:56:17.608Z live stream stop (exit 0)
+2026-11-26T18:56:22.708Z live edid set
+2026-11-26T18:56:23.305Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -L 10 -f YUYV -b 4 -n 120 -p -F -B -M /
+2026-11-26T18:56:28.110Z live stream stop (exit 0)
+2026-11-26T18:56:30.222Z live edid set
+2026-11-26T18:56:35.298Z live edid set
+2026-11-26T18:56:35.896Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -L 10 -f YUYV -b 4 -n 120 -p -F -B -M /
+2026-11-26T18:56:40.698Z live stream stop (exit 0)
+2026-11-26T18:56:43.618Z guard ok: audio 1197 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 0
+2026-11-26T18:56:43.651Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T18:56:45.806Z live edid set
+2026-11-26T18:56:46.406Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -L 10 -f YUYV -b 4 -n 120 -p -F -B -M /
+2026-11-26T18:56:51.214Z live stream stop (exit 0)
+2026-11-26T18:56:53.327Z live edid set
+2026-11-26T18:56:58.409Z live edid set
+2026-11-26T18:56:59.009Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -L 10 -f YUYV -b 4 -n 120 -p -F -B -M /
+2026-11-26T18:57:03.819Z live stream stop (exit 0)
+2026-11-26T18:57:08.874Z live edid set
+2026-11-26T18:57:09.473Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -L 10 -f YUYV -b 4 -n 120 -p -F -B -M /
+2026-11-26T18:57:14.267Z live stream stop (exit 0)
+2026-11-26T18:57:16.325Z live edid set
+2026-11-26T18:57:16.685Z camwatch end run pid 2577305 gone; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T18:57:16.774Z guard end: run pid 2577305 gone; audio 1854 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 0; no breach

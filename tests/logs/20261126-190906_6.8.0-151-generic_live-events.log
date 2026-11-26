@@ -1,0 +1,295 @@
+2026-11-26T19:09:06.805Z guard start: run pid 2603057, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-26T19:09:06.818Z roku query device-info
+2026-11-26T19:09:06.848Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap /home/brian/dev/gc573-driver/.claude/worktrees/ag
+2026-11-26T19:09:06.865Z camwatch start pid 2603080 (guard): 13 nodes marked: /dev/media0 (HD Pro Webcam C920); /dev/snd/controlC0 (card 0 C920); /dev/snd/controlC1 (card 1 Device); /dev/snd/controlC2 (card 2 PCH); /dev/snd/hwC2D0 (card 2 PCH); /dev/snd/pcmC0D0c (card 0 C920); /dev/snd/pcmC1D0c (card 1 Device); /dev/snd/pcmC1D0p (card 1 Device); /dev/snd/pcmC2D0c (card 2 PCH); /dev/snd/pcmC2D0p (card 2 PCH); /dev/snd/pcmC2D2c (card 2 PCH); /dev/video0 (HD Pro Webcam C920); /dev/video1 (HD Pro Webcam C920). Not watched: snd/controlC3 (card 3 NVidia: NVIDIA HDMI); snd/controlC4 (card 4 GC573: the GC573); snd/hwC3D0 (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D3p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D7p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D8p (card 3 NVidia: NVIDIA HDMI); snd/pcmC3D9p (card 3 NVidia: NVIDIA HDMI); snd/pcmC4D0c (card 4 GC573: the GC573); video2 (the GC573)
+2026-11-26T19:09:06.877Z guard x11 start: DVI-D-0 none; outputs HDMI-0 1920x1200+0+0
+2026-11-26T19:09:06.889Z guard audio links: none
+2026-11-26T19:09:07.252Z live stream stop (exit 0)
+2026-11-26T19:09:07.681Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -t 60 -v -V /dev/v4l/by-path/pci-0000:
+2026-11-26T19:10:06.895Z guard ok: audio 1197 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 0
+2026-11-26T19:10:06.925Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:10:07.899Z live stream stop (exit 0)
+2026-11-26T19:10:08.144Z live obs start
+2026-11-26T19:10:16.882Z obs-events obs record start to /home/brian/gc573-rec
+2026-11-26T19:10:37.869Z live edid set
+2026-11-26T19:11:06.905Z guard ok: audio 2395 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:11:06.985Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:12:06.916Z guard ok: audio 3592 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:12:07.044Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:13:06.925Z guard ok: audio 4789 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:13:07.104Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:13:27.502Z live edid set
+2026-11-26T19:14:06.934Z guard ok: audio 5987 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:14:07.164Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:15:06.943Z guard ok: audio 7184 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:15:07.225Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:16:06.954Z guard ok: audio 8381 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:16:07.285Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:17:06.965Z guard ok: audio 9579 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:17:07.346Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:18:06.976Z guard ok: audio 10776 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:18:07.406Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:19:06.987Z guard ok: audio 11973 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:19:07.467Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:19:28.041Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-26T19:20:06.997Z guard ok: audio 13170 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:20:07.527Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:21:07.006Z guard ok: audio 14368 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:21:07.587Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:22:07.017Z guard ok: audio 15565 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:22:07.648Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:22:28.639Z live edid set
+2026-11-26T19:23:07.027Z guard ok: audio 16762 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:23:07.709Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:24:07.036Z guard ok: audio 17960 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:24:07.770Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:25:07.046Z guard ok: audio 19157 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:25:07.830Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:25:28.082Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0)
+2026-11-26T19:26:07.055Z guard ok: audio 20354 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:26:07.891Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:27:07.065Z guard ok: audio 21551 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:27:07.951Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:28:07.075Z guard ok: audio 22749 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:28:08.012Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:28:28.639Z live edid set
+2026-11-26T19:29:07.086Z guard ok: audio 23946 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:29:08.072Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:30:07.095Z guard ok: audio 25143 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:30:08.133Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:31:07.104Z guard ok: audio 26340 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:31:08.194Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:31:28.257Z live edid set
+2026-11-26T19:32:07.114Z guard ok: audio 27537 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:32:08.253Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:33:07.122Z guard ok: audio 28735 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:33:08.312Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:34:07.131Z guard ok: audio 29932 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:34:08.372Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:35:07.139Z guard ok: audio 31129 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:35:08.432Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:36:07.149Z guard ok: audio 32326 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:36:08.492Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:37:07.159Z guard ok: audio 33524 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:37:08.552Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:37:28.382Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-26T19:38:07.169Z guard ok: audio 34721 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:38:08.612Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:39:07.178Z guard ok: audio 35918 polls, longest interval 51 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:39:08.671Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:40:07.186Z guard ok: audio 37115 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:40:08.732Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:40:28.013Z live edid set
+2026-11-26T19:41:07.196Z guard ok: audio 38313 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:41:08.792Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:42:07.206Z guard ok: audio 39510 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:42:08.853Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:43:07.215Z guard ok: audio 40707 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:43:08.913Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:43:28.324Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0)
+2026-11-26T19:44:07.225Z guard ok: audio 41904 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:44:08.972Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:45:07.234Z guard ok: audio 43102 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:45:09.032Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:46:07.244Z guard ok: audio 44299 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:46:09.092Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:46:28.762Z live edid set
+2026-11-26T19:47:07.253Z guard ok: audio 45496 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:47:09.151Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:48:07.262Z guard ok: audio 46693 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:48:09.210Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:49:07.271Z guard ok: audio 47891 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:49:09.268Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:49:28.144Z live edid set
+2026-11-26T19:50:07.280Z guard ok: audio 49088 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:50:09.326Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:51:07.288Z guard ok: audio 50285 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:51:09.387Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:52:07.297Z guard ok: audio 51482 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:52:09.448Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:53:07.306Z guard ok: audio 52680 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:53:09.511Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:54:07.318Z guard ok: audio 53877 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:54:09.573Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:55:07.328Z guard ok: audio 55074 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:55:09.633Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:55:28.840Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-26T19:56:07.336Z guard ok: audio 56271 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:56:09.692Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:57:07.345Z guard ok: audio 57469 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:57:09.752Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:58:07.356Z guard ok: audio 58666 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:58:09.813Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T19:58:28.739Z live edid set
+2026-11-26T19:59:07.367Z guard ok: audio 59863 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T19:59:09.873Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:00:07.375Z guard ok: audio 61061 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:00:09.932Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:01:07.384Z guard ok: audio 62258 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:01:09.991Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:01:28.258Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0)
+2026-11-26T20:02:07.395Z guard ok: audio 63455 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:02:10.053Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:03:07.404Z guard ok: audio 64652 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:03:10.114Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:04:07.414Z guard ok: audio 65850 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:04:10.174Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:04:27.721Z live edid set
+2026-11-26T20:05:07.422Z guard ok: audio 67047 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:05:10.235Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:06:07.434Z guard ok: audio 68244 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:06:10.295Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:07:07.444Z guard ok: audio 69441 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:07:10.355Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:07:28.122Z live edid set
+2026-11-26T20:08:07.454Z guard ok: audio 70638 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:08:10.415Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:09:07.465Z guard ok: audio 71836 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:09:10.474Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:10:07.474Z guard ok: audio 73033 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:10:10.534Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:11:07.483Z guard ok: audio 74230 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:11:10.594Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:12:07.494Z guard ok: audio 75427 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:12:10.654Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:13:07.504Z guard ok: audio 76625 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:13:10.715Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:13:27.943Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-26T20:14:07.514Z guard ok: audio 77822 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:14:10.775Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:15:07.524Z guard ok: audio 79019 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:15:10.835Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:16:07.535Z guard ok: audio 80217 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:16:10.895Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:16:28.510Z live edid set
+2026-11-26T20:17:07.543Z guard ok: audio 81414 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:17:10.954Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:18:07.553Z guard ok: audio 82611 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:18:11.016Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:19:07.562Z guard ok: audio 83808 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:19:11.076Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:19:28.872Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0)
+2026-11-26T20:20:07.570Z guard ok: audio 85006 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:20:11.136Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:21:07.582Z guard ok: audio 86203 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:21:11.196Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:22:07.592Z guard ok: audio 87400 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:22:11.256Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:22:28.668Z live edid set
+2026-11-26T20:23:07.602Z guard ok: audio 88598 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:23:11.315Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:24:07.610Z guard ok: audio 89795 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:24:11.375Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:25:07.618Z guard ok: audio 90992 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:25:11.435Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:25:28.101Z live edid set
+2026-11-26T20:26:07.627Z guard ok: audio 92189 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:26:11.494Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:27:07.636Z guard ok: audio 93386 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:27:11.554Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:28:07.646Z guard ok: audio 94584 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:28:11.615Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:29:07.656Z guard ok: audio 95781 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:29:11.673Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:30:07.667Z guard ok: audio 96978 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:30:11.733Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:31:07.678Z guard ok: audio 98175 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:31:11.793Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:31:28.073Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-26T20:32:07.688Z guard ok: audio 99373 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:32:11.854Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:33:07.698Z guard ok: audio 100570 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:33:11.913Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:34:07.707Z guard ok: audio 101767 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:34:11.971Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:34:28.078Z live edid set
+2026-11-26T20:35:07.717Z guard ok: audio 102965 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:35:12.031Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:36:07.727Z guard ok: audio 104162 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:36:12.090Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:37:07.736Z guard ok: audio 105359 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:37:12.150Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:37:28.517Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0)
+2026-11-26T20:38:07.746Z guard ok: audio 106557 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:38:12.210Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:39:07.755Z guard ok: audio 107754 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:39:12.269Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:40:07.765Z guard ok: audio 108951 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:40:12.329Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:40:28.106Z live edid set
+2026-11-26T20:41:07.774Z guard ok: audio 110148 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:41:12.389Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:42:07.782Z guard ok: audio 111345 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:42:12.449Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:43:07.791Z guard ok: audio 112543 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:43:12.510Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:43:28.578Z live edid set
+2026-11-26T20:44:07.800Z guard ok: audio 113740 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:44:12.570Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:45:07.811Z guard ok: audio 114937 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:45:12.631Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:46:07.820Z guard ok: audio 116134 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:46:12.689Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:47:07.830Z guard ok: audio 117332 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:47:12.749Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:48:07.839Z guard ok: audio 118529 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:48:12.808Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:49:07.850Z guard ok: audio 119726 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:49:12.867Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:49:28.273Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-26T20:50:07.862Z guard ok: audio 120924 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:50:12.924Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:51:07.871Z guard ok: audio 122121 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:51:12.984Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:52:07.880Z guard ok: audio 123318 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:52:13.044Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:52:28.130Z live edid set
+2026-11-26T20:53:07.889Z guard ok: audio 124515 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 2
+2026-11-26T20:53:13.104Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:54:07.899Z guard ok: audio 125712 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T20:54:13.165Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:55:07.909Z guard ok: audio 126910 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T20:55:13.225Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:55:28.244Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0)
+2026-11-26T20:56:07.920Z guard ok: audio 128107 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T20:56:13.284Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:57:07.928Z guard ok: audio 129304 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T20:57:13.344Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:58:07.936Z guard ok: audio 130501 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T20:58:13.404Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T20:58:28.954Z live edid set
+2026-11-26T20:59:07.945Z guard ok: audio 131698 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T20:59:13.465Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:00:07.958Z guard ok: audio 132896 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:00:13.525Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:01:07.968Z guard ok: audio 134093 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:01:13.584Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:01:28.502Z live edid set
+2026-11-26T21:02:07.980Z guard ok: audio 135290 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:02:13.644Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:03:07.990Z guard ok: audio 136488 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:03:13.703Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:04:08.001Z guard ok: audio 137685 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:04:13.763Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:05:08.012Z guard ok: audio 138882 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:05:13.823Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:06:08.022Z guard ok: audio 140080 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:06:13.883Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:07:08.032Z guard ok: audio 141277 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:07:13.942Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:07:28.305Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-26T21:08:08.043Z guard ok: audio 142474 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:08:14.001Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:09:08.053Z guard ok: audio 143671 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:09:14.060Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:10:08.062Z guard ok: audio 144869 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 6
+2026-11-26T21:10:14.119Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:10:28.234Z obs-events obs record stop
+2026-11-26T21:10:31.308Z live obs stop
+2026-11-26T21:10:31.878Z live edid set
+2026-11-26T21:10:34.488Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -t 60 -v -V /dev/v4l/by-path/pci-0000:
+2026-11-26T21:11:08.072Z guard ok: audio 146066 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 10
+2026-11-26T21:11:14.179Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T21:11:34.699Z live stream stop (exit 0)
+2026-11-26T21:11:46.080Z guard end: run pid 2603057 gone; audio 146815 polls, longest interval 52 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 0, breaches 0, X events 10; no breach
+2026-11-26T21:11:46.212Z camwatch end run pid 2603057 gone; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test

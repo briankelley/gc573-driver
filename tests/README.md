@@ -120,8 +120,20 @@ Roku mode (`GC573_SOURCE=roku GC573_LOCAL=1`, M6): the source is the Roku
 through the HDCP filter. `tools/roku/ecp.py` drives it, and it plays
 `tools/roku/pattern-video.sh`'s file, served by `tools/roku/serve.py` for the
 run only. `DVI-D-0` is never touched. Actions on the Roku need
-`GC573_ROKU_GO=1`; without it only `rokulock`, `rokucompliance`, `q25` and
-`q25back` run. Steps:
+`GC573_ROKU_GO=1`; without it only `rokuwhich`, `rokulock`, `rokucompliance`,
+`q25` and `q25back` run. On the saved Roku an action also needs it identified
+as the one cabled to the card (`rokuwhich`). Its state before the run's first
+action (the app in the foreground, the power mode) is saved for the record,
+not restored (the user does that). The run's end only stops our video if
+it still plays, and sends Home if a PowerOff of the run left the Roku
+asleep. Steps that need no pattern judge the driver by its own numbers on
+any picture: `gc573-aud -V` sequence numbers and intervals, the debugfs
+frame-interrupt ring, the error counters. The default steps are `rokulock`,
+`rokucompliance`, `rokusleep`, `rokumodes` and `rokuobsany`. Steps:
+- `rokuwhich`: is the saved Roku the cabled one? No action; only the saved
+  Roku is asked (`ecp.py survey --saved`, no SSDP): its ui-resolution
+  follows a 720p-only EDID and back. `rokuwhichkey` (go; it surveys every
+  Roku) was the fallback when two were candidates;
 - `rokulock`: the lock, its timings and colour;
 - `rokucompliance`;
 - `rokucapture`: `live-av.py --exact` on the pattern video, the bursts'
@@ -129,9 +141,21 @@ run only. `DVI-D-0` is never touched. Actions on the Roku need
   range;
 - `rokuobs`: OBS screenshots, meters and a recording, with
   `tests/obs-events.py` in its Roku mode;
-- `rokusleep`, `rokumodes` (EDID re-sets: another serial, 720p only, the
-  default) and `rokureboot` (`GC573_ROKU_REBOOT_KEYS`);
-- `rokuobssoak`: obssoak with the Roku's changes;
+- `rokusleep` (any picture): PowerOff, then Home. It records what the card
+  sees at each step and runs 10 s of `gc573-aud -V` before and after;
+- `rokumodes` (any picture): EDID re-sets (720p only, another serial, the
+  default), with the Roku's mode after each (INFO when it does not follow),
+  the lock and 10 s of `gc573-aud -V`;
+- `rokuobsany` (any picture): OBS through `tests/obs-any.py`. It takes
+  screenshots, reads the meters and makes a 60 s recording, then deletes
+  it. Alongside it checks the driver's stream, intervals and counters;
+- `rokureboot` (`GC573_ROKU_REBOOT_KEYS`; SKIP without them: ECP has no
+  restart, and menu keys would be blind navigation);
+- `rokuobssoak`: obssoak with the Roku's pattern and changes;
+- `rokusoakany` (any picture): the 2-hour soak without playback. OBS
+  records while the Roku sleeps and wakes, the EDID is set again and OBS
+  reopens its devices. At each change it checks the driver's stream,
+  intervals, counters and memory, and OBS's counters and log;
 - `q25` (the Roku without the filter: open question 25) and `q25back`.
 
 Details are in `live.sh`'s header. The privacy rules are in AGENTS.md: no
