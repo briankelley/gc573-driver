@@ -291,6 +291,8 @@ struct gc573_video {
 	struct v4l2_pix_format pix;
 	const struct gc573_fmt *fmt;
 	struct gc573_input in;		/* input as last seen by the device */
+	struct gc573_input col_in;	/* last input locked since load */
+	bool col_valid;			/* col_in is set */
 	bool adopt_pending;		/* input changed while the queue was busy */
 	bool start_pending;		/* restart waits for a queued buffer */
 	bool failed;			/* queue marked failed (vb2_queue_error) */
