@@ -6,7 +6,7 @@ The card has no working Linux driver. Community ports of AVerMedia's old CL511HN
 
 ## Status
 
-**Driver milestones M0–M4 are done. M5 (delivery) is done in a virtual machine with the card passed through; validation on a real host is next.** Done so far:
+**Driver milestones M0–M4 are done. M5 (delivery) is done in a virtual machine with the card passed through, and the validation on a real host is under way (Linux Mint 22, kernel 6.8).** Done so far:
 - PCI bring-up, FPGA init, interrupts, I2C buses, video DMA, the HDMI input and audio.
 - Live capture up to 1080p60. 1080p60 and 1080p59.94 are verified against a test pattern in all six formats. 720p, 576p and 480p lock and capture.
 - HDMI audio (LPCM stereo, 48 kHz) comes through ALSA in sync with the video.
@@ -48,7 +48,9 @@ To remove the driver, run `sudo tools/uninstall.sh`. It undoes what `install.sh`
 - After a permanent install it puts the override back as it was. It asks first; `--yes` skips that.
 - It unloads the module, removes it from DKMS for every kernel, and removes the `modprobe.d` entry.
 
-While an application or PipeWire holds the card, the module stays loaded until the next reboot. PipeWire keeps the control device of every sound card it manages open.
+An update (`install.sh` again) or `uninstall.sh` first takes the card away from the loaded module, so that it can be unloaded:
+- PipeWire keeps the control device of every sound card it manages open. It lets go by itself once the card is taken away, so neither script needs you to stop it.
+- If another program has the card open (OBS, a capture), the scripts name it and change nothing on the card. Close it and run the script again, or add `--yes`: the program then loses the card. If it keeps the device open anyway, the old module stays loaded until it lets go, at the latest until a reboot.
 
 ## Use with OBS
 
@@ -65,11 +67,12 @@ While an application or PipeWire holds the card, the module stays loaded until t
   - With buffering on, OBS's default, OBS plays the frames by their timestamps against a clock of its own, and that clock stands still while no frame is waiting. Every pause in the frames shorter than 2 s therefore adds its length to the video's delay, for good.
   - The driver pauses 0.2–0.9 s at each source change, such as a signal loss or a colour-format change. After a few changes, the audio in a test recording ran up to 0.4 s ahead of the picture.
   - With buffering off, OBS shows each frame as it arrives, and the A/V offset stays put.
+- On a weak GPU, run OBS minimized to the tray while it records (`obs --minimize-to-tray`), so that it draws no preview. On the test PC's GeForce GT 710, drawing the preview made OBS lag while it recorded.
 
 **Audio**
 - Add an *Audio Capture Device (ALSA)* source at 48000 Hz, with the custom PCM `hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0` (`ls -l /dev/snd/by-path/` shows yours, the link to the GC573's `controlC` node). This source reads the card directly.
   - `hw:CARD=GC573,DEV=0`, or picking the GC573 in the list, works too, but alsa-lib finds a card by its name by opening the control device of every sound card before it, a webcam's microphone included. By its path, alsa-lib opens the GC573 alone.
-- With PipeWire, an *Audio Input Capture (PulseAudio)* source on *GC573 HDMI capture Stereo* works too.
+- With PipeWire, an *Audio Input Capture (PulseAudio)* source on *GC573 HDMI capture Stereo* works too. PipeWire passes the card's samples on unchanged, at the card's clock (measured: exactly 48000 samples per second of the source), so over a long recording it behaves as the ALSA source does (see *A/V sync*).
 - The card has one capture stream. While PipeWire records from the card, the ALSA source cannot open it, and the other way round.
 
 **A/V sync**
@@ -80,6 +83,13 @@ These were measured with the ALSA source and a test source on the HDMI input. Th
 - In steady state both stay inside what people notice (ITU-R BT.1359: audio 45 ms early or 125 ms late), so no *Sync Offset* is needed.
 - The driver's own timestamps drifted by less than 0.1 ms over 10 minutes, and they keep their A/V offset through the stream restarts at source changes (within 0.2 ms).
 - Through the 2-hour soak's 40 source changes (buffering off), each stretch between two changes stayed between 17 ms early and 74 ms late. These figures include the test source's own offset, which changes each time the source restarts.
+- Over a long recording, OBS's own A/V offset wanders in a sawtooth of up to about 70 ms. This happens with any capture source whose clock differs from the computer's, so it is not this driver's doing:
+  - It comes from libobs's 70 ms timestamp smoothing. OBS lays an audio source's samples back to back for as long as their timestamps stay within 70 ms of where it expects them.
+  - The card's audio runs on the source's clock. The test PC's HDMI audio ran about 25 ppm fast against the computer's clock, so the sound fell behind the picture by about 1.5 ms a minute on average.
+  - When the gap reaches 70 ms, OBS puts the sound back at its timestamps, and 70 ms of it are lost. In the 2-hour host soak that happened after 56 and 101 minutes. With a source whose clock runs slow, the sound moves ahead of the picture instead, and the reset inserts 70 ms of silence.
+  - Reopening the video source does not reset it. Reopening the audio source does not reset it either: in a test, two audio reopens moved the offset by 10.5 ms one way and 10.7 ms the other.
+  - Where the offset starts also varies from one OBS start to the next: 0 ms and 27 ms in two tests.
+  - The PulseAudio source gets the same samples on the same clock (above), so it shows the same sawtooth.
 - With the PulseAudio source, three 2-minute tests put the audio 1 to 13 ms after the video in the recording, against 6 ms with the ALSA source (neither corrected for the source). OBS does not allow for PipeWire's buffering, so this depends on PipeWire's settings.
 - In a virtual machine, WirePlumber gives every ALSA device 170 ms of extra buffering. There the PulseAudio source records the audio about 230 ms late, so use the ALSA source.
 
@@ -115,14 +125,35 @@ While OBS records, the reopen works only with *Hybrid MP4* (tested; OBS 32's def
   - PNG at 960x540 takes about 18 ms.
   - JPG is lossy (errors of about 25 codes). Use PNG to compare pictures.
 - `InputVolumeMeters` events (subscribe with `1 << 16`) arrive every 50 ms with the levels of OBS's last audio tick. A sound shorter than that, such as a one-frame beep, shows in only about half of the events.
-- A rule that worked in the tests: reopen the source (above) after any change of the source's mode, or whenever its screenshots stay black for more than a few seconds while the source should show a picture. A reopen when nothing changed costs a fraction of a second.
-- Watch the picture, not the events, and keep watching between your own actions. The test harness uses this pattern (`tests/obs-events.py`):
+- Decide when to reopen the source (above) from the card's input, not from the picture. A black or still picture, such as a screen saver, looks the same as a source that has stopped. The test harness does this with `tests/obsbridge.py`, which you can run as it is: `python3 tests/obsbridge.py --source 'GC573 video'` (`--help` for the rest). What it does:
+  - It opens the video device a second time, never streams on it, and subscribes to `V4L2_EVENT_SOURCE_CHANGE`. This handle never requests buffers, so it does not keep the device busy and OBS can still reopen it.
+  - After each event it waits until the input has been still for 2 s, longer than the driver's 1 s hold. It then compares the input (`VIDIOC_QUERY_DV_TIMINGS`) with what the stream runs at (`VIDIOC_G_DV_TIMINGS` on the same handle, which reports the stream's timings while OBS streams).
+  - It reopens OBS's source only when the timings differ (in practice, a new resolution), or when the input sat in other timings for about a second since the last check, so the driver ended the stream even if the source came back. Nothing else needs a reopen: the driver carries the stream through the other changes in the table.
+  - It checks the reopen: `VIDIOC_G_DV_TIMINGS` takes the new timings when OBS closes the device. If that does not happen within 3 s, it reopens again after 2, 4, 8 ... s. It logs every step.
+- Keep a check on the picture as the fallback, and keep watching between your own actions. The test harness uses this pattern (`tests/obs-events.py`):
   - A screenshot every 2 s. A good one shows a new frame: the picture moved since the last one. A frozen picture can look perfect in a single screenshot, so compare two.
-  - Watchdog: no new frame for more than 10 s while the card has a signal, then reopen the source and log it. `v4l2-ctl -d /dev/v4l/by-path/pci-<address>-video-index0 --query-dv-timings` succeeds when the card has a signal, and it works while OBS streams.
+  - Watchdog: no new frame for more than 10 s while the card has a signal (and no reopen by the bridge in that time): reopen the source. If the picture still does not move, reopen again after 10, 20 and 40 s, then every 60 s, until it does. Log each attempt. `v4l2-ctl -d /dev/v4l/by-path/pci-<address>-video-index0 --query-dv-timings` succeeds when the card has a signal, and it works while OBS streams.
   - Before each action on the source, check the picture. If it is not moving while the card has a signal, reopen first, then carry on with the action.
   - Never stop driving the source because the picture is bad. In the first 2-hour host soak, the harness skipped its source changes while OBS's source was stopped. The input then never changed again, and the recording stayed black for its last 48 minutes.
   - Check a recording by its motion over time, not by stills.
 - When no frame arrives for 5 frame periods, which happens during a source change, OBS logs `select timed out` and asks the driver to log its status (`VIDIOC_LOG_STATUS`). That adds about 70 lines to the kernel log per change.
+
+## Use with other applications
+
+The card is a plain V4L2 video device and ALSA sound card, so applications need no special support. These were tested on the host (Linux Mint 22) by recording the card's picture and sound into a file with a test pattern on the input. Each file was checked for the picture, every frame (from a counter in the picture), the sound's channels and rate, and the A/V offset against the driver's own.
+
+| Application | Picture and sound | Signal lost and back, EDID set again, 60 ↔ 59.94 Hz | Another resolution |
+|---|---|---|---|
+| ffmpeg 6.1 | Every frame, the right picture and sound. A/V within 1 ms of the driver's | Carries on | Stops taking frames, without an error: start it again |
+| VLC 3.0 | The right picture and sound. A/V 14 ms later than the driver's. Recording 1080p60 with lossless x264, it dropped up to 36 of 1490 frames in its own encoder; the driver delivered them all | Carries on | Stops taking frames: start it again |
+
+Neither application listens to the driver's source-change event. At another resolution or frame rate the driver ends the stream, because the format must not change under an application that is streaming (see *When the source changes*), so start the application again.
+
+Name the devices explicitly. Then nothing else is opened, and the names stay put (see *Device names that stay put*):
+- ffmpeg: `ffmpeg -f v4l2 -ts mono2abs -input_format yuyv422 -video_size 1920x1080 -framerate 60 -i /dev/v4l/by-path/pci-<address>-video-index0 -f alsa -channels 2 -sample_rate 48000 -i hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0 ...`. With `-ts mono2abs` the picture and the sound share a clock.
+- VLC: `cvlc "v4l2:///dev/videoN" --v4l2-dev=/dev/videoN --v4l2-chroma=YUYV --v4l2-width=1920 --v4l2-height=1080 --v4l2-fps=60 --input-slave="alsa://hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0" --sout ...`.
+  - Use the `/dev/videoN` node that the by-path name points to (`readlink -f /dev/v4l/by-path/pci-<address>-video-index0`). VLC takes everything after `v4l2://` up to the first `:` as the device, and the by-path name has colons in it.
+  - If nothing comes before that `:`, VLC opens its default device, `/dev/video0`, which may be another camera.
 
 ## Known limitations
 
@@ -133,8 +164,9 @@ While OBS records, the reopen works only with *Hybrid MP4* (tested; OBS 32's def
 - Audio: LPCM stereo at 48 kHz only. When the signal drops, the gap is filled with silence.
 - OBS does not follow a change of resolution or frame rate by itself: reopen the source (see *When the source changes*).
 - Unloading or reloading the driver does not look like an unplug to the source: the test PC (NVIDIA GPU) kept its output on and the card's EDID in use.
+- The driver reports a lock only once the card's own measurement of the input is valid. Once, at a boot, that measurement did not start while the source came up, and the card then shows no signal although the source is on. The kernel log says `the FPGA has no valid measurement` after about 2 s of it. Set the source's mode again (or unplug and replug the HDMI cable). The cause is open (`spec/open-questions.md`, question 40).
 - HDCP-protected sources (consoles, streaming boxes) are untested.
-- Tested so far in a virtual machine with the card passed through. Testing on a real host is next.
+- Tested in a virtual machine with the card passed through, and on a real host (Linux Mint 22, kernel 6.8): a 2-hour OBS recording with a source change every 3 minutes, and frame-exact captures at 1080p60, 1080p59.94 and 720p59.94.
 
 ## Clean room
 
