@@ -1,0 +1,124 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 22:02:21 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     036f971b6ca7
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 1
+steps:   rokusoakany
+module:  srcversion 471419EDEC56524224376F5 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 471419EDEC56524224376F5, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokusoakany
+  the card: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; the lock: HDMI: locked: 1920x1080p, 148500000 Hz; rotation edid-same,edid-new,idle,reopen-video,edid-default,reopen-audio
+RESULT roku-soak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.628 xruns=0 restarts=0 )
+RESULT roku-soak-driver-first-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-first-xruns PASS (0 overruns)
+RESULT roku-soak-driver-first-rate PASS (47999.628 Hz against CLOCK_MONOTONIC, -7.8 ppm)
+RESULT roku-soak-driver-first-gaps PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.04 ms of one line over the run; single reads within 0.15 ms of it; 6000 reads)
+RESULT roku-soak-driver-first-video PASS (3592 frames, 0 sequence gaps, interval 16.684 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO roku-soak-driver-first-picture 3592 frames; their grid luma took 13 values and changed between 987 of 3591 frame pairs
+  OBS started minimized to the tray (pid 3058625, profile gc573, recording format hybrid_mp4; 0 windows visible)
+  OBS sources: GC573 video on /dev/v4l/by-path/pci-0000:07:00.0-video-index0, GC573 audio on hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0, scene 'Scene', canvas 1920x1080 at 60/1 fps; no other inputs
+  SETTINGS saved: GC573 video: color_range=0; GC573 audio: device_id=__custom__ custom_pcm=hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0
+RESULT roku-soak-record-start     PASS (STARTED )
+  rokusoak: 600 s from 22:03:31 UTC, a change every 60 s
+  POINT 0 start: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.685 ms, 16.600 to 16.771, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 39-40; 2 of 2 differ from the one before (mean 16.9 codes))
+  POINT 1 before edid-same: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.559 to 16.777, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 41-42; 2 of 2 differ from the one before (mean 15.5 codes))
+  CHANGE 1 edid-same: the input held 10 s
+  POINT 1 after edid-same: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.679 ms, 16.605 to 16.780, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 41-42; 2 of 2 differ from the one before (mean 17.2 codes))
+  POINT 2 before edid-new: locked (14 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.600 to 16.758, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-39; 2 of 2 differ from the one before (mean 13.6 codes))
+  CHANGE 2 edid-new: the input lost
+  POINT 2 after edid-new: locked (3131 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.680 ms, 16.597 to 16.783, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 13.2 codes))
+  POINT 3 before idle: locked (16 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.682 ms, 16.603 to 16.759, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 12.6 codes))
+  CHANGE 3 idle
+  POINT 3 after idle: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.686 ms, 16.584 to 16.763, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 11.7 codes))
+  POINT 4 before reopen-video: locked (14 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.685 ms, 16.581 to 16.777, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 12.5 codes))
+  CHANGE 4 reopen-video
+  POINT 4 after reopen-video: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.585 to 16.774, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 36-37; 2 of 2 differ from the one before (mean 12.9 codes))
+  POINT 5 before edid-default: locked (13 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.604 to 16.770, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-38; 2 of 2 differ from the one before (mean 13.2 codes))
+  CHANGE 5 edid-default: the input lost
+  POINT 5 after edid-default: locked (3124 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.591 to 16.778, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-39; 2 of 2 differ from the one before (mean 14.1 codes))
+  POINT 6 before reopen-audio: locked (15 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.597 to 16.771, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 40-40; 2 of 2 differ from the one before (mean 16.1 codes))
+  CHANGE 6 reopen-audio: INFO custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -> hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 
+  POINT 6 after reopen-audio: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.681 ms, 16.603 to 16.761, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 40-40; 2 of 2 differ from the one before (mean 16.0 codes))
+  POINT 7 before edid-same: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.681 ms, 16.575 to 16.779, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 12.4 codes))
+  CHANGE 7 edid-same: the input held 10 s
+  POINT 7 after edid-same: locked (10 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.596 to 16.773, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 37-38; 2 of 2 differ from the one before (mean 13.5 codes))
+  POINT 8 before edid-new: locked (14 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.589 to 16.772, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 39-39; 2 of 2 differ from the one before (mean 14.9 codes))
+  CHANGE 8 edid-new: the input lost
+  POINT 8 after edid-new: locked (3115 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.685 ms, 16.524 to 16.773, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 40-41; 2 of 2 differ from the one before (mean 16.3 codes))
+  POINT 9 before idle: locked (8 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.681 ms, 16.583 to 16.798, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-36; 2 of 2 differ from the one before (mean 14.2 codes))
+  CHANGE 9 idle
+  POINT 9 after idle: locked (4 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.597 to 16.772, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 35-35; 2 of 2 differ from the one before (mean 12.8 codes))
+  POINT 10 before reopen-video: locked (5 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.683 ms, 16.624 to 16.734, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-39; 2 of 2 differ from the one before (mean 13.6 codes))
+  CHANGE 10 reopen-video
+  POINT 10 after reopen-video: locked (74 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.597 to 16.759, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 39-39; 2 of 2 differ from the one before (mean 13.9 codes))
+  POINT end: locked (8 ms) power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; ring 31 intervals, median 16.684 ms, 16.598 to 16.776, 0 off by more than half a period; OBS PASS (3 of 3 screenshots 1920x1080, 0 failed; luma 38-38; 2 of 2 differ from the one before (mean 17.1 codes))
+  OBS at the start: STATS activeFps=60.0000024000001 renderTotalFrames=521 renderSkippedFrames=0 outputTotalFrames=9 outputSkippedFrames=0 cpuUsage=2.083333333333333 memoryUsage=444.47265625
+  OBS at the end:   STATS activeFps=60.0000024000001 renderTotalFrames=37202 renderSkippedFrames=7 outputTotalFrames=36690 outputSkippedFrames=0 cpuUsage=9.477317957525694 memoryUsage=1343.87109375
+  STATS renderSkippedFrames=7 renderTotalFrames=36694 outputSkippedFrames=0 outputTotalFrames=36693
+  INFO recording: 1920x1080, 611.5 s, 36693 video frames at 60.000 fps (+0 against length x rate)
+RESULT roku-soak-record           PASS (record-stop exit 0; OBS over the recording: STATS renderSkippedFrames=7 renderTotalFrames=36694 outputSkippedFrames=0 outputTotalFrames=36693;INFO recording: 1920x1080, 611.5 s, 36693 video frames at 60.000 fps (+0 against length x rate))
+  SETTINGS put back (GC573 audio): GC573 video: color_range=0; GC573 audio: device_id=__custom__ custom_pcm=hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0
+RESULT roku-soak-driver-last-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.773 xruns=0 restarts=0 )
+RESULT roku-soak-driver-last-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-last-xruns PASS (0 overruns)
+RESULT roku-soak-driver-last-rate PASS (47999.773 Hz against CLOCK_MONOTONIC, -4.7 ppm)
+RESULT roku-soak-driver-last-gaps PASS (per-second medians move <= 0.05 ms from one second to the next; within 0.06 ms of one line over the run; single reads within 0.14 ms of it; 6000 reads)
+RESULT roku-soak-driver-last-video PASS (3592 frames, 0 sequence gaps, interval 16.684 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO roku-soak-driver-last-picture 3592 frames; their grid luma took 12 values and changed between 1141 of 3591 frame pairs
+RESULT roku-soak-length           PASS (the whole 600 s: 10 changes; 22:14:51 UTC now)
+RESULT roku-soak-lock             PASS (22 check points: 0 without a lock within 60 s while the Roku sent a signal; 0 without a signal from the Roku (INFO))
+RESULT roku-soak-stream           PASS (the driver's stream delivering to OBS at every point but 0: 0 of them with no lock in other timings, 0 not back after OBS's reopen)
+RESULT roku-soak-intervals        PASS (the driver's last 32 frame intervals at each point within half a period of their median: 0 points not; medians 16.679-16.686 ms)
+RESULT roku-soak-obs-shots        PASS (OBS's screenshots at every point: 0 points with one failed or of another size)
+  INFO roku-soak-picture OBS's picture moved between screenshots 2 s apart at 22 points (the screen saver animating: OBS not frozen there) and stood still at 0 (a still screen or a freeze: not told apart; the driver's frames moved at every point unless roku-soak-stream says otherwise)
+  obs: 15 select timeouts, 0 dequeue failures, 2 device opens
+  obs log: 15:03:31.409: ==== Recording Start ===============================================
+  obs log: 15:13:43.818: Output 'simple_file_output': Total frames output: 36695
+  obs log: 15:13:43.818: Output 'simple_file_output': Total drawn frames: 36737 (36744 attempted)
+  obs log: 15:13:43.818: Output 'simple_file_output': Number of lagged frames due to rendering lag/stalls: 7 (0.0%)
+  obs log: 15:13:43.819: ==== Recording Stop ================================================
+  INFO memory-kmalloc live objects in the kmalloc caches: 237376 kB before OBS started, 237808 kB after OBS exited and the recording was deleted, +432 kB (every program's); SUnreclaim 485844 -> 486488 kB (+644)
+RESULT roku-soak-memory           PASS (the driver's own buffer memory, debugfs video "mem": before OBS bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0; after OBS exited bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT roku-soak-cpu              PASS (report only: OBS 225.5 % of one CPU, the IRQ thread 0.49 %, the host 11.0 % of its CPUs, over 618 s)
+RESULT roku-soak-driver-counters  PASS (over the soak, 12 samples: v_skipped +8 a_silent +579 v_terms +6 v_input_restarts +6 a_stops +1 it_losses +3 it_releases +3 it_entries +3 v_frames +35153 h_runs +1959 h_fpga_rejects +6 a_periods +61765 a_starts +1 a_pauses +3; kernel log: 275 lines, 275 of the driver, 0 bad)
+  mem: 1795730606 62473496 1931312 488872 185040 26400 293016 80 1019 14707432:201986293 0 0 0
+  mem: 1795731149 61472648 1944108 490896 185680 26400 1374312 122469 1285 14850537:203138853 274 274 0
+  INFO memory from minute 5 to the end: SUnreclaim +1272 kB (the recording's page cache counts), Slab -3172 kB, VmallocUsed -304 kB, MemAvailable +872624 kB, OBS RSS -865124 kB
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 279 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-soak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.628 xruns=0 restarts=0 )
+RESULT roku-soak-driver-first-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-first-xruns PASS (0 overruns)
+RESULT roku-soak-driver-first-rate PASS (47999.628 Hz against CLOCK_MONOTONIC, -7.8 ppm)
+RESULT roku-soak-driver-first-gaps PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.04 ms of one line over the run; single reads within 0.15 ms of it; 6000 reads)
+RESULT roku-soak-driver-first-video PASS (3592 frames, 0 sequence gaps, interval 16.684 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT roku-soak-record-start     PASS (STARTED )
+RESULT roku-soak-record           PASS (record-stop exit 0; OBS over the recording: STATS renderSkippedFrames=7 renderTotalFrames=36694 outputSkippedFrames=0 outputTotalFrames=36693;INFO recording: 1920x1080, 611.5 s, 36693 video frames at 60.000 fps (+0 against length x rate))
+RESULT roku-soak-driver-last-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.990 rate=47999.773 xruns=0 restarts=0 )
+RESULT roku-soak-driver-last-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-last-xruns PASS (0 overruns)
+RESULT roku-soak-driver-last-rate PASS (47999.773 Hz against CLOCK_MONOTONIC, -4.7 ppm)
+RESULT roku-soak-driver-last-gaps PASS (per-second medians move <= 0.05 ms from one second to the next; within 0.06 ms of one line over the run; single reads within 0.14 ms of it; 6000 reads)
+RESULT roku-soak-driver-last-video PASS (3592 frames, 0 sequence gaps, interval 16.684 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT roku-soak-length           PASS (the whole 600 s: 10 changes; 22:14:51 UTC now)
+RESULT roku-soak-lock             PASS (22 check points: 0 without a lock within 60 s while the Roku sent a signal; 0 without a signal from the Roku (INFO))
+RESULT roku-soak-stream           PASS (the driver's stream delivering to OBS at every point but 0: 0 of them with no lock in other timings, 0 not back after OBS's reopen)
+RESULT roku-soak-intervals        PASS (the driver's last 32 frame intervals at each point within half a period of their median: 0 points not; medians 16.679-16.686 ms)
+RESULT roku-soak-obs-shots        PASS (OBS's screenshots at every point: 0 points with one failed or of another size)
+RESULT roku-soak-memory           PASS (the driver's own buffer memory, debugfs video "mem": before OBS bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0; after OBS exited bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT roku-soak-cpu              PASS (report only: OBS 225.5 % of one CPU, the IRQ thread 0.49 %, the host 11.0 % of its CPUs, over 618 s)
+RESULT roku-soak-driver-counters  PASS (over the soak, 12 samples: v_skipped +8 a_silent +579 v_terms +6 v_input_restarts +6 a_stops +1 it_losses +3 it_releases +3 it_entries +3 v_frames +35153 h_runs +1959 h_fpga_rejects +6 a_periods +61765 a_starts +1 a_pauses +3; kernel log: 275 lines, 275 of the driver, 0 bad)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=25 fail=0 skip=1
