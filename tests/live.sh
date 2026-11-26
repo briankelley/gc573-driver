@@ -29,6 +29,13 @@
 #             restart at the new timings; 60 -> 59.94 Hz (same buffers) the
 #             stream carries on; an application that never sets timings
 #             gets the new ones once its queue is free
+#   blip      a short lock in other timings while streaming (a GPU after a
+#             hot-plug shows its preferred mode before the desktop sets its
+#             own): 1080p60 -> 720p60, and back as soon as the driver locks
+#             at 720p. The stream carries on (no DQBUF error, frames after
+#             the events) and the driver counts a hold, no stop. Then 720p60
+#             for good: the DQBUF error comes when the hold ends, 0.9-1.6 s
+#             after the lock
 #   loss      output off and on, idle and while streaming: the stream
 #             carries on, black while off, the pattern again after
 #   colour    RGB limited range, YCbCr 4:4:4, YCbCr 4:2:2 (report only)
@@ -137,7 +144,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=/tmp/gc573-live		# work directory in the VM (here, in local mode)
 # local mode: the steps that leave the driver's binding, the GPU's colour
 # settings and OBS's configuration alone
-LOCAL_STEPS="bringup lock relock capture modes change loss audio exact avsync audioloss soak obssoak compliance"
+LOCAL_STEPS="bringup lock relock capture modes change blip loss audio exact avsync audioloss soak obssoak compliance"
 REC_DIR=${GC573_REC_DIR:-$HOME/gc573-rec}
 OBSSOAK_ROTATION=${GC573_OBSSOAK_ROTATION:-sleep,rate-59.94,edid-same,rate-60,res-720p,edid-new,sleep,res-1080p,edid-default}
 if [ "$LOCAL" = 1 ]; then
@@ -671,6 +678,32 @@ frame_black() {
 
 off_on() { src_off; sleep 4; src_on 1920x1080 60; }
 
+# The output to MODE1 RATE1 and, as soon as the driver has locked there,
+# back to MODE2 RATE2: a lock in other timings for as long as the GPU takes
+# to set the mode again (138 ms at 23:11:06Z in the first host soak,
+# tests/logs/20261125-215755_6.8.0-151-generic_live.log). No test player
+# runs: xrandr sets the mode. $5: file for the driver's lock line
+blip() {
+	local i t0 line=""
+	"$ROOT/tools/testsrc/avsync.sh" --off
+	"$ROOT/tools/testsrc/show.sh" --off
+	ev "output $OUT $1@$2 (blip)"
+	xrandr --output "$OUT" --mode "$1" --rate "$2"
+	t0=$(date +%s%N)
+	for i in $(seq 200); do
+		line=$(hdmi_dbg | grep -E "^timings: ${1}p") && break
+		sleep 0.02
+	done
+	ev "output $OUT $3@$4 (blip back $(( ($(date +%s%N) - t0) / 1000000 )) ms after the mode set; ${line:-no lock at $1})"
+	xrandr --output "$OUT" --mode "$3" --rate "$4"
+	echo "$line" > "$5"
+}
+
+# the video stream's counters: restarts, stops and holds (debugfs)
+vid_counters() {
+	vm "sudo cat $dbgdir/video" | grep -oE 'input_restarts [0-9]+ input_stops [0-9]+( input_holds [0-9]+)?'
+}
+
 step_change() {
 	local out line
 	src_on 1920x1080 60
@@ -690,6 +723,33 @@ step_change() {
 	check change-adopted "$(grep -q '^RESULT capture fmt=YUYV 1280x720 frames=30 ' <<< "$out"; echo $?)" \
 		"(capture without setting timings: $line)"
 	src_mode 1920x1080 60
+}
+
+step_blip() {
+	local c0 c1 lock line ev_ms err_ms
+	src_on 1920x1080 60
+	time_to_lock 10 >/dev/null
+	c0=$(vid_counters)
+	change_while_streaming blip-continue continue "" blip 1280x720 60 1920x1080 60 /tmp/gc573-live-blip.txt
+	c1=$(vid_counters)
+	lock=$(cat /tmp/gc573-live-blip.txt)
+	check blip-other-lock "$([ -n "$lock" ]; echo $?)" \
+		"(the driver locked at 1280x720 before the mode went back: ${lock:-no})"
+	check blip-held "$(awk -v a="$c0" -v b="$c1" 'BEGIN { split(a, x); split(b, y)
+		exit !(y[6] != "" && y[6] >= x[6] + 1 && y[4] == x[4]) }'; echo $?)" \
+		"(a hold and no stop: before $c0; after $c1)"
+	# a change that stays: the stream fails once the hold has ended
+	src_on 1920x1080 60
+	time_to_lock 10 >/dev/null
+	change_while_streaming blip-stays error "" src_on 1280x720 60
+	line=$(sed -n 's/^RESULT change //p' /tmp/gc573-live-x.txt)
+	ev_ms=$(grep -oE 'last_event_ms=-?[0-9]+' <<< "$line" | cut -d= -f2)
+	err_ms=$(grep -oE 'dqbuf_error_ms=-?[0-9]+' <<< "$line" | cut -d= -f2)
+	check blip-hold-ms "$([ "${err_ms:--1}" -ge 0 ] && [ $((err_ms - ev_ms)) -ge 900 ] &&
+		[ $((err_ms - ev_ms)) -le 1600 ]; echo $?)" \
+		"(DQBUF error $((${err_ms:--1} - ${ev_ms:-0})) ms after the last SOURCE_CHANGE, the lock at 720p; hold 0.9-1.6 s)"
+	src_on 1920x1080 60
+	time_to_lock 10 >/dev/null
 }
 
 step_loss() {
@@ -1624,9 +1684,9 @@ kml() {
 
 # ---- main ----
 
-all="bringup lock relock capture modes change loss colour audio exact avsync audioloss"
+all="bringup lock relock capture modes change blip loss colour audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
-[ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change loss audio exact avsync audioloss compliance"
+[ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change blip loss audio exact avsync audioloss compliance"
 [ $# -gt 0 ] || set -- $all
 if [ "$LOCAL" = 1 ]; then
 	for s in "$@"; do
