@@ -1475,8 +1475,14 @@ host_sample() {
 # counter steps, the A/V offset per segment, OBS's own part at the first
 # and last segments against the driver's), memory, CPU, the driver's
 # counters, OBS's log; the recording is deleted.
+# SUnreclaim (kB), then each slab cache's size (kB, all its objects)
+mem_snapshot() {
+	awk '/^SUnreclaim:/ { print "SUnreclaim", $2 }' /proc/meminfo
+	vm "sudo cat /proc/slabinfo" | awk 'NR > 2 { printf "%s %d\n", $1, $3 * $4 / 1024 }'
+}
+
 obssoak_local() {
-	local out f m lg sm marks refa="" refc="" seg sp avail first last
+	local out f m lg sm marks refa="" refc="" seg sp avail first last mem0 mem1 top
 	# shellcheck source=tests/lib.sh
 	. "$ROOT/tests/lib.sh"	# KMSG_BAD, KMSG_DRV_BAD for host_sample
 	mkdir -p "$REC_DIR" || { result obssoak-recdir FAIL "(cannot make $REC_DIR)"; return; }
@@ -1489,6 +1495,10 @@ obssoak_local() {
 	sleep 3
 	driver_ref obssoak-driver-first 60
 	refa=$ref
+	# memory before OBS: the leak check compares it with after OBS and the
+	# recording are gone (the recording's page cache grows SUnreclaim on
+	# any file system: tests/logs/20261126T0017Z-host-slab-attribution.log)
+	mem0=$(mem_snapshot)
 	obs_up || { result obssoak-start FAIL "(OBS minimized, with the sources expected)"; obs_down; av_off; return; }
 	m=$(obs_log_mark)
 	sp=${log%.log}-obssoak-samples.txt
@@ -1535,6 +1545,17 @@ obssoak_local() {
 		result obssoak-recording FAIL "(no recording: ${f:-none})"
 	fi
 	rmdir "$REC_DIR" 2>/dev/null
+	sync
+	sleep 10
+	mem1=$(mem_snapshot)
+	top=$(join <(sort <<< "$mem0") <(sort <<< "$mem1") |
+		awk '$1 != "SUnreclaim" { d = $3 - $2; if (d >= 128 || d <= -128) printf "%s %+d\n", $1, d }' |
+		sort -k2 -n -r | head -8 | paste -sd, | sed 's/,/, /g')
+	out=$(awk -v a="$(sed -n 's/^SUnreclaim //p' <<< "$mem0")" -v b="$(sed -n 's/^SUnreclaim //p' <<< "$mem1")" \
+		-v top="$top" 'BEGIN {
+		printf "RESULT memory %s (SUnreclaim before OBS started %d kB, after OBS exited and the recording was deleted %d kB: %+d kB (limit 2048); slab caches that moved by 128 kB or more (kB): %s)\n",
+			b - a <= 2048 ? "PASS" : "FAIL", a, b, b - a, top == "" ? "none" : top }')
+	av_results obssoak "$out"
 	# memory, CPU and the driver's counters over the soak (host_sample)
 	sm=$(cat "$sp")
 	awk 'NR == 1 || NR % 10 == 0 { print "  mem: " $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 }' <<< "$sm"
@@ -1545,8 +1566,8 @@ obssoak_local() {
 			if (n < 7) { print "RESULT memory SKIP (" n " samples: fewer than 7)"; exit }
 			s = 6
 			du = sunr[n] - sunr[s]
-			printf "RESULT memory %s (from minute 5 to the end: SUnreclaim %+d kB (limit 2048), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB; a desktop host: other programs count too)\n",
-				du <= 2048 ? "PASS" : "FAIL", du, slab[n] - slab[s], vm[n] - vm[s], avail[n] - avail[s], rss[n] - rss[s]
+			printf "INFO memory while recording, from minute 5 to the end: SUnreclaim %+d kB (the page cache of the recording counts: memcg vectors, about 600 x 512 bytes per 100 MiB written), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB\n",
+				du, slab[n] - slab[s], vm[n] - vm[s], avail[n] - avail[s], rss[n] - rss[s]
 			wall = t[n] - t[1]
 			printf "RESULT cpu PASS (report only: OBS %.1f %% of one CPU, the IRQ thread %.2f %%, the host %.1f %% of its CPUs, over %d s)\n",
 				(obs[n] - obs[1]) / hz / wall * 100, (irq[n] - irq[1]) / hz / wall * 100,
@@ -1561,7 +1582,7 @@ obssoak_local() {
 			for (i in errs) iserr[errs[i]] = 1
 			for (k in names) {
 				d = v[n, k] - v[1, k]
-				if (k ~ /^(v_(skipped|multi|stale|terms|term_missing|underruns|input_restarts|input_stops|bad_status|unarmed|order)|a_(silent|pauses|starts|restarts|stops|stop_missing|stale|late|bad_done|order)|h_(failed|poll_errors|xfer_errors|retries|resyncs|runs|fpga_rejects)|it_(entries|losses|releases)|sp_(link_errors|level_changes|repowers|failed|pll_recoveries|scdc_aborts))$/ && d)
+				if (k ~ /^(v_(skipped|multi|stale|terms|term_missing|underruns|input_restarts|input_stops|input_holds|bad_status|unarmed|order)|a_(silent|pauses|starts|restarts|stops|stop_missing|stale|late|bad_done|order)|h_(failed|poll_errors|xfer_errors|retries|resyncs|runs|fpga_rejects)|it_(entries|losses|releases)|sp_(link_errors|level_changes|repowers|failed|pll_recoveries|scdc_aborts))$/ && d)
 					info = info sprintf(" %s %+d", k, d)
 				if (k in iserr && d) bad = bad sprintf(" %s %+d", k, d)
 			}
