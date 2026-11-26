@@ -44,8 +44,9 @@
 #                      uninstall.sh (no --yes) refuse, name it, change
 #                      nothing on the card
 #   holder-yes         uninstall.sh --yes: sleep loses the card; gc573 cannot
-#                      unload while it keeps the node open, so it stays
-#                      loaded (files removed) and unloads once sleep ends
+#                      unload while it keeps the old node open, so it gets
+#                      the card back (files removed); once sleep has ended,
+#                      uninstall.sh again unloads it and leaves nothing
 #   pw-uninstall       install.sh, then uninstall.sh (no --yes): gc573
 #                      unloads although WirePlumber held the card
 #   pw-stream-refused  install.sh, then pw-record from the GC573's PipeWire
@@ -433,15 +434,18 @@ s=$(state); echo "  $s"
 alive=$(vm "kill -0 $sp 2>/dev/null && echo yes || echo no")
 vm "kill $sp"
 sleep 1
-r=$(vm "sudo rmmod gc573 2>&1; lsmod | grep -cw gc573")
+# the recovery: uninstall.sh again, once the holder has ended
+o2=$(vm "$U" 2>&1); rc2=$?
+echo "$o2" | sed 's/^/  /'
 left=$(not_left)
-echo "  sleep still running before the kill: $alive; rmmod after it ended: $(echo $r); left: '$left'"
+echo "  sleep still running before the kill: $alive; left after the second uninstall.sh: '$left'"
 if [ $rc = 0 ] && has "the card is in use by sleep (pid $sp): --yes, so it loses the card now" "$o" &&
-	has 'still in use' "$o" && has 'loaded: yes' "$s" && has 'state:  dkms: ' "$s" && ! has 'dkms: gc573/' "$s" &&
-	[ "$alive" = yes ] && [ "$(echo $r)" = 0 ] && [ -z "$left" ]; then
-	res holder-yes PASS "uninstall.sh --yes: sleep lost the card; gc573 stayed loaded while sleep kept the node open (its files removed), and unloaded once it ended; nothing left"
+	has 'still in use' "$o" && has 'the card goes back to it' "$o" && has 'driver: gc573' "$s" &&
+	has 'loaded: yes' "$s" && has 'state:  dkms: ' "$s" && ! has 'dkms: gc573/' "$s" && [ "$alive" = yes ] &&
+	[ $rc2 = 0 ] && has 'unloaded gc573' "$o2" && [ -z "$left" ]; then
+	res holder-yes PASS "uninstall.sh --yes: sleep lost the card's node; gc573 could not unload while sleep kept it open, so it has the card again (its files removed); once sleep ended, uninstall.sh again unloaded it; nothing left"
 else
-	res holder-yes FAIL "exit $rc; sleep running: $alive; rmmod: $r; left '$left'; $s"
+	res holder-yes FAIL "exit $rc/$rc2; sleep running: $alive; left '$left'; $s"
 fi
 
 echo "=== pw-uninstall"
