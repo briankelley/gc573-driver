@@ -33,7 +33,10 @@ opener's pid, comm and command line:
   camwatch TEST    an open of a --test path (the mechanism's own test: a
                    scratch file, the GC573's own node; never a camera)
 A lost event (queue overflow) is a BREACH too. A line a minute says it
-runs. With --pid it ends when PID ends; without, at SIGTERM or SIGINT
+runs. Notification events do not wait for the watch, so a short-lived
+opener (v4l2-ctl, arecord) has often exited by the time its event is read:
+a zombie keeps its comm and parent, not its command line, and the line then
+gives the nearest parent's command line (the script that ran it). With --pid it ends when PID ends; without, at SIGTERM or SIGINT
 (standalone, for a whole session). --dry-run prints the marks and exits;
 --only-tests marks the --test paths alone (the mechanism's test).
 """
@@ -182,26 +185,41 @@ def candidates():
 
 
 def ancestry(pid):
-    """comm of PID and its ancestors (nearest first)"""
+    """(pid, comm) of PID and its ancestors (nearest first)"""
     out = []
     for _ in range(32):
         st = read(f'/proc/{pid}/stat')
         if not st:
             break
-        out.append(st[st.index('(') + 1:st.rindex(')')])
+        out.append((pid, st[st.index('(') + 1:st.rindex(')')]))
         pid = int(st[st.rindex(')') + 2:].split()[1])
         if pid <= 1:
             break
     return out
 
 
-def opener(pid):
-    comm = read(f'/proc/{pid}/comm', '?')
+def cmdline(pid):
     try:
         with open(f'/proc/{pid}/cmdline', 'rb') as f:
-            cmd = f.read().replace(b'\0', b' ').decode(errors='replace').strip()
+            return f.read().replace(b'\0', b' ').decode(errors='replace').strip()
     except OSError:
-        cmd = '(gone)'
+        return ''
+
+
+def opener(pid, chain):
+    """comm and command line of PID. A short-lived opener (v4l2-ctl, arecord)
+    has often exited by the time its event is read: a zombie keeps its comm
+    and parent but not its command line. Then the nearest parent's, which
+    started it"""
+    comm = read(f'/proc/{pid}/comm', '?')
+    cmd = cmdline(pid)
+    if cmd:
+        return comm, cmd
+    cmd = '(exited before its command line was read)'
+    for ppid, pcomm in chain[1:]:
+        pcmd = cmdline(ppid)
+        if pcmd:
+            return comm, f'{cmd}; started by pid {ppid} {pcomm}: {pcmd}'
     return comm, cmd
 
 
@@ -311,7 +329,7 @@ class Watch:
                 buf = os.read(self.fd, 65536)
             except BlockingIOError:
                 return
-            i = 0
+            i, evs = 0, []
             while i + 24 <= len(buf):
                 ev_len, vers, _r, mlen, mask, fd, pid = struct.unpack_from('<IBBHQii', buf, i)
                 if vers != FANOTIFY_METADATA_VERSION or ev_len < 24:
@@ -334,17 +352,24 @@ class Watch:
                     continue
                 if not mask & FAN_OPEN:
                     continue
-                self.report(h, pid)
+                # who opened, read at once for every event in the batch,
+                # before the slower logging: a short-lived opener exits soon
+                chain = ancestry(pid)
+                evs.append((h, pid, chain, opener(pid, chain)))
+            for e in evs:
+                self.report(*e)
 
-    def report(self, h, pid):
+    def report(self, h, pid, chain, who):
         path, what, kind = self.marks.get(h, ('(unknown node)', f'handle {h}', 'watch'))
-        comm, cmd = opener(pid)
-        chain = ancestry(pid)
+        comm, cmd = who
+        if comm == '?' and chain:
+            comm = chain[0][1]
+        names = [c for _, c in chain]
         if kind == 'test':
             level = 'TEST'
         elif comm in INFO_COMMS:
             level = 'INFO'
-        elif 'systemd-udevd' in chain[1:] or comm in ('(udev-worker)', 'systemd-udevd'):
+        elif 'systemd-udevd' in names[1:] or comm in ('(udev-worker)', 'systemd-udevd'):
             level = 'INFO'
             what += '; udev, hot-plug'
         else:
@@ -352,8 +377,8 @@ class Watch:
         if what.endswith('serial -'):
             what = what[:-1] + serial(path)
         self.n[level] += 1
-        self.say(level, f'open {path} ({what}) by pid {pid} {comm}: {cmd[:300]}'
-                 + (f' [parents: {" < ".join(chain[1:6])}]' if level == 'BREACH' else ''))
+        self.say(level, f'open {path} ({what}) by pid {pid} {comm}: {cmd[:400]}'
+                 + (f' [parents: {" < ".join(names[1:6])}]' if level != 'INFO' else ''))
 
     def run(self, alive):
         p = select.poll()
