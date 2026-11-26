@@ -142,6 +142,18 @@ A host GPU output (GT 710, DVI-D, through a DVI-to-HDMI cable) feeds HDMI IN. Fa
 - Report lock and unlock as `V4L2_EVENT_SOURCE_CHANGE`. Report DV timings from the IT6805 timing registers plus FPGA 0x1010. What a running stream does is driver policy (below).
 - The chips are separate I2C devices on the bus-1 adapter. Implement them as v4l2 subdevices or internal helpers. All their I2C goes through the bus-1 adapter.
 
+## Lock policy
+Driver policy (design decision, not a hardware fact; `src/gc573_hdmi.c` gc573_hdmi_publish):
+- The input is locked, and DV timings are reported, only when the IT6805 is STABLE with the AV mute released (`hdmi-it6805.md` §7.7, §7.10) and the FPGA's own measurement is valid and agrees with the IT6805:
+  - 0x1004[1:0] = 3 (`regmap.md`);
+  - 0x1008 = the IT6805's active width (halved for a dual-pixel bus and again for DDR), and 0x100c[15:0] = its active height for a progressive input;
+  - 0x1010 in range (5 to 121 Hz), within 0.02 % of its value one poll earlier (two polls in a row agree), and within 5 % of the period the IT6805's coarse clock gives for the measured frame (§8.3 of `hdmi-it6805.md`: those counters are good for coarse decisions only).
+- There is no lock without it, however long the IT6805 has been stable. The rate comes from 0x1010 only, never from the IT6805's clock counters, which are about 1 % off (one count is 1.2 % at 1080p).
+- Why: at a host boot (2026-11-25, PC source arriving while X started), 0x1004 read 1 with 0x1008/0x100c valid, so the check failed for the 20 polls the earlier policy waited, and went on failing until the source set its mode again (0x1010's own value was not logged). That policy then locked on the IT6805's clock alone and reported 1080p60 as a 146.823 MHz custom mode, 59.32 Hz. 0x1004 = 1 is not documented (`regmap.md` has 3 and 2), nor is a way to re-arm the measurement: open question 40.
+- After 40 polls (about 2.3 s) without a valid measurement the driver logs it once per stable entry (`dev_warn`, FPGA registers included) and counts it (debugfs hdmi `fpga_waits`).
+- A lock holds while the IT6805 stays stable at the same active size. Its timings change only when a valid frame period moves by more than 0.05 %, half the 1000/1001 step.
+- Test: the experiment parameter `exp_fpga_invalid` (polls after each stable entry for which the poll sees 0x1004[1:0] = 1, as at that boot, and 0x1010 = 0) and `tests/live.sh fpgawait`.
+
 ## Stream policy on input changes
 Driver policy (design decision, not a hardware fact; also in the header comment of `src/gc573_video.c`):
 - Every lock, loss and mode change raises `V4L2_EVENT_SOURCE_CHANGE` at once. An application that handles it stops streaming, queries and sets the timings, and starts again.
