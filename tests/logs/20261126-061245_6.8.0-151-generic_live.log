@@ -1,0 +1,122 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 06:12:45 UTC
+vm:      gc573-dev, kernel 6.8.0-151-generic
+rev:     fc53de31d3ec-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   apps
+module:  srcversion DA910DA849A1402705BBB41 loaded, DA910DA849A1402705BBB41 in ~/gc573-driver, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## apps
+  gst 1.24.2
+RESULT apps-driver-1080p60-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=480000 secs=9.990 rate=48001.321 xruns=0 restarts=0 )
+RESULT apps-driver-1080p60-duration PASS (10.0 s, 480000 frames, minimum 9 s)
+RESULT apps-driver-1080p60-xruns  PASS (0 overruns)
+RESULT apps-driver-1080p60-gaps   PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.09 ms of one line over the run; single reads within 0.25 ms of it; 1000 reads)
+RESULT apps-driver-1080p60-video  PASS (596 frames, 0 sequence gaps, interval 16.664 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT apps-driver-1080p60-avsync PASS (10 flashes over 0.1 min: offset +44.690 ms (std 0.044, min +44.622, max +44.746), drift +0.2132 ms/min = +0.032 ms over the run, residual <= 0.074 ms)
+  INFO counter   596 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 595; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 10 between the first and last frame: 10 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +44.69 ms, min +44.62, max +44.75, std 0.04; frames from the most common (count): +0: 10
+  apps-gst-1080p60-yuyv: exit 0
+RESULT apps-gst-1080p60-yuyv-media PASS (matroska,webm: video rawvideo 1920x1080 yuyv422; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-gst-1080p60-yuyv-frames PASS (590 frames, period 16.667 ms (the file's median interval 20.000); 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 3 frames twice and skipped 3; 0 unreadable)
+RESULT apps-gst-1080p60-yuyv-pattern PASS (frames at 10/50/90 %: pattern 5, pattern 5, pattern 5 (limit 8))
+RESULT apps-gst-1080p60-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-gst-1080p60-yuyv-rate PASS (48000.0 samples from one burst to the next (median of 9; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-gst-1080p60-yuyv-avsync PASS (burst onset - flash frame over 9 flashes: median +53.9 ms, mean +53.9, std 0.0, min +53.9, max +53.9 (positive: audio late); the driver +44.7 ms in the same source session: the application +9.2 ms; BT.1359: -45 to +125 ms)
+  INFO apps-gst-1080p60-yuyv-driver the driver's stream: frames 591 underruns 0 (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)
+  apps-gst-1080p60-nv12: exit 0
+RESULT apps-gst-1080p60-nv12-media PASS (matroska,webm: video rawvideo 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-gst-1080p60-nv12-frames FAIL (591 frames, period 16.667 ms (the file's median interval 20.000); 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 1 other than 0, 1, 2; the source showed 14 frames twice and skipped 5; 0 unreadable)
+RESULT apps-gst-1080p60-nv12-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-gst-1080p60-nv12-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-gst-1080p60-nv12-rate PASS (48000.0 samples from one burst to the next (median of 9; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-gst-1080p60-nv12-avsync PASS (burst onset - flash frame over 10 flashes: median +4.0 ms, mean +8.0, std 22.0, min -36.0, max +54.0 (positive: audio late); the driver +44.7 ms in the same source session: the application -40.7 ms; BT.1359: -45 to +125 ms)
+  INFO apps-gst-1080p60-nv12-driver the driver's stream: frames 591 underruns 0 (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)
+RESULT apps-driver-720p59.94-capture PASS (PARAMS video 1280x720 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=480000 secs=9.990 rate=48000.838 xruns=0 restarts=0 )
+RESULT apps-driver-720p59.94-duration PASS (10.0 s, 480000 frames, minimum 9 s)
+RESULT apps-driver-720p59.94-xruns PASS (0 overruns)
+RESULT apps-driver-720p59.94-gaps PASS (per-second medians move <= 0.06 ms from one second to the next; within 0.07 ms of one line over the run; single reads within 0.13 ms of it; 1000 reads)
+RESULT apps-driver-720p59.94-video PASS (595 frames, 0 sequence gaps, interval 16.681 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT apps-driver-720p59.94-avsync PASS (10 flashes over 0.2 min: offset +39.926 ms (std 0.192, min +39.606, max +40.226), drift +3.9141 ms/min = +0.588 ms over the run, residual <= 0.086 ms)
+  INFO counter   595 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 594; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 10 between the first and last frame: 10 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +39.93 ms, min +39.61, max +40.23, std 0.19; frames from the most common (count): +0: 10
+  apps-gst-720p59.94-yuyv: exit 0
+RESULT apps-gst-720p59.94-yuyv-media PASS (matroska,webm: video rawvideo 1280x720 yuyv422; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-gst-720p59.94-yuyv-frames FAIL (590 frames, period 16.683 ms (the file's median interval 20.000); 0 timestamp gaps over 1.5 periods, 1 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 1 frames twice and skipped 0; 0 unreadable)
+RESULT apps-gst-720p59.94-yuyv-pattern PASS (frames at 10/50/90 %: pattern 5, pattern 5, pattern 5 (limit 8))
+RESULT apps-gst-720p59.94-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-gst-720p59.94-yuyv-rate PASS (48048.0 samples from one burst to the next (median of 9; 48048.0 for a source at 59.94 Hz), -1 ppm)
+RESULT apps-gst-720p59.94-yuyv-avsync PASS (burst onset - flash frame over 10 flashes: median +42.6 ms, mean +39.6, std 8.4, min +24.1, max +49.1 (positive: audio late); the driver +39.9 ms in the same source session: the application +2.6 ms; BT.1359: -45 to +125 ms)
+  INFO apps-gst-720p59.94-yuyv-driver the driver's stream: frames 591 underruns 0 (an underrun: no buffer queued, the frame uncaptured; the application was late returning its buffers)
+  APP gst sleep: events subscribed 3x, dequeued 2x; ran its 30 s (exit 124); carried on
+    RESULT media     PASS (matroska,webm: video rawvideo 1920x1080 yuyv422; audio pcm_s16le 48000 Hz 2 ch) CHANGE 900 frames before the change at 15.0 s, 634 from 18.0 s (settled), the last at 28.55 s; longest gap after the change 0.02 s; from 18.0 s: live 
+    stderr: 
+    driver: input: power 1 signal 1 locked 1 period 0x196dac fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-gst-change-sleep      PASS (ran its 30 s (exit 124); carried on; events subscribed 3x, dequeued 2x)
+  APP gst relock: events subscribed 3x, dequeued 2x; ran its 30 s (exit 124); carried on
+    RESULT media     PASS (matroska,webm: video rawvideo 1920x1080 yuyv422; audio pcm_s16le 48000 Hz 2 ch) CHANGE 687 frames before the change at 11.4 s, 847 from 14.4 s (settled), the last at 28.55 s; longest gap after the change 0.02 s; from 14.4 s: live 
+    stderr: 
+    driver: input: power 1 signal 1 locked 1 period 0x196dac fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-gst-change-relock     PASS (ran its 30 s (exit 124); carried on; events subscribed 3x, dequeued 2x)
+  APP gst rate: events subscribed 2x, dequeued 2x; ended +2.6 s after the change, exit 1; errored out (no frames after the change); a restart at 1920x1080@59.94 brings it back
+    RESULT media     PASS (matroska,webm: video rawvideo 1920x1080 yuyv422; audio pcm_s16le 48000 Hz 2 ch) CHANGE 535 frames before the change at 10.0 s, 0 from 13.0 s (settled), the last at 8.90 s; longest gap after the change nan s; from 13.0 s: none 
+    stderr: ERROR: from element /GstPipeline:pipeline0/GstV4l2Src:v4l2src0: Internal data stream error. Additional debug info: ../libs/gst/base/gstbasesrc.c(3177): gst_base_src_loop (): /GstPipeline:pipeline0/GstV4l2Src:v4l2src0: streaming stopped, reason not-negotiated (-4) 
+    driver: input: power 1 signal 1 locked 1 period 0x197441 fpga 0x3 0x780 0x438 colour 0 vic 16 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-gst-change-rate       PASS (ended +2.6 s after the change, exit 1; errored out (no frames after the change); a restart at 1920x1080@59.94 brings it back; events subscribed 2x, dequeued 2x)
+  APP gst res: events subscribed 2x, dequeued 2x; ended +2.5 s after the change, exit 1; errored out (no frames after the change); a restart at 1280x720@59.94 brings it back
+    RESULT media     PASS (matroska,webm: video rawvideo 1920x1080 yuyv422; audio pcm_s16le 48000 Hz 2 ch) CHANGE 523 frames before the change at 10.0 s, 0 from 13.0 s (settled), the last at 9.58 s; longest gap after the change nan s; from 13.0 s: none 
+    stderr: ERROR: from element /GstPipeline:pipeline0/GstV4l2Src:v4l2src0: Internal data stream error. Additional debug info: ../libs/gst/base/gstbasesrc.c(3177): gst_base_src_loop (): /GstPipeline:pipeline0/GstV4l2Src:v4l2src0: streaming stopped, reason not-negotiated (-4) 
+    driver: input: power 1 signal 1 locked 1 period 0x1973d2 fpga 0x3 0x500 0x2d0 colour 0 vic 4 full_range 1 enc 0 dvi 0 dual 0 ddr 0
+RESULT apps-gst-change-res        PASS (ended +2.5 s after the change, exit 1; errored out (no frames after the change); a restart at 1280x720@59.94 brings it back; events subscribed 2x, dequeued 2x)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 28 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT apps-driver-1080p60-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=480000 secs=9.990 rate=48001.321 xruns=0 restarts=0 )
+RESULT apps-driver-1080p60-duration PASS (10.0 s, 480000 frames, minimum 9 s)
+RESULT apps-driver-1080p60-xruns  PASS (0 overruns)
+RESULT apps-driver-1080p60-gaps   PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.09 ms of one line over the run; single reads within 0.25 ms of it; 1000 reads)
+RESULT apps-driver-1080p60-video  PASS (596 frames, 0 sequence gaps, interval 16.664 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT apps-driver-1080p60-avsync PASS (10 flashes over 0.1 min: offset +44.690 ms (std 0.044, min +44.622, max +44.746), drift +0.2132 ms/min = +0.032 ms over the run, residual <= 0.074 ms)
+RESULT apps-gst-1080p60-yuyv-media PASS (matroska,webm: video rawvideo 1920x1080 yuyv422; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-gst-1080p60-yuyv-frames PASS (590 frames, period 16.667 ms (the file's median interval 20.000); 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 3 frames twice and skipped 3; 0 unreadable)
+RESULT apps-gst-1080p60-yuyv-pattern PASS (frames at 10/50/90 %: pattern 5, pattern 5, pattern 5 (limit 8))
+RESULT apps-gst-1080p60-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-gst-1080p60-yuyv-rate PASS (48000.0 samples from one burst to the next (median of 9; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-gst-1080p60-yuyv-avsync PASS (burst onset - flash frame over 9 flashes: median +53.9 ms, mean +53.9, std 0.0, min +53.9, max +53.9 (positive: audio late); the driver +44.7 ms in the same source session: the application +9.2 ms; BT.1359: -45 to +125 ms)
+RESULT apps-gst-1080p60-nv12-media PASS (matroska,webm: video rawvideo 1920x1080 yuv420p; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-gst-1080p60-nv12-frames FAIL (591 frames, period 16.667 ms (the file's median interval 20.000); 0 timestamp gaps over 1.5 periods, 0 under half; counter steps at regular intervals: 1 other than 0, 1, 2; the source showed 14 frames twice and skipped 5; 0 unreadable)
+RESULT apps-gst-1080p60-nv12-pattern PASS (frames at 10/50/90 %: pattern 4, pattern 4, pattern 4 (limit 8))
+RESULT apps-gst-1080p60-nv12-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-gst-1080p60-nv12-rate PASS (48000.0 samples from one burst to the next (median of 9; 48000.0 for a source at 60 Hz), +0 ppm)
+RESULT apps-gst-1080p60-nv12-avsync PASS (burst onset - flash frame over 10 flashes: median +4.0 ms, mean +8.0, std 22.0, min -36.0, max +54.0 (positive: audio late); the driver +44.7 ms in the same source session: the application -40.7 ms; BT.1359: -45 to +125 ms)
+RESULT apps-driver-720p59.94-capture PASS (PARAMS video 1280x720 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=480000 secs=9.990 rate=48000.838 xruns=0 restarts=0 )
+RESULT apps-driver-720p59.94-duration PASS (10.0 s, 480000 frames, minimum 9 s)
+RESULT apps-driver-720p59.94-xruns PASS (0 overruns)
+RESULT apps-driver-720p59.94-gaps PASS (per-second medians move <= 0.06 ms from one second to the next; within 0.07 ms of one line over the run; single reads within 0.13 ms of it; 1000 reads)
+RESULT apps-driver-720p59.94-video PASS (595 frames, 0 sequence gaps, interval 16.681 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT apps-driver-720p59.94-avsync PASS (10 flashes over 0.2 min: offset +39.926 ms (std 0.192, min +39.606, max +40.226), drift +3.9141 ms/min = +0.588 ms over the run, residual <= 0.086 ms)
+RESULT apps-gst-720p59.94-yuyv-media PASS (matroska,webm: video rawvideo 1280x720 yuyv422; audio pcm_s16le 48000 Hz 2 ch)
+RESULT apps-gst-720p59.94-yuyv-frames FAIL (590 frames, period 16.683 ms (the file's median interval 20.000); 0 timestamp gaps over 1.5 periods, 1 under half; counter steps at regular intervals: 0 other than 0, 1, 2; the source showed 1 frames twice and skipped 0; 0 unreadable)
+RESULT apps-gst-720p59.94-yuyv-pattern PASS (frames at 10/50/90 %: pattern 5, pattern 5, pattern 5 (limit 8))
+RESULT apps-gst-720p59.94-yuyv-channels PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, other tone <= -84.2 dB, 0 bad)
+RESULT apps-gst-720p59.94-yuyv-rate PASS (48048.0 samples from one burst to the next (median of 9; 48048.0 for a source at 59.94 Hz), -1 ppm)
+RESULT apps-gst-720p59.94-yuyv-avsync PASS (burst onset - flash frame over 10 flashes: median +42.6 ms, mean +39.6, std 8.4, min +24.1, max +49.1 (positive: audio late); the driver +39.9 ms in the same source session: the application +2.6 ms; BT.1359: -45 to +125 ms)
+RESULT apps-gst-change-sleep      PASS (ran its 30 s (exit 124); carried on; events subscribed 3x, dequeued 2x)
+RESULT apps-gst-change-relock     PASS (ran its 30 s (exit 124); carried on; events subscribed 3x, dequeued 2x)
+RESULT apps-gst-change-rate       PASS (ended +2.6 s after the change, exit 1; errored out (no frames after the change); a restart at 1920x1080@59.94 brings it back; events subscribed 2x, dequeued 2x)
+RESULT apps-gst-change-res        PASS (ended +2.5 s after the change, exit 1; errored out (no frames after the change); a restart at 1280x720@59.94 brings it back; events subscribed 2x, dequeued 2x)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=35 fail=2 skip=1
