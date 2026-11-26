@@ -1574,14 +1574,22 @@ obssoak_local() {
 		seg=$(python3 "$ROOT/tests/obs-av.py" "$f" --box 0.70,0.88,0.92,0.92 ${marks:+--segments $marks} 2>&1)
 		av_results obssoak-rec "$seg"
 		# OBS's own part of the offset where the driver's is known: the
-		# first and the last segment, each in the session gc573-aud measured
+		# first and the last segment, each in the session gc573-aud measured.
+		# It grows: libobs lays the card's samples back to back while their
+		# timestamps stay within 70 ms of where it expects them, and the
+		# HDMI audio clock runs about 25 ppm against the host's; at 70 ms
+		# libobs puts the audio back at its timestamps (audio-timeline above
+		# finds those resets). So it is bounded, not constant: from a frame
+		# period early to 70 ms plus a frame period late (the 2-hour soak:
+		# -0.2 and +45.3 ms, tests/logs/20261126-004854_6.8.0-151-generic_live.log)
 		first=$(sed -n 's/^SEGMENT 0 .* offset=\([-+0-9.]*\) .*/\1/p' <<< "$seg")
 		last=$(grep '^SEGMENT ' <<< "$seg" | tail -1 | sed -n 's/.* offset=\([-+0-9.]*\) .*/\1/p')
 		if [ -n "$first" ] && [ -n "$last" ] && [ -n "$refa" ] && [ -n "$refc" ]; then
 			out=$(awk -v f="$first" -v a="$refa" -v l="$last" -v c="$refc" 'BEGIN {
-				d1 = f - a; d2 = l - c; dd = d2 - d1; if (dd < 0) dd = -dd
-				printf "RESULT obs-own %s (OBS - driver in the same source session: first segment %+.1f ms (OBS %+.1f, driver %+.2f), last %+.1f ms (OBS %+.1f, driver %+.2f); the two within one frame period, 16.7 ms)\n",
-					dd <= 16.7 ? "PASS" : "FAIL", d1, f, a, d2, l, c }')
+				d1 = f - a; d2 = l - c
+				ok = d1 >= -16.7 && d1 <= 86.7 && d2 >= -16.7 && d2 <= 86.7
+				printf "RESULT obs-own %s (OBS - driver in the same source session: first segment %+.1f ms (OBS %+.1f, driver %+.2f), last %+.1f ms (OBS %+.1f, driver %+.2f); both within OBS'"'"'s bound, a frame period early to its 70 ms timestamp smoothing plus a frame period late, -16.7 to +86.7 ms)\n",
+					ok ? "PASS" : "FAIL", d1, f, a, d2, l, c }')
 			av_results obssoak "$out"
 		else
 			result obssoak-obs-own FAIL "(offsets missing: first segment ${first:--}, last ${last:--}, driver ${refa:--} and ${refc:--})"
