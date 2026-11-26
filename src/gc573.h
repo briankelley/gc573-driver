@@ -417,6 +417,23 @@ void gc573_hdmi_debugfs(struct gc573 *gc);
 
 extern const struct vb2_mem_ops gc573_vb2_mem_ops;
 
+/*
+ * The driver's own video buffer memory live now, over all cards: vb2
+ * buffers (gc573_vb2.c) with their pages and kernel mappings, and the DMA
+ * descriptor lists (gc573_video.c). debugfs "video" prints them ("mem:").
+ * With no buffers requested they are all 0: a leak check that other
+ * programs' memory cannot move (tests/live.sh obssoak).
+ */
+struct gc573_mem_live {
+	atomic_t bufs;
+	atomic_long_t pages;
+	atomic_t vmaps;
+	atomic_t dlists;
+	atomic_long_t dl_bytes;
+};
+
+extern struct gc573_mem_live gc573_mem_live;
+
 void gc573_video_early_init(struct gc573 *gc);
 int gc573_video_init(struct gc573 *gc);
 void gc573_video_hw_stop(struct gc573 *gc);

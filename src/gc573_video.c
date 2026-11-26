@@ -436,6 +436,8 @@ static int gc573_dl_build(struct gc573 *gc, struct sg_table *sgt, u32 off,
 	dl->desc = dma_alloc_coherent(dev, dl->size, &dl->dma, GFP_KERNEL);
 	if (!dl->desc)
 		return -ENOMEM;
+	atomic_inc(&gc573_mem_live.dlists);
+	atomic_long_add(dl->size, &gc573_mem_live.dl_bytes);
 
 	memset(&x, 0, sizeof(x));
 	x.desc = dl->desc;
@@ -451,9 +453,12 @@ static void gc573_dl_free(struct gc573 *gc, struct gc573_vbuf *b)
 	for (c = 0; c < GC573_VCH_NUM; c++) {
 		struct gc573_dlist *dl = &b->dl[c];
 
-		if (dl->desc)
+		if (dl->desc) {
 			dma_free_coherent(&gc->pdev->dev, dl->size, dl->desc,
 					  dl->dma);
+			atomic_dec(&gc573_mem_live.dlists);
+			atomic_long_sub(dl->size, &gc573_mem_live.dl_bytes);
+		}
 		memset(dl, 0, sizeof(*dl));
 	}
 }
@@ -1564,6 +1569,12 @@ static int gc573_vid_debugfs_show(struct seq_file *m, void *unused)
 	seq_printf(m, "ch0: STATUS %#010x CTRL %#010x\n",
 		   gc573_rd(gc, GC573_VCH0_BASE + GC573_VCH_STATUS),
 		   gc573_rd(gc, GC573_VCH0_BASE + GC573_VCH_CTRL));
+	seq_printf(m, "mem (live, all cards): bufs %d pages %ld vmaps %d dlists %d dl_bytes %ld\n",
+		   atomic_read(&gc573_mem_live.bufs),
+		   atomic_long_read(&gc573_mem_live.pages),
+		   atomic_read(&gc573_mem_live.vmaps),
+		   atomic_read(&gc573_mem_live.dlists),
+		   atomic_long_read(&gc573_mem_live.dl_bytes));
 
 	/* seq_printf() does not sleep: print the shared state under slock */
 	spin_lock(&v->slock);
