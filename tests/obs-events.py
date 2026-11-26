@@ -39,11 +39,14 @@ the screenshot after it must be good too.
       gives it); one EVENT line per change, SHOT lines for every screenshot
       that is not good, and RESULT lines at the end. Prints RECORDING
       <file> (the recording, where OBS runs). No change is ever skipped:
-      if the picture is not good before one while the driver reports a
-      lock, the source is reopened first (RECOVER line), and the change
-      runs anyway. Between changes a watchdog reopens the source after
-      WATCHDOG seconds without a good screenshot while the driver reports
-      a lock. RESULT obsev-recoveries fails if either was needed.
+      if the picture is not good before one, it is recovered first, and
+      the change runs anyway. Between changes a watchdog recovers it after
+      WATCHDOG seconds without a good screenshot. A recovery reopens the
+      source while the driver reports a lock, and again after 5, 10, 20,
+      40, then every 60 s while the picture stays not good, until it is
+      good or its time runs out (60 s before a change; the watchdog's: to
+      the next change); one RECOVER line per attempt. RESULT
+      obsev-recoveries fails if any was needed.
       --keep-source: the test
       source that runs (avsync.sh --pattern at 1080p60) is not restarted
       before the recording, and --no-restore leaves the last one running
@@ -430,7 +433,7 @@ class Runner:
         self.mode = ('1920x1080', '60')
         self.edid = 'default'
         self.results = {}
-        self.recoveries = []	# (why, reopened, TTFGF or None)
+        self.recoveries = []	# (why, attempts, good, seconds to good or None)
 
     def audio_on(self):
         if self.audio:
@@ -552,25 +555,38 @@ class Runner:
         self.record(name, ttf, f'({"hot-plug" if changed else "no change"}: {fmt_runs(runs, t0)}; '
                     f'source {size[0]}x{size[1]})')
 
-    def recover(self, why, detail):
+    def recover(self, why, detail, budget=60):
         """The picture is not good. With the driver locked, OBS has lost
         the stream (it does not reopen by itself): reopen the source and
-        wait for good frames. One RECOVER line; counted in
+        wait for good frames, 5 s; while it stays not good, again after
+        10, 20, 40, then 60 s, until it is good or BUDGET seconds are
+        used. Without a lock nothing is reopened; the next attempt looks
+        again. One RECOVER line per attempt; the episode counts in
         RESULT obsev-recoveries"""
-        locked = driver_locked()
-        if not locked:
-            self.recoveries.append((why, False, None))
-            self.out(f'RECOVER {why}: {detail}; driver {"not locked" if locked is False else "unreadable"}: '
-                     f'no reopen', flush=True)
-            return False
-        ev(f'recover {why}: reopen')
         t0 = time.monotonic()
-        self.src.reopen()
-        ttf, runs, size = wait_good(self.src, t0, TIMEOUT)
-        self.recoveries.append((why, True, ttf))
-        self.out(f'RECOVER {why}: {detail}; driver locked: reopened, '
-                 f'{"good after %.2f s" % ttf if ttf is not None else "still not good"} '
-                 f'({fmt_runs(runs, t0)}; source {size[0]}x{size[1]}) [{driver_state()}]', flush=True)
+        wait, n, ttf = 5, 0, None
+        while True:
+            n += 1
+            locked = driver_locked()
+            t1 = time.monotonic()
+            if locked:
+                ev(f'recover {why}: reopen (attempt {n})')
+                self.src.reopen()
+            ttf, runs, size = wait_good(self.src, t1, wait)
+            how = 'reopened' if locked else \
+                ('not locked' if locked is False else 'lock unreadable') + ', no reopen'
+            self.out(f'RECOVER {why} attempt {n} at +{t1 - t0:.1f} s: '
+                     f'{detail if n == 1 else "still not good"}; {how}, '
+                     f'{"good after %.2f s" % ttf if ttf is not None else "not good in %d s" % wait} '
+                     f'({fmt_runs(runs, t1)}; source {size[0]}x{size[1]}) [{driver_state()}]', flush=True)
+            if ttf is not None or time.monotonic() - t0 + min(wait * 2, 60) > budget:
+                break
+            wait = min(wait * 2, 60)
+        took = time.monotonic() - t0 if ttf is not None else None
+        self.recoveries.append((why, n, ttf is not None, took))
+        if ttf is None:
+            self.out(f'RECOVER {why}: still not good after {n} attempts, {time.monotonic() - t0:.0f} s',
+                     flush=True)
         return ttf is not None
 
     def run(self, name):
@@ -620,9 +636,9 @@ def summary(results, out=print, recoveries=None):
     if recoveries is not None:
         good = not recoveries
         ok &= good
-        what = '; '.join(f'{w}: ' + ((f'reopened, good after {t:.2f} s' if t is not None else
-                                       'reopened, not good') if ro else 'not reopened')
-                         for w, ro, t in recoveries)
+        what = '; '.join(f'{w}: {n} attempt{"s" if n > 1 else ""}, '
+                         + (f'good after {t:.2f} s' if g else 'not good')
+                         for w, n, g, t in recoveries)
         out(f"RESULT obsev-recoveries {'PASS' if good else 'FAIL'} ({len(recoveries)} times the "
             f"picture was not good outside a change's own recovery" + (f': {what}' if what else '') + ')')
     for name in ORDER:
@@ -800,9 +816,11 @@ def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=
                 if state == 'good':
                     t_good = t
                 elif t - t_good > WATCHDOG:
-                    # the watchdog: OBS stopped getting frames between changes
+                    # the watchdog: OBS stopped getting frames between
+                    # changes; attempts until good or the next change
                     r.recover(f'watchdog at {t - t_start:.1f} s',
-                              f'no good screenshot for {t - t_good:.0f} s (last: {state})')
+                              f'no good screenshot for {t - t_good:.0f} s (last: {state})',
+                              budget=max(10, next_ev - time.monotonic() - 5))
                     t_good = time.monotonic()
                 time.sleep(max(0, shot_every - (time.monotonic() - now)))
         finally:
