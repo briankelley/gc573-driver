@@ -70,6 +70,7 @@ An update (`install.sh` again) or `uninstall.sh` first takes the card away from 
 - On a weak GPU, run OBS minimized to the tray while it records (`obs --minimize-to-tray`), so that it draws no preview. On the test PC's GeForce GT 710, drawing the preview made OBS lag while it recorded.
 
 **Audio**
+- Use the ALSA source below. It reads the card directly and opens the GC573 alone. The PulseAudio source behaves the same over a long recording (see *A/V sync*). On top of that, it adds PipeWire's buffering, which OBS does not allow for.
 - Add an *Audio Capture Device (ALSA)* source at 48000 Hz, with the custom PCM `hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0` (`ls -l /dev/snd/by-path/` shows yours, the link to the GC573's `controlC` node). This source reads the card directly.
   - `hw:CARD=GC573,DEV=0`, or picking the GC573 in the list, works too, but alsa-lib finds a card by its name by opening the control device of every sound card before it, a webcam's microphone included. By its path, alsa-lib opens the GC573 alone.
 - With PipeWire, an *Audio Input Capture (PulseAudio)* source on *GC573 HDMI capture Stereo* works too. PipeWire passes the card's samples on unchanged, at the card's clock (measured: exactly 48000 samples per second of the source), so over a long recording it behaves as the ALSA source does (see *A/V sync*).
