@@ -14,10 +14,10 @@ RESULT lines (PASS/FAIL/SKIP):
   media     the file holds a WxH video stream and a 2-channel 48 kHz audio
             stream
   frames    frame timestamps against the counter of avsync.sh --pattern:
-            no timestamp gap over 1.5 frame periods, none under half a
-            period, and every counter step 1 where the timestamps are
-            regular. A counter step of 0 or 2 at a regular interval is the
-            source's (its player's pacing: tests/logs/
+            no timestamp gap over 1.5 frame periods (the source's, --fps),
+            none under half a period, and every counter step 1 where the
+            timestamps are regular. A counter step of 0 or 2 at a regular
+            interval is the source's (its player's pacing: tests/logs/
             20261125T2115Z-testsrc-pacing.log) and only counted; a gap is
             a loss in the application or the driver, and fails
   pattern   frames at 10, 50 and 90 % against pattern.py: error <= 8
@@ -188,7 +188,12 @@ def main():
         return 1
     t0 = ts[0]
     have_ts = not np.isnan(ts).any() and np.all(np.diff(ts) > 0)
-    period = float(np.median(np.diff(ts))) if have_ts else 1 / 60
+    # the source's frame period (--fps), not the file's median interval: a
+    # file can keep its timestamps in coarse steps (GStreamer with alsasrc
+    # stamps video by the audio clock, in 10 ms steps: intervals of 10 and
+    # 20 ms at 60 Hz, median 20)
+    period = 1 / a.fps
+    med = float(np.median(np.diff(ts))) if have_ts else float('nan')
 
     if a.change is not None:
         rel = ts - t0 if have_ts else np.arange(n) / 60
@@ -235,7 +240,8 @@ def main():
             elif s != 1:
                 other += 1
         st = 'PASS' if gaps == 0 and dups == 0 and other == 0 else 'FAIL'
-        result('frames', st, f'{n} frames, period {period * 1e3:.3f} ms; {gaps} timestamp gaps over '
+        result('frames', st, f'{n} frames, period {period * 1e3:.3f} ms (the file\'s median interval '
+               f'{med * 1e3:.3f}); {gaps} timestamp gaps over '
                f'1.5 periods, {dups} under half; counter steps at regular intervals: {other} other '
                f'than 0, 1, 2; the source showed {src0} frames twice and skipped {src2}; '
                f'{unread} unreadable')

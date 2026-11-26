@@ -1923,9 +1923,11 @@ kml() {
 # - one of each source change while it records 30 s, 8 s in: sleep/wake
 #   (output off 5 s), a same-mode relock (EDID re-set with a hot-plug),
 #   60 -> 59.94 Hz, 1080p60 -> 720p59.94. What it did (an APP line: it
-#   subscribed to V4L2_EVENT_SOURCE_CHANGE or not, from strace; carried on,
-#   errored out or froze; app-check.py --change), and whether a restart at
-#   the new mode brings it back (a 6 s capture, live frames).
+#   subscribed to events and dequeued them or not, from strace, which does
+#   not decode the event type; the driver raises V4L2_EVENT_SOURCE_CHANGE
+#   at every change; carried on, errored out or froze; app-check.py
+#   --change), and whether a restart at the new mode brings it back (a 6 s
+#   capture, live frames).
 # GStreamer's v4l2 plugin opens every /dev/video* node whenever it loads
 # (its M2M probe, "Probing devices"), cameras too: on the host (local mode)
 # it is skipped; GST_REGISTRY_UPDATE=no keeps registry rebuilds out too.
@@ -2089,8 +2091,8 @@ apps_change() {
 			left="ran its 30 s (exit $rc)"
 		fi
 	fi
-	sub=$(vm "grep -c 'VIDIOC_SUBSCRIBE_EVENT.*V4L2_EVENT_SOURCE_CHANGE' $APPS_DIR/$name.strace;
-		grep -c 'VIDIOC_DQEVENT' $APPS_DIR/$name.strace" | paste -sd' ')
+	sub=$(vm "grep -c 'VIDIOC_SUBSCRIBE_EVENT.*= 0$' $APPS_DIR/$name.strace;
+		grep -c 'VIDIOC_DQEVENT.*= 0$' $APPS_DIR/$name.strace" | paste -sd' ')
 	out=$(vm "python3 $W/app-check.py '$f' $mode0 --change $(echo "$t_back - $t0 - 0.5" | bc)" 2>&1 |
 		grep -E '^CHANGE|^RESULT media')
 	case "$out" in
@@ -2111,7 +2113,7 @@ apps_change() {
 		*) back="a restart at $mode1@$rate1 does NOT bring it back (${back:-no file})" ;;
 		esac
 	fi
-	echo "  APP $app $kind: SOURCE_CHANGE subscribed ${sub%% *}x, events dequeued ${sub##* }; $left; $verdict${back:+; $back}"
+	echo "  APP $app $kind: events subscribed ${sub%% *}x, dequeued ${sub##* }x; $left; $verdict${back:+; $back}"
 	echo "    $(tr '\n' ' ' <<< "$out")"
 	echo "    stderr: $(vm "tail -c 400 $APPS_DIR/$name.err" | tr '\n' ' ')"
 	echo "    driver: $(hdmi_dbg | grep -E '^input:' | head -1)"
@@ -2120,7 +2122,7 @@ apps_change() {
 	else
 		ok=$([ "$verdict" = "carried on" ]; echo $?)
 	fi
-	check "$name" "$ok" "($left; $verdict${back:+; $back}; SOURCE_CHANGE subscribed: $([ "${sub%% *}" -gt 0 ] 2>/dev/null && echo yes || echo no))"
+	check "$name" "$ok" "($left; $verdict${back:+; $back}; events subscribed ${sub%% *}x, dequeued ${sub##* }x)"
 	vm "rm -f '$f' '$APPS_DIR/$name-again.mkv' $APPS_DIR/$name.strace $APPS_DIR/$name.err"
 	if [ "$kind" = relock ]; then
 		vm "v4l2-ctl -d $vdev --set-edid=file=$APPS_DIR/edid-default.bin,format=raw" > /dev/null
