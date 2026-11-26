@@ -154,10 +154,16 @@ frame-interrupt ring, the error counters. The default steps are `rokulock`,
   frames' phase, untouched blocks (`gc573-cap -p`), band signatures (`-B`),
   IN_FRAME_PERIOD (`-M`), the interrupt ring and the HDMI worker's activity
   (`tests/dbg-watch.py`). `GC573_ROKU_START_DELAY` starts the streams that
-  many seconds after the lock;
-- `rokurelock` (any picture): a stream across a relock in the same timings
-  (the EDID set again). From 0.1 s after the driver's live restart, the
-  same checks;
+  many seconds after the lock. `GC573_ROKU_START_FIRST=serial` uses the
+  other-serial EDID instead of the 720p one: streams started at a lock in
+  the same timings;
+- `rokurelock` (any picture): a stream across a relock in the same timings.
+  The EDID alternates between the other serial and the default: setting
+  the same EDID again brings no loss. From 0.1 s after the driver's live
+  restart, the same checks. An INFO timeline from the stable entry gives
+  the loss, the free-run restart, the published lock, the live restart,
+  the FPGA's 0x1004/0x1010 changes, and the free-run frames' intervals
+  between the stable entry and the live restart;
 - `rokuobsany` (any picture): OBS through `tests/obs-any.py`. It takes
   screenshots, reads the meters and makes a 60 s recording, then deletes
   it. Alongside it checks the driver's stream, intervals and counters;
