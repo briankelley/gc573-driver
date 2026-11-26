@@ -26,6 +26,11 @@
 
 #include "gc573.h"
 
+static unsigned int exp_fpga_invalid;
+module_param(exp_fpga_invalid, uint, 0644);
+MODULE_PARM_DESC(exp_fpga_invalid,
+		 "Experiment, a test of the lock policy (hdmi-chips.md \"Lock policy\"); read per poll. For this many polls after each stable entry the poll sees the FPGA's input measurement not valid yet: 0x1004[1:0] = 1, as in the boot race, and 0x1010 = 0; 0xffffffff: always. Default 0");
+
 /* hdmi-chips.md "Control model": the next poll 50 ms after a cycle ends */
 #define GC573_HDMI_POLL_MS		50
 /* hdmi-chips.md GPIO bit 2: after load RD pulses 1, 10 ms, 0, 100 ms, 1 */
@@ -436,23 +441,28 @@ static bool gc573_hdmi_publish(struct gc573_hdmi *h)
 	in.power = h->sp.r13 & BIT(0);
 	in.signal = in.power && (h->sp.r13 & BIT(3));
 	period = gc573_rd(gc, GC573_IN_FRAME_PERIOD);
-	h->period_raw = period;
 	in.fpga[0] = gc573_rd(gc, GC573_IN_STATUS);
 	in.fpga[1] = gc573_rd(gc, GC573_IN_WIDTH);
 	in.fpga[2] = gc573_rd(gc, GC573_IN_HEIGHT);
 
 	if (h->it.state == GC573_IT_STABLE && h->it.released) {
+		if (h->lock_polls < READ_ONCE(exp_fpga_invalid)) {
+			/* experiment: the boot race's FPGA state */
+			in.fpga[0] = (in.fpga[0] & ~3U) | 1;
+			period = 0;
+		}
 		if (gc573_hdmi_fpga_ok(h, period, prev, in.fpga))
 			in.period = period;
 		else if (!old->locked)
 			h->fpga_rejects++;
-		if (h->lock_polls < GC573_HDMI_PERIOD_WAIT)
+		if (h->lock_polls < UINT_MAX)
 			h->lock_polls++;
 		in.locked = old->locked || in.period ||
 			    h->lock_polls >= GC573_HDMI_PERIOD_WAIT;
 	} else {
 		h->lock_polls = 0;
 	}
+	h->period_raw = period;
 	if (in.locked) {
 		/* the rate is part of the timings: keep them while it holds */
 		if (old->locked && old->period &&

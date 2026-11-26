@@ -16,6 +16,11 @@
 #             POWER_PRESENT = 1; SOURCE_CHANGE on lock, loss and mode change
 #   relock    GC573_RELOCKS (25) x 2 mode switches 1080p60 <-> 1080p59.94
 #             with show.sh: each locks to the new rate within 3 s
+#   fpgawait  the lock policy with the FPGA's input measurement held not
+#             valid (module parameter exp_fpga_invalid, the boot race of
+#             2026-11-25): no lock and one warning while it is not valid;
+#             once valid, one lock at the FPGA's rate, also when it becomes
+#             valid 30 polls after the input's stable entry (VM only)
 #   capture   1080p60 and 1080p59.94, 6 formats x GC573_LIVE_FRAMES (600):
 #             each format's last frame compared with pattern.py, all frames
 #             identical (full-frame hash), no sequence gaps, G_PARM equal
@@ -606,6 +611,78 @@ step_relock() {
 	echo "  ms from the switch to the new rate:$times"
 	check relock "$([ $bad = 0 ]; echo $?)" \
 		"($((n - bad)) of $n switches locked within 3 s, slowest $tmax ms; $(hdmi_dbg | grep -oE '(level_changes|fpga_rejects) [0-9]+' | tr '\n' ' '))"
+}
+
+# fpgawait: the lock policy (spec/hdmi-chips.md "Lock policy") with the
+# FPGA's input measurement held not valid by the experiment parameter
+# exp_fpga_invalid: for that many polls after each stable entry the driver
+# sees 0x1004[1:0] = 1, as a host boot did on 2026-11-25 (the lock then
+# came from the IT6805's clock: 59.32 Hz for 1080p60), and 0x1010 = 0
+FPGA_PARAM=/sys/module/gc573/parameters/exp_fpga_invalid
+fpga_param() { vm "echo $1 | sudo tee $FPGA_PARAM > /dev/null"; }
+kmsg_mark() { vm "echo 'gc573-live: $1' | sudo tee /dev/kmsg > /dev/null"; }
+kmsg_since() { vm "sudo dmesg | awk -v m='gc573-live: $1' 'f; index(\$0, m) { f = 1 }'"; }
+fpga_waits() { hdmi_dbg | grep -oE 'fpga_waits [0-9]+' | cut -d' ' -f2; }
+lock_lines() { grep -c 'HDMI: locked' <<< "$1"; }
+lock_rates() { grep -oE 'frame period [0-9a-fx]+ \([0-9.]+ Hz\)' <<< "$1" | paste -sd, - | sed 's/,/, /g'; }
+step_fpgawait() {
+	local line log w0 w1 q t i
+	if ! vm "test -e $FPGA_PARAM"; then
+		result fpgawait SKIP "(the loaded gc573 has no exp_fpga_invalid)"
+		return
+	fi
+	src_on 1920x1080 60
+	time_to_lock 10 > /dev/null
+	w0=$(fpga_waits)
+	# never valid: no lock however long, and the warning after 40 polls
+	fpga_param 4294967295
+	src_off
+	wait_unlocked
+	kmsg_mark fpgawait-never
+	src_on 1920x1080 60
+	for i in $(seq 100); do
+		kmsg_since fpgawait-never | grep -q 'the FPGA has no valid measurement' && break
+		sleep 0.1
+	done
+	sleep 1
+	line=$(hdmi_dbg | grep '^input:')
+	log=$(kmsg_since fpgawait-never | grep gc573)
+	w1=$(fpga_waits)
+	grep 'HDMI: ' <<< "$log" | sed 's/^/  | /'
+	echo "  $line"
+	check fpgawait-no-lock "$(grep -q 'signal 1 locked 0' <<< "$line" && ! locked &&
+		[ "$(lock_lines "$log")" = 0 ]; echo $?)" \
+		"(the FPGA measurement held not valid for good: $(grep -oE 'locked [01] period [0-9a-fx]+' <<< "$line"), QUERY_DV_TIMINGS $(locked && echo locked || echo 'no lock'), $(lock_lines "$log") lock lines${log:+: $(lock_rates "$log")})"
+	check fpgawait-warning "$([ "$(grep -c 'the FPGA has no valid measurement' <<< "$log")" = 1 ] &&
+		[ -n "$w0" ] && [ "${w1:-}" = $((w0 + 1)) ]; echo $?)" \
+		"(the warning once: $(grep -c 'the FPGA has no valid measurement' <<< "$log"); fpga_waits ${w0:-none} -> ${w1:-none})"
+	# valid again: the lock within a few polls, at the FPGA's rate
+	kmsg_mark fpgawait-valid
+	fpga_param 0
+	t=$(time_to_lock 3)
+	q=$(query)
+	sleep 1
+	log=$(kmsg_since fpgawait-valid | grep 'HDMI: locked')
+	echo "$log" | sed 's/^/  | /'
+	check fpgawait-lock "$([ "$t" != none ] && cta1080p60 "$q" && ! grep -q 'framerate is reduced' <<< "$q" &&
+		[ "$(lock_lines "$log")" = 1 ] && ! grep -q 'frame period 0 ' <<< "$log"; echo $?)" \
+		"(the measurement valid again: locked after $t ms; $(lock_lines "$log") lock lines: $(lock_rates "$log"))"
+	# valid 30 polls (1.7 s) after the stable entry, a slow start: one lock,
+	# at the FPGA's rate
+	fpga_param 30
+	src_off
+	wait_unlocked
+	kmsg_mark fpgawait-late
+	src_on 1920x1080 60
+	t=$(time_to_lock 10)
+	sleep 3
+	fpga_param 0
+	q=$(query)
+	log=$(kmsg_since fpgawait-late | grep 'HDMI: locked')
+	echo "$log" | sed 's/^/  | /'
+	check fpgawait-late "$([ "$t" != none ] && cta1080p60 "$q" && [ "$(lock_lines "$log")" = 1 ] &&
+		! grep -q 'frame period 0 ' <<< "$log"; echo $?)" \
+		"(the measurement valid 30 polls after the stable entry: locked $t ms after the output came on; $(lock_lines "$log") lock lines: $(lock_rates "$log"))"
 }
 
 # Show the pattern in a mode and wait until the input has locked to it and
@@ -1773,7 +1850,7 @@ kml() {
 
 # ---- main ----
 
-all="bringup lock relock capture modes change blip loss colour audio exact avsync audioloss"
+all="bringup lock relock fpgawait capture modes change blip loss colour audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
 [ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change blip loss audio exact avsync audioloss compliance"
 [ $# -gt 0 ] || set -- $all
