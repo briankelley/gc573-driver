@@ -83,6 +83,15 @@ resetting MASK. `exp-reset.py` summarises. Result:
 
 Helpers: `gc573-aud.c` (ALSA capture tool, alsa-lib: per-read frame count and timestamp, raw samples, BAR0 snapshot, a V4L2 capture beside it for A/V timing, stop/start), `gc573-regs.c` (BAR0 registers through `resource0`, mapped read-only; documented offsets only), `gc573-cap.c` (V4L2 capture tool: pattern, cadence, DV timings sweep (`-T all`, or a list saved with `-t`), stop/start, underrun, wait and returned-buffer modes; live input: lock wait `-L`, frame save `-o`, input-change test `-X` (every event, the frames after them, the DQBUF or QBUF error, the last frame with `-o`; `-A` time after the last event, `-H` buffers held after STREAMOFF) with restart `-r`, per-frame log `-F`; built per case with gcc), `i2c-id-reads.py`, `kmemleak-canary/`, `live-compare.py` (saved frame vs `tools/testsrc/pattern.py`), `live-av.py` (a `gc573-aud` capture of `tools/testsrc/avsync.sh`: bursts, channel order and rate by frequency, frames against the clock, gaps, video cadence, A/V offset and drift; reads the samples through a memory map, hours of them fit), `obsws.py` (minimal obs-websocket v5 client, standard library only: `obsws.py REQUEST [JSON]`), `obs-check.py` (OBS set-up, format screenshots, recording, reopen; see its docstring), `obs-av.py` (A/V offset and drift in a recording of `avsync.sh`, per-segment flash counts), `obs-run.sh` (starts OBS on the VM's desktop with a minimal profile and obs-websocket on port 4455 without a password, or stops it). Env: `GC573_FRAMES` (`10-video-capture` frames per format at the default timings, default 120), `GC573_SWEEP_FRAMES` (per format and timing, default 30), `GC573_CYCLES`.
 
+`scrub-check.sh` (host or VM, no device touched): `tools/testsrc/scrub.py`
+and `scrub.sh` on made-up device names. Every log writer passes its text
+through them: guard.py, obs-events.py, and the event lines of live.sh,
+show.sh and avsync.sh, route-check.sh and state-check.sh. The serial in a
+udev or PipeWire USB name (`usb-<vendor>_<model>_<serial>-00`,
+`...-video-index0`) becomes `<serial>`. PCI names, such as the GC573's,
+and path-based USB names stay as they are. The Python filter and the bash
+function must agree, and scrubbing twice must change nothing.
+
 ## Live input (`live.sh`, host)
 `tests/live.sh [STEP...]` runs on the host: it drives the loopback output
 (`DVI-D-0`, never the primary) with `tools/testsrc/show.sh`, `avsync.sh` and xrandr, and runs

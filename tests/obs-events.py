@@ -164,6 +164,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from obsws import OBS  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'testsrc'))
+from scrub import scrub  # noqa: E402
 AVSYNC = os.path.join(ROOT, 'tools', 'testsrc', 'avsync.sh')
 SHOW = os.path.join(ROOT, 'tools', 'testsrc', 'show.sh')
 VSRC, ASRC = 'GC573 video', 'GC573 audio'
@@ -404,7 +406,7 @@ def ev(text):
         import datetime
         t = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
         with EV_LOCK, open(f, 'a') as fh:
-            fh.write(f'{t} obs-events {text}\n')
+            fh.write(f'{t} obs-events {scrub(text)}\n')
 
 
 def start_guard(log):

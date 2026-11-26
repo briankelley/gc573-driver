@@ -211,7 +211,9 @@ check() {	# name, condition result (0 = pass), detail
 # loads or unloads the driver, sets the EDID or starts or stops OBS; host
 # side, src_off, the colour changes and the test sources themselves
 # (show.sh and avsync.sh log their own mode sets and players)
-ev() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) live $*" >> "$GC573_EVENT_LOG"; }
+# shellcheck source=tools/testsrc/scrub.sh
+. "$ROOT/tools/testsrc/scrub.sh"	# gc573_scrub: no USB serial in a log
+ev() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) live $(gc573_scrub "$*")" >> "$GC573_EVENT_LOG"; }
 vm() {
 	local what="" rc
 	if [ "$LOCAL" = 1 ]; then

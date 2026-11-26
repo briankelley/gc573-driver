@@ -35,7 +35,9 @@ export DISPLAY=${DISPLAY:-:0} XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
 run=${XDG_RUNTIME_DIR:-/tmp}/gc573-testsrc; mkdir -p "$run"; pidf=$run/ffplay.pid
 wdf=$run/watchdog.pid
 here=$(cd "$(dirname "$0")" && pwd)
-evlog() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) show $*" >> "$GC573_EVENT_LOG"; }
+# shellcheck source=tools/testsrc/scrub.sh
+. "$here/scrub.sh"	# gc573_scrub: no USB serial in a log
+evlog() { [ -z "${GC573_EVENT_LOG:-}" ] || echo "$(date -u +%FT%T.%3NZ) show $(gc573_scrub "$*")" >> "$GC573_EVENT_LOG"; }
 # An ffplay stopped within about a second of its start can hang for good in its
 # SIGTERM exit path (main and SDL timer threads in futex wait): wait up to 2 s for
 # each process to go, then SIGKILL.
