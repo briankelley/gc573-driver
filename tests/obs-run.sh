@@ -63,21 +63,31 @@ for s in json.load(open(sys.argv[1])).get('sources', []):
 EOF
 )
 		[ -z "$bad" ] || { echo "scene collection gc573: ALSA source $bad: by the card's id alsa-lib opens the control node of every card before it; set hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0. Not started"; exit 1; }
-		DISPLAY=${DISPLAY:-:0} setsid obs --minimize-to-tray --disable-shutdown-check \
-			--disable-missing-files-check --profile gc573 --collection gc573 \
-			> "${XDG_RUNTIME_DIR:-/tmp}/gc573-obs-stdout.txt" 2>&1 < /dev/null &
-		echo $! > "$pidf"
-		for _ in $(seq 120); do
-			if ss -ltn | grep -q ':4455 '; then
-				sleep 3
-				vis=$(DISPLAY=${DISPLAY:-:0} xdotool search --onlyvisible --pid "$(cat "$pidf")" 2>/dev/null | wc -l)
-				echo "OBS started minimized to the tray (pid $(cat "$pidf"), profile gc573, recording format $fmt; $vis windows visible)"
-				[ "$vis" = 0 ] || { echo "an OBS window shows: the preview would be drawn"; exit 1; }
-				exit 0
-			fi
-			sleep 0.5
+		# OBS 32.2 with NVIDIA 470 can crash while it starts: its graphics
+		# thread's getenv() in libnvidia-eglcore races the frontend-tools
+		# plugin's Python start (core dump of 2026-11-26 03:37:22Z). One
+		# more try then
+		for try in 1 2; do
+			DISPLAY=${DISPLAY:-:0} setsid obs --minimize-to-tray --disable-shutdown-check \
+				--disable-missing-files-check --profile gc573 --collection gc573 \
+				> "${XDG_RUNTIME_DIR:-/tmp}/gc573-obs-stdout.txt" 2>&1 < /dev/null &
+			echo $! > "$pidf"
+			for _ in $(seq 120); do
+				if ss -ltn | grep -q ':4455 '; then
+					sleep 3
+					vis=$(DISPLAY=${DISPLAY:-:0} xdotool search --onlyvisible --pid "$(cat "$pidf")" 2>/dev/null | wc -l)
+					echo "OBS started minimized to the tray (pid $(cat "$pidf"), profile gc573, recording format $fmt; $vis windows visible)"
+					[ "$vis" = 0 ] || { echo "an OBS window shows: the preview would be drawn"; exit 1; }
+					exit 0
+				fi
+				kill -0 "$(cat "$pidf")" 2>/dev/null || break
+				sleep 0.5
+			done
+			kill -0 "$(cat "$pidf")" 2>/dev/null && { echo "OBS did not open its websocket in 60 s"; exit 1; }
+			echo "OBS (pid $(cat "$pidf")) ended while starting, attempt $try (its log: ~/.config/obs-studio/logs/)"
 		done
-		echo "OBS did not open its websocket in 60 s"; exit 1
+		rm -f "$pidf"
+		exit 1
 		;;
 	stop)
 		[ -f "$pidf" ] || { echo "OBS left running (not started by obs-run.sh)"; exit 0; }
