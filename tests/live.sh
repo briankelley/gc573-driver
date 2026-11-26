@@ -3583,7 +3583,11 @@ soak_samples() {
 # lock, as the loopback's change step restarts): 120 YUYV frames with
 # every buffer pattern-filled before its QBUF (-p: blocks the DMA did not
 # write), per-frame signatures of 18 bands top to bottom (-B), and the
-# driver's frame-interrupt ring read every 0.3 s. Then the same at 1080p
+# driver's frame-interrupt ring read every 0.3 s, and after each DQBUF the
+# FPGA's input block read through BAR0 (-M, sysfs resource0 mapped read-only,
+# as tests/exp-delivery.sh does): IN_FRAME_PERIOD (0x1010), the period of
+# the input as the FPGA measures it, says whether the source's frames were
+# regular across a step or not. Then the same at 1080p
 # (the default EDID set again). Per stream: its frame intervals against the
 # median; for each one more than 10 % off, the phase of the frames around
 # it, their untouched bytes, which bands of the off frame match the frame
@@ -3597,18 +3601,22 @@ roku_start_one() {	# TAG EDIDFILE
 		sleep 0.3
 	done ) > "$W/start-ring.txt" 2> /dev/null &
 	rp=$!
-	vm "sudo $W/gc573-cap -d $vdev -L 10 -f YUYV -b 4 -n 120 -p -F -B > $W/start.txt 2>&1"
+	vm "sudo $W/gc573-cap -d $vdev -L 10 -f YUYV -b 4 -n 120 -p -F -B -M /sys/bus/pci/devices/${dbgdir##*/gc573-}/resource0 > $W/start.txt 2>&1"
 	kill "$rp" 2> /dev/null
 	wait "$rp" 2> /dev/null
 	sort -u "$W/start-ring.txt" > "$W/start-ring.u"
 	# ring times are CLOCK_MONOTONIC ns, the frame lines' ts_ms the same in ms
 	out=$(awk -v tag="$1" 'FNR == NR { nr++; rt[nr] = $1 / 1e6; r[nr] = $0; next }
 		/^LOCK / { lk = $0 }
+		# REGS: 0x300-0x3fc, then 0x1000-0x10fc; 0x1010 is word 68 ($71)
+		/^REGS / { split($2, rq, "="); per[rq[2]] = strtonum("0x" $71); cst[rq[2]] = $3 }
 		/^FRAME / { n++
 			for (i = 2; i <= NF; i++) { split($i, kv, "="); v[kv[1]] = kv[2] }
 			seq[n] = v["seq"]; ts[n] = v["ts_ms"]; un[n] = v["untouched"]; nb = split(v["bands"], b, ",")
 			for (k = 1; k <= nb; k++) bd[n, k] = b[k]
-			if (v["untouched"] > 0) nun++ }
+			if (v["untouched"] > 0) nun++
+			p = per[v["seq"]]; fp[n] = p
+			if (p) { if (!pmin || p < pmin) pmin = p; if (p > pmax) pmax = p } }
 		END {
 			if (n < 3) { printf "RESULT %s FAIL (%d frames: %s)\n", tag, n, lk; exit }
 			for (i = 2; i <= n; i++) { d[i] = ts[i] - ts[i - 1]; x[i - 1] = d[i] }
@@ -3628,11 +3636,13 @@ roku_start_one() {	# TAG EDIDFILE
 					bs = bs (p && q ? "=" : p ? "<" : q ? ">" : "x")
 				}
 				printf "    frame %d by band, top to bottom (< as the frame before, > as the one after, = both, x neither): %s\n", i, bs
+				printf "    IN_FRAME_PERIOD (100 MHz ticks) read after frames %d to %d: %s %s %s %s\n", i - 2, i + 1, fp[i - 2], fp[i - 1], fp[i], fp[i + 1]
 				for (j = 1; j <= nr; j++) if (rt[j] >= ts[i > 3 ? i - 3 : 1] - 1 && rt[j] <= ts[i + 2 <= n ? i + 2 : n] + 1) {
 					split(r[j], e, " ")
 					printf "    ring: %+.3f ms from frame %d, status %s ctrl %s done %s armed %s\n", rt[j] - ts[i - 1], i - 1, e[2], e[3], e[4], e[5]
 				}
 			}
+			printf "  %s IN_FRAME_PERIOD over the stream: %d to %d ticks (%.4f to %.4f ms)\n", tag, pmin, pmax, pmin / 1e5, pmax / 1e5
 			printf "RESULT %s %s (%d frames, interval median %.3f ms, %d more than 10 %% off; %d frames with 32-byte blocks the DMA did not write; %s)\n",
 				tag, off || nun ? "FAIL" : "PASS", n, med, off, nun, lk }' "$W/start-ring.u" "$W/start.txt")
 	av_results roku-start "$(sed 's/^RESULT /RESULT /' <<< "$out")"
