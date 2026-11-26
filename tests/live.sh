@@ -1475,10 +1475,10 @@ host_sample() {
 # counter steps, the A/V offset per segment, OBS's own part at the first
 # and last segments against the driver's), memory, CPU, the driver's
 # counters, OBS's log; the recording is deleted.
-# SUnreclaim (kB), then each slab cache's size (kB, all its objects)
+# SUnreclaim (kB), then each slab cache's live objects (kB)
 mem_snapshot() {
 	awk '/^SUnreclaim:/ { print "SUnreclaim", $2 }' /proc/meminfo
-	vm "sudo cat /proc/slabinfo" | awk 'NR > 2 { printf "%s %d\n", $1, $3 * $4 / 1024 }'
+	vm "sudo cat /proc/slabinfo" | awk 'NR > 2 { printf "%s %d\n", $1, $2 * $4 / 1024 }'
 }
 
 obssoak_local() {
@@ -1551,10 +1551,14 @@ obssoak_local() {
 	top=$(join <(sort <<< "$mem0") <(sort <<< "$mem1") |
 		awk '$1 != "SUnreclaim" { d = $3 - $2; if (d >= 128 || d <= -128) printf "%s %+d\n", $1, d }' |
 		sort -k2 -n -r | head -8 | paste -sd, | sed 's/,/, /g')
-	out=$(awk -v a="$(sed -n 's/^SUnreclaim //p' <<< "$mem0")" -v b="$(sed -n 's/^SUnreclaim //p' <<< "$mem1")" \
-		-v top="$top" 'BEGIN {
-		printf "RESULT memory %s (SUnreclaim before OBS started %d kB, after OBS exited and the recording was deleted %d kB: %+d kB (limit 2048); slab caches that moved by 128 kB or more (kB): %s)\n",
-			b - a <= 2048 ? "PASS" : "FAIL", a, b, b - a, top == "" ? "none" : top }')
+	# the driver allocates from the kmalloc caches (GFP_KERNEL, not
+	# accounted): their live objects, from before OBS to after it
+	out=$(join <(sort <<< "$mem0") <(sort <<< "$mem1") | awk -v top="$top" '
+		$1 == "SUnreclaim" { a = $2; b = $3; next }
+		$1 ~ /^kmalloc-([0-9]+k?|rnd-[0-9]+-[0-9]+k?)$/ { k0 += $2; k1 += $3 }
+		END {
+			printf "RESULT memory %s (live objects in the kmalloc caches, where a driver leak would show: %d kB before OBS started, %d kB after OBS exited and the recording was deleted, %+d kB (limit 2048); SUnreclaim %d -> %d kB (%+d, other programs too); slab caches that moved by 128 kB or more (kB): %s)\n",
+				k1 - k0 <= 2048 ? "PASS" : "FAIL", k0, k1, k1 - k0, a, b, b - a, top == "" ? "none" : top }')
 	av_results obssoak "$out"
 	# memory, CPU and the driver's counters over the soak (host_sample)
 	sm=$(cat "$sp")
@@ -1563,7 +1567,7 @@ obssoak_local() {
 		$14 == "|" { n++; t[n] = $1; avail[n] = $2; slab[n] = $3; sunr[n] = $4; vm[n] = $5; rss[n] = $7
 			obs[n] = $8; irq[n] = $9; split($10, c, ":"); busy[n] = c[1]; idle[n] = c[2] }
 		END {
-			if (n < 7) { print "RESULT memory SKIP (" n " samples: fewer than 7)"; exit }
+			if (n < 7) { print "INFO memory while recording: " n " samples, fewer than 7"; exit }
 			s = 6
 			du = sunr[n] - sunr[s]
 			printf "INFO memory while recording, from minute 5 to the end: SUnreclaim %+d kB (the page cache of the recording counts: memcg vectors, about 600 x 512 bytes per 100 MiB written), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB\n",

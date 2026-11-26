@@ -878,12 +878,15 @@ def cmd_recheck(path, every, across=False):
             kind, err, counter, _ = classify(Image.open(io.BytesIO(r.stdout)).convert('RGB'))
             if kind == 'pattern':
                 errs.append(err)
-                c = band_counters(path, t, n_prog, W, H)
-                if len(c) >= 2 and c[0] is not None and c[-1] is not None:
-                    moved = (c[-1] - c[0]) % 65536
+                # the first and last readable counters (a torn frame can
+                # leave one unreadable): progress against the frames between
+                c = [(i, x) for i, x in enumerate(band_counters(path, t, n_prog, W, H)) if x is not None]
+                if len(c) >= 2 and c[-1][0] - c[0][0] >= (n_prog - 1) // 2:
+                    moved = (c[-1][1] - c[0][1]) % 65536
+                    frames = c[-1][0] - c[0][0]
                     if moved == 0:
                         kind = 'frozen'
-                    elif 0.8 * (len(c) - 1) <= moved <= 1.2 * (len(c) - 1):
+                    elif 0.8 * frames <= moved <= 1.2 * frames:
                         kind = 'live'
                     else:
                         kind = 'jumpy'
