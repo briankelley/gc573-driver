@@ -120,8 +120,14 @@ Roku mode (`GC573_SOURCE=roku GC573_LOCAL=1`, M6): the source is the Roku
 through the HDCP filter. `tools/roku/ecp.py` drives it, and it plays
 `tools/roku/pattern-video.sh`'s file, served by `tools/roku/serve.py` for the
 run only. `DVI-D-0` is never touched. Actions on the Roku need
-`GC573_ROKU_GO=1`; without it only `rokulock`, `rokucompliance`, `q25` and
-`q25back` run. Steps:
+`GC573_ROKU_GO=1`; without it only `rokuwhich`, `rokulock`, `rokucompliance`,
+`q25` and `q25back` run. On the saved Roku an action also needs it identified
+as the one cabled to the card (`rokuwhich`). Its state before the run's first
+action (the app in the foreground, the power mode) is put back at the run's
+end. Steps:
+- `rokuwhich`: which Roku is cabled, with no action on either: the one whose
+  ui-resolution follows a 720p-only EDID. `rokuwhichkey` (go) is the
+  fallback: Info, then Back, on the Roku that is on;
 - `rokulock`: the lock, its timings and colour;
 - `rokucompliance`;
 - `rokucapture`: `live-av.py --exact` on the pattern video, the bursts'
@@ -129,8 +135,9 @@ run only. `DVI-D-0` is never touched. Actions on the Roku need
   range;
 - `rokuobs`: OBS screenshots, meters and a recording, with
   `tests/obs-events.py` in its Roku mode;
-- `rokusleep`, `rokumodes` (EDID re-sets: another serial, 720p only, the
-  default) and `rokureboot` (`GC573_ROKU_REBOOT_KEYS`);
+- `rokusleep`, `rokumodes` (EDID re-sets: 720p only, another serial, the
+  default; SKIP when our EDID does not reach the Roku) and `rokureboot`
+  (`GC573_ROKU_REBOOT_KEYS`);
 - `rokuobssoak`: obssoak with the Roku's changes;
 - `q25` (the Roku without the filter: open question 25) and `q25back`.
 

@@ -153,8 +153,16 @@
 # Roku through the HDCP filter, driven by tools/roku/ecp.py, playing
 # tools/roku/pattern-video.sh's file from tools/roku/serve.py. DVI-D-0 is
 # never touched (src_on, src_off, av_on and colour_set refuse). Actions on
-# the Roku need GC573_ROKU_GO=1; without it only rokulock, rokucompliance,
-# q25 and q25back run, passively. Steps (default: the first six):
+# the Roku need GC573_ROKU_GO=1; without it only rokuwhich, rokulock,
+# rokucompliance, q25 and q25back run, passively. On the saved Roku they
+# also need it identified as the cabled one (rokuwhich; tools/roku/ecp.py
+# refuses otherwise), and its first action saves its state (the app in the
+# foreground, the power mode: 0600, never logged), which the run's end puts
+# back. Steps (default: the six after rokuwhichkey):
+#   rokuwhich which Roku is cabled, with no action on either: the one whose
+#             ui-resolution follows a 720p-only EDID; its address saved
+#   rokuwhichkey  (the go) the fallback: Info, then Back, on the Roku that
+#             is on, and whether the card's picture changed with it
 #   rokulock  the input locks; timings, colour and range; model, software
 #   rokucompliance  v4l2-compliance -s with the Roku's input
 #   rokucapture  GC573_ROKU_SECS (60) of the pattern video: the driver loses
@@ -164,8 +172,9 @@
 #   rokusleep the Roku asleep and awake (GC573_ROKU_SLEEP_KEYS, PowerOff;
 #             GC573_ROKU_WAKE_KEYS, Home): the input goes, comes back at the
 #             same timings, and the pattern plays again
-#   rokumodes EDID re-sets (another serial, 720p only, the default): the
-#             Roku's mode set after each hot-plug, the lock and the pattern
+#   rokumodes EDID re-sets (720p only, another serial, the default): the
+#             Roku's mode set after each hot-plug, the lock and the pattern;
+#             SKIP if the Roku stays in its mode with 720p only
 #   rokureboot  the Roku restarted (GC573_ROKU_REBOOT_KEYS: ECP has no
 #             command for it): the input back within 3 minutes
 #   rokuobssoak  obssoak with the Roku's pattern and the Roku's changes
@@ -2755,11 +2764,15 @@ roku_source_on() {
 	done
 	return 1
 }
-# the end of a Roku run: the server stopped; the Roku back on its home
-# screen if we played something on it
+# the end of a Roku run: the server stopped; with the go, the Roku back on
+# its home screen if we played something on it, then the state its first
+# action saved (tools/roku/ecp.py restore-state: PowerOff if it was in
+# Suspend, else the app it had in the foreground launched again)
 roku_end() {
 	roku_serve_stop
-	[ "$roku_played" = 0 ] || ! roku_go || ecp key Home > /dev/null 2>&1
+	roku_go || return 0
+	[ "$roku_played" = 0 ] || ecp key Home > /dev/null 2>&1
+	[ ! -e "$HOME/.config/gc573/roku-state" ] || { sleep 2; ecp restore-state 2>&1 | sed 's/^/  /'; }
 }
 roku_rate() {	# 60 or 59.94 from QUERY_DV_TIMINGS
 	local q
@@ -2934,25 +2947,132 @@ step_rokureboot() {
 		"(input lost ${lb% *} s after the keys, back at ${lb#* } s; $(roku_timings); the pattern on the card again: $(roku_counters) of 60 counters read in 1 s)"
 }
 
+# the card's EDID (default.bin) and its variants (720p.bin, serial.bin) in DIR
+roku_edids() {
+	vm "mkdir -p $1 && v4l2-ctl -d $vdev --get-edid=format=raw,file=$1/default.bin" > /dev/null &&
+		python3 "$ROOT/tools/roku/edid-variant.py" "$1/default.bin" "$1/serial.bin" --serial 0x5731 &&
+		python3 "$ROOT/tools/roku/edid-variant.py" "$1/default.bin" "$1/720p.bin" --only-720p
+}
+roku_edid_set() { vm "v4l2-ctl -d $vdev --set-edid=file=$1,format=raw" > /dev/null; }
+
+# rokuwhich: which of the Rokus on the LAN is cabled to the card, with no
+# action on either. The card's EDID set to 720p only: the Roku whose
+# device-info ui-resolution follows to 720p, and back after the default
+# EDID, is the one; its address is saved as identified (ecp.py discover
+# --save --model). Neither following within 45 s means our EDID does not
+# reach the Roku (the filter's own EDID) or its display type is not Auto
+# detect: rokumodes then skips, and rokuwhichkey is the fallback
+step_rokuwhich() {
+	local e before out back m r0 t
+	e=$W/roku-edid
+	before=$(ecp survey 2>&1)
+	sed 's/^/  before: /' <<< "$before"
+	roku_edids "$e" || { result roku-which FAIL "(G_EDID or edid-variant.py)"; return; }
+	echo "  the card before: $(roku_input); $(roku_reported)"
+	roku_edid_set "$e/720p.bin"
+	out=$(ecp survey --watch 45 --until ui-resolution=720p 2>&1)
+	sed 's/^/  720p only: /' <<< "$out"
+	m=$(sed -n 's/^MATCH \([^ ]*\) .*/\1/p' <<< "$out")
+	t=$(time_to_lock 20)
+	echo "  the card with the 720p-only EDID: $(roku_input); $(roku_reported) (locked after $t ms)"
+	roku_edid_set "$e/default.bin"
+	back=""
+	if [ -n "$m" ]; then
+		r0=$(sed -n "s/^$m: .*ui-resolution \([^,]*\),.*/\1/p" <<< "$before")
+		back=$(ecp survey --watch 45 --model "$m" --until "ui-resolution=${r0:-1080p}" 2>&1)
+		sed 's/^/  default again: /' <<< "$back"
+	fi
+	t=$(time_to_lock 30)
+	echo "  the card with the default EDID again: $(roku_input); $(roku_reported) (locked after $t ms)"
+	vm "rm -rf $e"
+	if [ -n "$m" ] && grep -q '^MATCH' <<< "$back"; then
+		ecp discover --save --model "$m" --identified edid-720p 2>&1 | tail -1 | sed 's/^/  /'
+		check roku-which "${PIPESTATUS[0]}" "(the Roku cabled to the card is the $m: its ui-resolution followed the 720p-only EDID to 720p and back to ${r0:-1080p}; our EDID reaches it through the filter)"
+	elif [ -n "$m" ]; then
+		check roku-which 1 "(the $m went to 720p with the 720p-only EDID, but not back to ${r0:-?} within 45 s of the default EDID)"
+	else
+		result roku-which SKIP "(neither Roku's ui-resolution followed the 720p-only EDID within 45 s: the filter's own EDID, or the display type is not Auto detect; rokumodes skips then; the fallback, with the go: rokuwhichkey)"
+	fi
+}
+
+# the mean luma difference of two YUYV frames, in codes
+frame_luma_diff() {
+	python3 - "$1" "$2" <<'PY'
+import sys
+import numpy as np
+a, b = (np.frombuffer(open(f, 'rb').read(), np.uint8)[0::2].astype(np.int16) for f in sys.argv[1:3])
+n = min(len(a), len(b))
+print(f'{float(np.abs(a[:n] - b[:n]).mean()):.2f}' if n else 'none')
+PY
+}
+
+# rokuwhichkey (the go): rokuwhich's fallback. One Info key on the Roku
+# that is on (power mode PowerOn), then Back. If the card's picture
+# changes with the key, that Roku is the cabled one, and its address is
+# saved as identified. Measured from the captured luma only (numbers, no
+# picture kept): two frames 1 s apart before the key (how much the
+# picture moves by itself, a screensaver), one 2 s after it
+step_rokuwhichkey() {
+	local out m d0 d1 f i
+	roku_go || { roku_skip roku-which-key "sends Info and Back to the Roku that is on"; return; }
+	out=$(ecp survey 2>&1)
+	sed 's/^/  /' <<< "$out"
+	m=$(grep -E '^[^ :]+: .*, PowerOn, ' <<< "$out" | cut -d: -f1)
+	[ -n "$m" ] && [ "$(grep -c . <<< "$m")" = 1 ] ||
+		{ result roku-which-key SKIP "(not exactly one Roku in PowerOn: ${m:-none})"; return; }
+	locked || { result roku-which-key SKIP "(the card has no input: $(roku_reported); with the $m the one that is on, the cabled Roku sends nothing)"; return; }
+	f=$W/which
+	for i in a b; do
+		vm "sudo $W/gc573-cap -d $vdev -L 5 -f YUYV -n 3 -o $f-$i > /dev/null 2>&1"
+		sleep 1
+	done
+	ecp --model "$m" key Info
+	sleep 2
+	vm "sudo $W/gc573-cap -d $vdev -L 5 -f YUYV -n 3 -o $f-c > /dev/null 2>&1"
+	ecp --model "$m" key Back
+	d0=$(frame_luma_diff "$f-a.YUYV" "$f-b.YUYV")
+	d1=$(frame_luma_diff "$f-b.YUYV" "$f-c.YUYV")
+	vm "rm -f $f-*"
+	if awk -v a="$d0" -v b="$d1" 'BEGIN { exit !(b + 0 > 3 * a && b + 0 > a + 4) }'; then
+		ecp discover --save --model "$m" --identified info-key 2>&1 | tail -1 | sed 's/^/  /'
+		check roku-which-key "${PIPESTATUS[0]}" "(the card's picture changed with Info on the $m: mean luma difference $d1 codes, against $d0 in 1 s without a key; that Roku is the cabled one)"
+	else
+		result roku-which-key SKIP "(no clear change with Info on the $m: $d1 codes, against $d0 in 1 s without a key; the cabled Roku is probably the other one)"
+	fi
+}
+
 # rokumodes: EDID re-sets, each a hot-plug the Roku answers with a new mode
-# set: the default image with another serial number (the same modes), a
-# 720p-only image (the Roku goes to 720p if its display type is Auto
-# detect), and the default again. Each: time to the lock, the timings,
-# the pattern on the card
+# set. 720p only first: the Roku goes to 720p if our EDID reaches it and
+# its display type is Auto detect; if it stays in its mode, the step says
+# so and skips. Then the default image with another serial number (the
+# Roku back to its own mode), then the default again. Each: the lock, the
+# timings, the pattern on the card
 step_rokumodes() {
-	local e t name
+	local e t name w i
 	roku_go || { roku_skip roku-modes "plays our pattern video on the Roku"; return; }
 	roku_source_on 3600 || { result roku-modes-source FAIL "(the pattern video on the Roku and the card)"; return; }
 	e=$W/roku-edid
-	vm "mkdir -p $e && v4l2-ctl -d $vdev --get-edid=format=raw,file=$e/default.bin" ||
-		{ result roku-modes FAIL "(G_EDID)"; return; }
-	python3 "$ROOT/tools/roku/edid-variant.py" "$e/default.bin" "$e/serial.bin" --serial 0x5731 &&
-		python3 "$ROOT/tools/roku/edid-variant.py" "$e/default.bin" "$e/720p.bin" --only-720p ||
-		{ result roku-modes FAIL "(edid-variant.py)"; return; }
-	for name in serial 720p default; do
-		vm "v4l2-ctl -d $vdev --set-edid=file=$e/$name.bin,format=raw" > /dev/null
+	roku_edids "$e" || { result roku-modes FAIL "(G_EDID or edid-variant.py)"; return; }
+	for name in 720p serial default; do
+		roku_edid_set "$e/$name.bin"
 		sleep 2
 		t=$(time_to_lock 60)
+		if [ "$name" = 720p ]; then
+			# the Roku may lock in its old mode first, then set 720p
+			for i in $(seq 20); do
+				roku_timings | grep -q 'Active width: 1280' && break
+				sleep 1
+			done
+			if ! roku_timings | grep -q 'Active width: 1280'; then
+				w=$(roku_timings)
+				roku_edid_set "$e/default.bin"
+				sleep 2
+				time_to_lock 60 > /dev/null
+				result roku-modes SKIP "(the Roku stayed at ${w:-no lock} for 20 s after the 720p-only EDID (locked $t ms after it): our EDID does not reach it, the filter's own EDID, or its display type is not Auto detect; the default EDID set again: $(roku_timings))"
+				vm "rm -rf $e"
+				return
+			fi
+		fi
 		sleep 3
 		roku_play
 		sleep 6
@@ -3089,7 +3209,7 @@ fi
 all="bringup lock relock fpgawait fpgaheal capture modes change blip loss colour colorimetry audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
 [ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change blip loss audio exact avsync audioloss compliance"
-ROKU_STEPS="rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes rokureboot rokuobssoak q25 q25back"
+ROKU_STEPS="rokuwhich rokuwhichkey rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes rokureboot rokuobssoak q25 q25back"
 [ "$SOURCE" != roku ] || { all="rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes"; LOCAL_STEPS=$ROKU_STEPS; }
 [ $# -gt 0 ] || set -- $all
 for s in "$@"; do
