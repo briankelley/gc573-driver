@@ -20,6 +20,7 @@
 #include <linux/sizes.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
+#include <linux/workqueue.h>
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-dev.h>
 #include <media/v4l2-device.h>
@@ -293,7 +294,11 @@ struct gc573_video {
 	bool adopt_pending;		/* input changed while the queue was busy */
 	bool start_pending;		/* restart waits for a queued buffer */
 	bool failed;			/* queue marked failed (vb2_queue_error) */
+	bool held;			/* stream held: input in other timings */
+	unsigned long hold_until;	/* jiffies: a hold lasting to here fails */
+	struct delayed_work hold_work;	/* fails a hold that lasts */
 	u32 input_restarts;		/* streams restarted by an input change */
+	u32 input_holds;		/* streams held by an input change */
 	bool dead;			/* quiesced: never start again */
 	struct completion term;		/* INT bit 0: stream terminated */
 	u64 irq_ns;			/* time of the last INT bit 1 */

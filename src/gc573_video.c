@@ -17,9 +17,17 @@
  * buffers still fit, for applications that ignore the event (OBS):
  * - input lost: the stream restarts free-running (black at 60 Hz);
  * - input locked in the stream's timings: the stream restarts from it;
- * - input locked in other timings: the stream stops, its buffers are
- *   returned with an error and the queue is marked failed
- *   (vb2_queue_error()).
+ * - input locked in other timings: the stream is held. The hardware
+ *   stops and the buffers wait in the queue; no frames arrive. If within
+ *   GC573_VID_HOLD_MS of the hold's start the input is lost or locks in
+ *   the stream's timings, the stream restarts as above. If the other
+ *   timings last that long, the stream stops: its buffers are returned
+ *   with an error and the queue is marked failed (vb2_queue_error()).
+ *   A source that changes its mode can lock briefly in another one first:
+ *   after a hot-plug a GPU shows its preferred mode until the desktop
+ *   sets its own (spec/hdmi-chips.md "Stream policy on input changes").
+ *   The hold does not free-run: free-running is documented with no input
+ *   (spec/video-dma.md), not with a locked input in other timings.
  * A restart is the hardware stop and start of STREAMOFF and STREAMON on
  * the same buffers: those in flight are queued again, the sequence counts
  * on, the first frame after it is dropped as after STREAMON, and the
@@ -54,6 +62,7 @@
 #include <linux/seq_file.h>
 #include <linux/string.h>
 #include <linux/v4l2-dv-timings.h>
+#include <linux/workqueue.h>
 #include <media/v4l2-dv-timings.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-fh.h>
@@ -78,6 +87,15 @@
  * carry stale lines from an earlier session. It is never delivered.
  */
 #define GC573_VID_SKIP			1
+/*
+ * How long a stream is held while the input is locked in other timings
+ * (policy: header comment). The driver locks in a passing mode 1.1-1.7 s
+ * after the source sets it, so the hold rides out a second mode set that
+ * comes up to 2.1-2.7 s after the first; measured blips lasted 138 and
+ * 224 ms. Applications that ignore SOURCE_CHANGE see a lasting change
+ * (the failed queue) that much later.
+ */
+#define GC573_VID_HOLD_MS		1000
 
 static int exp_slot_mode;
 module_param(exp_slot_mode, int, 0644);
@@ -1038,6 +1056,7 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 	struct gc573_video *v = &gc->vid;
 
 	v->failed = false;
+	v->held = false;
 	v->start_pending = false;
 	if (v->dead) {
 		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
@@ -1061,6 +1080,7 @@ static void gc573_stop_streaming(struct vb2_queue *q)
 	if (!v->dead)
 		gc573_video_hw_stop(gc);
 	v->start_pending = false;
+	v->held = false;
 	gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
 
 	dev_dbg(&gc->pdev->dev,
@@ -1399,10 +1419,11 @@ static int gc573_log_status(struct file *file, void *priv)
 		  gc573_rd(gc, GC573_IN_STATUS), gc573_rd(gc, GC573_IN_WIDTH),
 		  gc573_rd(gc, GC573_IN_HEIGHT),
 		  gc573_rd(gc, GC573_IN_FRAME_PERIOD));
-	v4l2_info(&gc->v4l2_dev, "stream: %s%s, frames %u, skipped %u; input changes: %u restarts, %u stops\n",
+	v4l2_info(&gc->v4l2_dev, "stream: %s%s, frames %u, skipped %u; input changes: %u restarts, %u holds, %u stops\n",
 		  vb2_is_streaming(&v->queue) ? "on" : "off",
-		  v->live ? " (live)" : "", v->st.frames, v->st.skipped,
-		  v->input_restarts, v->input_stops);
+		  v->held ? " (held)" : v->live ? " (live)" : "",
+		  v->st.frames, v->st.skipped, v->input_restarts,
+		  v->input_holds, v->input_stops);
 	v4l2_info(&gc->v4l2_dev, "input: power %d signal %d locked %d period %#x\n",
 		  v->in.power, v->in.signal, v->in.locked, v->in.period);
 	if (v->in.locked)
@@ -1546,9 +1567,9 @@ static int gc573_vid_debugfs_show(struct seq_file *m, void *unused)
 
 	/* seq_printf() does not sleep: print the shared state under slock */
 	spin_lock(&v->slock);
-	seq_printf(m, "stream: running %d live %d input_restarts %u input_stops %u start_pending %d fmt %p4cc %ux%u sizeimage %u exp_slot_mode %d next_arm %u ch_ctrl written: ch1 %#x ch2 %#x\n",
+	seq_printf(m, "stream: running %d live %d input_restarts %u input_stops %u input_holds %u held %d start_pending %d fmt %p4cc %ux%u sizeimage %u exp_slot_mode %d next_arm %u ch_ctrl written: ch1 %#x ch2 %#x\n",
 		   v->running, v->live, v->input_restarts, v->input_stops,
-		   v->start_pending, &v->pix.pixelformat,
+		   v->input_holds, v->held, v->start_pending, &v->pix.pixelformat,
 		   v->pix.width, v->pix.height, v->pix.sizeimage, v->exp_mode,
 		   v->next_arm, v->ch_ctrl[1], v->ch_ctrl[2]);
 	seq_puts(m, "slots (buffer index):");
@@ -1665,6 +1686,42 @@ static void gc573_vid_unarm(struct gc573_video *v)
 }
 
 /*
+ * The stream stops for good: its buffers return with an error and the
+ * queue is marked failed. vid.lock held.
+ */
+static void gc573_vid_fail(struct gc573 *gc)
+{
+	struct gc573_video *v = &gc->vid;
+
+	if (v->running)
+		gc573_video_hw_stop(gc);
+	v->start_pending = false;
+	v->held = false;
+	gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
+	vb2_queue_error(&v->queue);
+	v->failed = true;
+	v->input_stops++;
+}
+
+/* The end of a hold: the input still in other timings fails the stream */
+static void gc573_vid_hold_expired(struct work_struct *work)
+{
+	struct gc573_video *v = container_of(to_delayed_work(work),
+					     struct gc573_video, hold_work);
+	struct gc573 *gc = container_of(v, struct gc573, vid);
+
+	mutex_lock(&v->lock);
+	/* a newer hold has its own deadline, and work queued for it */
+	if (v->held && !v->dead && !time_before(jiffies, v->hold_until)) {
+		gc573_vid_fail(gc);
+		dev_dbg(&gc->pdev->dev,
+			"video: input in other timings for %u ms, stream stopped\n",
+			GC573_VID_HOLD_MS);
+	}
+	mutex_unlock(&v->lock);
+}
+
+/*
  * A streaming queue follows a change of the input (policy: header
  * comment). vid.lock held; v->in is the new input.
  */
@@ -1676,15 +1733,23 @@ static void gc573_vid_follow_input(struct gc573 *gc)
 	if (v->failed)
 		return;
 	if (v->in.locked && !gc573_vid_input_matches(v)) {
+		/* held already: the hold counts from its start */
+		if (v->held)
+			return;
 		gc573_video_hw_stop(gc);
+		spin_lock(&v->slock);
+		gc573_vid_unarm(v);
+		spin_unlock(&v->slock);
 		v->start_pending = false;
-		gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
-		vb2_queue_error(&v->queue);
-		v->failed = true;
-		v->input_stops++;
-		dev_dbg(dev, "video: input in other timings, stream stopped\n");
+		v->held = true;
+		v->hold_until = jiffies + msecs_to_jiffies(GC573_VID_HOLD_MS);
+		mod_delayed_work(system_wq, &v->hold_work,
+				 msecs_to_jiffies(GC573_VID_HOLD_MS));
+		v->input_holds++;
+		dev_dbg(dev, "video: input in other timings, stream held\n");
 		return;
 	}
+	v->held = false;
 	/* free-running already, and still no input */
 	if (!v->in.locked && !v->live && (v->running || v->start_pending))
 		return;
@@ -1748,6 +1813,7 @@ void gc573_video_early_init(struct gc573 *gc)
 	spin_lock_init(&v->slock);
 	INIT_LIST_HEAD(&v->queued);
 	init_completion(&v->term);
+	INIT_DELAYED_WORK(&v->hold_work, gc573_vid_hold_expired);
 	v->timings = gc573_timings_def;
 	v->fmt = &gc573_fmts[0];
 	gc573_fill_pix(gc, v->fmt, &v->pix);

@@ -282,6 +282,8 @@ static void gc573_quiesce(void *data)
 	if (gc573_rd(gc, GC573_VIP_CTRL) & GC573_VIP_CTRL_OUT_EN)
 		gc573_video_hw_stop(gc);
 	mutex_unlock(&gc->vid.lock);
+	/* a held stream's deadline: nothing queues it once dead is set */
+	cancel_delayed_work_sync(&gc->vid.hold_work);
 	gc573_audio_quiesce(gc);
 
 	/* 2: interrupts off, status cleared */
