@@ -72,7 +72,9 @@ the screenshot after it must be good too.
       not move; 'jumpy': anything else), and the counter's steps from one
       recorded frame to the next in three runs of 120 frames. Every frame
       is decoded once (-fps_mode passthrough). A frozen pattern is not a
-      good picture. --across: the recording spans source changes; the
+      good picture. Each frame is read at its own size, else as each other
+      size of SIZES stretched to it (OBS stretches a 720p source to its
+      1080p canvas) --across: the recording spans source changes; the
       first and last samples must be live, and no two samples in a row
       anything else
   obs-events.py selftest
@@ -133,6 +135,7 @@ where the GPU's settings must stay as they are.
 import argparse
 import base64
 import io
+import math
 import os
 import re
 import shlex
@@ -196,16 +199,56 @@ def geometry(W, H):
     return bits, gaps, flash
 
 
+# the source sizes of the changes: a recording of OBS's 1920x1080 canvas
+# holds a 1280x720 source stretched to it (obs-check.py: OBS_BOUNDS_STRETCH)
+SIZES = [(1920, 1080), (1280, 720)]
+
+
+def scale_box(b, sx, sy):
+    """a box at the source's size in the frame's pixels, rounded inwards"""
+    x0, y0, x1, y1 = b[:4]
+    return (math.ceil(x0 * sx), math.ceil(y0 * sy), math.floor(x1 * sx), math.floor(y1 * sy)) + tuple(b[4:])
+
+
+def regions_for(W, H, src=None):
+    w, h = src or (W, H)
+    return [scale_box(r, W / w, H / h) for r in regions(w, h)]
+
+
+def geometry_for(W, H, src=None):
+    w, h = src or (W, H)
+    bits, gaps, flash = geometry(w, h)
+    sx, sy = W / w, H / h
+    return ([scale_box(b, sx, sy) for b in bits], [scale_box(g, sx, sy) for g in gaps],
+            scale_box(flash, sx, sy))
+
+
 def luma(img, box):
     return ImageStat.Stat(img.crop(box).convert('L')).mean[0]
 
 
-def classify(img):
+def classify_any(img):
+    """classify() at the frame's own size, else at each other size of
+    SIZES with the frame's aspect, stretched to it: the first that reads a
+    counter, else the frame's own result; and the size used (None: its own)"""
+    first = classify(img)
+    if first[0] == 'pattern' and first[2] is not None:
+        return first + (None,)
+    W, H = img.size
+    for w, h in SIZES:
+        if (w, h) != (W, H) and w * H == h * W:
+            r = classify(img, (w, h))
+            if r[0] == 'pattern' and r[2] is not None:
+                return r + ((w, h),)
+    return first + (None,)
+
+
+def classify(img, src=None):
     """kind (pattern, black, bad), max error, counter (None: unreadable),
-    flash"""
+    flash. SRC: the pattern's own size, if the frame is it stretched"""
     W, H = img.size
     err = 0
-    for x0, y0, x1, y1, c in regions(W, H):
+    for x0, y0, x1, y1, c in regions_for(W, H, src):
         crop = img.crop((x0, y0, x1, y1))
         ex = ImageChops.difference(crop, Image.new('RGB', crop.size, c)).getextrema()
         err = max(err, max(e[1] for e in ex))
@@ -213,7 +256,7 @@ def classify(img):
         if ImageStat.Stat(img.convert('L')).mean[0] < 12:
             return 'black', err, None, False
         return 'bad', err, None, False
-    bits, gaps, flash = geometry(W, H)
+    bits, gaps, flash = geometry_for(W, H, src)
     counter = 0
     for k, b in enumerate(bits):
         y = luma(img, b)
@@ -1033,9 +1076,10 @@ def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=
                    t_start=t_start)
 
 
-def counter_band(img, W, H):
-    """The counter from a frame cropped to its bottom fifth (rows 4H/5..H)"""
-    bits, gaps, _ = geometry(W, H)
+def counter_band(img, W, H, src=None):
+    """The counter from a frame cropped to its bottom fifth (rows 4H/5..H);
+    SRC as for classify()"""
+    bits, gaps, _ = geometry_for(W, H, src)
     dy = H * 4 // 5
     counter = 0
     for k, (x0, y0, x1, y1) in enumerate(bits):
@@ -1046,16 +1090,16 @@ def counter_band(img, W, H):
     return counter
 
 
-def band_counters(path, start, n, W, H):
+def band_counters(path, start, n, W, H, src=None):
     """The counter of each of N recorded frames from START (s), each frame
-    decoded once; None where unreadable"""
+    decoded once; None where unreadable; SRC as for classify()"""
     r = subprocess.run(['ffmpeg', '-v', 'quiet', '-ss', f'{start:.3f}', '-i', path, '-frames:v', str(n),
                         '-fps_mode', 'passthrough',
                         '-vf', f'crop={W}:{H - H * 4 // 5}:0:{H * 4 // 5}', '-pix_fmt', 'rgb24',
                         '-f', 'rawvideo', '-'], capture_output=True)
     k = W * (H - H * 4 // 5) * 3
-    return [counter_band(Image.frombytes('RGB', (W, H - H * 4 // 5), r.stdout[i * k:(i + 1) * k]), W, H)
-            for i in range(len(r.stdout) // k)]
+    return [counter_band(Image.frombytes('RGB', (W, H - H * 4 // 5), r.stdout[i * k:(i + 1) * k]), W, H,
+                         src) for i in range(len(r.stdout) // k)]
 
 
 def cmd_recheck(path, every, across=False):
@@ -1082,18 +1126,21 @@ def cmd_recheck(path, every, across=False):
     num, den = (int(x) for x in st.get('avg_frame_rate', '60/1').split('/'))
     fps = num / den if den and num else 60.0
     n_prog = max(2, round(fps / 2)) + 1	# frames over 0.5 s
-    kinds, errs, seq = {}, [], []
+    kinds, errs, seq, sizes = {}, [], [], {}
     t = 1.0
     while t < dur - 1.5:
         r = subprocess.run(['ffmpeg', '-v', 'quiet', '-ss', f'{t:.3f}', '-i', path, '-frames:v', '1',
                             '-f', 'image2pipe', '-vcodec', 'png', '-'], capture_output=True)
         if r.stdout:
-            kind, err, counter, _ = classify(Image.open(io.BytesIO(r.stdout)).convert('RGB'))
+            kind, err, counter, _, src = classify_any(Image.open(io.BytesIO(r.stdout)).convert('RGB'))
+            if src:
+                sizes[src] = sizes.get(src, 0) + 1
             if kind == 'pattern':
                 errs.append(err)
                 # the first and last readable counters (a torn frame can
                 # leave one unreadable): progress against the frames between
-                c = [(i, x) for i, x in enumerate(band_counters(path, t, n_prog, W, H)) if x is not None]
+                c = [(i, x) for i, x in enumerate(band_counters(path, t, n_prog, W, H, src))
+                     if x is not None]
                 if len(c) >= 2 and c[-1][0] - c[0][0] >= (n_prog - 1) // 2:
                     moved = (c[-1][1] - c[0][1]) % 65536
                     frames = c[-1][0] - c[0][0]
@@ -1113,7 +1160,10 @@ def cmd_recheck(path, every, across=False):
     steps = {}
     for start in (dur * 0.1, dur * 0.5, max(0, dur * 0.9 - 2.5)):
         prev = None
-        for c in band_counters(path, start, 120, W, H):
+        # the run at the size that reads more of its counters
+        runs = [band_counters(path, start, 120, W, H, src) for src in
+                [None] + [x for x in SIZES if x != (W, H) and x[0] * H == x[1] * W]]
+        for c in max(runs, key=lambda cs: sum(x is not None for x in cs)):
             if c is not None and prev is not None:
                 d = (c - prev) % 65536
                 steps[d] = steps.get(d, 0) + 1
@@ -1136,7 +1186,8 @@ def cmd_recheck(path, every, across=False):
     good = bool(good) and max(errs, default=0) <= TOL
     print(f"RESULT obsrec-image {'PASS' if good else 'FAIL'} ({sum(kinds.values())} samples every "
           f"{every} s over {dur:.0f} s at {W}x{H}, the counter's progress over {n_prog - 1} frames each: "
-          f"{what}; max error in the pattern frames {max(errs, default=-1)} (limit {TOL})")
+          f"{what}; max error in the pattern frames {max(errs, default=-1)} (limit {TOL})"
+          + ''.join(f'; {n} read as {w}x{h} stretched' for (w, h), n in sizes.items()) + ')')
     print(f'INFO obsrec-counter steps from one recorded frame to the next (step: count): '
           + ', '.join(f'{k}: {v}' for k, v in sorted(steps.items())))
     return bool(good)
@@ -1176,8 +1227,53 @@ def cmd_selftest():
                 ok = False
                 print(f'{w}x{h} at {fps}: {len(t)} frames, {len(late)} not at n/{fps} s: '
                       + ', '.join(f'{i}: {x:.6f}' for i, x in late[:6]))
+    # 1280x720 stretched to 1920x1080 (bilinear), as OBS records a 720p
+    # source in its canvas: read as that size, the counter in the band too
+    with tempfile.TemporaryDirectory() as d:
+        png = os.path.join(d, 'pattern.png')
+        subprocess.run([os.path.join(ROOT, 'tools', 'testsrc', 'pattern.py'), png, '1280', '720'],
+                       check=True, capture_output=True)
+        g = subprocess.run([os.path.join(ROOT, 'tools', 'testsrc', 'counter-graph.sh'), png, '1280', '720',
+                            '60000/1001', '60'], check=True, capture_output=True, text=True).stdout.strip()
+        subprocess.run(['ffmpeg', '-v', 'quiet', '-f', 'lavfi', '-i', g, '-vf', 'scale=1920:1080:flags=bilinear',
+                        '-fps_mode', 'passthrough', '-frames:v', '70', os.path.join(d, 'f%04d.png')], check=True)
+        bad = 0
+        for i in range(70):
+            img = Image.open(os.path.join(d, f'f{i + 1:04d}.png')).convert('RGB')
+            kind, err, counter, flash, src = classify_any(img)
+            band = counter_band(img.crop((0, 1080 * 4 // 5, 1920, 1080)), 1920, 1080, src)
+            if not (kind == 'pattern' and err <= TOL and counter == i and band == i
+                    and flash == (i % 60 == 0)):
+                bad += 1
+                print(f'1280x720 stretched, frame {i}: {kind} err {err} counter {counter} band {band} '
+                      f'as {src} flash {flash}')
+        # high counters (bits the canvas geometry misses), drawn on frame 1
+        # at 1280x720 the way counter-graph.sh draws them (B x B squares)
+        from PIL import ImageDraw
+        base = Image.open(os.path.join(d, 'f0002.png')).convert('RGB').resize((1280, 720), Image.BILINEAR)
+        bits720, _, _ = geometry(1280, 720)
+        B = 720 // 27
+        q = B // 4
+        for v in (0xffff, 0xa5c3, 0x8000, 0x7ffe):
+            img = base.copy()
+            dr = ImageDraw.Draw(img)
+            for k, (x0, y0, x1, y1) in enumerate(bits720):
+                dr.rectangle((x0 - q, y0 - q, x0 - q + B - 1, y0 - q + B - 1),
+                             fill=(255, 255, 255) if v >> k & 1 else (0, 0, 0))
+            big = img.resize((1920, 1080), Image.BILINEAR)
+            kind, err, counter, flash, src = classify_any(big)
+            native = classify(big)[2]
+            band = counter_band(big.crop((0, 1080 * 4 // 5, 1920, 1080)), 1920, 1080, src)
+            if not (kind == 'pattern' and counter == v and band == v and src == (1280, 720)
+                    and native in (None, v)):
+                bad += 1
+                print(f'1280x720 stretched, counter {v:#06x}: {kind} err {err} counter {counter} band {band} '
+                      f'as {src}; at the canvas geometry {native}')
+        ok &= bad == 0
     print(f"RESULT selftest {'PASS' if ok else 'FAIL'} (70 frames at 1920x1080 and 1280x720: pattern exact, "
-          "counter = frame index, flash on frames 0 and 60; 130 frames each at n/fps within 1 us)")
+          "counter = frame index, flash on frames 0 and 60; 130 frames each at n/fps within 1 us; 70 frames "
+          "of 1280x720 stretched to 1920x1080 and 4 high counters drawn on one: counter and band right, "
+          "high counters only as 1280x720 stretched, never misread at the canvas geometry)")
     return ok
 
 
