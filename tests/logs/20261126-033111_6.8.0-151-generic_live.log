@@ -1,0 +1,57 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 03:31:11 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     5a5e71da0e7b-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   exact
+module:  srcversion 8FC633C76E1A9301322AF83 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 292FD1A2D4D0C4210A150E8, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## exact
+  RESULT video      PASS (3597 frames, 0 sequence gaps, interval 16.666 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO counter   3597 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 3596; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+  RESULT exact      PASS (the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3597 frames at 60.00157 Hz)
+  INFO source    0 frames shown twice, 0 skipped, 0 torn, between frames at regular intervals; net +0 frames over 59.9 s (source frames advanced 3596, captured 3596); the clocks predict -0.09 (source 60.00000 Hz (the system clock) = 60.00000 Hz, capture 60.00157 Hz, a crossing every 638 s); 0 clusters (at most 2, events within 59.9 s as one); explained by the clocks
+RESULT exact-counter-1080p60      PASS (60 s: the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3597 frames at 60.00157 Hz; the source: 0 frames shown twice, 0 skipped, 0 torn, net +0 (the clocks: -0.09): explained by the clocks)
+  RESULT video      PASS (3597 frames, 0 sequence gaps, interval 16.667 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO counter   3597 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 3596; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+  RESULT exact      PASS (the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3597 frames at 60.00155 Hz)
+  INFO source    0 frames shown twice, 0 skipped, 0 torn, between frames at regular intervals; net +0 frames over 59.9 s (source frames advanced 3596, captured 3596); the clocks predict +0.00 (source 60.00000 Hz x 48001.255/48000 (the HDMI audio clock) = 60.00157 Hz, capture 60.00155 Hz, a crossing every 64434 s); 0 clusters (at most 2, events within 59.9 s as one); explained by the clocks
+    raw offsets: mean +37.44 ms, min +37.38, max +37.46, std 0.02; frames from the most common (count): +0: 60
+  RESULT avsync     PASS (60 flashes over 1.0 min: offset +37.435 ms (std 0.024, min +37.378, max +37.461), drift -0.0100 ms/min = -0.010 ms over the run, residual <= 0.056 ms)
+RESULT exact-pattern-1080p60      PASS (60 s: the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3597 frames at 60.00155 Hz; the source: 0 frames shown twice, 0 skipped, 0 torn, net +0 (the clocks: +0.00): explained by the clocks)
+  RESULT video      PASS (3593 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO counter   3593 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 3592; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+  RESULT exact      PASS (the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3593 frames at 59.94094 Hz)
+  INFO source    0 frames shown twice, 0 skipped, 0 torn, between frames at regular intervals; net +0 frames over 59.9 s (source frames advanced 3592, captured 3592); the clocks predict +0.04 (source 59.94006 Hz x 48001.203/48000 (the HDMI audio clock) = 59.94156 Hz, capture 59.94094 Hz, a crossing every 1616 s); 0 clusters (at most 2, events within 59.9 s as one); explained by the clocks
+    raw offsets: mean +31.10 ms, min +30.78, max +31.45, std 0.19; frames from the most common (count): +0: 60
+  RESULT avsync     PASS (60 flashes over 1.0 min: offset +31.105 ms (std 0.190, min +30.778, max +31.449), drift -0.6500 ms/min = -0.640 ms over the run, residual <= 0.053 ms)
+RESULT exact-pattern-1080p59.94   PASS (60 s: the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3593 frames at 59.94094 Hz; the source: 0 frames shown twice, 0 skipped, 0 torn, net +0 (the clocks: +0.04): explained by the clocks)
+  RESULT video      PASS (3593 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO counter   3593 frames, 102 unreadable; steps from one frame to the next (step: count) 0: 25, 1: 3353, 2: 13; 25 repeated, 13 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 59 captured once, 0 twice, 0 more often, 1 never; 0 frames whose flash box disagrees with the counter
+  RESULT exact      PASS (the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3593 frames at 59.94493 Hz)
+  INFO source    25 frames shown twice, 13 skipped, 102 torn, between frames at regular intervals; net -1 frames over 59.9 s (source frames advanced 3591, captured 3592); the clocks predict -0.20 (source 59.94006 Hz x 48001.283/48000 (the HDMI audio clock) = 59.94166 Hz, capture 59.94493 Hz, a crossing every 306 s); 1 clusters (at most 2, events within 36.7 s as one): 3.2-59.8 s: 25 repeat, 13 skip, 102 tear; explained by the clocks
+    raw offsets: mean +33.34 ms, min +28.10, max +45.28, std 6.59; frames from the most common (count): +0: 45, +1: 15
+  RESULT avsync     PASS (60 flashes over 1.0 min: offset +29.167 ms (std 0.965, min +27.547, max +30.818), drift +3.3371 ms/min = +3.285 ms over the run, residual <= 0.060 ms)
+RESULT exact-pattern-720p59.94    PASS (60 s: the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3593 frames at 59.94493 Hz; the source: 25 frames shown twice, 13 skipped, 102 torn, net -1 (the clocks: -0.20): explained by the clocks)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 7 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT exact-counter-1080p60      PASS (60 s: the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3597 frames at 60.00157 Hz; the source: 0 frames shown twice, 0 skipped, 0 torn, net +0 (the clocks: -0.09): explained by the clocks)
+RESULT exact-pattern-1080p60      PASS (60 s: the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3597 frames at 60.00155 Hz; the source: 0 frames shown twice, 0 skipped, 0 torn, net +0 (the clocks: +0.00): explained by the clocks)
+RESULT exact-pattern-1080p59.94   PASS (60 s: the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3593 frames at 59.94094 Hz; the source: 0 frames shown twice, 0 skipped, 0 torn, net +0 (the clocks: +0.04): explained by the clocks)
+RESULT exact-pattern-720p59.94    PASS (60 s: the driver: 0 sequence gaps, 0 frame intervals over 1.5 periods, 0 under half a period, over 3593 frames at 59.94493 Hz; the source: 25 frames shown twice, 13 skipped, 102 torn, net -1 (the clocks: -0.20): explained by the clocks)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=6 fail=0 skip=1
