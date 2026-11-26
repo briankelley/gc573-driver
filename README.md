@@ -120,6 +120,10 @@ A source can pass through another mode on its way to its own: after a hot-plug, 
 While OBS records, the reopen works only with *Hybrid MP4* (tested; OBS 32's default) or *Hybrid MOV*, which OBS writes itself. The other formats (MKV, MP4, MOV, ...) run OBS's `obs-ffmpeg-mux` helper. The helper inherits OBS's open handle on the device, so the device stays busy and the reopen fails until the recording stops. OBS sets up its recording output when it starts and when the output settings change in its Settings window. A format set through obs-websocket (`SetProfileParameter`) takes effect only at the next start.
 
 **Driving OBS from a program (obs-websocket)**
+- Expect OBS to die now and then, and start it again. On the test PC, 1 of 10 OBS starts crashed 0.2 s in, inside the NVIDIA driver's OpenGL library, before OBS had loaded any source.
+  - Watch OBS's process, and start OBS again when it exits.
+  - Start OBS with `--multi`. OBS 32 then neither writes nor reads its crash markers. Without it, a start after a crash waits on an *unclean shutdown* dialog until someone clicks it.
+  - The test harness's `tests/obs-run.sh` starts OBS with `--multi`, and starts it once more when it crashes at start.
 - Set `"buffering": false` on the V4L2 source (see *Video*).
 - `GetSourceScreenshot` of the V4L2 source:
   - PNG at 1920x1080 takes 55–70 ms per request and comes within 2 codes of the source's picture.
