@@ -2698,6 +2698,9 @@ step_apps() {
 ECP=$ROOT/tools/roku/ecp.py
 ROKU_DIR=${GC573_ROKU_DIR:-$HOME/gc573-roku}
 ROKU_SECS=${GC573_ROKU_SECS:-60}
+# the pattern video's frame rate: the Roku's output, 59.94 Hz (a 60 fps
+# file makes its player drop frames); GC573_ROKU_FPS as ffmpeg takes it
+ROKU_FPS=${GC573_ROKU_FPS:-60000/1001}
 Q25_SECS=${GC573_Q25_SECS:-180}
 ROKU_URL_FILE="" roku_serve_pid="" roku_served="" roku_halt=0
 # The steps run in main's subshell (piped to tee), and the EXIT trap in the
@@ -2710,11 +2713,13 @@ roku_skip() { result "$1" SKIP "(needs GC573_ROKU_GO=1: it $2)"; }
 # the pattern video for SECS seconds, made once and checked
 # (tools/roku/check-video.py) in ROKU_DIR; prints its path
 roku_video() {
-	local f=$ROKU_DIR/pattern-$1s.mp4
+	local f tag
+	case $ROKU_FPS in 60000/1001) tag=-59.94 ;; 60) tag="" ;; *) tag=-${ROKU_FPS//\//_} ;; esac
+	f=$ROKU_DIR/pattern-$1s$tag.mp4
 	mkdir -p "$ROKU_DIR" || return 1
 	if [ ! -s "$f" ]; then
-		echo "  making $f ($1 s of the pattern video)" >&2
-		nice "$ROOT/tools/roku/pattern-video.sh" "$f.new.mp4" "$1" > /dev/null &&
+		echo "  making $f ($1 s of the pattern video at $ROKU_FPS fps)" >&2
+		nice "$ROOT/tools/roku/pattern-video.sh" "$f.new.mp4" "$1" 1920 1080 "$ROKU_FPS" 60 > /dev/null &&
 			python3 "$ROOT/tools/roku/check-video.py" "$f.new.mp4" > "$f.check" &&
 			mv "$f.new.mp4" "$f" || { cat "$f.check" >&2; rm -f "$f.new.mp4"; return 1; }
 	fi
