@@ -34,17 +34,40 @@
 #   no-override        without any override: install.sh takes the card at
 #                      once and lets gc573 load by alias only after that
 #                      first probe worked; uninstall.sh --yes leaves nothing
+# Then with PipeWire holding the card, as on a desktop: the VM's udev rule
+# that keeps PipeWire off the card is lifted, and WirePlumber keeps the
+# card's ALSA control node open while gc573 has it (tools/card-release.sh):
+#   pw-install         no override: gc573 takes the card, WirePlumber holds it
+#   pw-update          install.sh again: the card taken from the old gc573,
+#                      which unloads; the new one has the card, held again
+#   holder-refused     sleep holding the video node: install.sh and
+#                      uninstall.sh (no --yes) refuse, name it, change
+#                      nothing on the card
+#   holder-yes         uninstall.sh --yes: sleep loses the card; gc573 cannot
+#                      unload while it keeps the node open, so it stays
+#                      loaded (files removed) and unloads once sleep ends
+#   pw-uninstall       install.sh, then uninstall.sh (no --yes): gc573
+#                      unloads although WirePlumber held the card
+#   pw-this-boot       the override saved again: --this-boot, then
+#                      --this-boot again (an update) while WirePlumber holds
+#                      the card
+#   pw-uninstall-this-boot  uninstall.sh: the card taken from gc573, the
+#                      saved override loaded again, nothing left; then the
+#                      override unset and the udev rule back
 #   cleanup            driverctl purged, as before the test; reboot (then
 #                      tools/vmbuild.sh load for development)
+# --pw-only: prepare, then (the override unset) the PipeWire steps and
+# cleanup: no reboot before cleanup, about 10 minutes
 # Log: tests/logs/install/<UTC>-<sha>/gc573-dev-card.log (+ summary.tsv)
-# Usage: tools/vms/install-card-test.sh [-r REF]
+# Usage: tools/vms/install-card-test.sh [-r REF] [--pw-only]
 set -uo pipefail
 
-REF=HEAD VM=gc573-dev
+REF=HEAD VM=gc573-dev pw_only=0
 while [ $# -gt 0 ]; do
 	case $1 in
 	-r) REF=$2; shift 2 ;;
-	-h|--help) sed -n '3,30p' "$0"; exit 0 ;;
+	--pw-only) pw_only=1; shift ;;
+	-h|--help) sed -n '3,62p' "$0"; exit 0 ;;
 	*) echo "unknown argument $1" >&2; exit 2 ;;
 	esac
 done
@@ -99,6 +122,37 @@ reboot_vm() {
 }
 I="cd ~/gc573-install/gc573 && sudo bash tools/install.sh"
 U="cd ~/gc573-install/gc573 && sudo bash tools/uninstall.sh"
+# PipeWire off the card (the VM's udev rule, tools/devvm) or on it, as on a
+# desktop: then WirePlumber keeps the card's ALSA control node open while a
+# driver has the card
+PW_RULE=/etc/udev/rules.d/90-gc573-pulse-ignore.rules
+pw_rule() {	# off: the rule lifted; on: back
+	if [ "$1" = off ]; then
+		vm "[ ! -e $PW_RULE ] || sudo mv $PW_RULE $PW_RULE.off"
+	else
+		vm "[ ! -e $PW_RULE.off ] || sudo mv $PW_RULE.off $PW_RULE"
+	fi
+	vm "sudo udevadm control --reload && sudo udevadm trigger -s sound -c change &&
+		sudo udevadm settle && systemctl --user restart wireplumber"
+}
+# "pid comm" of each process with one of the card's nodes open (video,
+# media, the ALSA card's), by fuser: not the scripts' own way of finding them
+holders() {
+	vm "d=/sys/bus/pci/devices/$bdf; n=\$( { ls -d \$d/video4linux/* \$d/media[0-9]* 2>/dev/null | sed 's#.*/#/dev/#'
+		for c in \$d/sound/card[0-9]*; do [ -e \$c ] && ls -d /dev/snd/controlC\${c##*card} /dev/snd/*C\${c##*card}D* 2>/dev/null; done; } )
+		[ -z \"\$n\" ] || for p in \$(sudo fuser \$n 2>/dev/null | tr -cs '0-9' ' '); do echo \"\$p \$(cat /proc/\$p/comm 2>/dev/null)\"; done | sort -u -n" |
+		tr '\n' ' '
+}
+wait_pw_hold() {	# up to 15 s for WirePlumber to open the card
+	local h
+	for _ in $(seq 30); do
+		h=$(holders)
+		has wireplumber "$h" && break
+		sleep 0.5
+	done
+	echo "$h"
+}
+not_left() { vm "sudo dkms status 2>/dev/null | grep gc573; find /lib/modules /usr/src -name 'gc573*' 2>/dev/null; lsmod | grep -w gc573" | tr '\n' ' '; }
 
 {
 echo "# install.sh / uninstall.sh with the card, $VM"
@@ -121,6 +175,7 @@ else
 	res prepare FAIL "$s"
 fi
 
+if [ $pw_only = 0 ]; then
 echo "=== install-notty"
 o=$(vm "$I" 2>&1); rc=$?
 echo "$o" | sed 's/^/  /'
@@ -274,9 +329,120 @@ if [ $rc = 0 ] && ! has 'A persistent driverctl override' "$o" && has 'loads by 
 else
 	res no-override FAIL "exit $rc/$rc2; left '$left'; $s / $s2"
 fi
+else
+	vm "sudo driverctl --noprobe unset-override $bdf" 2>&1 | sed 's/^/  /'
+fi
+
+echo "=== pw-install"
+pw_rule off
+o=$(vm "$I" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+s=$(state); echo "  $s"
+h=$(wait_pw_hold); echo "  holders: $h"
+if [ $rc = 0 ] && has 'the card is up' "$o" && has 'driver: gc573' "$s" && has wireplumber "$h"; then
+	res pw-install PASS "the udev rule lifted, no override: gc573 has the card and WirePlumber holds it ($h)"
+else
+	res pw-install FAIL "exit $rc; holders '$h'; $s"
+fi
+
+echo "=== pw-update"
+o=$(vm "$I" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+s=$(state); echo "  $s"
+h=$(wait_pw_hold); echo "  holders: $h"
+if [ $rc = 0 ] && has 'taking the card from gc573 (open now by wireplumber' "$o" && has 'reloading gc573' "$o" &&
+	has 'the card is up' "$o" && has 'driver: gc573' "$s" && has wireplumber "$h"; then
+	res pw-update PASS "install.sh again while WirePlumber held the card: the card taken from the old gc573, which unloaded; the new one has the card, WirePlumber holds it again"
+else
+	res pw-update FAIL "exit $rc; holders '$h'; $s"
+fi
+
+echo "=== holder-refused"
+vdev=/dev/$(vm "ls /sys/bus/pci/devices/$bdf/video4linux | head -1")
+sp=$(vm "nohup sleep 600 < $vdev > /dev/null 2>&1 & echo \$!")
+sleep 1
+h=$(holders); echo "  holders: $h"
+o=$(vm "$I" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+s=$(state); echo "  $s"
+o2=$(vm "$U" 2>&1); rc2=$?
+echo "$o2" | sed 's/^/  /'
+s2=$(state); echo "  $s2"
+if has "$sp sleep" "$h" && [ $rc = 1 ] && has "the card is in use by sleep (pid $sp)" "$o" && has 'driver: gc573' "$s" &&
+	[ $rc2 = 1 ] && has "the card is in use by sleep (pid $sp)" "$o2" && has 'nothing was changed' "$o2" &&
+	has 'driver: gc573' "$s2" && has 'dkms: gc573/' "$s2" && vm "kill -0 $sp"; then
+	res holder-refused PASS "sleep (pid $sp) with $vdev open: install.sh and uninstall.sh without --yes exit 1 and name it; the card stays with gc573, still installed"
+else
+	res holder-refused FAIL "holders '$h'; exit $rc/$rc2; $s / $s2"
+fi
+
+echo "=== holder-yes"
+o=$(vm "$U --yes" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+s=$(state); echo "  $s"
+alive=$(vm "kill -0 $sp 2>/dev/null && echo yes || echo no")
+vm "kill $sp"
+sleep 1
+r=$(vm "sudo rmmod gc573 2>&1; lsmod | grep -cw gc573")
+left=$(not_left)
+echo "  sleep still running before the kill: $alive; rmmod after it ended: $(echo $r); left: '$left'"
+if [ $rc = 0 ] && has "the card is in use by sleep (pid $sp): --yes, so it loses the card now" "$o" &&
+	has 'still in use' "$o" && has 'loaded: yes' "$s" && has 'state:  dkms: ' "$s" && ! has 'dkms: gc573/' "$s" &&
+	[ "$alive" = yes ] && [ "$(echo $r)" = 0 ] && [ -z "$left" ]; then
+	res holder-yes PASS "uninstall.sh --yes: sleep lost the card; gc573 stayed loaded while sleep kept the node open (its files removed), and unloaded once it ended; nothing left"
+else
+	res holder-yes FAIL "exit $rc; sleep running: $alive; rmmod: $r; left '$left'; $s"
+fi
+
+echo "=== pw-uninstall"
+o=$(vm "$I" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+h=$(wait_pw_hold); echo "  holders: $h"
+o2=$(vm "$U" 2>&1); rc2=$?
+echo "$o2" | sed 's/^/  /'
+s2=$(state); echo "  $s2"
+left=$(not_left)
+if [ $rc = 0 ] && has wireplumber "$h" && [ $rc2 = 0 ] && has 'taking the card from gc573 (open now by wireplumber' "$o2" &&
+	has 'unloaded gc573' "$o2" && has 'loaded: no' "$s2" && [ -z "$left" ]; then
+	res pw-uninstall PASS "uninstall.sh without --yes while WirePlumber held the card: the card taken from gc573, gc573 unloaded, nothing left"
+else
+	res pw-uninstall FAIL "exit $rc/$rc2; holders '$h'; left '$left'; $s2"
+fi
+
+echo "=== pw-this-boot"
+vm "sudo driverctl --noprobe set-override $bdf vfio-pci" 2>&1 | sed 's/^/  /'
+o=$(vm "$I --this-boot" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+h=$(wait_pw_hold); echo "  holders: $h"
+o2=$(vm "$I --this-boot" 2>&1); rc2=$?
+echo "$o2" | sed 's/^/  /'
+s2=$(state); echo "  $s2"
+h2=$(wait_pw_hold); echo "  holders: $h2"
+if [ $rc = 0 ] && has wireplumber "$h" && [ $rc2 = 0 ] && has 'taking the card from gc573 (open now by wireplumber' "$o2" &&
+	has 'driver: gc573 override: gc573 persisted: vfio-pci' "$s2" && has wireplumber "$h2"; then
+	res pw-this-boot PASS "override saved, --this-boot while WirePlumber held the card, then again (an update): taken from the old gc573, the new one has the card for this boot, held again"
+else
+	res pw-this-boot FAIL "exit $rc/$rc2; holders '$h' / '$h2'; $s2"
+fi
+
+echo "=== pw-uninstall-this-boot"
+o=$(vm "$U" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+s=$(state); echo "  $s"
+left=$(not_left)
+vm "sudo driverctl --noprobe unset-override $bdf" 2>&1 | sed 's/^/  /'
+pw_rule on
+if [ $rc = 0 ] && has 'taking the card from gc573 (open now by wireplumber' "$o" &&
+	has "the saved override is loaded again: $bdf -> vfio-pci" "$o" &&
+	has 'driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: no state:  dkms' "$s" && [ -z "$left" ]; then
+	res pw-uninstall-this-boot PASS "uninstall.sh while WirePlumber held the card: the card taken from gc573, the saved override loaded again, nothing left"
+else
+	res pw-uninstall-this-boot FAIL "exit $rc; left '$left'; $s"
+fi
 
 echo "=== cleanup"
 vm "sudo DEBIAN_FRONTEND=noninteractive apt-get purge -y -q driverctl | tail -1; rm -rf ~/gc573-install"
+pw_rule on
 reboot_vm
 s=$(state); echo "  $s"
 if has 'override: (null) persisted:  loaded: no noload: no state:  dkms' "$s" &&
