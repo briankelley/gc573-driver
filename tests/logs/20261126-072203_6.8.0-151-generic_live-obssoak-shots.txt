@@ -1,0 +1,6 @@
+SHOT 112.4 bad err=255 counter=None size=1920x1080
+SHOT 302.9 bad err=255 counter=None size=1920x1080
+SHOT 404.0 bad err=255 counter=None size=1920x1080
+SHOT 605.8 bad err=250 counter=None size=1280x720
+SHOT 712.8 bad err=255 counter=None size=1280x720
+SHOT 806.2 bad err=253 counter=None size=1920x1080

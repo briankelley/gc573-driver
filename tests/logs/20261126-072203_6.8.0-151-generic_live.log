@@ -1,0 +1,523 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 07:22:03 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     d58946fee293
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   lock capture change blip loss audio compliance obssoak
+module:  srcversion DA910DA849A1402705BBB41 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst DA910DA849A1402705BBB41, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## lock
+  	Active width: 1920
+  	Active height: 1080
+  	Total width: 2200
+  	Total height: 1125
+  	Frame format: progressive
+  	Polarities: +vsync +hsync
+  	Pixelclock: 148500000 Hz (60.00 frames per second)
+  	Horizontal frontporch: 88
+  	Horizontal sync: 44
+  	Horizontal backporch: 148
+  	Vertical frontporch: 4
+  	Vertical sync: 5
+  	Vertical backporch: 36
+  	Standards: CTA-861, DMT
+  	CTA-861 VIC: 16
+  	Flags: framerate can be reduced by 1/1.001, can detect reduced framerates, CE-video, has CTA-861 VIC
+RESULT lock-1080p60               PASS (1415 ms from output on)
+  	Active width: 1920
+  	Active height: 1080
+  	Total width: 2200
+  	Total height: 1125
+  	Frame format: progressive
+  	Polarities: +vsync +hsync
+  	Pixelclock: 148500000 Hz (60.00 frames per second)
+  	Horizontal frontporch: 88
+  	Horizontal sync: 44
+  	Horizontal backporch: 148
+  	Vertical frontporch: 4
+  	Vertical sync: 5
+  	Vertical backporch: 36
+  	Standards: CTA-861, DMT
+  	CTA-861 VIC: 16
+  	Flags: framerate can be reduced by 1/1.001, framerate is reduced by 1/1.001, can detect reduced framerates, CE-video, has CTA-861 VIC
+RESULT lock-1080p59.94            PASS (1793 ms from the mode switch)
+RESULT lock-power-present         PASS (power_present: 1)
+RESULT lock-event-mode-change     PASS (37788.953492: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-loss            PASS (37792.084030: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-lock            PASS (37794.926342: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+  Video input : 0 (HDMI: ok)
+  ioctl: VIDIOC_ENUMINPUT
+  	Input       : 0
+  	Name        : HDMI
+  	Type        : 0x00000002 (Camera)
+  	Audioset    : 0x00000000
+  	Tuner       : 0x00000000
+  	Standard    : 0x0000000000000000 ()
+  	Status      : 0x00000000 (ok)
+  	Capabilities: 0x00000002 (DV timings)
+
+## capture
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0000 tpf=1/60 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.599 max=16.728 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.590 max=16.736 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.562 max=16.778 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.581 max=16.755 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.595 max=16.733 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.593 max=16.739 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT cap-1080p60-timings        PASS (1920x1080 at 60.0000 Hz in the DV timings, delivered at 60.0000 Hz; expected 1920x1080 at 60)
+RESULT cap-1080p60-interval       PASS (G_PARM 1/60, nominal 1/60)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.599 max 16.728
+RESULT cap-1080p60-YUYV           PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-YUYV-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.599 max 16.728)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.590 max 16.736
+RESULT cap-1080p60-UYVY           PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-UYVY-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.590 max 16.736)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.562 max 16.778
+RESULT cap-1080p60-NV12           PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-NV12-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.562 max 16.778)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.581 max 16.755
+RESULT cap-1080p60-YV12           PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-YV12-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.581 max 16.755)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.595 max 16.733
+RESULT cap-1080p60-BGR3           PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-BGR3-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.595 max 16.733)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.593 max 16.739
+RESULT cap-1080p60-XR24           PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-XR24-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.593 max 16.739)
+RESULT cap-1080p60-first-frame    PASS (skipped 1 in 6 of 6 streams)
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3
+  RESULT capture fmt=YUYV 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.622 max=16.748 ch0_bytes=4147200 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+  RESULT capture fmt=UYVY 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.615 max=16.752 ch0_bytes=4147200 ch0_top_word=eb80eb80(6.2%) distinct_frames=1
+  RESULT capture fmt=NV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.589 max=16.776 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=1036800 ch1_top_word=80808080(55.0%) distinct_frames=1
+  RESULT capture fmt=YV12 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.593 max=16.773 ch0_bytes=2073600 ch0_top_word=ebebebeb(6.2%) ch1_bytes=518400 ch1_top_word=80808080(57.6%) ch2_bytes=518400 ch2_top_word=80808080(57.5%) distinct_frames=1
+  RESULT capture fmt=BGR3 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.612 max=16.757 ch0_bytes=6220800 ch0_top_word=ffffffff(6.2%) distinct_frames=1
+  RESULT capture fmt=XR24 1920x1080 frames=600 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.612 max=16.753 ch0_bytes=8294400 ch0_top_word=00ffffff(16.2%) distinct_frames=1
+RESULT cap-1080p59.94-timings     PASS (1920x1080 at 59.9401 Hz in the DV timings, delivered at 59.9401 Hz; expected 1920x1080 at 59.94)
+RESULT cap-1080p59.94-interval    PASS (G_PARM 1001/60000, nominal 1001/60000)
+    INFO compare YUYV Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YUYV Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YUYV chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.622 max 16.748
+RESULT cap-1080p59.94-YUYV        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-YUYV-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.622 max 16.748)
+    INFO compare UYVY Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare UYVY Cb n=809112 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY Cr n=809112 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare UYVY chroma sites compared 809112 of 1036800 (flat windows)
+    RESULT compare fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.615 max 16.752
+RESULT cap-1080p59.94-UYVY        PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-UYVY-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.615 max 16.752)
+    INFO compare NV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare NV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare NV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.589 max 16.776
+RESULT cap-1080p59.94-NV12        PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-NV12-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.589 max 16.776)
+    INFO compare YV12 Y n=2073600 min=-1 max=1 max_abs=0.92 out_of_limit=0
+    INFO compare YV12 Cb n=402196 min=-1 max=1 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 Cr n=402196 min=-1 max=0 max_abs=1.00 out_of_limit=0
+    INFO compare YV12 chroma sites compared 402196 of 518400 (flat windows)
+    RESULT compare fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.593 max 16.773
+RESULT cap-1080p59.94-YV12        PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-YV12-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.593 max 16.773)
+    INFO compare BGR3 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare BGR3 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare BGR3 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    RESULT compare fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.612 max 16.757
+RESULT cap-1080p59.94-BGR3        PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-BGR3-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.612 max 16.757)
+    INFO compare XR24 R n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360832,1:712768
+    INFO compare XR24 G n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360768,1:712832
+    INFO compare XR24 B n=2073600 min=0 max=1 max_abs=1.00 out_of_limit=0 hist=0:1360736,1:712864
+    INFO compare XR24 X min=0 max=0
+    RESULT compare fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00 out_of_limit=0
+    frames 600 gaps 0 err 0 distinct 1; mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.612 max 16.753
+RESULT cap-1080p59.94-XR24        PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-XR24-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.612 max 16.753)
+RESULT cap-1080p59.94-first-frame PASS (skipped 1 in 6 of 6 streams)
+
+## change
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4490 ms, 250 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5924 ms, 288 frames
+  INFO change: DQBUF Input/output error at 6933 ms, 288 frames, last frame at 5810 ms
+    | stream: running 0 live 0 input_restarts 1 input_stops 1 input_holds 1 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 1 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 290 frames 288 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=288 event_ms=4490 events=2 last_event_ms=5924 frames_after_event=38 frames_after_last_event=0 last_frame_ms=5810 dqbuf_error_ms=6933 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3
+    | stream: running 1 live 1 input_restarts 1 input_stops 1 input_holds 1 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1280x720 sizeimage 1843200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1280x720 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.616 max=16.741 frames_not_overwritten=0 ch0_bytes=1843200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.3%) distinct_frames=1
+RESULT change-1080p60-to-720p60   PASS (error: fmt=YUYV 1920x1080 frames=288 event_ms=4490 events=2 last_event_ms=5924 frames_after_event=38 frames_after_last_event=0 last_frame_ms=5810 dqbuf_error_ms=6933 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1280x720 frames=60)
+  INFO change: streaming YUYV 1280x720, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4509 ms, 251 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5930 ms, 288 frames
+  INFO change: DQBUF Input/output error at 6974 ms, 288 frames, last frame at 5817 ms
+    | stream: running 0 live 0 input_restarts 2 input_stops 2 input_holds 2 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1280x720 sizeimage 1843200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 290 frames 288 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1280x720 frames=288 event_ms=4509 events=2 last_event_ms=5930 frames_after_event=37 frames_after_last_event=0 last_frame_ms=5817 dqbuf_error_ms=6974 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0000 tpf=1/60 h=88/44/148 v=4/5/36 pol=0x3
+    | stream: running 1 live 1 input_restarts 2 input_stops 2 input_holds 2 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.634 max=16.729 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+RESULT change-720p60-to-1080p60   PASS (error: fmt=YUYV 1280x720 frames=288 event_ms=4509 events=2 last_event_ms=5930 frames_after_event=37 frames_after_last_event=0 last_frame_ms=5817 dqbuf_error_ms=6974 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4509 ms, 251 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 6050 ms, 291 frames
+    | stream: running 1 live 1 input_restarts 4 input_stops 2 input_holds 2 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 591 frames 588 skipped 3 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=588 event_ms=4509 events=2 last_event_ms=6050 frames_after_event=337 frames_after_last_event=297 last_frame_ms=11061 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3
+    | stream: running 1 live 1 input_restarts 4 input_stops 2 input_holds 2 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.612 max=16.750 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+RESULT change-1080p60-to-p59.94   PASS (continue: fmt=YUYV 1920x1080 frames=588 event_ms=4509 events=2 last_event_ms=6050 frames_after_event=337 frames_after_last_event=297 last_frame_ms=11061 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4473 ms, 248 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5894 ms, 285 frames
+  INFO change: DQBUF Input/output error at 6916 ms, 285 frames, last frame at 5776 ms
+    | stream: running 0 live 0 input_restarts 5 input_stops 3 input_holds 3 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 287 frames 285 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=285 event_ms=4473 events=2 last_event_ms=5894 frames_after_event=37 frames_after_last_event=0 last_frame_ms=5776 dqbuf_error_ms=6916 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  INFO change: holding the buffers 6.0 s
+RESULT change-to-720p-held        PASS (error: fmt=YUYV 1920x1080 frames=285 event_ms=4473 events=2 last_event_ms=5894 frames_after_event=37 frames_after_last_event=0 last_frame_ms=5776 dqbuf_error_ms=6916 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT change-adopted             PASS (capture without setting timings: RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.674 max=16.694 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=1 )
+
+## blip
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4341 ms, 240 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5770 ms, 278 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 6069 ms, 278 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 7557 ms, 317 frames
+    | stream: running 1 live 1 input_restarts 8 input_stops 3 input_holds 4 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 618 frames 614 skipped 4 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 3 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=614 event_ms=4341 events=4 last_event_ms=7557 frames_after_event=374 frames_after_last_event=297 last_frame_ms=12570 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT blip-continue              PASS (continue: fmt=YUYV 1920x1080 frames=614 event_ms=4341 events=4 last_event_ms=7557 frames_after_event=374 frames_after_last_event=297 last_frame_ms=12570 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-other-lock            PASS (the driver locked at 1280x720 before the mode went back: timings: 1280x720p pixelclock 74250000 flags 0x296 vic 4 h 110/40/220 v 5/5/20 pol 0x3)
+RESULT blip-held                  PASS (a hold and no stop: before input_restarts 5 input_stops 3 input_holds 3; after input_restarts 8 input_stops 3 input_holds 4)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4530 ms, 249 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5952 ms, 288 frames
+  INFO change: DQBUF Input/output error at 6977 ms, 288 frames, last frame at 5833 ms
+    | stream: running 0 live 0 input_restarts 9 input_stops 4 input_holds 5 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 2 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 290 frames 288 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=288 event_ms=4530 events=2 last_event_ms=5952 frames_after_event=39 frames_after_last_event=0 last_frame_ms=5833 dqbuf_error_ms=6977 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT blip-stays                 PASS (error: fmt=YUYV 1920x1080 frames=288 event_ms=4530 events=2 last_event_ms=5952 frames_after_event=39 frames_after_last_event=0 last_frame_ms=5833 dqbuf_error_ms=6977 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-hold-ms               PASS (DQBUF error 1025 ms after the last SOURCE_CHANGE, the lock at 720p; hold 0.9-1.6 s)
+
+## loss
+  colorimetry locked: YUYV sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: UYVY sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: NV12 sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: YV12 sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: BGR3 sRGB/sRGB/Rec. 709/Full Range
+  colorimetry locked: XR24 sRGB/sRGB/Rec. 709/Full Range
+  colorimetry locked: G_FMT:YUYV sRGB/sRGB/Rec. 709/Limited Range
+RESULT loss-idle-event            PASS (38012.325959: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+  query while off: VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed
+	Active width: 0
+	Active height: 0
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+RESULT loss-idle-colorimetry      PASS (TRY_FMT and G_FMT while unlocked: as while locked)
+  input:	Status      : 0x00000002 (no signal)
+  RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=16.599 max=16.736 ch0_bytes=4147200 ch0_top_word=80108010(100.0%) distinct_frames=1
+  unlocked frame:  10 80 10 80 10 80 10 80 10 80 10 80 10 80 10 80
+  unlocked frame: *
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (38016.754330: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (14 ms)
+RESULT loss-relock-colorimetry    PASS (TRY_FMT and G_FMT after the relock: as before)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4289 ms, 238 frames
+    | stream: running 1 live 0 input_restarts 10 input_stops 4 input_holds 5 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 2 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 499 frames 497 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=497 event_ms=4289 events=1 last_event_ms=4289 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9293 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-streaming             PASS (continue: fmt=YUYV 1920x1080 frames=497 event_ms=4289 events=1 last_event_ms=4289 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9293 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-streaming-black       PASS (last frame: 100.00 % limited-range black)
+RESULT loss-streaming-colorimetry PASS (G_FMT while the YUYV stream ran unlocked: sRGB/sRGB/Rec. 709/Limited Range; while locked: sRGB/sRGB/Rec. 709/Limited Range)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5567 ms, 316 frames
+    | stream: running 1 live 1 input_restarts 11 input_stops 4 input_holds 5 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 615 frames 613 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=613 event_ms=5567 events=1 last_event_ms=5567 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10569 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-return-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=613 event_ms=5567 events=1 last_event_ms=5567 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10569 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-return-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4356 ms, 242 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 9774 ms, 515 frames
+    | stream: running 1 live 1 input_restarts 13 input_stops 4 input_holds 5 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 1234 frames 1231 skipped 3 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=1231 event_ms=4356 events=2 last_event_ms=9774 frames_after_event=989 frames_after_last_event=716 last_frame_ms=21771 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-off-on-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=1231 event_ms=4356 events=2 last_event_ms=9774 frames_after_event=989 frames_after_last_event=716 last_frame_ms=21771 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-off-on-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+
+## audio
+  it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 28570 entries 20 losses 19 releases 20
+  it6805: audio errors 0 events 0 (audio logic reset skipped)
+RESULT audio-capture              PASS (RESULT audio frames=480480 secs=10.000 rate=48001.449 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480480 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (48001.449 Hz against CLOCK_MONOTONIC, +30.2 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.01 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.07 ms of it; 1001 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 1209 silent 208 filled 0 pauses 0 starts 2 restarts 0 stops 2 stop_missing 0
+  order 0 bad_done 0 stale 0 late 0 interval_us 9907..10078
+
+## compliance
+  Total for gc573 device /dev/v4l/by-path/pci-0000:07:00.0-video-index0: 55, Succeeded: 55, Failed: 0, Warnings: 0
+RESULT compliance                 PASS (Total for gc573 device /dev/v4l/by-path/pci-0000:07:00.0-video-index0: 55, Succeeded: 55, Failed: 0, Warnings: 0)
+
+## obssoak
+  recording to /home/brian/gc573-rec (828 GB free); rotation sleep,rate-59.94,edid-same,rate-60,res-720p,edid-new,sleep,res-1080p,edid-default
+RESULT obssoak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880480 secs=59.998 rate=48001.251 xruns=0 restarts=0 )
+RESULT obssoak-driver-first-duration PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obssoak-driver-first-xruns PASS (0 overruns)
+RESULT obssoak-driver-first-gaps  PASS (per-second medians move <= 0.02 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.11 ms of it; 6001 reads)
+RESULT obssoak-driver-first-video PASS (3596 frames, 0 sequence gaps, interval 16.667 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-first-avsync PASS (59 flashes over 1.0 min: offset +35.663 ms (std 0.024, min +35.607, max +35.690), drift -0.0126 ms/min = -0.012 ms over the run, residual <= 0.053 ms)
+  INFO counter   3596 frames, 4 unreadable; steps from one frame to the next (step: count) 0: 9, 1: 3569, 2: 9; 9 repeated, 9 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 59 captured once, 0 twice, 0 more often, 1 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +39.34 ms, min +35.61, max +52.35, std 6.91; frames from the most common (count): +0: 46, +1: 13
+  OBS started minimized to the tray (pid 1037489, profile gc573, recording format hybrid_mp4; 0 windows visible)
+  OBS sources: GC573 video on /dev/v4l/by-path/pci-0000:07:00.0-video-index0, GC573 audio on hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0, scene 'Scene', canvas 1920x1080 at 60/1 fps; no other inputs
+  obssoak: 900 s from 07:28:10 UTC, a change every 100 s
+RESULT obssoak-obsev-bridge       PASS (reopens in the changes: res-1080p x1, res-720p x1; res-* changes without one: none; in changes of the same timings: none; not adopted at first: 0; outside the changes: 0)
+RESULT obssoak-obsev-recoveries   PASS (0 times the picture was not good outside a change's own recovery)
+RESULT obssoak-obsev-sleep        PASS (2/2 recovered; TTFGF min 1.68 s, max 1.70 s)
+RESULT obssoak-obsev-rate-59.94   PASS (1/1 recovered; TTFGF min 2.15 s, max 2.15 s)
+RESULT obssoak-obsev-rate-60      PASS (1/1 recovered; TTFGF min 2.04 s, max 2.04 s)
+RESULT obssoak-obsev-res-720p     PASS (1/1 recovered; TTFGF min 4.12 s, max 4.12 s)
+RESULT obssoak-obsev-res-1080p    PASS (1/1 recovered; TTFGF min 4.16 s, max 4.16 s)
+RESULT obssoak-obsev-edid-same    PASS (1/1 recovered; TTFGF min 0.03 s, max 0.03 s)
+RESULT obssoak-obsev-edid-new     PASS (1/1 recovered; TTFGF min 3.33 s, max 3.33 s)
+  EVENTS /tmp/claude-1000/-home-brian/1eddbe94-e70f-45af-8d11-3097649c39bc/scratchpad/final-wt/tests/logs/20261126-072203_6.8.0-151-generic_live-events.log
+  BASELINE good (good +0.06..+0.19)
+  RECDIR /home/brian/gc573-rec (OBS had /tmp/claude-1000/-home-brian/1eddbe94-e70f-45af-8d11-3097649c39bc/scratchpad/obsrec)
+  RECFORMAT hybrid_mp4; muxer: in OBS
+  MARK 101.0
+  EVENT sleep recovered ttfgf=1.70 (off: bad +0.28..+0.86, black +1.05..+7.97; on: black +1.13..+1.60, good +1.70..+1.82; source 1920x1080) bridge: no reopen
+  MARK 200.2
+  EVENT rate-59.94 recovered ttfgf=2.15 (bad +1.24..+1.24, black +1.43..+2.07, good +2.15..+2.23; source 1920x1080) bridge: no reopen
+  MARK 301.7
+  EVENT edid-same recovered ttfgf=0.03 (no change: good +0.03..+0.11; source 1920x1080) bridge: no reopen
+  MARK 400.7
+  EVENT rate-60 recovered ttfgf=2.04 (bad +1.20..+1.20, black +1.38..+1.96, good +2.04..+2.12; source 1920x1080) bridge: no reopen
+  MARK 501.9
+  EVENT res-720p recovered ttfgf=4.12 (after the bridge's reopen: black +1.35..+4.07, good +4.12..+4.16; source 1280x720) bridge: reopen at +4.07 s
+  MARK 601.2
+  EVENT edid-new recovered ttfgf=3.33 (hot-plug: black +2.90..+3.26, good +3.33..+3.40; source 1280x720) bridge: no reopen
+  MARK 701.8
+  EVENT sleep recovered ttfgf=1.68 (off: bad +0.17..+0.96, black +1.04..+7.98; on: black +1.14..+1.65, good +1.68..+1.72; source 1280x720) bridge: no reopen
+  MARK 800.7
+  EVENT res-1080p recovered ttfgf=4.16 (after the bridge's reopen: black +1.29..+4.11, good +4.16..+4.24; source 1920x1080) bridge: reopen at +4.01 s
+  RECORDING /home/brian/gc573-rec/2026-11-26 00-28-10.mp4
+  SHOTS {'good': 421, 'bad': 6}
+  screenshots that were not good: 6 (SHOT lines in the event log's run)
+RESULT obssoak-driver-last-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.988 rate=48001.583 xruns=0 restarts=0 )
+RESULT obssoak-driver-last-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT obssoak-driver-last-xruns  PASS (0 overruns)
+RESULT obssoak-driver-last-gaps   PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.14 ms of it; 6000 reads)
+RESULT obssoak-driver-last-video  PASS (3597 frames, 0 sequence gaps, interval 16.666 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-last-avsync PASS (60 flashes over 1.0 min: offset +31.986 ms (std 0.025, min +31.936, max +32.012), drift -0.0045 ms/min = -0.004 ms over the run, residual <= 0.051 ms)
+  INFO counter   3597 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 3595, 2: 1; 0 repeated, 1 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +30.87 ms, min +15.28, max +32.01, std 4.16; frames from the most common (count): -1: 4, +0: 56
+  recording: 663M /home/brian/gc573-rec/2026-11-26 00-28-10.mp4
+RESULT obssoak-obsrec-image       PASS (30 samples every 30.0 s over 900 s at 1920x1080, the counter's progress over 30 frames each: first and last samples live, never two in a row not; in order: live x20, jumpy x1, live x9; max error in the pattern frames 5 (limit 8); 10 read as 1280x720 stretched)
+  INFO obsrec-counter steps from one recorded frame to the next (step: count): 0: 4, 1: 347, 2: 4
+RESULT obssoak-rec-duration       PASS (900.1 s of video, 900.1 s of audio)
+RESULT obssoak-rec-video          PASS (54006 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obssoak-rec-flashes        PASS (854 flash frames, 858 burst onsets, 848 paired within 0.5 s; unpaired at 507.1, 605.8, 712.7, 805.1, 806.1, 900.0 s)
+RESULT obssoak-rec-audio-timeline PASS (9 source sessions: the bursts' period against the media period -0.01 to +0.01 ppm (0: OBS lays the samples back to back); OBS's own resets at its 70 ms threshold: 0)
+RESULT obssoak-rec-segments       PASS (9 segments between changes, each paired again, with at least every other second's flash paired from there and a mean offset from -45 to +125 ms (BT.1359); paired again after a change: median +5.88 s, max +11.88 s from the change)
+RESULT obssoak-rec-offset         SKIP (burst onset - flash frame: mean +58.42 ms, std 10.75, min +1.63, max +88.50 over 848 flashes (positive: audio late); over all segments)
+RESULT obssoak-rec-drift          SKIP (+1.620 ms/min = +24.27 ms over 15.0 min (one frame period: 16.7 ms); means per minute +48.9 +46.5 +46.6 +53.4 +56.3 +56.8 +57.2 +51.0 +60.8 +70.2 +58.8 +63.4 +76.2 +66.1 +64.1; the source restarts at each change)
+  SEGMENT 0 0.0 101.0 flashes=101 bursts=101 back=+0.28 pairs_after=101 offset=+49.2 ok
+  SEGMENT 1 101.0 200.2 flashes=85 bursts=88 back=+11.27 pairs_after=85 offset=+46.4 ok
+  SEGMENT 2 200.2 301.7 flashes=98 bursts=99 back=+3.43 pairs_after=97 offset=+55.4 ok
+  SEGMENT 3 301.7 400.7 flashes=99 bursts=99 back=+0.02 pairs_after=99 offset=+58.0 ok
+  SEGMENT 4 400.7 501.9 flashes=99 bursts=99 back=+3.20 pairs_after=98 offset=+51.0 ok
+  SEGMENT 5 501.9 601.2 flashes=95 bursts=94 back=+6.22 pairs_after=93 offset=+69.1 ok
+  SEGMENT 6 601.2 701.8 flashes=97 bursts=96 back=+5.53 pairs_after=95 offset=+60.0 ok
+  SEGMENT 7 701.8 800.7 flashes=87 bursts=88 back=+11.88 pairs_after=85 offset=+76.8 ok
+  SEGMENT 8 800.7 900.1 flashes=93 bursts=94 back=+6.37 pairs_after=89 offset=+61.6 ok
+  AUDIO 0 P=1.000 bursts=97 ppm=+0.00 resets=- other=-
+  AUDIO 1 P=1.000 bursts=83 ppm=-0.00 resets=- other=-
+  AUDIO 2 P=1.001 bursts=85 ppm=+0.00 resets=- other=-
+  AUDIO 3 P=1.001 bursts=83 ppm=-0.01 resets=- other=-
+  AUDIO 4 P=1.000 bursts=85 ppm=+0.00 resets=- other=-
+  AUDIO 5 P=1.001 bursts=83 ppm=-0.00 resets=- other=-
+  AUDIO 6 P=1.001 bursts=84 ppm=+0.01 resets=- other=-
+  AUDIO 7 P=1.001 bursts=82 ppm=+0.00 resets=- other=-
+  AUDIO 8 P=1.000 bursts=83 ppm=-0.00 resets=- other=-
+    offset in frame periods (count): +0: 1, +1: 4, +2: 37, +3: 465, +4: 275, +5: 66
+RESULT obssoak-obs-own            PASS (OBS - driver in the same source session: first segment +9.9 ms (OBS +49.2, driver +39.34), last +30.7 ms (OBS +61.6, driver +30.87); both within OBS's bound, a frame period early to its 70 ms timestamp smoothing plus a frame period late, -16.7 to +86.7 ms)
+  INFO memory-kmalloc live objects in the kmalloc caches: 225818 kB before OBS started, 226542 kB after OBS exited and the recording was deleted, +724 kB (every program: the random kmalloc caches cannot be told apart); SUnreclaim 446112 -> 449984 kB (+3872); slab caches that moved by 128 kB or more (kB): radix_tree_node +471, nvidia_stack_cache +708, kmalloc-rnd-10-4k +132, kmalloc-rnd-08-512 +653, buffer_head +235, biovec-max +160, bio-1072 +159, kmalloc-rnd-12-8k -184
+RESULT obssoak-memory             PASS (the driver's own buffer memory, debugfs video "mem": before OBS bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0; after OBS exited bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+  mem: 1795678090 62139956 1717608 450848 186576 24384 292852 94 955 6964504:84042080 78 78 0
+  mem: 1795678633 61353536 1734260 455424 187296 24384 1317528 89872 1224 7120524:85177882 930 930 0
+RESULT obssoak-cpu                PASS (report only: OBS 165.3 % of one CPU, the IRQ thread 0.49 %, the host 11.7 % of its CPUs, over 906 s)
+  INFO memory while recording, from minute 5 to the end: SUnreclaim +1700 kB (the page cache of the recording counts: memcg vectors, about 600 x 512 bytes per 100 MiB written), Slab +15500 kB, VmallocUsed -432 kB, MemAvailable +839376 kB, OBS RSS -882832 kB
+RESULT obssoak-driver-counters    PASS (over the soak, 17 samples: v_input_stops +2 a_silent +4061 v_input_restarts +12 v_input_holds +2 it_losses +7 it_releases +8 it_entries +8 h_runs +2870 h_fpga_rejects +19 sp_pll_recoveries +1 a_pauses +8; kernel log: 1586 lines, 1586 of the driver, 0 bad)
+  obs: 62 select timeouts, 2 dequeue failures, 2 device opens
+  obs log: 00:28:10.941: ==== Recording Start ===============================================
+  obs log: 00:43:11.906: Output 'simple_file_output': Total frames output: 54008
+  obs log: 00:43:11.906: Output 'simple_file_output': Total drawn frames: 53771 (54058 attempted)
+  obs log: 00:43:11.906: Output 'simple_file_output': Number of lagged frames due to rendering lag/stalls: 287 (0.5%)
+  obs log: 00:43:11.907: ==== Recording Stop ================================================
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 1586 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT lock-1080p60               PASS (1415 ms from output on)
+RESULT lock-1080p59.94            PASS (1793 ms from the mode switch)
+RESULT lock-power-present         PASS (power_present: 1)
+RESULT lock-event-mode-change     PASS (37788.953492: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-loss            PASS (37792.084030: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT lock-event-lock            PASS (37794.926342: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT cap-1080p60-timings        PASS (1920x1080 at 60.0000 Hz in the DV timings, delivered at 60.0000 Hz; expected 1920x1080 at 60)
+RESULT cap-1080p60-interval       PASS (G_PARM 1/60, nominal 1/60)
+RESULT cap-1080p60-YUYV           PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-YUYV-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.599 max 16.728)
+RESULT cap-1080p60-UYVY           PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-UYVY-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.590 max 16.736)
+RESULT cap-1080p60-NV12           PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-NV12-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.562 max 16.778)
+RESULT cap-1080p60-YV12           PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-YV12-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.581 max 16.755)
+RESULT cap-1080p60-BGR3           PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-BGR3-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.595 max 16.733)
+RESULT cap-1080p60-XR24           PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p60-XR24-cadence   PASS (mean 16.6660 ms, expected 16.6667, -0.0040 %, min 16.593 max 16.739)
+RESULT cap-1080p60-first-frame    PASS (skipped 1 in 6 of 6 streams)
+RESULT cap-1080p59.94-timings     PASS (1920x1080 at 59.9401 Hz in the DV timings, delivered at 59.9401 Hz; expected 1920x1080 at 59.94)
+RESULT cap-1080p59.94-interval    PASS (G_PARM 1001/60000, nominal 1001/60000)
+RESULT cap-1080p59.94-YUYV        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-YUYV-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.622 max 16.748)
+RESULT cap-1080p59.94-UYVY        PASS (fmt=UYVY 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-UYVY-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.615 max 16.752)
+RESULT cap-1080p59.94-NV12        PASS (fmt=NV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-NV12-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.589 max 16.776)
+RESULT cap-1080p59.94-YV12        PASS (fmt=YV12 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-YV12-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.593 max 16.773)
+RESULT cap-1080p59.94-BGR3        PASS (fmt=BGR3 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-BGR3-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.612 max 16.757)
+RESULT cap-1080p59.94-XR24        PASS (fmt=XR24 1920x1080 enc=709 max_err_R=1.00 max_err_G=1.00 max_err_B=1.00; frames 600 gaps 0 err 0 distinct 1)
+RESULT cap-1080p59.94-XR24-cadence PASS (mean 16.6830 ms, expected 16.6833, -0.0019 %, min 16.612 max 16.753)
+RESULT cap-1080p59.94-first-frame PASS (skipped 1 in 6 of 6 streams)
+RESULT change-1080p60-to-720p60   PASS (error: fmt=YUYV 1920x1080 frames=288 event_ms=4490 events=2 last_event_ms=5924 frames_after_event=38 frames_after_last_event=0 last_frame_ms=5810 dqbuf_error_ms=6933 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1280x720 frames=60)
+RESULT change-720p60-to-1080p60   PASS (error: fmt=YUYV 1280x720 frames=288 event_ms=4509 events=2 last_event_ms=5930 frames_after_event=37 frames_after_last_event=0 last_frame_ms=5817 dqbuf_error_ms=6974 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+RESULT change-1080p60-to-p59.94   PASS (continue: fmt=YUYV 1920x1080 frames=588 event_ms=4509 events=2 last_event_ms=6050 frames_after_event=337 frames_after_last_event=297 last_frame_ms=11061 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+RESULT change-to-720p-held        PASS (error: fmt=YUYV 1920x1080 frames=285 event_ms=4473 events=2 last_event_ms=5894 frames_after_event=37 frames_after_last_event=0 last_frame_ms=5776 dqbuf_error_ms=6916 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT change-adopted             PASS (capture without setting timings: RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.674 max=16.694 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=1 )
+RESULT blip-continue              PASS (continue: fmt=YUYV 1920x1080 frames=614 event_ms=4341 events=4 last_event_ms=7557 frames_after_event=374 frames_after_last_event=297 last_frame_ms=12570 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-other-lock            PASS (the driver locked at 1280x720 before the mode went back: timings: 1280x720p pixelclock 74250000 flags 0x296 vic 4 h 110/40/220 v 5/5/20 pol 0x3)
+RESULT blip-held                  PASS (a hold and no stop: before input_restarts 5 input_stops 3 input_holds 3; after input_restarts 8 input_stops 3 input_holds 4)
+RESULT blip-stays                 PASS (error: fmt=YUYV 1920x1080 frames=288 event_ms=4530 events=2 last_event_ms=5952 frames_after_event=39 frames_after_last_event=0 last_frame_ms=5833 dqbuf_error_ms=6977 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-hold-ms               PASS (DQBUF error 1025 ms after the last SOURCE_CHANGE, the lock at 720p; hold 0.9-1.6 s)
+RESULT loss-idle-event            PASS (38012.325959: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+RESULT loss-idle-colorimetry      PASS (TRY_FMT and G_FMT while unlocked: as while locked)
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (38016.754330: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (14 ms)
+RESULT loss-relock-colorimetry    PASS (TRY_FMT and G_FMT after the relock: as before)
+RESULT loss-streaming             PASS (continue: fmt=YUYV 1920x1080 frames=497 event_ms=4289 events=1 last_event_ms=4289 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9293 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-streaming-black       PASS (last frame: 100.00 % limited-range black)
+RESULT loss-streaming-colorimetry PASS (G_FMT while the YUYV stream ran unlocked: sRGB/sRGB/Rec. 709/Limited Range; while locked: sRGB/sRGB/Rec. 709/Limited Range)
+RESULT loss-return-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=613 event_ms=5567 events=1 last_event_ms=5567 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10569 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-return-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+RESULT loss-off-on-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=1231 event_ms=4356 events=2 last_event_ms=9774 frames_after_event=989 frames_after_last_event=716 last_frame_ms=21771 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-off-on-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+RESULT audio-capture              PASS (RESULT audio frames=480480 secs=10.000 rate=48001.449 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480480 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (48001.449 Hz against CLOCK_MONOTONIC, +30.2 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.01 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.07 ms of it; 1001 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT compliance                 PASS (Total for gc573 device /dev/v4l/by-path/pci-0000:07:00.0-video-index0: 55, Succeeded: 55, Failed: 0, Warnings: 0)
+RESULT obssoak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880480 secs=59.998 rate=48001.251 xruns=0 restarts=0 )
+RESULT obssoak-driver-first-duration PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obssoak-driver-first-xruns PASS (0 overruns)
+RESULT obssoak-driver-first-gaps  PASS (per-second medians move <= 0.02 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.11 ms of it; 6001 reads)
+RESULT obssoak-driver-first-video PASS (3596 frames, 0 sequence gaps, interval 16.667 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-first-avsync PASS (59 flashes over 1.0 min: offset +35.663 ms (std 0.024, min +35.607, max +35.690), drift -0.0126 ms/min = -0.012 ms over the run, residual <= 0.053 ms)
+RESULT obssoak-obsev-bridge       PASS (reopens in the changes: res-1080p x1, res-720p x1; res-* changes without one: none; in changes of the same timings: none; not adopted at first: 0; outside the changes: 0)
+RESULT obssoak-obsev-recoveries   PASS (0 times the picture was not good outside a change's own recovery)
+RESULT obssoak-obsev-sleep        PASS (2/2 recovered; TTFGF min 1.68 s, max 1.70 s)
+RESULT obssoak-obsev-rate-59.94   PASS (1/1 recovered; TTFGF min 2.15 s, max 2.15 s)
+RESULT obssoak-obsev-rate-60      PASS (1/1 recovered; TTFGF min 2.04 s, max 2.04 s)
+RESULT obssoak-obsev-res-720p     PASS (1/1 recovered; TTFGF min 4.12 s, max 4.12 s)
+RESULT obssoak-obsev-res-1080p    PASS (1/1 recovered; TTFGF min 4.16 s, max 4.16 s)
+RESULT obssoak-obsev-edid-same    PASS (1/1 recovered; TTFGF min 0.03 s, max 0.03 s)
+RESULT obssoak-obsev-edid-new     PASS (1/1 recovered; TTFGF min 3.33 s, max 3.33 s)
+RESULT obssoak-driver-last-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.988 rate=48001.583 xruns=0 restarts=0 )
+RESULT obssoak-driver-last-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT obssoak-driver-last-xruns  PASS (0 overruns)
+RESULT obssoak-driver-last-gaps   PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.14 ms of it; 6000 reads)
+RESULT obssoak-driver-last-video  PASS (3597 frames, 0 sequence gaps, interval 16.666 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-last-avsync PASS (60 flashes over 1.0 min: offset +31.986 ms (std 0.025, min +31.936, max +32.012), drift -0.0045 ms/min = -0.004 ms over the run, residual <= 0.051 ms)
+RESULT obssoak-obsrec-image       PASS (30 samples every 30.0 s over 900 s at 1920x1080, the counter's progress over 30 frames each: first and last samples live, never two in a row not; in order: live x20, jumpy x1, live x9; max error in the pattern frames 5 (limit 8); 10 read as 1280x720 stretched)
+RESULT obssoak-rec-duration       PASS (900.1 s of video, 900.1 s of audio)
+RESULT obssoak-rec-video          PASS (54006 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obssoak-rec-flashes        PASS (854 flash frames, 858 burst onsets, 848 paired within 0.5 s; unpaired at 507.1, 605.8, 712.7, 805.1, 806.1, 900.0 s)
+RESULT obssoak-rec-audio-timeline PASS (9 source sessions: the bursts' period against the media period -0.01 to +0.01 ppm (0: OBS lays the samples back to back); OBS's own resets at its 70 ms threshold: 0)
+RESULT obssoak-rec-segments       PASS (9 segments between changes, each paired again, with at least every other second's flash paired from there and a mean offset from -45 to +125 ms (BT.1359); paired again after a change: median +5.88 s, max +11.88 s from the change)
+RESULT obssoak-rec-offset         SKIP (burst onset - flash frame: mean +58.42 ms, std 10.75, min +1.63, max +88.50 over 848 flashes (positive: audio late); over all segments)
+RESULT obssoak-rec-drift          SKIP (+1.620 ms/min = +24.27 ms over 15.0 min (one frame period: 16.7 ms); means per minute +48.9 +46.5 +46.6 +53.4 +56.3 +56.8 +57.2 +51.0 +60.8 +70.2 +58.8 +63.4 +76.2 +66.1 +64.1; the source restarts at each change)
+RESULT obssoak-obs-own            PASS (OBS - driver in the same source session: first segment +9.9 ms (OBS +49.2, driver +39.34), last +30.7 ms (OBS +61.6, driver +30.87); both within OBS's bound, a frame period early to its 70 ms timestamp smoothing plus a frame period late, -16.7 to +86.7 ms)
+RESULT obssoak-memory             PASS (the driver's own buffer memory, debugfs video "mem": before OBS bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0; after OBS exited bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT obssoak-cpu                PASS (report only: OBS 165.3 % of one CPU, the IRQ thread 0.49 %, the host 11.7 % of its CPUs, over 906 s)
+RESULT obssoak-driver-counters    PASS (over the soak, 17 samples: v_input_stops +2 a_silent +4061 v_input_restarts +12 v_input_holds +2 it_losses +7 it_releases +8 it_entries +8 h_runs +2870 h_fpga_rejects +19 sp_pll_recoveries +1 a_pauses +8; kernel log: 1586 lines, 1586 of the driver, 0 bad)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=102 fail=0 skip=3
