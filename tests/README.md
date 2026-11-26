@@ -116,6 +116,27 @@ drawn) without writing its configuration, and `tests/obs-check.py verify`
 checks the sources (setting them up would make OBS open every `/dev/video*`
 node, cameras too). `GC573_OBS_BUFFERING` defaults to 0 there.
 
+Roku mode (`GC573_SOURCE=roku GC573_LOCAL=1`, M6): the source is the Roku
+through the HDCP filter. `tools/roku/ecp.py` drives it, and it plays
+`tools/roku/pattern-video.sh`'s file, served by `tools/roku/serve.py` for the
+run only. `DVI-D-0` is never touched. Actions on the Roku need
+`GC573_ROKU_GO=1`; without it only `rokulock`, `rokucompliance`, `q25` and
+`q25back` run. Steps:
+- `rokulock`: the lock, its timings and colour;
+- `rokucompliance`;
+- `rokucapture`: `live-av.py --exact` on the pattern video, the bursts'
+  channels, the A/V offset, and the colour patches against BT.709 limited
+  range;
+- `rokuobs`: OBS screenshots, meters and a recording, with
+  `tests/obs-events.py` in its Roku mode;
+- `rokusleep`, `rokumodes` (EDID re-sets: another serial, 720p only, the
+  default) and `rokureboot` (`GC573_ROKU_REBOOT_KEYS`);
+- `rokuobssoak`: obssoak with the Roku's changes;
+- `q25` (the Roku without the filter: open question 25) and `q25back`.
+
+Details are in `live.sh`'s header. The privacy rules are in AGENTS.md: no
+identifiers, no pictures of what the Roku shows.
+
 | Step | Checks |
 |---|---|
 | `bringup` | load; the host sees the output connected; its EDID (`xrandr --verbose`) equals `VIDIOC_G_EDID` byte for byte; `edid-decode --check` PASS |
