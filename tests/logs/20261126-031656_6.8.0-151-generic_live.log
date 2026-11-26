@@ -1,0 +1,10 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 03:16:56 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     1a9f8d9ef6c9-dirty
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   obssoak
+module:  srcversion 8FC633C76E1A9301322AF83 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 292FD1A2D4D0C4210A150E8, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## obssoak
+  recording to /var/tmp/gc573-rec (846 GB free); rotation res-1080p,edid-new,res-720p,edid-default
