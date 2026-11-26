@@ -145,11 +145,11 @@ The card is a plain V4L2 video device and ALSA sound card, so applications need 
 | Application | Picture and sound | Signal lost and back, EDID set again, 60 ↔ 59.94 Hz | Another resolution |
 |---|---|---|---|
 | ffmpeg 6.1 | Every frame, the right picture and sound. A/V within 1 ms of the driver's | Carries on | Stops taking frames, without an error: start it again |
-| VLC 3.0 | The right picture and sound. A/V 14 ms later than the driver's. Recording 1080p60 with lossless x264, it dropped up to 36 of 1490 frames in its own encoder; the driver delivered them all | Carries on | Stops taking frames: start it again |
+| VLC 3.0 | The right picture and sound. A/V 14 ms later than the driver's. Recording 1080p60 with lossless x264, it lost up to 36 of 1490 frames after taking them from the driver. The driver delivered them all, and VLC always had a buffer queued | Carries on | Stops taking frames: start it again |
 
-Neither application listens to the driver's source-change event. At another resolution or frame rate the driver ends the stream, because the format must not change under an application that is streaming (see *When the source changes*), so start the application again.
+Neither application listens to the driver's source-change event. At another resolution or frame rate (60 ↔ 59.94 Hz aside), the driver ends the stream, because the format must not change under an application that is streaming (see *When the source changes* under *Use with OBS*). Start the application again.
 
-Name the devices explicitly. Then nothing else is opened, and the names stay put (see *Device names that stay put*):
+Name the devices explicitly. Then nothing else is opened, and the names stay put (see *Device names that stay put* under *Use with OBS*):
 - ffmpeg: `ffmpeg -f v4l2 -ts mono2abs -input_format yuyv422 -video_size 1920x1080 -framerate 60 -i /dev/v4l/by-path/pci-<address>-video-index0 -f alsa -channels 2 -sample_rate 48000 -i hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0 ...`. With `-ts mono2abs` the picture and the sound share a clock.
 - VLC: `cvlc "v4l2:///dev/videoN" --v4l2-dev=/dev/videoN --v4l2-chroma=YUYV --v4l2-width=1920 --v4l2-height=1080 --v4l2-fps=60 --input-slave="alsa://hw:CARD=/dev/snd/by-path/pci-<address>,DEV=0" --sout ...`.
   - Use the `/dev/videoN` node that the by-path name points to (`readlink -f /dev/v4l/by-path/pci-<address>-video-index0`). VLC takes everything after `v4l2://` up to the first `:` as the device, and the by-path name has colons in it.
