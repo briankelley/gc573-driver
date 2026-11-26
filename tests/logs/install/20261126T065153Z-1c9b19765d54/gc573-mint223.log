@@ -1,0 +1,36 @@
+vm: gc573-mint223  ref: 1c9b19765d54  date: 2026-11-26T06:57:32Z
+distro: Linux Mint 22.3
+running: 6.14.0-37-generic
+kernels with headers: 6.14.0-37-generic
+=== headers-missing
+install.sh: no headers for the running kernel 6.14.0-37-generic (/lib/modules/6.14.0-37-generic/build). Install them with: sudo apt install linux-headers-6.14.0-37-generic, then run this again
+RESULT	headers-missing	PASS	exit 1; Install them with: sudo apt install linux-headers-6.14.0-37-generic; nothing installed
+=== dkms-missing
+install.sh: dkms is not installed. Install it with: sudo apt install dkms
+RESULT	dkms-missing	PASS	exit 1; Install it with: sudo apt install dkms
+=== install
+building gc573 0.1 for 6.14.0-37-generic with DKMS (this takes a minute)
+installed: /lib/modules/6.14.0-37-generic/updates/dkms/gc573.ko.zst
+no GC573 card found: the driver loads by itself once the card is present
+gc573/0.1, 6.14.0-37-generic, x86_64: installed
+RESULT	install	PASS	installed for 1 of 1 kernels with headers: /lib/modules/6.14.0-37-generic/updates/dkms/gc573.ko.zst
+RESULT	install-noload	PASS	not loaded: no card
+RESULT	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/6.14.0-37-generic/updates/dkms/gc573.ko.zst
+=== autoinstall
+RESULT	autoinstall	SKIP	no second kernel with headers, or no Debian-style kernel hook
+running: 6.14.0-37-generic
+=== reboot
+RESULT	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+=== modprobe
+gc573                 176128  0
+v4l2_dv_timings        40960  1 gc573
+videobuf2_v4l2         36864  1 gc573
+videobuf2_common       86016  2 videobuf2_v4l2,gc573
+snd_pcm               192512  1 gc573
+videodev              360448  2 videobuf2_v4l2,gc573
+snd                   143360  8 snd_seq,snd_seq_device,snd_timer,gc573,snd_pcm,snd_rawmidi
+RESULT	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+=== uninstall
+removing gc573 0.1 from DKMS (all kernels)
+done
+RESULT	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing
