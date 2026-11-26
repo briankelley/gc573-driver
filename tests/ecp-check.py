@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0
-"""Offline check of tools/roku/ecp.py: survey (--watch, --until, --model),
+"""Offline check of tools/roku/ecp.py: survey (--watch, --until, --model,
+--saved: the saved Roku alone, no SSDP),
 the --model target, discover --save --model --identified, save-state and
 restore-state, stop-ours, and the gates on actions (the go; a saved Roku
 identified as the cabled one; its state saved before the first action).
@@ -32,6 +33,7 @@ for v in ('GC573_ROKU', 'GC573_ROKU_GO', 'GC573_EVENT_LOG'):
     os.environ.pop(v, None)
 T0 = time.monotonic()
 LOG = []
+GETS = []
 ROKUS = {
     '127.0.0.1': dict(model='4850X', power='PowerOn', ecpm='enabled', app='', after720=4.0,
                       plugin='dev', mstate='play'),
@@ -49,6 +51,7 @@ class H(http.server.BaseHTTPRequestHandler):
         return ROKUS[self.server.server_address[0]]
 
     def do_GET(self):
+        GETS.append(self.server.server_address[0])
         r = self.r()
         if self.path == '/query/device-info':
             ui = '720p' if r['after720'] is not None and time.monotonic() - T0 > r['after720'] else '1080p'
@@ -266,6 +269,18 @@ ROKUS['127.0.0.1']['mstate'] = 'close'
 LOG.clear()
 rc, out = run(lambda: print(ecp.stop_ours('user-app')))
 check('user-app-stop-idle', LOG == [] and 'not playing' in out, repr(out))
+# survey --saved: the saved Roku's device-info alone, no SSDP
+os.environ.pop('GC573_ROKU', None)
+ecp.save_address('127.0.0.1', 'user')
+ssdp_calls = []
+ssdp_was = ecp.ssdp
+ecp.ssdp = lambda timeout=3.0: ssdp_calls.append(1) or list(ROKUS)
+GETS.clear()
+sys.argv = ['ecp.py', 'survey', '--saved', '--watch', '3', '--until', 'ui-resolution=720p']
+rc, out = run(ecp.main)
+check('survey-saved', rc == 0 and 'MATCH 4850X' in out and set(GETS) == {'127.0.0.1'} and not ssdp_calls
+      and '127.0.0' not in out, repr((out.splitlines()[-1:], sorted(set(GETS)), len(ssdp_calls))))
+ecp.ssdp = ssdp_was
 evlog = open(os.environ['GC573_EVENT_LOG']).read()
 check('event-log-private', '127.0.0' not in evlog and '192.0.2.9' not in evlog and 'launch 12' not in evlog
       and '/12' not in evlog, '')

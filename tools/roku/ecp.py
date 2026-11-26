@@ -51,12 +51,15 @@ Usage:
   ecp.py discover [--save [--pick N | --model M]] [--timeout S]
                                find Rokus by SSDP; --save keeps one's
                                address (--model: the one of model number M)
-  ecp.py survey [--watch S [--until KEY=VALUE [--model M]]]
+  ecp.py survey [--saved] [--watch S [--until KEY=VALUE [--model M]]]
                                every Roku's model, software, power mode,
                                ui-resolution and ECP setting; --watch: every
                                2 s for S s, a line at each change, until a
                                Roku (of model M) has device-info KEY=VALUE
-                               (MATCH, exit 0; else NO MATCH, exit 1)
+                               (MATCH, exit 0; else NO MATCH, exit 1);
+                               --saved: the saved Roku's alone (GC573_ROKU
+                               or the config), no SSDP: nothing reaches any
+                               other Roku
   ecp.py save-state [--file F] the foreground app, the power mode and the
                                model, in F (~/.config/gc573/roku-state,
                                0600); a file that is there already is kept
@@ -481,6 +484,8 @@ def main():
     sv.add_argument('--watch', type=float, default=0)
     sv.add_argument('--until', default='', help='KEY=VALUE of device-info')
     sv.add_argument('--model', default='')
+    sv.add_argument('--saved', action='store_true',
+                    help='the saved Roku alone, without SSDP')
     sv.add_argument('--timeout', type=float, default=3.0)
     for name in ('save-state', 'restore-state'):
         sub.add_parser(name).add_argument('--file', default=STATE)
@@ -504,8 +509,11 @@ def main():
     TARGET_MODEL = a.target
     try:
         if a.cmd == 'survey':
-            ev(f'discover (SSDP), then device-info'
-               f'{f" every 2 s for {a.watch:.0f} s" if a.watch else ""}')
+            every = f' every 2 s for {a.watch:.0f} s' if a.watch else ''
+            if a.saved:
+                ev(f'query device-info of the saved Roku{every}')
+                return survey([address()], a.watch, a.until, a.model)
+            ev(f'discover (SSDP), then device-info{every}')
             found = ssdp(a.timeout)
             if not found:
                 print('no Roku answered (ECP off, another subnet, or '
