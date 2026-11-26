@@ -3018,7 +3018,7 @@ step_rokuwhichkey() {
 	sed 's/^/  /' <<< "$out"
 	m=$(grep -E '^[^ :]+: .*, PowerOn, ' <<< "$out" | cut -d: -f1)
 	[ -n "$m" ] && [ "$(grep -c . <<< "$m")" = 1 ] ||
-		{ result roku-which-key SKIP "(not exactly one Roku in PowerOn: ${m:-none})"; return; }
+		{ result roku-which-key SKIP "(not exactly one Roku in PowerOn: $(paste -sd, - <<< "${m:-none}" | sed 's/,/, /g'))"; return; }
 	locked || { result roku-which-key SKIP "(the card has no input: $(roku_reported); with the $m the one that is on, the cabled Roku sends nothing)"; return; }
 	f=$W/which
 	for i in a b; do
