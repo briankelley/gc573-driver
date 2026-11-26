@@ -2699,7 +2699,11 @@ ECP=$ROOT/tools/roku/ecp.py
 ROKU_DIR=${GC573_ROKU_DIR:-$HOME/gc573-roku}
 ROKU_SECS=${GC573_ROKU_SECS:-60}
 Q25_SECS=${GC573_Q25_SECS:-180}
-ROKU_URL_FILE="" roku_serve_pid="" roku_served="" roku_played=0 roku_halt=0
+ROKU_URL_FILE="" roku_serve_pid="" roku_served="" roku_halt=0
+# The steps run in main's subshell (piped to tee), and the EXIT trap in the
+# shell above it: what the trap needs (the server's pid; whether we played)
+# goes in files in ROKU_RUN, made below in Roku mode
+ROKU_RUN=""
 ecp() { python3 "$ECP" "$@"; }
 roku_go() { [ "${GC573_ROKU_GO:-0}" = 1 ]; }
 roku_skip() { result "$1" SKIP "(needs GC573_ROKU_GO=1: it $2)"; }
@@ -2721,25 +2725,36 @@ roku_video() {
 roku_serve_start() {
 	local i
 	ROKU_URL_FILE=$(mktemp -u /tmp/gc573-roku-url.XXXXXX)
+	# not on main's stdout: tee would wait for the server to end (it logs
+	# its requests to GC573_EVENT_LOG itself)
 	python3 "$ROOT/tools/roku/serve.py" "$1" --url-file "$ROKU_URL_FILE" \
-		--secs $((OBSSOAK_SECS + 14400)) --pid $$ &
+		--secs $((OBSSOAK_SECS + 14400)) --pid $$ > /dev/null 2> "$ROKU_RUN/serve.err" &
 	roku_serve_pid=$!
+	echo "$roku_serve_pid" > "$ROKU_RUN/server.pid"
 	for i in $(seq 50); do
 		[ -s "$ROKU_URL_FILE" ] && { roku_served=$1; return 0; }
 		sleep 0.1
 	done
+	sed 's/^/  serve.py: /' "$ROKU_RUN/serve.err" 2>/dev/null | head -5
 	roku_serve_stop
 	return 1
 }
+# here or from the EXIT trap, where the server is no child of the shell
 roku_serve_stop() {
+	local pid i
 	roku_served=""
-	[ -n "$roku_serve_pid" ] || return 0
-	kill "$roku_serve_pid" 2>/dev/null
-	wait "$roku_serve_pid" 2>/dev/null
+	pid=${roku_serve_pid:-$(cat "$ROKU_RUN/server.pid" 2>/dev/null)}
 	roku_serve_pid=""
+	rm -f "$ROKU_RUN/server.pid"
+	[ -n "$pid" ] || return 0
+	kill "$pid" 2>/dev/null
+	for i in $(seq 50); do
+		kill -0 "$pid" 2>/dev/null || return 0
+		sleep 0.1
+	done
 }
 roku_play() {
-	roku_played=1
+	: > "$ROKU_RUN/played"
 	ecp play "$(cat "$ROKU_URL_FILE")" --via "${GC573_ROKU_VIA:-pol}"
 }
 # awake: a Home keypress unless its power mode is PowerOn
@@ -2778,8 +2793,8 @@ roku_source_on() {
 # user restores the Roku's state themselves
 roku_end() {
 	roku_serve_stop
-	roku_go || return 0
-	[ "$roku_played" = 0 ] || ecp stop-ours 2>&1 | sed 's/^/  /'
+	! roku_go || [ ! -e "$ROKU_RUN/played" ] || ecp stop-ours 2>&1 | sed 's/^/  /'
+	[ -z "$ROKU_RUN" ] || rm -rf "$ROKU_RUN"
 }
 roku_rate() {	# 60 or 59.94 from QUERY_DV_TIMINGS
 	local q
@@ -3210,6 +3225,7 @@ if [ "$SOURCE" = roku ]; then
 	av_on() { roku_refuse av_on; }
 	colour_set() { roku_refuse colour_set; }
 	colour_restore() { return 0; }
+	ROKU_RUN=$(mktemp -d /tmp/gc573-roku-run.XXXXXX)
 fi
 
 # ---- main ----
