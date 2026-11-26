@@ -1,0 +1,41 @@
+# GStreamer with fixed caps through rate and size changes (README, Use with other applications)
+# date: 2026-11-26 06:22:44 UTC; gc573-dev (Ubuntu 24.04, GStreamer 1.24.2, no x264enc: jpegenc), module fc53de3 (srcversion DA910DA849A1402705BBB41)
+# source: avsync.sh --pattern on DVI-D-0 (picture and audio), 1080p60, at 10 s 1080p59.94, at 20 s 720p59.94, at 30 s 1080p60;
+# the recording runs 45 s (timeout -s INT: EOS). Pass: it ran its 45 s with no ERROR, and the file has one video stream
+# in the fixed caps for the whole time, and the audio. Under tools/testsrc/guard.py, as live.sh.
+
+loaded: DA910DA849A1402705BBB41
+pipeline: gst-launch-1.0 -e v4l2src device=/dev/v4l/by-path/pci-0000:07:00.0-video-index0 ! videorate ! videoscale ! videoconvert ! video/x-raw,format=I420,width=1280,height=720,framerate=30/1 ! jpegenc ! queue ! mux. alsasrc device=hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 ! audioconvert ! audio/x-raw,format=S16LE,rate=48000,channels=2 ! queue ! mux. matroskamux name=mux ! filesink location=/tmp/gc573-gst-caps/caps.mkv
+=== 06:22:44.721 1080p59.94
+=== 06:22:54.693 720p59.94
+=== 06:23:04.700 1080p60
+=== gst ended after 45 s, rc 124 (124: ran its 45 s and stopped at the timeout's SIGINT, EOS)
+--- gst stdout (tail)
+Additional debug info:
+../sys/v4l2/gstv4l2src.c(693): gst_v4l2src_query_preferred_size (): /GstPipeline:pipeline0/GstV4l2Src:v4l2src0:
+No input source was detected - video frames invalid
+INFO:
+../sys/v4l2/gstv4l2src.c(698): gst_v4l2src_query_preferred_size (): /GstPipeline:pipeline0/GstV4l2Src:v4l2src0:
+Input source detected
+handling interrupt.
+Interrupt: Stopping pipeline ...
+EOS on shutdown enabled -- Forcing EOS on the pipeline
+Waiting for EOS...
+Got EOS from element "pipeline0".
+EOS received - stopping pipeline...
+Execution ended after 0:00:45.004992039
+Setting pipeline to NULL ...
+Freeing pipeline ...
+--- gst stderr (tail)
+--- the file
+-rw-rw-r-- 1 dev dev 97330955 Nov 26 06:23 /tmp/gc573-gst-caps/caps.mkv
+stream|index=0|codec_name=mjpeg|codec_type=video|width=1280|height=720|r_frame_rate=30/1
+stream|index=1|codec_name=pcm_s16le|codec_type=audio|sample_rate=48000|channels=2|r_frame_rate=0/0
+format|duration=44.999999
+video frames: 1350 (45 s at 30/1: about 1350)
+RESULT gst-fixed-caps PASS (ran its 45 s through 60 -> 59.94 Hz -> 720p -> 1080p60: one video stream 1280,720,30/1, 1350 frames, 44.999999 s, no ERROR)
+
+# guard and camera watch (event log)
+2026-11-26T06:23:24.364Z camwatch end run pid 3660849 gone; opens: 17 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-26T06:23:25.100Z guard ok: audio 1181 polls, longest interval 51 ms; windows: test windows created 9 (0 created outside DVI-D-0, unmapped), maps 8, maps inside DVI-D-0 8, unmapped geometries outside 0, output changes 2, breaches 0, X events 99
+2026-11-26T06:23:25.100Z guard end: run pid 3660849 gone; audio 1181 polls, longest interval 51 ms; windows: test windows created 9 (0 created outside DVI-D-0, unmapped), maps 8, maps inside DVI-D-0 8, unmapped geometries outside 0, output changes 2, breaches 0, X events 99; no breach
