@@ -81,7 +81,10 @@ gc573_names() {
 }
 
 # gc573 unloaded once nothing holds it any more: up to 5 s for its users
-# (PipeWire, after an unbind) to let go
+# (PipeWire, after an unbind) to let go. rmmod when modprobe cannot: once
+# an uninstall that could not unload gc573 has removed its files,
+# "modprobe -r" fails with "Module gc573 not found" (kmod 31), even
+# though nothing holds it
 gc573_unload_wait() {
 	local i
 	grep -q "^$NAME " /proc/modules || return 0
@@ -89,7 +92,7 @@ gc573_unload_wait() {
 		[ "$(cat "/sys/module/$NAME/refcnt" 2>/dev/null || echo 0)" = 0 ] && break
 		sleep 0.1
 	done
-	modprobe -r "$NAME" 2>/dev/null
+	modprobe -r "$NAME" 2>/dev/null || rmmod "$NAME" 2>/dev/null
 }
 
 # Take every card gc573 has away from it, and unload it. Refuses (status 1,
