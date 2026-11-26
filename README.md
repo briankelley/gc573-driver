@@ -180,7 +180,13 @@ Name the devices explicitly. Then nothing else is opened, and the names stay put
 - Audio: LPCM stereo at 48 kHz only. When the signal drops, the gap is filled with silence.
 - OBS does not follow a change of resolution or frame rate by itself: reopen the source (see *When the source changes*).
 - Unloading or reloading the driver does not look like an unplug to the source: the test PC (NVIDIA GPU) kept its output on and the card's EDID in use.
-- The driver reports a lock only once the card's own measurement of the input is valid. Once, at a boot, that measurement did not start while the source came up, and the card then shows no signal although the source is on. The kernel log says `the FPGA has no valid measurement` after about 2 s of it. Set the source's mode again (or unplug and replug the HDMI cable). The cause is open (`spec/open-questions.md`, question 40).
+- The driver reports a lock only once the card's own measurement of the input is valid. Once, at a boot, that measurement did not start while the source came up, and the card showed no signal although the source was on. The cause is open (`spec/open-questions.md`, question 40). The driver now tries to fix this by itself, and the kernel log (`sudo dmesg | grep HDMI`) shows each step:
+  - after about 2 s: `the FPGA has no valid measurement`;
+  - at about 5 s: `self-heal 1 of 3, receiver restart`, which the source does not see;
+  - 20 s later: `self-heal 2 of 3, hot-plug`, and 80 s after that `self-heal 3 of 3, hot-plug`. Each hot-plug looks to the source like an unplug and a replug, as when the EDID changes;
+  - if the card still has no measurement: `self-heal gave up`. The driver tries again only after a lock or after the source's 5 V goes away (unplug, source off).
+
+  A source whose signal the card cannot measure gets the same restart and two hot-plugs each time it is plugged in. That may be the case for an interlaced or deep-colour signal or 4K, which the driver does not support yet, and maybe for an HDCP-encrypted signal without a splitter. To turn the self-heal off until the next load: `echo N | sudo tee /sys/module/gc573/parameters/fpga_heal`. For good: `options gc573 fpga_heal=0` in a file in `/etc/modprobe.d/`. By hand, set the source's mode again or unplug and replug the HDMI cable.
 - HDCP-protected sources (consoles, streaming boxes) are untested.
 - Tested in a virtual machine with the card passed through, and on a real host (Linux Mint 22, kernel 6.8): a 2-hour OBS recording with a source change every 3 minutes, and frame-exact captures at 1080p60, 1080p59.94 and 720p59.94.
 
