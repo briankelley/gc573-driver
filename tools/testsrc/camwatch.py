@@ -6,7 +6,7 @@ microphones) must never be opened by a test. Root (fanotify), Python's
 standard library only (ctypes), notification events only: nothing is ever
 blocked or delayed.
 
-  camwatch.py --log FILE [--pid PID] [--test PATH ...] [--only-tests] [--dry-run]
+  camwatch.py --log FILE [--pid PID] [--guard] [--test PATH ...] [--only-tests] [--dry-run]
 
 Marks (fanotify FAN_OPEN, inode marks, re-made for new nodes):
 - every /dev/video*, /dev/vbi*, /dev/radio*, /dev/swradio*, /dev/v4l-subdev*,
@@ -21,24 +21,43 @@ each node for this watch at every event (a camera's open() would run).
 An inotify watch on /dev and /dev/snd marks nodes that appear later (the
 KVM switch brings a camera and takes it away).
 
-Each open is a line in FILE (UTC, ms), with the node, what it is (the
-video4linux name or the sound card's id, and ID_SERIAL_SHORT), and the
-opener's pid, comm and command line:
-  camwatch INFO    PipeWire's own (wireplumber, pipewire, pipewire-pulse),
-                   or udev's work on a hot-plug (a process under
-                   systemd-udevd, such as v4l_id or alsactl)
-  camwatch BREACH  anything else. Printed on stdout too: tools/testsrc/guard.py
-                   starts this watch through sudo on host runs and stops
-                   the run on a BREACH line, as for a window breach
+Each open is a line in FILE (UTC, ms) with the node and what it is (the
+video4linux name or the sound card's id, and ID_SERIAL_SHORT). Whose open
+it is decides the level and how much of the opener is logged. An opener is
+ours when CLAUDECODE=1 is in its environment or an ancestor's: Claude Code
+sets it for every command it runs, and it survives daemonizing (OBS from
+tests/obs-run.sh has it). The user's own programs (a video call on this
+PC) must never stop a run or have their command lines logged.
+  camwatch BREACH  ours: pid, comm, command line, parents. Printed on
+                   stdout too: tools/testsrc/guard.py starts this watch
+                   through sudo (--guard) on host runs and stops the run on a
+                   BREACH line, as for a window breach
+  camwatch INFO    a system service: PipeWire's own (wireplumber, pipewire,
+                   pipewire-pulse) or udev's work (a process under
+                   systemd-udevd, such as v4l_id or alsactl); or, unless
+                   ours, any open within 10 s of the node appearing (a
+                   hot-plug); pid and comm
+  camwatch OTHER   not ours and not a system service: pid and comm only,
+                   never a breach
+  camwatch UNKNOWN an opener that exited before it could be looked up,
+                   outside a hot-plug window, with no ancestor of ours left
+                   to show it was ours: pid and the comm of what is left. A
+                   BREACH with --guard (the guard's runs: on the safe side)
   camwatch TEST    an open of a --test path (the mechanism's own test: a
-                   scratch file, the GC573's own node; never a camera)
+                   scratch file, the GC573's own node; never a camera), with
+                   the level and the details it would have had
 A lost event (queue overflow) is a BREACH too. A line a minute says it
 runs. Notification events do not wait for the watch, so a short-lived
-opener (v4l2-ctl, arecord) has often exited by the time its event is read:
-a zombie keeps its comm and parent, not its command line, and the line then
-gives the nearest parent's command line (the script that ran it). With --pid it ends when PID ends; without, at SIGTERM or SIGINT
-(standalone, for a whole session). --dry-run prints the marks and exits;
---only-tests marks the --test paths alone (the mechanism's test).
+opener (v4l2-ctl, arecord) has often exited by the time its event is read.
+Each event's opener is looked up at once, for the whole batch before any
+logging. A zombie keeps its comm and parent, not its environment or command
+line: one forked by an ordinary process belongs to that process (ours if it
+is ours, then with the parent's command line); one under init or systemd
+may have been daemonized from anywhere, so it is unknown. With --pid it
+ends when PID ends; without, at SIGTERM or SIGINT (standalone, for a whole
+session). --dry-run prints the marks and exits; --only-tests marks the
+--test paths alone (the mechanism's test). A --test path that does not
+exist yet is marked when it appears, as a hot-plugged node would be.
 """
 import argparse
 import ctypes
@@ -54,6 +73,8 @@ import time
 
 GC573_DRIVER = '/sys/bus/pci/drivers/gc573'
 INFO_COMMS = {'wireplumber', 'pipewire', 'pipewire-pulse'}
+OURS = b'CLAUDECODE=1'
+HOTPLUG_S = 10
 V4L_PREFIXES = ('video', 'vbi', 'radio', 'swradio', 'v4l-subdev', 'v4l-touch')
 SND_RE = re.compile(r'^(controlC|pcmC|hwC|midiC|comprC)(\d+)(D\d+[cp]?)?$')
 
@@ -185,17 +206,47 @@ def candidates():
 
 
 def ancestry(pid):
-    """(pid, comm) of PID and its ancestors (nearest first)"""
+    """(pid, comm, state) of PID and its ancestors (nearest first), up to
+    but not including init"""
     out = []
     for _ in range(32):
         st = read(f'/proc/{pid}/stat')
         if not st:
             break
-        out.append((pid, st[st.index('(') + 1:st.rindex(')')]))
-        pid = int(st[st.rindex(')') + 2:].split()[1])
+        rest = st[st.rindex(')') + 2:].split()
+        out.append((pid, st[st.index('(') + 1:st.rindex(')')], rest[0]))
+        pid = int(rest[1])
         if pid <= 1:
             break
     return out
+
+
+def has_marker(pid):
+    """CLAUDECODE=1 in PID's environment (as it was at its exec)"""
+    try:
+        with open(f'/proc/{pid}/environ', 'rb') as f:
+            return OURS in f.read().split(b'\0')
+    except OSError:
+        return False
+
+
+def owner(pid, chain):
+    """('ours', the pid that has the marker), ('not ours', None) or
+    ('unknown', None). CHAIN is PID's ancestry, read at the event. A zombie
+    (or a process already reaped) has no environment left; a zombie's parent
+    is the process that forked it unless that is init or a subreaper
+    (systemd), which take over orphans: daemonized from anywhere"""
+    alive = bool(chain) and chain[0][0] == pid and chain[0][2] not in ('Z', 'X')
+    if alive and has_marker(pid):
+        return 'ours', pid
+    for p, _c, s in chain[1:]:
+        if s not in ('Z', 'X') and has_marker(p):
+            return 'ours', p
+    if alive:
+        return 'not ours', None
+    if len(chain) > 1 and chain[1][1] != 'systemd':
+        return 'not ours', None
+    return 'unknown', None
 
 
 def cmdline(pid):
@@ -207,30 +258,47 @@ def cmdline(pid):
 
 
 def opener(pid, chain):
-    """comm and command line of PID. A short-lived opener (v4l2-ctl, arecord)
-    has often exited by the time its event is read: a zombie keeps its comm
-    and parent but not its command line. Then the nearest parent's, which
-    started it"""
-    comm = read(f'/proc/{pid}/comm', '?')
+    """comm and command line of PID (read only for ours). A short-lived
+    opener (v4l2-ctl, arecord) has often exited by the time its event is
+    read: a zombie keeps its comm and parent but not its command line. Then
+    the nearest parent's, which started it"""
+    comm = read(f'/proc/{pid}/comm', '') or (chain[0][1] if chain and chain[0][0] == pid else '?')
     cmd = cmdline(pid)
     if cmd:
         return comm, cmd
     cmd = '(exited before its command line was read)'
-    for ppid, pcomm in chain[1:]:
+    for ppid, pcomm, _s in chain[1:]:
         pcmd = cmdline(ppid)
         if pcmd:
             return comm, f'{cmd}; started by pid {ppid} {pcomm}: {pcmd}'
     return comm, cmd
 
 
+def snapshot(pid):
+    """who opened, read at once at the event: (chain, (owner, marker pid),
+    comm, command line or '' when not ours)"""
+    chain = ancestry(pid)
+    own = owner(pid, chain)
+    if own[0] == 'ours':
+        comm, cmd = opener(pid, chain)
+    else:
+        comm = read(f'/proc/{pid}/comm', '') or (chain[0][1] if chain and chain[0][0] == pid else '?')
+        cmd = ''
+    return chain, own, comm, cmd
+
+
 class Watch:
-    def __init__(self, log, tests, out=print, only_tests=False):
-        self.log, self.out, self.only_tests = log, out, only_tests
+    def __init__(self, log, tests, out=print, only_tests=False, guard=False):
+        self.log, self.out, self.only_tests, self.guard = log, out, only_tests, guard
         self.gc = gc573_devices()
         self.fd = -1
-        self.marks = {}		# handle -> (path, what, kind)
+        self.marks = {}		# handle -> (path, what, kind, monotonic time it appeared or None)
         self.tests = [os.path.abspath(t) for t in tests]
-        self.n = {'INFO': 0, 'BREACH': 0, 'TEST': 0}
+        self.pending = [t for t in self.tests if not os.path.exists(t)]
+        self.n = {'INFO': 0, 'BREACH': 0, 'OTHER': 0, 'UNKNOWN': 0, 'TEST': 0}
+
+    def counts(self):
+        return ', '.join(f'{v} {k.lower()}' for k, v in self.n.items())
 
     def say(self, level, text):
         line = f'{now()} camwatch {level} {text}'
@@ -251,13 +319,14 @@ class Watch:
         if self.only_tests:
             off += [(p[5:], 'not marked: --only-tests') for p, _, _ in on]
             on = []
-        on += [(t, 'test path', 'test') for t in self.tests]
+        on += [(t, 'test path', 'test') for t in self.tests if t not in self.pending]
+        off += [(t, 'test path, marked when it appears') for t in self.pending]
         return on, off
 
-    def mark(self, path, what, kind):
+    def mark(self, path, what, kind, born=None):
         if libc.fanotify_mark(self.fd, FAN_MARK_ADD, FAN_OPEN, AT_FDCWD, path.encode()) < 0:
             raise oserr(f'fanotify_mark {path}')
-        self.marks[handle_of(path)] = (path, what, kind)
+        self.marks[handle_of(path)] = (path, what, kind, born)
 
     def start(self):
         self.fd = libc.fanotify_init(FAN_CLASS_NOTIF | FAN_REPORT_FID | FAN_CLOEXEC | FAN_NONBLOCK,
@@ -271,10 +340,13 @@ class Watch:
         self.watch_dir('/dev')
         if os.path.isdir('/dev/snd'):
             self.watch_dir('/dev/snd')
+        for d in sorted({os.path.dirname(t) for t in self.pending}):
+            if d not in self.wd.values():
+                self.watch_dir(d)
         on, off = self.plan()
         for path, what, kind in on:
             self.mark(path, what, kind)
-        self.say('start', f'pid {os.getpid()}: {len(on)} nodes marked: '
+        self.say('start', f'pid {os.getpid()}{" (guard)" if self.guard else ""}: {len(on)} nodes marked: '
                  + '; '.join(f'{p} ({w})' for p, w, _ in on)
                  + '. Not watched: ' + ('; '.join(f'{n} ({w})' for n, w in off) or 'none'))
 
@@ -297,6 +369,18 @@ class Watch:
             d = self.wd.get(wd)
             if d is None or not name:
                 continue
+            full = os.path.join(d, name)
+            if full in self.pending and not mask & IN_DELETE:
+                # a test path appearing: marked as a hot-plugged node is
+                try:
+                    self.mark(full, 'test path', 'test', time.monotonic())
+                    self.pending.remove(full)
+                    self.say('INFO', f'new test path marked: {full}')
+                except OSError as e:
+                    self.say('FAIL', f'new test path {full} could not be marked: {e}')
+                continue
+            if d not in ('/dev', '/dev/snd'):
+                continue
             rel = name if d == '/dev' else 'snd/' + name
             if mask & IN_DELETE:
                 gone = [h for h, v in self.marks.items() if v[0] == f'/dev/{rel}']
@@ -316,9 +400,12 @@ class Watch:
             if not what.startswith('not '):
                 self.say('INFO', f'new node /dev/{rel}: not watched ({what})')
             return
+        if self.only_tests:
+            self.say('INFO', f'new node {path} ({what}): not marked (--only-tests)')
+            return
         # udev may still be writing its database: the serial at the open
         try:
-            self.mark(path, f'{what}, serial {serial(path, sysdev(rel))}', 'watch')
+            self.mark(path, f'{what}, serial {serial(path, sysdev(rel))}', 'watch', time.monotonic())
             self.say('INFO', f'new node marked: {path} ({what})')
         except OSError as e:
             self.say('BREACH', f'new node {path} ({what}) could not be marked: {e}')
@@ -354,31 +441,40 @@ class Watch:
                     continue
                 # who opened, read at once for every event in the batch,
                 # before the slower logging: a short-lived opener exits soon
-                chain = ancestry(pid)
-                evs.append((h, pid, chain, opener(pid, chain)))
+                evs.append((h, pid, time.monotonic(), snapshot(pid)))
             for e in evs:
                 self.report(*e)
 
-    def report(self, h, pid, chain, who):
-        path, what, kind = self.marks.get(h, ('(unknown node)', f'handle {h}', 'watch'))
-        comm, cmd = who
-        if comm == '?' and chain:
-            comm = chain[0][1]
-        names = [c for _, c in chain]
-        if kind == 'test':
-            level = 'TEST'
-        elif comm in INFO_COMMS:
-            level = 'INFO'
-        elif 'systemd-udevd' in names[1:] or comm in ('(udev-worker)', 'systemd-udevd'):
-            level = 'INFO'
-            what += '; udev, hot-plug'
-        else:
-            level = 'BREACH'
+    def classify(self, pid, t, born, snap):
+        """(level, the opener as logged at that level)"""
+        chain, (own, by), comm, cmd = snap
+        names = [c for _, c, _ in chain]
+        if own == 'ours':
+            return 'BREACH', (f'pid {pid} {comm}: {cmd[:400]} [parents: {" < ".join(names[1:6])}] '
+                              f'(ours: CLAUDECODE=1 in the environment of pid {by})')
+        if comm in INFO_COMMS:
+            return 'INFO', f'pid {pid} {comm} (PipeWire)'
+        if 'systemd-udevd' in names[1:] or comm in ('(udev-worker)', 'systemd-udevd'):
+            return 'INFO', f'pid {pid} {comm} (udev)'
+        if born is not None and t - born <= HOTPLUG_S:
+            return 'INFO', f'pid {pid} {comm} (hot-plug: {t - born:.1f} s after the node appeared)'
+        if own == 'not ours':
+            return 'OTHER', f'pid {pid} {comm}'
+        return ('BREACH' if self.guard else 'UNKNOWN',
+                f'pid {pid} {comm}: exited before it could be looked up'
+                + (f' [parents: {" < ".join(names[1:6])}]' if len(names) > 1 else ''))
+
+    def report(self, h, pid, t, snap):
+        path, what, kind, born = self.marks.get(h, ('(unknown node)', f'handle {h}', 'watch', None))
+        level, who = self.classify(pid, t, born, snap)
         if what.endswith('serial -'):
             what = what[:-1] + serial(path)
+        if kind == 'test':
+            self.n['TEST'] += 1
+            self.say('TEST', f'open {path} ({what}) as {level}: {who}')
+            return
         self.n[level] += 1
-        self.say(level, f'open {path} ({what}) by pid {pid} {comm}: {cmd[:400]}'
-                 + (f' [parents: {" < ".join(names[1:6])}]' if level != 'INFO' else ''))
+        self.say(level, f'open {path} ({what}) by {who}')
 
     def run(self, alive):
         p = select.poll()
@@ -392,8 +488,7 @@ class Watch:
                 else:
                     self.on_inotify()
             if time.monotonic() - beat >= 60:
-                self.say('ok', f'{len(self.marks)} nodes marked; opens: {self.n["INFO"]} info, '
-                               f'{self.n["BREACH"]} breach, {self.n["TEST"]} test')
+                self.say('ok', f'{len(self.marks)} nodes marked; opens: {self.counts()}')
                 beat = time.monotonic()
 
 
@@ -401,6 +496,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('--log', required=True)
     ap.add_argument('--pid', type=int, help='end when this process ends')
+    ap.add_argument('--guard', action='store_true',
+                    help="guard.py's runs: an opener that cannot be looked up is a BREACH, not UNKNOWN")
     ap.add_argument('--test', action='append', default=[], help='a path to watch as a test (never a camera)')
     ap.add_argument('--only-tests', action='store_true', help='mark the --test paths alone')
     ap.add_argument('--dry-run', action='store_true', help='print the marks and exit')
@@ -411,13 +508,13 @@ def main():
         for path, what, kind in on:
             print(f'mark {path} ({what}){" [test]" if kind == "test" else ""}')
         for name, why in off:
-            print(f'skip /dev/{name} ({why})')
+            print(f'skip {name if name.startswith("/") else "/dev/" + name} ({why})')
         return 0
     stopping = []
     signal.signal(signal.SIGTERM, lambda *_: stopping.append(1))
     signal.signal(signal.SIGINT, lambda *_: stopping.append(1))
     with open(a.log, 'a') as log:
-        w = Watch(log, a.test, only_tests=a.only_tests)
+        w = Watch(log, a.test, only_tests=a.only_tests, guard=a.guard)
         try:
             w.start()
         except OSError as e:
@@ -435,8 +532,8 @@ def main():
             except OSError as e:
                 return e.errno == errno.EPERM
         w.run(alive)
-        w.say('end', f'{"run pid %d gone" % a.pid if a.pid and not stopping else "stopped"}; opens: '
-                     f'{w.n["INFO"]} info, {w.n["BREACH"]} breach, {w.n["TEST"]} test')
+        w.say('end', f'{"run pid %d gone" % a.pid if a.pid and not stopping else "stopped"}; '
+                     f'opens: {w.counts()}')
     return 0
 
 

@@ -15,13 +15,16 @@ sees (UTC, milliseconds):
 - Audio, every 50 ms: every test audio stream (a PipeWire node named
   gc573-*, or one of ffplay's) is linked to the NVIDIA HDMI sink and
   nothing else.
-- Cameras: tools/testsrc/camwatch.py (fanotify, root: started through sudo
-  -A with SUDO_ASKPASS, else sudo -n) logs every open of a video, media or
-  sound node that is not the GC573's or the NVIDIA HDMI audio's. An open by
-  anything but PipeWire's own processes or udev's hot-plug work is a
-  breach, and so is a camera watch that does not start within 10 s or ends
-  before the run. GC573_CAMWATCH=0 runs without it (logged), for a machine
-  where it cannot run.
+- Cameras: tools/testsrc/camwatch.py --guard (fanotify, root: started
+  through sudo -A with SUDO_ASKPASS, else sudo -n) logs every open of a
+  video, media or sound node that is not the GC573's or the NVIDIA HDMI
+  audio's. An open by one of ours (CLAUDECODE=1 in the opener's environment
+  or an ancestor's) is a breach, and so is one by an opener that exited
+  before it could be looked up (on the safe side), outside the first 10 s
+  of a node's hot-plug. The user's own programs are logged as OTHER (comm
+  only) and never stop a run. A camera watch that does not start within
+  10 s or ends before the run is a breach too. GC573_CAMWATCH=0 runs
+  without it (logged), for a machine where it cannot run.
 On a breach it logs it, closes every test player, and stops the run: the
 process PID and all its descendants (SIGTERM, then SIGKILL after 1 s). It
 then exits with status 3. A window or camera watcher that cannot start, or
@@ -135,7 +138,8 @@ def start_camwatch(pid, log_path, say, found, alive):
         say('camwatch: off (GC573_CAMWATCH=0): opens of the cameras are not watched')
         return None
     how = '-A' if os.environ.get('SUDO_ASKPASS') else '-n'
-    p = subprocess.Popen(['sudo', how, sys.executable, CAMWATCH, '--log', log_path, '--pid', str(pid)],
+    p = subprocess.Popen(['sudo', how, sys.executable, CAMWATCH, '--log', log_path, '--pid', str(pid),
+                          '--guard'],
                          stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                          text=True, start_new_session=True)
     up = threading.Event()
