@@ -136,6 +136,7 @@ struct gc573_it6805 {
 	u8 rev;
 	unsigned int cal_retrigger;
 	u32 entries, losses, releases, polls;
+	u32 restarts;		/* gc573_it6805_restart(), not losses */
 	/* untraced audio paths RD takes and the driver does not (11.1) */
 	u32 audio_errors;		/* 0:b9 bits 7:6 at the ready check */
 	u32 audio_events;		/* 0:10 bit 7 while STABLE */
@@ -255,6 +256,14 @@ struct gc573_hdmi {
 	u32 fpga_waits;			/* entries still without it after
 					 * GC573_HDMI_FPGA_WARN polls
 					 */
+	/* the measurement self-heal (gc573_hdmi_heal_check()) */
+	unsigned int heal_tries;	/* attempts since a lock or 5 V loss */
+	unsigned long heal_at;		/* jiffies of the last attempt */
+	u8 heal_due;			/* GC573_HEAL_*: to run after publish */
+	bool heal_gave_up;		/* warned; none until a lock or 5 V loss */
+	u32 fpga_heals;			/* attempts since load */
+	u32 fpga_heal_fixes;		/* locks that followed an attempt */
+	u32 fpga_heal_giveups;		/* sessions given up */
 
 	/* statistics */
 	u32 polls, poll_errors, xfers, xfer_errors, retries, resyncs, runs;
@@ -280,6 +289,7 @@ bool gc573_seq_last(struct gc573_hdmi *h, unsigned int before, u8 dev,
 /* gc573_it6805.c */
 int gc573_it6805_init(struct gc573_hdmi *h);
 int gc573_it6805_poll(struct gc573_hdmi *h);
+int gc573_it6805_restart(struct gc573_hdmi *h);
 int gc573_it6805_edid(struct gc573_hdmi *h);
 int gc573_it6805_x(struct gc573_hdmi *h, unsigned int x);
 int gc573_it6805_var(struct gc573_hdmi *h, unsigned int var, u8 *val);
