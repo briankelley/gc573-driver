@@ -252,6 +252,9 @@ struct gc573_hdmi {
 	unsigned int lock_polls;	/* polls since the entry, for 0x1010 */
 	u32 period_raw;			/* 0x1010 at the last poll */
 	u32 fpga_rejects;		/* polls the FPGA measurement held a lock */
+	u32 fpga_waits;			/* entries still without it after
+					 * GC573_HDMI_FPGA_WARN polls
+					 */
 
 	/* statistics */
 	u32 polls, poll_errors, xfers, xfer_errors, retries, resyncs, runs;
