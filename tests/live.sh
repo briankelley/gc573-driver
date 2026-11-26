@@ -156,9 +156,10 @@
 # the Roku need GC573_ROKU_GO=1; without it only rokuwhich, rokulock,
 # rokucompliance, q25 and q25back run, passively. On the saved Roku they
 # also need it identified as the cabled one (rokuwhich; tools/roku/ecp.py
-# refuses otherwise), and its first action saves its state (the app in the
-# foreground, the power mode: 0600, never logged), which the run's end puts
-# back. Steps (default: the six after rokuwhichkey):
+# refuses otherwise), and its first action saves its state for the record
+# (the app in the foreground, the power mode: 0600, never logged). The
+# run's end does not restore it (the user does): it only stops our video
+# if it still plays. Steps (default: the six after rokuwhichkey):
 #   rokuwhich which Roku is cabled, with no action on either: the one whose
 #             ui-resolution follows a 720p-only EDID; its address saved
 #   rokuwhichkey  (the go) the fallback: Info, then Back, on the Roku that
@@ -2764,15 +2765,13 @@ roku_source_on() {
 	done
 	return 1
 }
-# the end of a Roku run: the server stopped; with the go, the Roku back on
-# its home screen if we played something on it, then the state its first
-# action saved (tools/roku/ecp.py restore-state: PowerOff if it was in
-# Suspend, else the app it had in the foreground launched again)
+# the end of a Roku run: the server stopped; with the go, our video
+# stopped (Home) if it still plays (ecp.py stop-ours). Nothing else: the
+# user restores the Roku's state themselves
 roku_end() {
 	roku_serve_stop
 	roku_go || return 0
-	[ "$roku_played" = 0 ] || ecp key Home > /dev/null 2>&1
-	[ ! -e "$HOME/.config/gc573/roku-state" ] || { sleep 2; ecp restore-state 2>&1 | sed 's/^/  /'; }
+	[ "$roku_played" = 0 ] || ecp stop-ours 2>&1 | sed 's/^/  /'
 }
 roku_rate() {	# 60 or 59.94 from QUERY_DV_TIMINGS
 	local q
@@ -3111,7 +3110,8 @@ step_rokuobssoak() {
 roku_reported() {
 	local q
 	q=$(query)
-	if grep -q 'Active width' <<< "$q"; then
+	# after a failure v4l2-ctl prints the zeroed timings too
+	if ! grep -q 'failed' <<< "$q" && grep -q 'Active width' <<< "$q"; then
 		echo "QUERY_DV_TIMINGS $(grep -oE 'Active width: [0-9]+|Active height: [0-9]+|Pixelclock: [0-9]+ Hz' <<< "$q" | paste -sd, -)"
 	else
 		echo "QUERY_DV_TIMINGS $(grep -oE 'failed: .*' <<< "$q" | head -1)"

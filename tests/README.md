@@ -123,8 +123,9 @@ run only. `DVI-D-0` is never touched. Actions on the Roku need
 `GC573_ROKU_GO=1`; without it only `rokuwhich`, `rokulock`, `rokucompliance`,
 `q25` and `q25back` run. On the saved Roku an action also needs it identified
 as the one cabled to the card (`rokuwhich`). Its state before the run's first
-action (the app in the foreground, the power mode) is put back at the run's
-end. Steps:
+action (the app in the foreground, the power mode) is saved for the record,
+not restored (the user does that); the run's end only stops our video if it
+still plays. Steps:
 - `rokuwhich`: which Roku is cabled, with no action on either: the one whose
   ui-resolution follows a 720p-only EDID. `rokuwhichkey` (go) is the
   fallback: Info, then Back, on the Roku that is on;
