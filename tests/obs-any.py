@@ -74,9 +74,11 @@ def cmd_shots(obs, n, every):
     lum = f'{min(lumas):.0f}-{max(lumas):.0f}' if lumas else '-'
     moved = sum(1 for d in diffs if d > 0.5)
     mean = sum(diffs) / len(diffs) if diffs else 0.0
+    still = ('; a still picture: a freeze would look the same, so these shots cannot catch one'
+             if diffs and not moved else '')
     print(f"RESULT any-shots {'PASS' if ok else 'FAIL'} ({len(sizes)} of {n} screenshots {size}"
           f"{'' if len(set(sizes)) <= 1 else ' (sizes differ)'}, {fails} failed; luma {lum}; "
-          f"{moved} of {len(diffs)} differ from the one before (mean {mean:.1f} codes))")
+          f"{moved} of {len(diffs)} differ from the one before (mean {mean:.1f} codes){still})")
     return ok
 
 
