@@ -1,0 +1,242 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-25 21:57:55 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     af90921028e3
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   obssoak
+module:  srcversion 292FD1A2D4D0C4210A150E8 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 292FD1A2D4D0C4210A150E8, /dev/video4
+
+## obssoak
+  recording to /home/brian/gc573-rec (851 GB free); rotation sleep,rate-59.94,edid-same,rate-60,res-720p,edid-new,sleep,res-1080p,edid-default
+RESULT obssoak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.988 rate=48001.405 xruns=0 restarts=0 )
+RESULT obssoak-driver-first-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT obssoak-driver-first-xruns PASS (0 overruns)
+RESULT obssoak-driver-first-gaps  PASS (per-second medians move <= 0.02 ms from one second to the next; within 0.03 ms of one line over the run; single reads within 0.10 ms of it; 6000 reads)
+RESULT obssoak-driver-first-video PASS (3597 frames, 0 sequence gaps, interval 16.667 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-first-avsync PASS (60 flashes over 1.0 min: offset +34.182 ms (std 0.033, min +34.123, max +34.221), drift -0.0113 ms/min = -0.011 ms over the run, residual <= 0.064 ms)
+  INFO counter   3597 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 3596; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +34.18 ms, min +34.12, max +34.22, std 0.03; frames from the most common (count): +0: 60
+  OBS started minimized to the tray (pid 125314, profile gc573, recording format hybrid_mp4; 0 windows visible)
+  OBS sources: GC573 video on /dev/v4l/by-path/pci-0000:07:00.0-video-index0, GC573 audio on hw:CARD=GC573,DEV=0, scene 'Scene', canvas 1920x1080 at 60/1 fps; no other inputs
+  obssoak: 7200 s from 21:59:05 UTC, a change every 180 s
+RESULT obssoak-obsev-sleep        FAIL (5/9 recovered; TTFGF min 1.64 s, max 1.71 s)
+RESULT obssoak-obsev-rate-59.94   FAIL (3/5 recovered; TTFGF min 2.11 s, max 2.19 s)
+RESULT obssoak-obsev-rate-60      FAIL (3/4 recovered; TTFGF min 2.05 s, max 2.11 s)
+RESULT obssoak-obsev-res-720p     FAIL (3/4 recovered; TTFGF min 0.21 s, max 0.22 s)
+RESULT obssoak-obsev-res-1080p    FAIL (2/4 recovered; TTFGF min 0.19 s, max 0.21 s)
+RESULT obssoak-obsev-edid-same    FAIL (3/5 recovered; TTFGF min 0.03 s, max 0.03 s)
+RESULT obssoak-obsev-edid-new     FAIL (2/4 recovered; TTFGF min 3.42 s, max 4.03 s)
+RESULT obssoak-obsev-edid-default FAIL (2/4 recovered; TTFGF min 2.76 s, max 2.81 s)
+  EVENTS /home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/tests/logs/20261125-215755_6.8.0-151-generic_live-events.log
+  BASELINE good (good +0.04..+0.16)
+  RECDIR /home/brian/gc573-rec (OBS had /tmp/claude-1000/-home-brian/1eddbe94-e70f-45af-8d11-3097649c39bc/scratchpad/obsrec)
+  RECFORMAT hybrid_mp4; muxer: in OBS
+  MARK 181.0
+  EVENT sleep recovered ttfgf=1.64 (off: bad +0.27..+0.86, black +1.04..+7.98; on: black +1.15..+1.56, good +1.64..+1.73; source 1920x1080)
+  MARK 360.1
+  EVENT rate-59.94 recovered ttfgf=2.15 (bad +1.21..+1.21, black +1.41..+2.08, good +2.15..+2.23; source 1920x1080)
+  MARK 541.7
+  EVENT edid-same recovered ttfgf=0.03 (no change: good +0.03..+0.11; source 1920x1080)
+  MARK 720.9
+  EVENT rate-60 recovered ttfgf=2.05 (bad +1.18..+1.18, black +1.36..+1.98, good +2.05..+2.13; source 1920x1080)
+  MARK 900.2
+  EVENT res-720p recovered ttfgf=0.21 (not by itself in 12 s: black +1.36..+12.01; TTFGF from the reopen at +12.06: black +0.02..+0.16, good +0.21..+0.25; source 1280x720)
+  MARK 1081.7
+  EVENT edid-new recovered ttfgf=3.42 (hot-plug: black +2.89..+3.39, good +3.42..+3.46; source 1280x720)
+  MARK 1260.3
+  EVENT sleep recovered ttfgf=1.68 (off: bad +0.20..+0.94, black +1.02..+8.00; on: black +1.04..+1.65, good +1.68..+1.72; source 1280x720)
+  MARK 1441.1
+  EVENT res-1080p recovered ttfgf=0.21 (not by itself in 12 s: black +1.38..+12.00; TTFGF from the reopen at +12.02: black +0.01..+0.16, good +0.21..+0.28; source 1920x1080)
+  MARK 1620.6
+  EVENT edid-default recovered ttfgf=2.81 (hot-plug: bad +2.65..+2.65, good +2.81..+2.92; source 1920x1080)
+  MARK 1801.0
+  EVENT sleep recovered ttfgf=1.71 (off: bad +0.27..+0.86, black +1.04..+8.01; on: black +1.12..+1.60, good +1.71..+1.83; source 1920x1080)
+  MARK 1980.4
+  EVENT rate-59.94 recovered ttfgf=2.11 (bad +1.23..+1.23, black +1.42..+2.03, good +2.11..+2.19; source 1920x1080)
+  MARK 2161.9
+  EVENT edid-same recovered ttfgf=0.03 (no change: good +0.03..+0.11; source 1920x1080)
+  MARK 2341.2
+  EVENT rate-60 recovered ttfgf=2.11 (bad +1.17..+1.17, black +1.37..+2.04, good +2.11..+2.19; source 1920x1080)
+  MARK 2520.7
+  EVENT res-720p recovered ttfgf=0.22 (not by itself in 12 s: black +1.42..+12.00; TTFGF from the reopen at +12.04: black +0.02..+0.16, good +0.22..+0.25; source 1280x720)
+  MARK 2700.1
+  EVENT edid-new recovered ttfgf=4.03 (hot-plug: bad +2.94..+3.13, black +3.19..+4.00, good +4.03..+4.07; source 1280x720)
+  MARK 2881.4
+  EVENT sleep recovered ttfgf=1.66 (off: bad +0.18..+0.98, black +1.06..+8.00; on: black +0.87..+1.62, good +1.66..+1.71; source 1280x720)
+  MARK 3060.3
+  EVENT res-1080p recovered ttfgf=0.19 (not by itself in 12 s: black +1.46..+12.00; TTFGF from the reopen at +12.02: black +0.01..+0.14, good +0.19..+0.27; source 1920x1080)
+  MARK 3241.8
+  EVENT edid-default recovered ttfgf=2.76 (hot-plug: bad +2.57..+2.57, good +2.76..+2.84; source 1920x1080)
+  MARK 3422.0
+  EVENT sleep recovered ttfgf=1.70 (off: bad +0.28..+0.85, black +1.03..+8.02; on: black +1.16..+1.60, good +1.70..+1.81; source 1920x1080)
+  MARK 3601.3
+  EVENT rate-59.94 recovered ttfgf=2.19 (bad +1.26..+1.26, black +1.45..+2.11, good +2.19..+2.27; source 1920x1080)
+  MARK 3780.8
+  EVENT edid-same recovered ttfgf=0.03 (no change: good +0.03..+0.11; source 1920x1080)
+  MARK 3961.9
+  EVENT rate-60 recovered ttfgf=2.10 (bad +1.05..+1.36, black +1.54..+2.03, good +2.10..+2.18; source 1920x1080)
+  MARK 4141.3
+  EVENT res-720p recovered ttfgf=0.21 (not by itself in 12 s: black +1.37..+11.97; TTFGF from the reopen at +12.01: black +0.02..+0.16, good +0.21..+0.25; source 1280x720)
+  MARK 4320.7
+  EVENT edid-new NOT-RECOVERED ttfgf=- (hot-plug: black +3.22..+19.99; source 1280x720) [source live (6 -> 34); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 4500.6
+  EVENT sleep NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+15.00) [source live (910 -> 938); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 4680.1
+  EVENT res-1080p NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+15.01) [source live (909 -> 936); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 4861.5
+  EVENT edid-default NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+15.01) [source live (910 -> 938); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 5041.0
+  EVENT sleep NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+14.99) [source live (908 -> 935); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 5220.5
+  EVENT rate-59.94 NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+14.98) [source live (907 -> 935); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 5402.0
+  EVENT edid-same NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+14.99) [source live (910 -> 938); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 5581.5
+  EVENT rate-60 NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+14.99) [source live (907 -> 935); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 5761.0
+  EVENT res-720p NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.02..+14.99) [source live (907 -> 937); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 5940.3
+  EVENT edid-new NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.03..+15.00) [source live (908 -> 936); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 6121.8
+  EVENT sleep NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+14.99) [source live (908 -> 935); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 6301.2
+  EVENT res-1080p NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+15.00) [source live (907 -> 936); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 6480.7
+  EVENT edid-default NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+14.99) [source live (909 -> 938); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 6660.1
+  EVENT sleep NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+15.01) [source live (911 -> 939); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 6841.6
+  EVENT rate-59.94 NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.01..+14.99) [source live (909 -> 937); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  MARK 7021.1
+  EVENT edid-same NOT-RECOVERED ttfgf=- (no good frames before the change: black +0.02..+15.00) [source live (909 -> 938); driver: colour 0 vic 4 full_range 1, input_restarts 44 input_stops 8]
+  RECORDING /home/brian/gc573-rec/2026-11-25 14-59-05.mp4
+  SHOTS {'good': 2063, 'bad': 14, 'black': 1253}
+  screenshots that were not good: 1267 (SHOT lines in the event log's run)
+RESULT obssoak-driver-last-capture PASS (PARAMS video 1280x720 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880480 secs=59.999 rate=48001.158 xruns=0 restarts=0 )
+RESULT obssoak-driver-last-duration PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obssoak-driver-last-xruns  PASS (0 overruns)
+RESULT obssoak-driver-last-gaps   PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.12 ms of it; 6001 reads)
+RESULT obssoak-driver-last-video  PASS (3593 frames, 0 sequence gaps, interval 16.682 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-last-avsync PASS (60 flashes over 1.0 min: offset +32.969 ms (std 0.971, min +31.314, max +34.636), drift +3.3586 ms/min = +3.306 ms over the run, residual <= 0.069 ms)
+  INFO counter   3593 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 3592; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +32.97 ms, min +31.31, max +34.64, std 0.97; frames from the most common (count): +0: 60
+  recording: 5.2G /home/brian/gc573-rec/2026-11-25 14-59-05.mp4
+RESULT obssoak-obsrec-image       FAIL (240 frames sampled every 30.0 s over 7201 s at 1920x1080: NOT the pattern at the start and end; in order: pattern x12, bad x1, pattern x17, bad x1, pattern x11, bad x1, pattern x11, bad x1, pattern x11, bad x1, pattern x17, bad x1, pattern x5, bad x1, pattern x11, black x1, pattern x41, bad x1, black x95; max error in the pattern frames 6 (limit 8)
+  INFO obsrec-counter steps from one recorded frame to the next (step: count): 0: 236, 1: 119, 54851: 1, 55441: 1
+RESULT obssoak-rec-duration       PASS (7200.8 s of video, 7200.8 s of audio)
+RESULT obssoak-rec-video          PASS (432050 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obssoak-rec-flashes        PASS (4114 flash frames, 7000 burst onsets, 4100 paired within 0.5 s; unpaired at 363.6, 723.0, 724.1, 912.7, 1453.5, 1623.5, 2343.4, 2533.1, 2534.0, 3072.7 s)
+RESULT obssoak-rec-segments       FAIL (40 segments between changes, each paired again, with at least every other second's flash paired from there and a mean offset from -45 to +125 ms (BT.1359); not: segments 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39; paired again after a change: median +5.73 s, max +41.32 s from the change)
+RESULT obssoak-rec-offset         SKIP (burst onset - flash frame: mean +78.21 ms, std 23.59, min +19.90, max +133.48 over 4100 flashes (positive: audio late); over all segments)
+RESULT obssoak-rec-drift          SKIP (+0.511 ms/min = +36.78 ms over 72.0 min (one frame period: 16.7 ms); means per minute +46.4 +46.4 +46.4 +56.5 +58.9 +62.1 +49.1 +49.7 +49.6 +55.7 +57.4 +56.7 +59.4 +59.4 +59.4 +60.4 +62.8 +67.9 +61.8 +65.7 +61.5 +57.6 +63.0 +67.1 +77.5 +78.8 +78.8 +75.0 +74.9 +74.9 +70.6 +85.1 +82.7 +90.0 +92.6 +91.2 +100.8 +92.5 +94.8 +97.6 +97.9 +111.4 +101.0 +102.8 +94.2 +119.3 +122.5 +112.5 +108.8 +114.3 +110.8 +123.0 +123.0 +123.0 +119.4 +119.3 +75.1 +50.2 +50.9 +52.4 +58.8 +60.3 +61.1 +71.8 +73.4 +74.8 +67.9 +73.7 +72.7 +77.1 +80.7 +84.0 +77.0; the source restarts at each change)
+  SEGMENT 0 0.0 181.0 flashes=181 bursts=181 back=+1.50 pairs_after=180 offset=+46.4 ok
+  SEGMENT 1 181.0 360.1 flashes=146 bursts=168 back=+12.08 pairs_after=146 offset=+59.6 ok
+  SEGMENT 2 360.1 541.7 flashes=175 bursts=178 back=+4.50 pairs_after=174 offset=+49.5 ok
+  SEGMENT 3 541.7 720.9 flashes=174 bursts=179 back=+2.10 pairs_after=173 offset=+56.6 ok
+  SEGMENT 4 720.9 900.2 flashes=179 bursts=177 back=+4.20 pairs_after=176 offset=+59.4 ok
+  SEGMENT 5 900.2 1081.7 flashes=167 bursts=167 back=+14.38 pairs_after=166 offset=+64.0 ok
+  SEGMENT 6 1081.7 1260.3 flashes=173 bursts=175 back=+4.53 pairs_after=172 offset=+62.9 ok
+  SEGMENT 7 1260.3 1441.1 flashes=169 bursts=169 back=+11.78 pairs_after=169 offset=+62.9 ok
+  SEGMENT 8 1441.1 1620.6 flashes=169 bursts=167 back=+13.52 pairs_after=167 offset=+78.5 ok
+  SEGMENT 9 1620.6 1801.0 flashes=177 bursts=178 back=+5.32 pairs_after=176 offset=+74.9 ok
+  SEGMENT 10 1801.0 1980.4 flashes=163 bursts=169 back=+11.33 pairs_after=163 offset=+79.9 ok
+  SEGMENT 11 1980.4 2161.9 flashes=175 bursts=177 back=+4.42 pairs_after=175 offset=+91.3 ok
+  SEGMENT 12 2161.9 2341.2 flashes=177 bursts=179 back=+41.32 pairs_after=137 offset=+94.8 ok
+  SEGMENT 13 2341.2 2520.7 flashes=171 bursts=178 back=+4.37 pairs_after=169 offset=+102.3 ok
+  SEGMENT 14 2520.7 2700.1 flashes=167 bursts=165 back=+14.28 pairs_after=165 offset=+99.1 ok
+  SEGMENT 15 2700.1 2881.4 flashes=175 bursts=176 back=+6.15 pairs_after=174 offset=+118.0 ok
+  SEGMENT 16 2881.4 3060.3 flashes=168 bursts=169 back=+10.83 pairs_after=167 offset=+111.5 ok
+  SEGMENT 17 3060.3 3241.8 flashes=171 bursts=168 back=+14.43 pairs_after=168 offset=+123.0 ok
+  SEGMENT 18 3241.8 3422.0 flashes=176 bursts=177 back=+5.13 pairs_after=176 offset=+103.4 ok
+  SEGMENT 19 3422.0 3601.3 flashes=163 bursts=168 back=+12.20 pairs_after=162 offset=+51.2 ok
+  SEGMENT 20 3601.3 3780.8 flashes=175 bursts=175 back=+4.40 pairs_after=174 offset=+60.1 ok
+  SEGMENT 21 3780.8 3961.9 flashes=181 bursts=181 back=+1.17 pairs_after=180 offset=+73.5 ok
+  SEGMENT 22 3961.9 4141.3 flashes=175 bursts=176 back=+4.35 pairs_after=174 offset=+71.3 ok
+  SEGMENT 23 4141.3 4320.7 flashes=166 bursts=166 back=+14.32 pairs_after=165 offset=+81.0 ok
+  SEGMENT 24 4320.7 4500.6 flashes=1 bursts=159 back=+0.08 pairs_after=1 offset=+77.0 NOT OK
+  SEGMENT 25 4500.6 4680.1 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 26 4680.1 4861.5 flashes=0 bursts=180 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 27 4861.5 5041.0 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 28 5041.0 5220.5 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 29 5220.5 5402.0 flashes=0 bursts=180 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 30 5402.0 5581.5 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 31 5581.5 5761.0 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 32 5761.0 5940.3 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 33 5940.3 6121.8 flashes=0 bursts=180 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 34 6121.8 6301.2 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 35 6301.2 6480.7 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 36 6480.7 6660.1 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 37 6660.1 6841.6 flashes=0 bursts=180 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 38 6841.6 7021.1 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+  SEGMENT 39 7021.1 7200.8 flashes=0 bursts=178 back=- pairs_after=0 offset=- NOT OK
+    offset in frame periods (count): +1: 1, +2: 23, +3: 855, +4: 1335, +5: 709, +6: 523, +7: 620, +8: 34
+RESULT obssoak-obs-own            FAIL (OBS - driver in the same source session: first segment +12.2 ms (OBS +46.4, driver +34.18), last -33.0 ms (OBS +0.0, driver +32.97); the two within one frame period, 16.7 ms)
+  mem: 1795643945 62530992 361124 244104 186620 21792 301836 87 2709 337479:9237642 0 0 0
+  mem: 1795644488 62065776 374532 246460 185804 21792 1340944 93634 3065 499696:10365928 300 300 0
+  mem: 1795645091 61822388 394368 252528 186972 21792 1340220 198709 3449 670675:11628537 669 669 0
+  mem: 1795645694 61553428 409628 254052 186956 21792 1351936 304598 3827 840551:12893237 1037 1037 0
+  mem: 1795646297 61473656 425024 255612 187164 21792 1361944 409048 4219 1020910:14146822 1487 1487 0
+  mem: 1795646901 61755516 440564 257400 187100 21792 1357748 513077 4591 1183083:15419360 1856 1856 0
+  mem: 1795647504 61418380 456592 259500 187292 21792 1369408 619831 4982 1361609:16676022 2224 2223 0
+  mem: 1795648108 61631720 472220 261360 187100 21792 1366152 724218 5372 1540383:17931168 2653 2652 0
+  mem: 1795648711 61711376 487504 262848 187036 21792 1339952 823769 5689 1693302:19213913 2723 2722 0
+  mem: 1795649315 61617452 503796 265284 187340 21792 1342424 921601 5986 1845910:20496442 2723 2722 0
+  mem: 1795649919 61703724 518864 266428 186892 21792 1342852 1018437 6276 1997786:21780641 2723 2722 0
+  mem: 1795650523 61711856 534508 268324 186924 21792 1343272 1116561 6573 2150859:23064086 2724 2722 0
+  mem: 1795651126 61717200 551636 271276 187148 21792 1343708 1214113 6868 2306446:24344184 2755 2722 0
+RESULT obssoak-memory             FAIL (from minute 5 to the end: SUnreclaim +22780 kB (limit 2048), Slab +181508 kB, VmallocUsed -464 kB, MemAvailable +1127724 kB, OBS RSS -893088 kB; a desktop host: other programs count too)
+RESULT obssoak-cpu                PASS (report only: OBS 169.0 % of one CPU, the IRQ thread 0.58 %, the host 11.5 % of its CPUs, over 7202 s)
+RESULT obssoak-driver-counters    PASS (over the soak, 121 samples: v_input_stops +6 a_silent +18263 v_input_restarts +36 it_losses +22 it_releases +23 it_entries +23 h_runs +22248 h_fpga_rejects +55 a_pauses +40; kernel log: 2755 lines, 2722 of the driver, 0 bad)
+  obs: 145 select timeouts, 6 dequeue failures, 6 device opens
+  obs log: 14:59:05.522: ==== Recording Start ===============================================
+  obs log: 16:59:07.296: Output 'simple_file_output': Total frames output: 432053
+  obs log: 16:59:07.296: Output 'simple_file_output': Total drawn frames: 431074 (432107 attempted)
+  obs log: 16:59:07.296: Output 'simple_file_output': Number of lagged frames due to rendering lag/stalls: 1033 (0.2%)
+  obs log: 16:59:07.297: ==== Recording Stop ================================================
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+
+## kernel log
+  kernel log: 2722 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT obssoak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.988 rate=48001.405 xruns=0 restarts=0 )
+RESULT obssoak-driver-first-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT obssoak-driver-first-xruns PASS (0 overruns)
+RESULT obssoak-driver-first-gaps  PASS (per-second medians move <= 0.02 ms from one second to the next; within 0.03 ms of one line over the run; single reads within 0.10 ms of it; 6000 reads)
+RESULT obssoak-driver-first-video PASS (3597 frames, 0 sequence gaps, interval 16.667 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-first-avsync PASS (60 flashes over 1.0 min: offset +34.182 ms (std 0.033, min +34.123, max +34.221), drift -0.0113 ms/min = -0.011 ms over the run, residual <= 0.064 ms)
+RESULT obssoak-obsev-sleep        FAIL (5/9 recovered; TTFGF min 1.64 s, max 1.71 s)
+RESULT obssoak-obsev-rate-59.94   FAIL (3/5 recovered; TTFGF min 2.11 s, max 2.19 s)
+RESULT obssoak-obsev-rate-60      FAIL (3/4 recovered; TTFGF min 2.05 s, max 2.11 s)
+RESULT obssoak-obsev-res-720p     FAIL (3/4 recovered; TTFGF min 0.21 s, max 0.22 s)
+RESULT obssoak-obsev-res-1080p    FAIL (2/4 recovered; TTFGF min 0.19 s, max 0.21 s)
+RESULT obssoak-obsev-edid-same    FAIL (3/5 recovered; TTFGF min 0.03 s, max 0.03 s)
+RESULT obssoak-obsev-edid-new     FAIL (2/4 recovered; TTFGF min 3.42 s, max 4.03 s)
+RESULT obssoak-obsev-edid-default FAIL (2/4 recovered; TTFGF min 2.76 s, max 2.81 s)
+RESULT obssoak-driver-last-capture PASS (PARAMS video 1280x720 YUYV 60.0000 Hz PARAMS audio hw:CARD=GC573,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880480 secs=59.999 rate=48001.158 xruns=0 restarts=0 )
+RESULT obssoak-driver-last-duration PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obssoak-driver-last-xruns  PASS (0 overruns)
+RESULT obssoak-driver-last-gaps   PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.12 ms of it; 6001 reads)
+RESULT obssoak-driver-last-video  PASS (3593 frames, 0 sequence gaps, interval 16.682 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-last-avsync PASS (60 flashes over 1.0 min: offset +32.969 ms (std 0.971, min +31.314, max +34.636), drift +3.3586 ms/min = +3.306 ms over the run, residual <= 0.069 ms)
+RESULT obssoak-obsrec-image       FAIL (240 frames sampled every 30.0 s over 7201 s at 1920x1080: NOT the pattern at the start and end; in order: pattern x12, bad x1, pattern x17, bad x1, pattern x11, bad x1, pattern x11, bad x1, pattern x11, bad x1, pattern x17, bad x1, pattern x5, bad x1, pattern x11, black x1, pattern x41, bad x1, black x95; max error in the pattern frames 6 (limit 8)
+RESULT obssoak-rec-duration       PASS (7200.8 s of video, 7200.8 s of audio)
+RESULT obssoak-rec-video          PASS (432050 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obssoak-rec-flashes        PASS (4114 flash frames, 7000 burst onsets, 4100 paired within 0.5 s; unpaired at 363.6, 723.0, 724.1, 912.7, 1453.5, 1623.5, 2343.4, 2533.1, 2534.0, 3072.7 s)
+RESULT obssoak-rec-segments       FAIL (40 segments between changes, each paired again, with at least every other second's flash paired from there and a mean offset from -45 to +125 ms (BT.1359); not: segments 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39; paired again after a change: median +5.73 s, max +41.32 s from the change)
+RESULT obssoak-rec-offset         SKIP (burst onset - flash frame: mean +78.21 ms, std 23.59, min +19.90, max +133.48 over 4100 flashes (positive: audio late); over all segments)
+RESULT obssoak-rec-drift          SKIP (+0.511 ms/min = +36.78 ms over 72.0 min (one frame period: 16.7 ms); means per minute +46.4 +46.4 +46.4 +56.5 +58.9 +62.1 +49.1 +49.7 +49.6 +55.7 +57.4 +56.7 +59.4 +59.4 +59.4 +60.4 +62.8 +67.9 +61.8 +65.7 +61.5 +57.6 +63.0 +67.1 +77.5 +78.8 +78.8 +75.0 +74.9 +74.9 +70.6 +85.1 +82.7 +90.0 +92.6 +91.2 +100.8 +92.5 +94.8 +97.6 +97.9 +111.4 +101.0 +102.8 +94.2 +119.3 +122.5 +112.5 +108.8 +114.3 +110.8 +123.0 +123.0 +123.0 +119.4 +119.3 +75.1 +50.2 +50.9 +52.4 +58.8 +60.3 +61.1 +71.8 +73.4 +74.8 +67.9 +73.7 +72.7 +77.1 +80.7 +84.0 +77.0; the source restarts at each change)
+RESULT obssoak-obs-own            FAIL (OBS - driver in the same source session: first segment +12.2 ms (OBS +46.4, driver +34.18), last -33.0 ms (OBS +0.0, driver +32.97); the two within one frame period, 16.7 ms)
+RESULT obssoak-memory             FAIL (from minute 5 to the end: SUnreclaim +22780 kB (limit 2048), Slab +181508 kB, VmallocUsed -464 kB, MemAvailable +1127724 kB, OBS RSS -893088 kB; a desktop host: other programs count too)
+RESULT obssoak-cpu                PASS (report only: OBS 169.0 % of one CPU, the IRQ thread 0.58 %, the host 11.5 % of its CPUs, over 7202 s)
+RESULT obssoak-driver-counters    PASS (over the soak, 121 samples: v_input_stops +6 a_silent +18263 v_input_restarts +36 it_losses +22 it_releases +23 it_entries +23 h_runs +22248 h_fpga_rejects +55 a_pauses +40; kernel log: 2755 lines, 2722 of the driver, 0 bad)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=19 fail=12 skip=3
