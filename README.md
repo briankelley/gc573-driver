@@ -100,6 +100,8 @@ These were measured with OBS 32.2 in the VM, with the V4L2 source in YUYV at 108
 | Another resolution or frame rate (tested: 1080p60 ↔ 720p59.94) | The source stops | After a reopen: 0.2–0.3 s |
 
 At another resolution or frame rate, the driver ends the stream, because the format must not change under an application that is streaming, and it reports the change with a V4L2 source-change event. OBS ignores the event, and its source stops when the stream ends. Reopen the source by changing a setting that makes OBS set the device up again; the driver's new mode then comes up.
+
+A source can pass through another mode on its way to its own: after a hot-plug, a PC shows its preferred mode until the desktop sets the one it was in. The driver does not end the stream for that. It holds the stream (no frames) for up to 1 s, and carries on if the source comes back to the stream's mode or drops the signal within that time. It ends the stream only when the other mode lasts the whole second.
 - By hand: in the source's properties, change *Color Range* and change it back.
 - Through obs-websocket: send `SetInputSettings` with `inputName` set to the V4L2 source and `inputSettings` set to `{"color_range": 1}`. Next time, send `{"color_range": 0}`. For the YUV formats both values mean limited range, so the picture stays the same. Setting the value the source already has does nothing.
 
@@ -113,6 +115,12 @@ While OBS records, the reopen works only with *Hybrid MP4* (tested; OBS 32's def
   - JPG is lossy (errors of about 25 codes). Use PNG to compare pictures.
 - `InputVolumeMeters` events (subscribe with `1 << 16`) arrive every 50 ms with the levels of OBS's last audio tick. A sound shorter than that, such as a one-frame beep, shows in only about half of the events.
 - A rule that worked in the tests: reopen the source (above) after any change of the source's mode, or whenever its screenshots stay black for more than a few seconds while the source should show a picture. A reopen when nothing changed costs a fraction of a second.
+- Watch the picture, not the events, and keep watching between your own actions. The test harness uses this pattern (`tests/obs-events.py`):
+  - A screenshot every 2 s. A good one shows a new frame: the picture moved since the last one. A frozen picture can look perfect in a single screenshot, so compare two.
+  - Watchdog: no new frame for more than 10 s while the card has a signal, then reopen the source and log it. `v4l2-ctl -d /dev/v4l/by-path/pci-<address>-video-index0 --query-dv-timings` succeeds when the card has a signal, and it works while OBS streams.
+  - Before each action on the source, check the picture. If it is not moving while the card has a signal, reopen first, then carry on with the action.
+  - Never stop driving the source because the picture is bad. In the first 2-hour host soak, the harness skipped its source changes while OBS's source was stopped. The input then never changed again, and the recording stayed black for its last 48 minutes.
+  - Check a recording by its motion over time, not by stills.
 - When no frame arrives for 5 frame periods, which happens during a source change, OBS logs `select timed out` and asks the driver to log its status (`VIDIOC_LOG_STATUS`). That adds about 70 lines to the kernel log per change.
 
 ## Known limitations
