@@ -3580,7 +3580,8 @@ soak_samples() {
 # rokustart: streams started at a fresh lock (the 720p stream's phase step,
 # 20261126-183914). GC573_ROKU_TRIALS (6) times: the default EDID, the lock,
 # 5 s; then the 720p-only EDID and at once gc573-cap -L 10 (it starts at the
-# lock, as the loopback's change step restarts): 120 YUYV frames with
+# lock, as the loopback's change step restarts; GC573_ROKU_START_DELAY s
+# after it instead): 120 YUYV frames with
 # every buffer pattern-filled before its QBUF (-p: blocks the DMA did not
 # write), per-frame signatures of 18 bands top to bottom (-B), and the
 # driver's frame-interrupt ring read every 0.3 s, and after each DQBUF the
@@ -3597,9 +3598,13 @@ soak_samples() {
 # it, their untouched bytes, which bands of the off frame match the frame
 # before (<), the frame after (>), both (=) or neither (x), and the ring of
 # that time. No Roku action but the EDID sets; numbers only
-roku_start_one() {	# TAG EDIDFILE
+roku_start_one() {	# TAG EDIDFILE [DELAY: s from the lock to the stream]
 	local rp wp out
 	roku_edid_set "$2"
+	if [ "${3:-0}" -gt 0 ]; then
+		time_to_lock 60 > /dev/null
+		sleep "$3"
+	fi
 	vm "sudo python3 $ROOT/tests/dbg-watch.py --secs 7 --every 25 '$dbgdir/hdmi=^(hdmi: polling|it6805: state|splitter: (rx|tx1|eq))'" \
 		> "$W/start-watch.txt" 2>&1 &
 	wp=$!
@@ -3661,6 +3666,11 @@ roku_start_one() {	# TAG EDIDFILE
 				}
 			}
 			printf "  %s IN_FRAME_PERIOD over the stream: %d to %d ticks (%.4f to %.4f ms)\n", tag, pmin, pmax, pmin / 1e5, pmax / 1e5
+			# the delivery rate before and after: the first and last 40 intervals
+			if (n > 81) {
+				a1 = (ts[41] - ts[1]) / 40; a2 = (ts[n] - ts[n - 40]) / 40
+				printf "  %s mean interval of the first 40: %.4f ms (%.3f Hz); of the last 40: %.4f ms (%.3f Hz)\n", tag, a1, 1000 / a1, a2, 1000 / a2
+			}
 			printf "RESULT %s %s (%d frames, interval median %.3f ms, %d more than 10 %% off; %d frames with 32-byte blocks the DMA did not write; %s)\n",
 				tag, off || nun ? "FAIL" : "PASS", n, med, off, nun, lk }' "$W/start-ring.u" "$W/start-watch.txt" "$W/start.txt")
 	av_results roku-start "$(sed 's/^RESULT /RESULT /' <<< "$out")"
@@ -3677,9 +3687,9 @@ step_rokustart() {
 		roku_edid_set "$e/default.bin"
 		time_to_lock 60 > /dev/null
 		sleep 5
-		roku_start_one "720p-$i" "$e/720p.bin"
+		roku_start_one "720p-$i" "$e/720p.bin" "${GC573_ROKU_START_DELAY:-0}"
 		sleep 5
-		roku_start_one "1080p-$i" "$e/default.bin"
+		roku_start_one "1080p-$i" "$e/default.bin" "${GC573_ROKU_START_DELAY:-0}"
 		sleep 2
 	done
 	roku_edid_set "$e/default.bin"
