@@ -1,0 +1,286 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-26 08:17:45 UTC
+vm:      gc573-dev, kernel 6.8.12-gc573dbg
+rev:     d06ea615e063
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   blip change loss colorimetry audio fpgawait fpgaheal
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, 5B3D6A46C710499DCDF4D74 in ~/gc573-driver, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## blip
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4360 ms, 240 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5840 ms, 283 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 6082 ms, 283 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 7636 ms, 324 frames
+    | stream: running 1 live 1 input_restarts 3 input_stops 0 input_holds 1 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 624 frames 620 skipped 4 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 3 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=620 event_ms=4360 events=4 last_event_ms=7636 frames_after_event=380 frames_after_last_event=296 last_frame_ms=12635 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT blip-continue              PASS (continue: fmt=YUYV 1920x1080 frames=620 event_ms=4360 events=4 last_event_ms=7636 frames_after_event=380 frames_after_last_event=296 last_frame_ms=12635 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-other-lock            PASS (the driver locked at 1280x720 before the mode went back: timings: 1280x720p pixelclock 74250000 flags 0x296 vic 4 h 110/40/220 v 5/5/20 pol 0x3)
+RESULT blip-held                  PASS (a hold and no stop: before input_restarts 0 input_stops 0 input_holds 0; after input_restarts 3 input_stops 0 input_holds 1)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4464 ms, 248 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5935 ms, 288 frames
+  INFO change: DQBUF Input/output error at 6986 ms, 288 frames, last frame at 5818 ms
+    | stream: running 0 live 0 input_restarts 4 input_stops 1 input_holds 2 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 290 frames 288 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=288 event_ms=4464 events=2 last_event_ms=5935 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5818 dqbuf_error_ms=6986 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT blip-stays                 PASS (error: fmt=YUYV 1920x1080 frames=288 event_ms=4464 events=2 last_event_ms=5935 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5818 dqbuf_error_ms=6986 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-hold-ms               PASS (DQBUF error 1051 ms after the last SOURCE_CHANGE, the lock at 720p; hold 0.9-1.6 s)
+
+## change
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4472 ms, 249 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5936 ms, 289 frames
+  INFO change: DQBUF Input/output error at 6951 ms, 289 frames, last frame at 5825 ms
+    | stream: running 0 live 0 input_restarts 5 input_stops 2 input_holds 3 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 291 frames 289 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=289 event_ms=4472 events=2 last_event_ms=5936 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5825 dqbuf_error_ms=6951 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3
+    | stream: running 1 live 1 input_restarts 5 input_stops 2 input_holds 3 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1280x720 sizeimage 1843200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1280x720 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.608 max=16.795 frames_not_overwritten=0 ch0_bytes=1843200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.3%) distinct_frames=1
+RESULT change-1080p60-to-720p60   PASS (error: fmt=YUYV 1920x1080 frames=289 event_ms=4472 events=2 last_event_ms=5936 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5825 dqbuf_error_ms=6951 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1280x720 frames=60)
+  INFO change: streaming YUYV 1280x720, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4522 ms, 250 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5996 ms, 290 frames
+  INFO change: DQBUF Input/output error at 7011 ms, 290 frames, last frame at 5879 ms
+    | stream: running 0 live 0 input_restarts 6 input_stops 3 input_holds 4 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1280x720 sizeimage 1843200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 292 frames 290 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1280x720 frames=290 event_ms=4522 events=2 last_event_ms=5996 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5879 dqbuf_error_ms=7011 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x292 vic=16 fps=60.0000 tpf=1/60 h=88/44/148 v=4/5/36 pol=0x3
+    | stream: running 1 live 1 input_restarts 6 input_stops 3 input_holds 4 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.565 max=16.747 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+RESULT change-720p60-to-1080p60   PASS (error: fmt=YUYV 1280x720 frames=290 event_ms=4522 events=2 last_event_ms=5996 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5879 dqbuf_error_ms=7011 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4427 ms, 247 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5716 ms, 270 frames
+    | stream: running 1 live 1 input_restarts 8 input_stops 3 input_holds 4 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 570 frames 567 skipped 3 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=567 event_ms=4427 events=2 last_event_ms=5716 frames_after_event=320 frames_after_last_event=297 last_frame_ms=10727 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3
+    | stream: running 1 live 1 input_restarts 8 input_stops 3 input_holds 4 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.681 min=16.481 max=16.804 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=1
+RESULT change-1080p60-to-p59.94   PASS (continue: fmt=YUYV 1920x1080 frames=567 event_ms=4427 events=2 last_event_ms=5716 frames_after_event=320 frames_after_last_event=297 last_frame_ms=10727 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4463 ms, 247 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5932 ms, 287 frames
+  INFO change: DQBUF Input/output error at 6963 ms, 287 frames, last frame at 5816 ms
+    | stream: running 0 live 0 input_restarts 9 input_stops 4 input_holds 5 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 3 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 289 frames 287 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=287 event_ms=4463 events=2 last_event_ms=5932 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5816 dqbuf_error_ms=6963 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+  INFO change: holding the buffers 6.0 s
+RESULT change-to-720p-held        PASS (error: fmt=YUYV 1920x1080 frames=287 event_ms=4463 events=2 last_event_ms=5932 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5816 dqbuf_error_ms=6963 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT change-adopted             PASS (capture without setting timings: RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.642 max=16.738 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=1 )
+
+## loss
+  colorimetry locked: YUYV sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: UYVY sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: NV12 sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: YV12 sRGB/sRGB/Rec. 709/Limited Range
+  colorimetry locked: BGR3 sRGB/sRGB/Rec. 709/Full Range
+  colorimetry locked: XR24 sRGB/sRGB/Rec. 709/Full Range
+  colorimetry locked: G_FMT:YUYV sRGB/sRGB/Rec. 709/Limited Range
+RESULT loss-idle-event            PASS (305.796647: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+  query while off: VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed
+	Active width: 0
+	Active height: 0
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+RESULT loss-idle-colorimetry      PASS (TRY_FMT and G_FMT while unlocked: as while locked)
+  input:	Status      : 0x00000002 (no signal)
+  RESULT capture fmt=YUYV 1920x1080 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.662 min=16.450 max=16.799 ch0_bytes=4147200 ch0_top_word=80108010(100.0%) distinct_frames=1
+  unlocked frame:  10 80 10 80 10 80 10 80 10 80 10 80 10 80 10 80
+  unlocked frame: *
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (310.271530: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (45 ms)
+RESULT loss-relock-colorimetry    PASS (TRY_FMT and G_FMT after the relock: as before)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4353 ms, 239 frames
+    | stream: running 1 live 0 input_restarts 10 input_stops 4 input_holds 5 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 502 frames 500 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=500 event_ms=4353 events=1 last_event_ms=4353 frames_after_event=261 frames_after_last_event=261 last_frame_ms=9357 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-streaming             PASS (continue: fmt=YUYV 1920x1080 frames=500 event_ms=4353 events=1 last_event_ms=4353 frames_after_event=261 frames_after_last_event=261 last_frame_ms=9357 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-streaming-black       PASS (last frame: 100.00 % limited-range black)
+RESULT loss-streaming-colorimetry PASS (G_FMT while the YUYV stream ran unlocked: sRGB/sRGB/Rec. 709/Limited Range; while locked: sRGB/sRGB/Rec. 709/Limited Range)
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 5505 ms, 312 frames
+    | stream: running 1 live 1 input_restarts 11 input_stops 4 input_holds 5 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 611 frames 609 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=609 event_ms=5505 events=1 last_event_ms=5505 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10515 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-return-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=609 event_ms=5505 events=1 last_event_ms=5505 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10515 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-return-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+  INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4344 ms, 240 frames
+  INFO change: SOURCE_CHANGE (changes 0x1) at 9795 ms, 515 frames
+    | stream: running 1 live 1 input_restarts 13 input_stops 4 input_holds 5 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 1920x1080 sizeimage 4147200 exp_slot_mode 0 next_arm 0 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 1235 frames 1232 skipped 3 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 2 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 1920x1080 frames=1232 event_ms=4344 events=2 last_event_ms=9795 frames_after_event=992 frames_after_last_event=717 last_frame_ms=21796 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT loss-off-on-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=1232 event_ms=4344 events=2 last_event_ms=9795 frames_after_event=992 frames_after_last_event=717 last_frame_ms=21796 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-off-on-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+
+## colorimetry
+  colour settings before: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1; 
+  RGB full range (sent 0/0): YUYV sRGB/sRGB/Rec. 709/Limited Range
+  RGB full range (sent 0/0): UYVY sRGB/sRGB/Rec. 709/Limited Range
+  RGB full range (sent 0/0): NV12 sRGB/sRGB/Rec. 709/Limited Range
+  RGB full range (sent 0/0): YV12 sRGB/sRGB/Rec. 709/Limited Range
+  RGB full range (sent 0/0): BGR3 sRGB/sRGB/Rec. 709/Full Range
+  RGB full range (sent 0/0): XR24 sRGB/sRGB/Rec. 709/Full Range
+  RGB full range (sent 0/0): G_FMT:YUYV sRGB/sRGB/Rec. 709/Limited Range
+RESULT colorimetry-rgb-full       PASS (YUYV sRGB/sRGB/Rec. 709/Limited Range; XR24 sRGB/sRGB/Rec. 709/Full Range)
+  YCbCr 4:4:4 limited range (sent 2/1): YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range
+  YCbCr 4:4:4 limited range (sent 2/1): UYVY Rec. 709/Rec. 709/Rec. 709/Limited Range
+  YCbCr 4:4:4 limited range (sent 2/1): NV12 Rec. 709/Rec. 709/Rec. 709/Limited Range
+  YCbCr 4:4:4 limited range (sent 2/1): YV12 Rec. 709/Rec. 709/Rec. 709/Limited Range
+  YCbCr 4:4:4 limited range (sent 2/1): BGR3 Rec. 709/Rec. 709/Rec. 709/Full Range
+  YCbCr 4:4:4 limited range (sent 2/1): XR24 Rec. 709/Rec. 709/Rec. 709/Full Range
+  YCbCr 4:4:4 limited range (sent 2/1): G_FMT:YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range
+RESULT colorimetry-ycbcr444       PASS (at the lock: YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range; XR24 Rec. 709/Rec. 709/Rec. 709/Full Range)
+  RGB limited range (sent 0/1): YUYV sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): UYVY sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): NV12 sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): YV12 sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): BGR3 sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): XR24 sRGB/sRGB/Rec. 709/Limited Range
+  RGB limited range (sent 0/1): G_FMT:YUYV sRGB/sRGB/Rec. 709/Limited Range
+RESULT colorimetry-rgb-limited    PASS (at the lock: XR24 sRGB/sRGB/Rec. 709/Limited Range; YUYV sRGB/sRGB/Rec. 709/Limited Range)
+RESULT colorimetry-loss           PASS (TRY_FMT and G_FMT while unlocked: as in RGB limited range)
+RESULT colorimetry-relock         PASS (sent 0/1; after the relock: as in RGB limited range)
+RESULT colorimetry-rgb-full-again PASS (sent 0/0: as at the start)
+  720x480 RGB full range: YUYV sRGB/sRGB/ITU-R 601/Limited Range
+  720x480 RGB full range: UYVY sRGB/sRGB/ITU-R 601/Limited Range
+  720x480 RGB full range: NV12 sRGB/sRGB/ITU-R 601/Limited Range
+  720x480 RGB full range: YV12 -
+  720x480 RGB full range: BGR3 sRGB/sRGB/ITU-R 601/Full Range
+  720x480 RGB full range: XR24 sRGB/sRGB/ITU-R 601/Full Range
+  720x480 RGB full range: G_FMT:YUYV sRGB/sRGB/ITU-R 601/Limited Range
+RESULT colorimetry-601            PASS (YUYV sRGB/sRGB/ITU-R 601/Limited Range)
+  INFO change: streaming YUYV 720x480, buffer 3 held back, tails 0 bytes
+  INFO change: SOURCE_CHANGE (changes 0x1) at 4367 ms, 241 frames
+    | stream: running 1 live 0 input_restarts 14 input_stops 4 input_holds 5 held 0 start_pending 0 fmt YUYV little-endian (0x56595559) 720x480 sizeimage 691200 exp_slot_mode 0 next_arm 2 ch_ctrl written: ch1 0x0 ch2 0x0
+    | stats: irqs 502 frames 500 skipped 2 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 1 term_missing 0 underruns 0
+  RESULT change fmt=YUYV 720x480 frames=500 event_ms=4367 events=1 last_event_ms=4367 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9367 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0
+RESULT colorimetry-601-loss       PASS (continue: fmt=YUYV 720x480 frames=500 event_ms=4367 events=1 last_event_ms=4367 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9367 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT colorimetry-601-gfmt       PASS (G_FMT while the YUYV stream ran unlocked: sRGB/sRGB/ITU-R 601/Limited Range; while locked: sRGB/sRGB/ITU-R 601/Limited Range)
+RESULT colorimetry-601-black      PASS (last frame: 100.00 % limited-range black)
+  colour settings after: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1; 
+RESULT colorimetry-settings       PASS (before: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1;  after: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1; : the other outputs as they were, DVI-D-0 at RGB full range, dithering off)
+
+## audio
+  it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 2871 entries 19 losses 16 releases 19 restarts 0
+  it6805: audio errors 0 events 0 (audio logic reset skipped)
+RESULT audio-capture              PASS (RESULT audio frames=480000 secs=9.990 rate=48000.188 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480000 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (48000.188 Hz against CLOCK_MONOTONIC, +3.9 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.14 ms of it; 1000 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+  state idle, last period samples, it6805 audio on
+  regs: DMA_RUN 0x00000000 AUDIO_DONE 0x00000000 AUDIO_SAMPLE_PERIOD 0x00000823 (48000 Hz)
+  periods 1000 silent 0 filled 0 pauses 0 starts 1 restarts 0 stops 1 stop_missing 0
+  order 0 bad_done 0 stale 0 late 0 interval_us 9782..10179
+
+## fpgawait
+  | [  415.490686] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  input: power 1 signal 1 locked 0 period 0x0 fpga 0x1 0x780 0x438 colour 0 vic 0 full_range 0 enc 0 dvi 0 dual 0 ddr 0
+RESULT fpgawait-no-lock           PASS (the FPGA measurement held not valid for good: locked 0 period 0x0, QUERY_DV_TIMINGS no lock, 0 lock lines: )
+RESULT fpgawait-warning           PASS (the warning once: 1; fpga_waits 0 -> 1)
+  | [  417.001710] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dac (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgawait-lock              PASS (the measurement valid again: locked after 134 ms; 1 lock lines: frame period 0x196dac (60.006 Hz))
+  | [  421.578794] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dac (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgawait-late              PASS (the measurement valid 30 polls after the stable entry: locked 1954 ms after the output came on; 1 lock lines: frame period 0x196dac (60.006 Hz))
+
+## fpgaheal
+  fpga_heal Y; the ELD of the card's port: /proc/asound/card3/eld#0.0
+  | [  429.798883] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  432.606668] gc573 0000:07:00.0: HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  432.984586] gc573 0000:07:00.0: HDMI: FPGA measurement valid after self-heal 1
+  | [  432.984599] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dac (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgaheal-fixed             PASS (locked 5476 ms after the output came on; attempts: self-heal 1 of 3, receiver restart; 1 lock lines: frame period 0x196dac (60.006 Hz); heals, fixes, give-ups +1 1 0; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 44 rounds, max ms QUERY_DV_TIMINGS 24, G_FMT 16, G_EDID 18; failed G_FMT 0, G_EDID 0; locked in 7)
+  | [  439.247828] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  442.082603] gc573 0000:07:00.0: HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  444.653414] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  462.095105] gc573 0000:07:00.0: HDMI: self-heal 2 of 3, hot-plug: input stable for 348 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  466.276230] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  542.101702] gc573 0000:07:00.0: HDMI: self-heal 3 of 3, hot-plug: input stable for 1382 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  546.442511] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  549.286698] gc573 0000:07:00.0: HDMI: self-heal gave up after 3 attempts: input stable, still no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0); none until a lock or a 5 V loss
+  the splitter's 5 V and the published power (UTC):
+  5v | 08:21:29.657 rx 5v 1 input: power 1 
+RESULT fpgaheal-never             PASS (attempts: self-heal 1 of 3, receiver restart; self-heal 2 of 3, hot-plug; self-heal 3 of 3, hot-plug; at s 442.082603 462.095105 542.101702 549.286698 (kernel clock); 1 warnings, nothing in the 30 s after; 0 lock lines; heals, fixes, give-ups +3 0 1; HPD drops the source saw: 2; 5 V held (rx 5v 1 input: power 1 ), 0 no-5-V lines; second handle: 896 rounds, max ms QUERY_DV_TIMINGS 37, G_FMT 33, G_EDID 586; failed G_FMT 0, G_EDID 0; locked in 0)
+RESULT fpgaheal-never-lock        PASS (the measurement valid again: locked after 157 ms, 1 lock lines: frame period 0x196dab (60.006 Hz); heals, fixes, give-ups +3 0 1 since the case began)
+  | [  586.719863] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x0): not locked until it has
+  | [  593.148070] gc573 0000:07:00.0: HDMI: self-heal 1 of 3, receiver restart: input stable for 154 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x0)
+  | [  593.532653] gc573 0000:07:00.0: HDMI: FPGA measurement valid after self-heal 1
+  | [  593.532664] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+RESULT fpgaheal-off               PASS (off for 8 s: no lock, 0 attempts; on: locked after 443 ms, attempts: self-heal 1 of 3, receiver restart; heals, fixes, give-ups +1 1 0; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 62 rounds, max ms QUERY_DV_TIMINGS 27, G_FMT 20, G_EDID 24; failed G_FMT 0, G_EDID 0; locked in 7)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 114 driver lines
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+
+## summary
+RESULT blip-continue              PASS (continue: fmt=YUYV 1920x1080 frames=620 event_ms=4360 events=4 last_event_ms=7636 frames_after_event=380 frames_after_last_event=296 last_frame_ms=12635 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-other-lock            PASS (the driver locked at 1280x720 before the mode went back: timings: 1280x720p pixelclock 74250000 flags 0x296 vic 4 h 110/40/220 v 5/5/20 pol 0x3)
+RESULT blip-held                  PASS (a hold and no stop: before input_restarts 0 input_stops 0 input_holds 0; after input_restarts 3 input_stops 0 input_holds 1)
+RESULT blip-stays                 PASS (error: fmt=YUYV 1920x1080 frames=288 event_ms=4464 events=2 last_event_ms=5935 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5818 dqbuf_error_ms=6986 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT blip-hold-ms               PASS (DQBUF error 1051 ms after the last SOURCE_CHANGE, the lock at 720p; hold 0.9-1.6 s)
+RESULT change-1080p60-to-720p60   PASS (error: fmt=YUYV 1920x1080 frames=289 event_ms=4472 events=2 last_event_ms=5936 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5825 dqbuf_error_ms=6951 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1280x720 frames=60)
+RESULT change-720p60-to-1080p60   PASS (error: fmt=YUYV 1280x720 frames=290 event_ms=4522 events=2 last_event_ms=5996 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5879 dqbuf_error_ms=7011 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+RESULT change-1080p60-to-p59.94   PASS (continue: fmt=YUYV 1920x1080 frames=567 event_ms=4427 events=2 last_event_ms=5716 frames_after_event=320 frames_after_last_event=297 last_frame_ms=10727 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0; restart: fmt=YUYV 1920x1080 frames=60)
+RESULT change-to-720p-held        PASS (error: fmt=YUYV 1920x1080 frames=287 event_ms=4463 events=2 last_event_ms=5932 frames_after_event=40 frames_after_last_event=0 last_frame_ms=5816 dqbuf_error_ms=6963 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT change-adopted             PASS (capture without setting timings: RESULT capture fmt=YUYV 1280x720 frames=30 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.642 max=16.738 ch0_bytes=1843200 ch0_top_word=80eb80eb(6.3%) distinct_frames=1 )
+RESULT loss-idle-event            PASS (305.796647: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-query            PASS (VIDIOC_QUERY_DV_TIMINGS: failed: Link has been severed)
+RESULT loss-idle-colorimetry      PASS (TRY_FMT and G_FMT while unlocked: as while locked)
+RESULT loss-unlocked-stream       PASS (ch0_top_word=80108010(100.0%))
+RESULT loss-idle-return           PASS (310.271530: event 0, pending 0: source_change: pad/input=0 changes: 1 )
+RESULT loss-idle-relock           PASS (45 ms)
+RESULT loss-relock-colorimetry    PASS (TRY_FMT and G_FMT after the relock: as before)
+RESULT loss-streaming             PASS (continue: fmt=YUYV 1920x1080 frames=500 event_ms=4353 events=1 last_event_ms=4353 frames_after_event=261 frames_after_last_event=261 last_frame_ms=9357 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-streaming-black       PASS (last frame: 100.00 % limited-range black)
+RESULT loss-streaming-colorimetry PASS (G_FMT while the YUYV stream ran unlocked: sRGB/sRGB/Rec. 709/Limited Range; while locked: sRGB/sRGB/Rec. 709/Limited Range)
+RESULT loss-return-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=609 event_ms=5505 events=1 last_event_ms=5505 frames_after_event=297 frames_after_last_event=297 last_frame_ms=10515 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-return-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+RESULT loss-off-on-streaming      PASS (continue: fmt=YUYV 1920x1080 frames=1232 event_ms=4344 events=2 last_event_ms=9795 frames_after_event=992 frames_after_last_event=717 last_frame_ms=21796 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT loss-off-on-pattern        PASS (fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0 )
+RESULT colorimetry-rgb-full       PASS (YUYV sRGB/sRGB/Rec. 709/Limited Range; XR24 sRGB/sRGB/Rec. 709/Full Range)
+RESULT colorimetry-ycbcr444       PASS (at the lock: YUYV Rec. 709/Rec. 709/Rec. 709/Limited Range; XR24 Rec. 709/Rec. 709/Rec. 709/Full Range)
+RESULT colorimetry-rgb-limited    PASS (at the lock: XR24 sRGB/sRGB/Rec. 709/Limited Range; YUYV sRGB/sRGB/Rec. 709/Limited Range)
+RESULT colorimetry-loss           PASS (TRY_FMT and G_FMT while unlocked: as in RGB limited range)
+RESULT colorimetry-relock         PASS (sent 0/1; after the relock: as in RGB limited range)
+RESULT colorimetry-rgb-full-again PASS (sent 0/0: as at the start)
+RESULT colorimetry-601            PASS (YUYV sRGB/sRGB/ITU-R 601/Limited Range)
+RESULT colorimetry-601-loss       PASS (continue: fmt=YUYV 720x480 frames=500 event_ms=4367 events=1 last_event_ms=4367 frames_after_event=259 frames_after_last_event=259 last_frame_ms=9367 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0)
+RESULT colorimetry-601-gfmt       PASS (G_FMT while the YUYV stream ran unlocked: sRGB/sRGB/ITU-R 601/Limited Range; while locked: sRGB/sRGB/ITU-R 601/Limited Range)
+RESULT colorimetry-601-black      PASS (last frame: 100.00 % limited-range black)
+RESULT colorimetry-settings       PASS (before: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1;  after: DVI-D-0 0/0/0/0/2/0; HDMI-0 0/0/0/0/0/1; : the other outputs as they were, DVI-D-0 at RGB full range, dithering off)
+RESULT audio-capture              PASS (RESULT audio frames=480000 secs=9.990 rate=48000.188 xruns=0 restarts=0)
+RESULT audio-duration             PASS (10.0 s, 480000 frames, minimum 0 s)
+RESULT audio-xruns                PASS (0 overruns)
+RESULT audio-rate                 PASS (48000.188 Hz against CLOCK_MONOTONIC, +3.9 ppm)
+RESULT audio-gaps                 PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.14 ms of it; 1000 reads)
+RESULT audio-bursts               PASS (10 in 10.0 s)
+RESULT audio-channels             PASS (left 999.8 Hz, right 2000.2 Hz over 10 bursts, worst 0.02 % off, other tone <= -84.2 dB, 0 bad)
+RESULT fpgawait-no-lock           PASS (the FPGA measurement held not valid for good: locked 0 period 0x0, QUERY_DV_TIMINGS no lock, 0 lock lines: )
+RESULT fpgawait-warning           PASS (the warning once: 1; fpga_waits 0 -> 1)
+RESULT fpgawait-lock              PASS (the measurement valid again: locked after 134 ms; 1 lock lines: frame period 0x196dac (60.006 Hz))
+RESULT fpgawait-late              PASS (the measurement valid 30 polls after the stable entry: locked 1954 ms after the output came on; 1 lock lines: frame period 0x196dac (60.006 Hz))
+RESULT fpgaheal-fixed             PASS (locked 5476 ms after the output came on; attempts: self-heal 1 of 3, receiver restart; 1 lock lines: frame period 0x196dac (60.006 Hz); heals, fixes, give-ups +1 1 0; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 44 rounds, max ms QUERY_DV_TIMINGS 24, G_FMT 16, G_EDID 18; failed G_FMT 0, G_EDID 0; locked in 7)
+RESULT fpgaheal-never             PASS (attempts: self-heal 1 of 3, receiver restart; self-heal 2 of 3, hot-plug; self-heal 3 of 3, hot-plug; at s 442.082603 462.095105 542.101702 549.286698 (kernel clock); 1 warnings, nothing in the 30 s after; 0 lock lines; heals, fixes, give-ups +3 0 1; HPD drops the source saw: 2; 5 V held (rx 5v 1 input: power 1 ), 0 no-5-V lines; second handle: 896 rounds, max ms QUERY_DV_TIMINGS 37, G_FMT 33, G_EDID 586; failed G_FMT 0, G_EDID 0; locked in 0)
+RESULT fpgaheal-never-lock        PASS (the measurement valid again: locked after 157 ms, 1 lock lines: frame period 0x196dab (60.006 Hz); heals, fixes, give-ups +3 0 1 since the case began)
+RESULT fpgaheal-off               PASS (off for 8 s: no lock, 0 attempts; on: locked after 443 ms, attempts: self-heal 1 of 3, receiver restart; heals, fixes, give-ups +1 1 0; HPD drops the source saw: 0; 5 V held (rx 5v 1 input: power 1 ); second handle: 62 rounds, max ms QUERY_DV_TIMINGS 27, G_FMT 20, G_EDID 24; failed G_FMT 0, G_EDID 0; locked in 7)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+SUMMARY pass=54 fail=0 skip=0
