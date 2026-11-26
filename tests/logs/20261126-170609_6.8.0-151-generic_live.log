@@ -1,0 +1,61 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 17:06:09 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     4a5ad9d12c4a
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 1
+steps:   rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokulock
+  Roku: model Ultra 4850X, software 16.0.4 build 853
+  	Active width: 1920
+  	Active height: 1080
+  	Frame format: progressive
+  	Pixelclock: 148500000 Hz (60.00 frames per second)
+  	Standards: CTA-861, DMT
+  	CTA-861 VIC: 16
+  	Flags: framerate can be reduced by 1/1.001, framerate is reduced by 1/1.001, can detect reduced framerates, CE-video, has CTA-861 VIC
+RESULT roku-lock                  PASS (locked within 3 ms; Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0)
+
+## rokucompliance
+  Total for gc573 device /dev/v4l/by-path/pci-0000:07:00.0-video-index0: 55, Succeeded: 55, Failed: 0, Warnings: 0
+RESULT roku-compliance            PASS (Total for gc573 device /dev/v4l/by-path/pci-0000:07:00.0-video-index0: 55, Succeeded: 55, Failed: 0, Warnings: 0)
+
+## rokucapture
+ecp: POST input/15985: HTTP 404
+Roku state saved: power mode PowerOn, in the foreground another app (/home/brian/.config/gc573/roku-state, 0600)
+RESULT roku-capture-source        FAIL (the pattern video on the Roku and the card: ecp.py play)
+
+## rokuobs
+  no action on the Roku: our video did not show on the card earlier in this run
+RESULT roku-obs-source            FAIL (the pattern video on the Roku and the card)
+
+## rokusleep
+  no action on the Roku: our video did not show on the card earlier in this run
+RESULT roku-sleep-source          FAIL (the pattern video on the Roku and the card)
+
+## rokumodes
+  no action on the Roku: our video did not show on the card earlier in this run
+RESULT roku-modes-source          FAIL (the pattern video on the Roku and the card)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 21 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-lock                  PASS (locked within 3 ms; Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0)
+RESULT roku-compliance            PASS (Total for gc573 device /dev/v4l/by-path/pci-0000:07:00.0-video-index0: 55, Succeeded: 55, Failed: 0, Warnings: 0)
+RESULT roku-capture-source        FAIL (the pattern video on the Roku and the card: ecp.py play)
+RESULT roku-obs-source            FAIL (the pattern video on the Roku and the card)
+RESULT roku-sleep-source          FAIL (the pattern video on the Roku and the card)
+RESULT roku-modes-source          FAIL (the pattern video on the Roku and the card)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=5 fail=4 skip=1

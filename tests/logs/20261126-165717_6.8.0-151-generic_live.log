@@ -1,0 +1,35 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 16:57:17 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     7679e9f614cd
+source:  the Roku (model Roku Ultra 4802X, software 16.0.4 build 853 (the saved Roku, not yet identified as the one cabled to the card)), go 0
+steps:   rokuwhich
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokuwhich
+  before: 4802X: Roku Ultra, software 16.0.4 build 853, PowerOn, ui-resolution 1080p, ecp permissive
+  before: 4850X: Ultra, software 16.0.4 build 853, PowerOn, ui-resolution 1080p, ecp enabled
+  the card before: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz
+  720p only: +0 s 4850X: Ultra, software 16.0.4 build 853, PowerOn, ui-resolution 1080p, ecp enabled
+  720p only: +0 s 4802X: Roku Ultra, software 16.0.4 build 853, PowerOn, ui-resolution 1080p, ecp permissive
+  720p only: NO MATCH after 45 s: no Roku with ui-resolution=720p
+  the card with the 720p-only EDID: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz (locked after 4 ms)
+  the card with the default EDID again: power 1 signal 0 locked 0 colour 0 vic 0 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 0,Active height: 0,Pixelclock: 0 Hz (locked after 3 ms)
+RESULT roku-which                 SKIP (neither Roku's ui-resolution followed the 720p-only EDID within 45 s: the filter's own EDID, or the display type is not Auto detect; rokumodes skips then; the fallback, with the go: rokuwhichkey)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 6 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-which                 SKIP (neither Roku's ui-resolution followed the 720p-only EDID within 45 s: the filter's own EDID, or the display type is not Auto detect; rokumodes skips then; the fallback, with the go: rokuwhichkey)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=3 fail=0 skip=2
