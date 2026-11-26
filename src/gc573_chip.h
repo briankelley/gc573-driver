@@ -251,6 +251,10 @@ struct gc573_hdmi {
 	struct gc573_input in;
 	bool audio_on;			/* IT6805 audio ON (11.1); READ_ONCE */
 	unsigned int lock_polls;	/* polls since the entry, for 0x1010 */
+	unsigned long stable_at;	/* jiffies of the entry's first poll */
+	u32 settle_polls;		/* polls a valid measurement waited for
+					 * the delivery settle
+					 */
 	u32 period_raw;			/* 0x1010 at the last poll */
 	u32 fpga_rejects;		/* polls the FPGA measurement held a lock */
 	u32 fpga_waits;			/* entries still without it after

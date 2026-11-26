@@ -12,10 +12,11 @@
 #   bringup   load; the output connects; its EDID (xrandr --verbose) equals
 #             VIDIOC_G_EDID byte for byte, and edid-decode passes it
 #   lock      1080p60 and 1080p59.94: QUERY_DV_TIMINGS CTA 1080p60 (with the
-#             1000/1001 flag at 59.94) within 3 s of the mode switch;
+#             1000/1001 flag at 59.94) within LOCK_MS (4 s) of the mode
+#             switch;
 #             POWER_PRESENT = 1; SOURCE_CHANGE on lock, loss and mode change
 #   relock    GC573_RELOCKS (25) x 2 mode switches 1080p60 <-> 1080p59.94
-#             with show.sh: each locks to the new rate within 3 s
+#             with show.sh: each locks to the new rate within LOCK_MS
 #   fpgawait  the lock policy with the FPGA's input measurement held not
 #             valid (module parameter exp_fpga_invalid, the boot race of
 #             2026-11-25): no lock and one warning while it is not valid;
@@ -643,6 +644,11 @@ cta1080p60() {
 		grep -q 'CTA-861 VIC: 16' <<< "$1"
 }
 
+# the longest a lock may take from the output on or a mode switch: 1.6-1.9 s
+# measured before the delivery settle (spec/hdmi-chips.md "Lock policy"),
+# which publishes a lock no earlier than 1.25 s after the stable entry,
+# about 1 s later than before
+LOCK_MS=${GC573_LOCK_MS:-4000}
 step_lock() {
 	local t q t0
 	src_on 1920x1080 60
@@ -656,7 +662,7 @@ step_lock() {
 	q=$(query)
 	echo "$q" | sed 's/^/  /'
 	check lock-1080p60 "$(cta1080p60 "$q" && ! grep -q 'framerate is reduced' <<< "$q" &&
-		[ "$t" -le 3000 ]; echo $?)" "($t ms from output on)"
+		[ "$t" -le "$LOCK_MS" ]; echo $?)" "($t ms from output on, at most $LOCK_MS)"
 	t0=$(date +%s%N)
 	src_on 1920x1080 59.94
 	wait_unlocked
@@ -665,7 +671,7 @@ step_lock() {
 	q=$(query)
 	echo "$q" | sed 's/^/  /'
 	check lock-1080p59.94 "$(cta1080p60 "$q" && grep -q 'framerate is reduced by 1/1.001' <<< "$q" &&
-		[ "$t" -le 3000 ]; echo $?)" "($t ms from the mode switch)"
+		[ "$t" -le "$LOCK_MS" ]; echo $?)" "($t ms from the mode switch, at most $LOCK_MS)"
 	q=$(vm "v4l2-ctl -d $vdev --get-ctrl=power_present" 2>&1)
 	check lock-power-present "$(grep -q 'power_present: 1' <<< "$q"; echo $?)" "($q)"
 	event_during lock-event-mode-change src_on 1920x1080 60
@@ -716,12 +722,12 @@ step_relock() {
 			ms=$((($(date +%s%N) - t0) / 1000000))
 			times="$times $ms"
 			[ "$ms" -gt "$tmax" ] && tmax=$ms
-			[ "$ms" -le 3000 ] || bad=$((bad + 1))
+			[ "$ms" -le "$LOCK_MS" ] || bad=$((bad + 1))
 		done
 	done
 	echo "  ms from the switch to the new rate:$times"
 	check relock "$([ $bad = 0 ]; echo $?)" \
-		"($((n - bad)) of $n switches locked within 3 s, slowest $tmax ms; $(hdmi_dbg | grep -oE '(level_changes|fpga_rejects) [0-9]+' | tr '\n' ' '))"
+		"($((n - bad)) of $n switches locked within $LOCK_MS ms, slowest $tmax ms; $(hdmi_dbg | grep -oE '(level_changes|fpga_rejects) [0-9]+' | tr '\n' ' '))"
 }
 
 # fpgawait: the lock policy (spec/hdmi-chips.md "Lock policy") with the

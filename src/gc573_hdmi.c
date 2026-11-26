@@ -70,6 +70,16 @@ MODULE_PARM_DESC(fpga_heal,
  * lock policy rejects its measurement (a frame period that moves).
  */
 #define GC573_HDMI_HEAL_POLLS		90
+/*
+ * hdmi-chips.md "Lock policy", delivery settle: the card's output follows
+ * a new input only about 1.0-1.05 s after the IT6805 stable entry
+ * (video-pipeline.md "Delivery rate"; open question 41). A new lock is
+ * published no earlier than this long after the first poll that saw the
+ * entry (stable, AV mute released), so that the event, the DV timings and
+ * a stream started or restarted at the lock all come after the re-phase.
+ * A published lock that holds is not affected.
+ */
+#define GC573_HDMI_SETTLE_MS		1250
 #define GC573_HDMI_HEAL_TRIES		3
 #define GC573_HDMI_HEAL_QUIET_MS	10000
 #define GC573_HEAL_RESTART		1
@@ -558,9 +568,10 @@ static void gc573_hdmi_heal(struct gc573_hdmi *h)
  * it: at a boot the FPGA once held 0x1004 at 1 until the source set its
  * mode again, and a lock on the IT6805's clock alone reported 59.32 Hz
  * for 1080p60. After GC573_HDMI_FPGA_WARN polls of that the driver logs
- * it, once per stable entry. A lock holds while the IT6805 stays stable at
- * the same size; its timings change only when a valid frame period moves
- * by more than 0.05 %, half the 1000/1001 step.
+ * it, once per stable entry. A new lock also waits for the delivery
+ * settle (GC573_HDMI_SETTLE_MS from the entry). A lock holds while the
+ * IT6805 stays stable at the same size; its timings change only when a
+ * valid frame period moves by more than 0.05 %, half the 1000/1001 step.
  * Returns true when the video device has to look: lock, loss, mode or
  * power change.
  */
@@ -591,12 +602,21 @@ static bool gc573_hdmi_publish(struct gc573_hdmi *h)
 			in.period = period;
 		else if (!old->locked)
 			h->fpga_rejects++;
+		if (!h->lock_polls)
+			h->stable_at = jiffies;
 		if (h->lock_polls < UINT_MAX)
 			h->lock_polls++;
 		hold = old->locked &&
 		       old->timings.bt.width ==
 		       h->it.mode.hactive * gc573_hdmi_mul(&h->it.mode) &&
 		       old->timings.bt.height == h->it.mode.vactive;
+		/* the delivery settle: no new lock before the output follows */
+		if (in.period && !hold &&
+		    time_before(jiffies, h->stable_at +
+				msecs_to_jiffies(GC573_HDMI_SETTLE_MS))) {
+			in.period = 0;
+			h->settle_polls++;
+		}
 		in.locked = in.period || hold;
 		if (!in.locked && h->lock_polls == GC573_HDMI_FPGA_WARN) {
 			h->fpga_waits++;
@@ -826,13 +846,13 @@ static int gc573_hdmi_debugfs_show(struct seq_file *m, void *unused)
 	struct gc573_input in;
 
 	mutex_lock(&h->lock);
-	seq_printf(m, "hdmi: polling %d failed %d polls %u poll_errors %u poll_ms_max %u xfers %u xfer_errors %u retries %u resyncs %u runs %u lock_polls %u period_raw %#x fpga_rejects %u fpga_waits %u fpga_heals %u fpga_heal_fixes %u fpga_heal_giveups %u heal_tries %u gpio %#010x\n",
+	seq_printf(m, "hdmi: polling %d failed %d polls %u poll_errors %u poll_ms_max %u xfers %u xfer_errors %u retries %u resyncs %u runs %u lock_polls %u period_raw %#x fpga_rejects %u fpga_waits %u settle_polls %u fpga_heals %u fpga_heal_fixes %u fpga_heal_giveups %u heal_tries %u gpio %#010x\n",
 		   h->polling, h->failed, h->polls, h->poll_errors,
 		   h->poll_ms_max, h->xfers, h->xfer_errors, h->retries,
 		   h->resyncs, h->runs, h->lock_polls, h->period_raw,
-		   h->fpga_rejects, h->fpga_waits, h->fpga_heals,
-		   h->fpga_heal_fixes, h->fpga_heal_giveups, h->heal_tries,
-		   gc573_rd(gc, GC573_GPIO));
+		   h->fpga_rejects, h->fpga_waits, h->settle_polls,
+		   h->fpga_heals, h->fpga_heal_fixes, h->fpga_heal_giveups,
+		   h->heal_tries, gc573_rd(gc, GC573_GPIO));
 	gc573_it6805_show(h, m);
 	gc573_sp_show(h, m);
 	mutex_unlock(&h->lock);

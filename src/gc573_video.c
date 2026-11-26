@@ -99,11 +99,12 @@
 #define GC573_VID_SKIP			1
 /*
  * How long a stream is held while the input is locked in other timings
- * (policy: header comment). The driver locks in a passing mode 1.1-1.7 s
- * after the source sets it, so the hold rides out a second mode set that
- * comes up to 2.1-2.7 s after the first; measured blips lasted 138 and
- * 224 ms. Applications that ignore SOURCE_CHANGE see a lasting change
- * (the failed queue) that much later.
+ * (policy: header comment). The driver locked in a passing mode 1.1-1.7 s
+ * after the source set it, before the delivery settle
+ * (GC573_HDMI_SETTLE_MS) added about 1 s, so the hold rides out a second
+ * mode set that comes up to 2.1-2.7 s after the first, or later; measured
+ * blips lasted 138 and 224 ms. Applications that ignore SOURCE_CHANGE see
+ * a lasting change (the failed queue) that much later.
  */
 #define GC573_VID_HOLD_MS		1000
 
