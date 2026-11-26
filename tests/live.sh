@@ -3433,8 +3433,11 @@ soak_change() {
 		fi
 		roku_key Home || { echo "  CHANGE $sk_n sleep: PowerOff, input $lost, power mode $roku_pm; Home: $roku_err"; return 1; }
 		echo "  CHANGE $sk_n sleep: PowerOff, input $lost, power mode $roku_pm after 20 s; Home" ;;
-	edid-same|edid-default) roku_edid_set "$sk_e/default.bin"; echo "  CHANGE $sk_n $1" ;;
-	edid-new) roku_edid_set "$sk_e/serial.bin"; echo "  CHANGE $sk_n $1" ;;
+	edid-same|edid-default|edid-new)
+		roku_edid_set "$sk_e/$([ "$1" = edid-new ] && echo serial || echo default).bin"
+		# the point after waits for the lock: first let the hot-plug's loss come
+		if wait_unlocked; then lost="lost"; else lost="held 10 s"; fi
+		echo "  CHANGE $sk_n $1: the input $lost" ;;
 	idle) echo "  CHANGE $sk_n idle" ;;
 	reopen-video) obsany reopen-video > /dev/null 2>&1; echo "  CHANGE $sk_n reopen-video" ;;
 	reopen-audio) echo "  CHANGE $sk_n reopen-audio: $(obsany reopen-audio 2>&1 | tr '\n' ' ')" ;;
