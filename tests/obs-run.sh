@@ -4,10 +4,19 @@
 # obs, obsav, obschange). Run as the desktop user (dev) over ssh.
 #   start  write a minimal configuration on first use (no first-run wizard,
 #          profile and scene collection "gc573", obs-websocket on port 4455
-#          without a password), clear OBS's run markers (after a kill OBS
-#          would otherwise wait in its "unclean shutdown" dialog), set the
-#          recording format, start OBS on the desktop (DISPLAY=:0) and wait
-#          for the websocket
+#          without a password), clear OBS's run markers, set the recording
+#          format, start OBS on the desktop (DISPLAY=:0) and wait for the
+#          websocket
+#   OBS starts with --multi, in both modes. OBS 32 has no
+#          --disable-shutdown-check: at its start it takes any run marker
+#          (~/.config/obs-studio/.sentinel/run_*) other than its own for an
+#          unclean shutdown and waits in its crash dialog, a window on the
+#          desktop, until someone answers it. It writes its own marker, and
+#          a clean exit removes all of them. With --multi it neither reads
+#          nor writes them (frontend/utility/CrashHandler.cpp). So a test
+#          OBS that crashes, or is killed, leaves nothing that stops the
+#          next start, the user's or ours, and the user's markers stay as
+#          they are (tests/obs-run-check.sh)
 #   GC573_OBS_RECFORMAT: Simple output's recording format (RecFormat2),
 #          default hybrid_mp4 (OBS 32's default). OBS picks the recording
 #          output when it loads the profile: hybrid_mp4 and hybrid_mov are
@@ -66,9 +75,9 @@ EOF
 		# OBS 32.2 with NVIDIA 470 can crash while it starts: its graphics
 		# thread's getenv() in libnvidia-eglcore races the frontend-tools
 		# plugin's Python start (core dump of 2026-11-26 03:37:22Z). One
-		# more try then
+		# more try then (with --multi the crash leaves no run marker)
 		for try in 1 2; do
-			DISPLAY=${DISPLAY:-:0} setsid obs --minimize-to-tray --disable-shutdown-check \
+			DISPLAY=${DISPLAY:-:0} setsid obs --multi --minimize-to-tray --disable-shutdown-check \
 				--disable-missing-files-check --profile gc573 --collection gc573 \
 				> "${XDG_RUNTIME_DIR:-/tmp}/gc573-obs-stdout.txt" 2>&1 < /dev/null &
 			echo $! > "$pidf"
@@ -125,7 +134,7 @@ start)
 			END { if (!done) { if (!sec) print "[SimpleOutput]"; print "RecFormat2=" v } }' "$f" > "$f.new" &&
 			mv "$f.new" "$f"
 	done
-	DISPLAY=:0 setsid obs --minimize-to-tray --disable-shutdown-check \
+	DISPLAY=:0 setsid obs --multi --minimize-to-tray --disable-shutdown-check \
 		--disable-missing-files-check --profile gc573 --collection gc573 \
 		> /tmp/obs-stdout.txt 2>&1 < /dev/null &
 	for _ in $(seq 120); do

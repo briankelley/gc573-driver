@@ -1,0 +1,35 @@
+# tests/obs-run-check.sh on the host, 2026-11-26 04:0x UTC: an OBS stand-in (no OBS started)
+# OBS installed: 32.2.0-0obsproject1~noble; the stand-in follows its
+# frontend/utility/CrashHandler.cpp and OBSApp.cpp (tag 32.2.0)
+
+## before: tests/obs-run.sh at 1e81ffd (no --multi)
+  start: OBS did not open its websocket in 60 s
+  stop: OBS stopped
+  stand-in: start 1: --minimize-to-tray --disable-shutdown-check --disable-missing-files-check --profile gc573 --collection gc573
+  stand-in: start 1: Crash or unclean shutdown detected (crash dialog)
+RESULT stale        FAIL (an earlier OBS's run marker: OBS waited in its crash dialog)
+  start: OBS (pid 1512773) ended while starting, attempt 1 (its log: ~/.config/obs-studio/logs/)
+  start: OBS did not open its websocket in 60 s
+  stop: OBS stopped
+  stand-in: start 1: --minimize-to-tray --disable-shutdown-check --disable-missing-files-check --profile gc573 --collection gc573
+  stand-in: start 1: crashed while starting
+  stand-in: start 2: --minimize-to-tray --disable-shutdown-check --disable-missing-files-check --profile gc573 --collection gc573
+  stand-in: start 2: Crash or unclean shutdown detected (crash dialog)
+RESULT crash        FAIL (OBS ended while starting: the next try waited in its crash dialog)
+exit 1
+
+## after: with --multi
+  start: OBS started minimized to the tray (pid 1513800, profile gc573, recording format hybrid_mp4; 0 windows visible)
+  stop: OBS stopped
+  stand-in: start 1: --multi --minimize-to-tray --disable-shutdown-check --disable-missing-files-check --profile gc573 --collection gc573
+  stand-in: start 1: clean exit
+RESULT stale        PASS (an earlier OBS's run marker: started without the crash dialog, the marker left as it was)
+  start: OBS (pid 1513842) ended while starting, attempt 1 (its log: ~/.config/obs-studio/logs/)
+  start: OBS started minimized to the tray (pid 1513852, profile gc573, recording format hybrid_mp4; 0 windows visible)
+  stop: OBS stopped
+  stand-in: start 1: --multi --minimize-to-tray --disable-shutdown-check --disable-missing-files-check --profile gc573 --collection gc573
+  stand-in: start 1: crashed while starting
+  stand-in: start 2: --multi --minimize-to-tray --disable-shutdown-check --disable-missing-files-check --profile gc573 --collection gc573
+  stand-in: start 2: clean exit
+RESULT crash        PASS (OBS ended while starting: the second try started without the crash dialog, no marker left)
+exit 0
