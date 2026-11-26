@@ -1,0 +1,193 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 19:03:06 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     113477ec9bfd
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 0
+steps:   rokustart
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokustart
+RESULT roku-start-720p-1          FAIL (120 frames, interval median 16.675 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2357 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-1 interval off: frame 50 of 120 (0.802 s in), seq 48 -> 49, 1.953 ms (median 16.675)
+      phase against the median cadence, frames 48 to 51: -0.392 -0.399 -15.121 -0.159 ms; untouched 32-byte blocks 0 0 0 0
+      frame 50 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): <<<<<<<<<<<<<<<<<<
+      IN_FRAME_PERIOD (100 MHz ticks) read after frames 48 to 51: 1668188 1668189 1668188 1668188
+      watch: -360.4 ms from frame 49: hdmi: polls 191815 poll_errors 0 xfers 6374709 retries 0 resyncs 0 runs 33586 lock_polls 14
+      watch: -360.4 ms from frame 49: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191815 entries 43 losses 42 releases 43 restarts 0
+      watch: -307.6 ms from frame 49: hdmi: polls 191816 poll_errors 0 xfers 6374738 retries 0 resyncs 0 runs 33586 lock_polls 15
+      watch: -307.6 ms from frame 49: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191816 entries 43 losses 42 releases 43 restarts 0
+      watch: -252.4 ms from frame 49: hdmi: polls 191817 poll_errors 0 xfers 6374767 retries 0 resyncs 0 runs 33586 lock_polls 16
+      watch: -252.4 ms from frame 49: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191817 entries 43 losses 42 releases 43 restarts 0
+      watch: -197.7 ms from frame 49: hdmi: polls 191818 poll_errors 0 xfers 6374796 retries 0 resyncs 0 runs 33586 lock_polls 17
+      watch: -197.7 ms from frame 49: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191818 entries 43 losses 42 releases 43 restarts 0
+      watch: -121.7 ms from frame 49: hdmi: polls 191819 poll_errors 0 xfers 6374828 retries 0 resyncs 0 runs 33586 lock_polls 18
+      watch: -121.7 ms from frame 49: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191819 entries 43 losses 42 releases 43 restarts 0
+      watch: -70.9 ms from frame 49: hdmi: polls 191820 poll_errors 0 xfers 6374876 retries 0 resyncs 0 runs 33587 lock_polls 19
+      watch: -70.9 ms from frame 49: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191820 entries 43 losses 42 releases 43 restarts 0
+      watch: -20.1 ms from frame 49: hdmi: polls 191821 poll_errors 0 xfers 6374905 retries 0 resyncs 0 runs 33587 lock_polls 20
+      watch: -20.1 ms from frame 49: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191821 entries 43 losses 42 releases 43 restarts 0
+      watch: +30.7 ms from frame 49: hdmi: polls 191822 poll_errors 0 xfers 6374934 retries 0 resyncs 0 runs 33587 lock_polls 21
+      watch: +30.7 ms from frame 49: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191822 entries 43 losses 42 releases 43 restarts 0
+      watch: +81.7 ms from frame 49: hdmi: polls 191823 poll_errors 0 xfers 6374966 retries 0 resyncs 0 runs 33587 lock_polls 22
+      watch: +81.7 ms from frame 49: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191823 entries 43 losses 42 releases 43 restarts 0
+      ring: -33.316 ms from frame 49, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: -16.668 ms from frame 49, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +0.001 ms from frame 49, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +1.954 ms from frame 49, status 0x00009023 ctrl 0x00000013 done 1 armed 2
+      ring: +33.590 ms from frame 49, status 0x00009024 ctrl 0x00000003 done 1 armed 3
+      ring: +50.281 ms from frame 49, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+    720p-1 interval off: frame 51 of 120 (0.834 s in), seq 49 -> 50, 31.637 ms (median 16.675)
+      phase against the median cadence, frames 49 to 52: -0.399 -15.121 -0.159 -0.143 ms; untouched 32-byte blocks 0 0 0 0
+      frame 51 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>>>>>>>>>>>>>>>
+      IN_FRAME_PERIOD (100 MHz ticks) read after frames 49 to 52: 1668189 1668188 1668188 1668189
+      watch: -362.4 ms from frame 50: hdmi: polls 191815 poll_errors 0 xfers 6374709 retries 0 resyncs 0 runs 33586 lock_polls 14
+      watch: -362.4 ms from frame 50: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191815 entries 43 losses 42 releases 43 restarts 0
+      watch: -309.6 ms from frame 50: hdmi: polls 191816 poll_errors 0 xfers 6374738 retries 0 resyncs 0 runs 33586 lock_polls 15
+      watch: -309.6 ms from frame 50: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191816 entries 43 losses 42 releases 43 restarts 0
+      watch: -254.4 ms from frame 50: hdmi: polls 191817 poll_errors 0 xfers 6374767 retries 0 resyncs 0 runs 33586 lock_polls 16
+      watch: -254.4 ms from frame 50: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191817 entries 43 losses 42 releases 43 restarts 0
+      watch: -199.6 ms from frame 50: hdmi: polls 191818 poll_errors 0 xfers 6374796 retries 0 resyncs 0 runs 33586 lock_polls 17
+      watch: -199.6 ms from frame 50: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191818 entries 43 losses 42 releases 43 restarts 0
+      watch: -123.7 ms from frame 50: hdmi: polls 191819 poll_errors 0 xfers 6374828 retries 0 resyncs 0 runs 33586 lock_polls 18
+      watch: -123.7 ms from frame 50: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191819 entries 43 losses 42 releases 43 restarts 0
+      watch: -72.9 ms from frame 50: hdmi: polls 191820 poll_errors 0 xfers 6374876 retries 0 resyncs 0 runs 33587 lock_polls 19
+      watch: -72.9 ms from frame 50: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191820 entries 43 losses 42 releases 43 restarts 0
+      watch: -22.0 ms from frame 50: hdmi: polls 191821 poll_errors 0 xfers 6374905 retries 0 resyncs 0 runs 33587 lock_polls 20
+      watch: -22.0 ms from frame 50: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191821 entries 43 losses 42 releases 43 restarts 0
+      watch: +28.8 ms from frame 50: hdmi: polls 191822 poll_errors 0 xfers 6374934 retries 0 resyncs 0 runs 33587 lock_polls 21
+      watch: +28.8 ms from frame 50: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191822 entries 43 losses 42 releases 43 restarts 0
+      watch: +79.7 ms from frame 50: hdmi: polls 191823 poll_errors 0 xfers 6374966 retries 0 resyncs 0 runs 33587 lock_polls 22
+      watch: +79.7 ms from frame 50: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 191823 entries 43 losses 42 releases 43 restarts 0
+      ring: -18.621 ms from frame 50, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: -1.952 ms from frame 50, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +0.001 ms from frame 50, status 0x00009023 ctrl 0x00000013 done 1 armed 2
+      ring: +31.637 ms from frame 50, status 0x00009024 ctrl 0x00000003 done 1 armed 3
+      ring: +48.328 ms from frame 50, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +65.061 ms from frame 50, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+    720p-1 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    720p-1 mean interval of the first 40: 16.6667 ms (60.000 Hz); of the last 40: 16.6819 ms (59.945 Hz)
+  INFO start_to_first_frame_ms=145.7
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.679 min=1.953 max=31.637 frames_not_overwritten=0
+RESULT roku-start-1080p-1         PASS (120 frames, interval median 16.680 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2509 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    1080p-1 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    1080p-1 mean interval of the first 40: 16.6650 ms (60.006 Hz); of the last 40: 16.6833 ms (59.940 Hz)
+  INFO start_to_first_frame_ms=141.6
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.669 min=15.786 max=16.764 frames_not_overwritten=0
+RESULT roku-start-720p-2          FAIL (120 frames, interval median 16.679 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2457 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-2 interval off: frame 47 of 120 (0.764 s in), seq 45 -> 46, 14.210 ms (median 16.679)
+      phase against the median cadence, frames 45 to 48: -0.486 -0.558 -3.027 +11.996 ms; untouched 32-byte blocks 0 0 0 0
+      frame 47 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): <<<<<<<<<<<<<<<<<<
+      IN_FRAME_PERIOD (100 MHz ticks) read after frames 45 to 48: 1668189 1668188 1668189 1668188
+      watch: -372.0 ms from frame 46: hdmi: polls 192260 poll_errors 0 xfers 6393749 retries 0 resyncs 0 runs 33756 lock_polls 13
+      watch: -372.0 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192260 entries 45 losses 44 releases 45 restarts 0
+      watch: -321.6 ms from frame 46: hdmi: polls 192261 poll_errors 0 xfers 6393781 retries 0 resyncs 0 runs 33756 lock_polls 14
+      watch: -321.6 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192261 entries 45 losses 44 releases 45 restarts 0
+      watch: -271.2 ms from frame 46: hdmi: polls 192262 poll_errors 0 xfers 6393810 retries 0 resyncs 0 runs 33756 lock_polls 15
+      watch: -271.2 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192262 entries 45 losses 44 releases 45 restarts 0
+      watch: -220.5 ms from frame 46: hdmi: polls 192263 poll_errors 0 xfers 6393839 retries 0 resyncs 0 runs 33756 lock_polls 16
+      watch: -220.5 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192263 entries 45 losses 44 releases 45 restarts 0
+      watch: -144.8 ms from frame 46: hdmi: polls 192264 poll_errors 0 xfers 6393868 retries 0 resyncs 0 runs 33756 lock_polls 17
+      watch: -144.8 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192264 entries 45 losses 44 releases 45 restarts 0
+      watch: -94.5 ms from frame 46: hdmi: polls 192265 poll_errors 0 xfers 6393900 retries 0 resyncs 0 runs 33756 lock_polls 18
+      watch: -94.5 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192265 entries 45 losses 44 releases 45 restarts 0
+      watch: -44.1 ms from frame 46: hdmi: polls 192266 poll_errors 0 xfers 6393948 retries 0 resyncs 0 runs 33757 lock_polls 19
+      watch: -44.1 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192266 entries 45 losses 44 releases 45 restarts 0
+      watch: +6.2 ms from frame 46: hdmi: polls 192267 poll_errors 0 xfers 6393977 retries 0 resyncs 0 runs 33757 lock_polls 20
+      watch: +6.2 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192267 entries 45 losses 44 releases 45 restarts 0
+      watch: +56.6 ms from frame 46: hdmi: polls 192268 poll_errors 0 xfers 6394006 retries 0 resyncs 0 runs 33757 lock_polls 21
+      watch: +56.6 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192268 entries 45 losses 44 releases 45 restarts 0
+      watch: +107.1 ms from frame 46: hdmi: polls 192269 poll_errors 0 xfers 6394038 retries 0 resyncs 0 runs 33757 lock_polls 22
+      watch: +107.1 ms from frame 46: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192269 entries 45 losses 44 releases 45 restarts 0
+      ring: -33.332 ms from frame 46, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: -16.607 ms from frame 46, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +0.001 ms from frame 46, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: +14.210 ms from frame 46, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: +45.912 ms from frame 46, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +62.586 ms from frame 46, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+    720p-2 interval off: frame 48 of 120 (0.796 s in), seq 46 -> 47, 31.702 ms (median 16.679)
+      phase against the median cadence, frames 46 to 49: -0.558 -3.027 +11.996 +11.991 ms; untouched 32-byte blocks 0 0 0 0
+      frame 48 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>>>>>>>>>>>>>>>
+      IN_FRAME_PERIOD (100 MHz ticks) read after frames 46 to 49: 1668188 1668189 1668188 1668189
+      watch: -386.2 ms from frame 47: hdmi: polls 192260 poll_errors 0 xfers 6393749 retries 0 resyncs 0 runs 33756 lock_polls 13
+      watch: -386.2 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192260 entries 45 losses 44 releases 45 restarts 0
+      watch: -335.8 ms from frame 47: hdmi: polls 192261 poll_errors 0 xfers 6393781 retries 0 resyncs 0 runs 33756 lock_polls 14
+      watch: -335.8 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192261 entries 45 losses 44 releases 45 restarts 0
+      watch: -285.4 ms from frame 47: hdmi: polls 192262 poll_errors 0 xfers 6393810 retries 0 resyncs 0 runs 33756 lock_polls 15
+      watch: -285.4 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192262 entries 45 losses 44 releases 45 restarts 0
+      watch: -234.7 ms from frame 47: hdmi: polls 192263 poll_errors 0 xfers 6393839 retries 0 resyncs 0 runs 33756 lock_polls 16
+      watch: -234.7 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192263 entries 45 losses 44 releases 45 restarts 0
+      watch: -159.1 ms from frame 47: hdmi: polls 192264 poll_errors 0 xfers 6393868 retries 0 resyncs 0 runs 33756 lock_polls 17
+      watch: -159.1 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192264 entries 45 losses 44 releases 45 restarts 0
+      watch: -108.7 ms from frame 47: hdmi: polls 192265 poll_errors 0 xfers 6393900 retries 0 resyncs 0 runs 33756 lock_polls 18
+      watch: -108.7 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192265 entries 45 losses 44 releases 45 restarts 0
+      watch: -58.3 ms from frame 47: hdmi: polls 192266 poll_errors 0 xfers 6393948 retries 0 resyncs 0 runs 33757 lock_polls 19
+      watch: -58.3 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192266 entries 45 losses 44 releases 45 restarts 0
+      watch: -8.0 ms from frame 47: hdmi: polls 192267 poll_errors 0 xfers 6393977 retries 0 resyncs 0 runs 33757 lock_polls 20
+      watch: -8.0 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192267 entries 45 losses 44 releases 45 restarts 0
+      watch: +42.4 ms from frame 47: hdmi: polls 192268 poll_errors 0 xfers 6394006 retries 0 resyncs 0 runs 33757 lock_polls 21
+      watch: +42.4 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192268 entries 45 losses 44 releases 45 restarts 0
+      watch: +92.9 ms from frame 47: hdmi: polls 192269 poll_errors 0 xfers 6394038 retries 0 resyncs 0 runs 33757 lock_polls 22
+      watch: +92.9 ms from frame 47: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192269 entries 45 losses 44 releases 45 restarts 0
+      ring: -30.817 ms from frame 47, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: -14.209 ms from frame 47, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: +0.000 ms from frame 47, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: +31.702 ms from frame 47, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +48.376 ms from frame 47, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +65.069 ms from frame 47, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+    720p-2 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    720p-2 mean interval of the first 40: 16.6683 ms (59.994 Hz); of the last 40: 16.6842 ms (59.937 Hz)
+  INFO start_to_first_frame_ms=146.0
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.783 min=14.210 max=31.702 frames_not_overwritten=0
+RESULT roku-start-1080p-2         FAIL (120 frames, interval median 16.679 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2557 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    1080p-2 interval off: frame 49 of 120 (0.806 s in), seq 47 -> 48, 22.897 ms (median 16.679)
+      phase against the median cadence, frames 47 to 50: -0.568 -0.507 +5.711 +5.718 ms; untouched 32-byte blocks 0 0 0 0
+      frame 49 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>>>>>>>>>>>>>>>
+      IN_FRAME_PERIOD (100 MHz ticks) read after frames 47 to 50: 1668188 1668189 1668188 1668189
+      watch: -358.2 ms from frame 48: hdmi: polls 192464 poll_errors 0 xfers 6403030 retries 0 resyncs 0 runs 33839 lock_polls 14
+      watch: -358.2 ms from frame 48: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192464 entries 46 losses 45 releases 46 restarts 0
+      watch: -307.6 ms from frame 48: hdmi: polls 192465 poll_errors 0 xfers 6403059 retries 0 resyncs 0 runs 33839 lock_polls 15
+      watch: -307.6 ms from frame 48: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192465 entries 46 losses 45 releases 46 restarts 0
+      watch: -253.3 ms from frame 48: hdmi: polls 192466 poll_errors 0 xfers 6403088 retries 0 resyncs 0 runs 33839 lock_polls 16
+      watch: -253.3 ms from frame 48: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192466 entries 46 losses 45 releases 46 restarts 0
+      watch: -177.5 ms from frame 48: hdmi: polls 192467 poll_errors 0 xfers 6403117 retries 0 resyncs 0 runs 33839 lock_polls 17
+      watch: -177.5 ms from frame 48: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192467 entries 46 losses 45 releases 46 restarts 0
+      watch: -126.8 ms from frame 48: hdmi: polls 192468 poll_errors 0 xfers 6403168 retries 0 resyncs 0 runs 33840 lock_polls 18
+      watch: -126.8 ms from frame 48: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192468 entries 46 losses 45 releases 46 restarts 0
+      watch: -76.2 ms from frame 48: hdmi: polls 192469 poll_errors 0 xfers 6403197 retries 0 resyncs 0 runs 33840 lock_polls 19
+      watch: -76.2 ms from frame 48: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192469 entries 46 losses 45 releases 46 restarts 0
+      watch: -25.8 ms from frame 48: hdmi: polls 192470 poll_errors 0 xfers 6403226 retries 0 resyncs 0 runs 33840 lock_polls 20
+      watch: -25.8 ms from frame 48: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192470 entries 46 losses 45 releases 46 restarts 0
+      watch: +25.0 ms from frame 48: hdmi: polls 192471 poll_errors 0 xfers 6403255 retries 0 resyncs 0 runs 33840 lock_polls 21
+      watch: +25.0 ms from frame 48: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192471 entries 46 losses 45 releases 46 restarts 0
+      watch: +75.7 ms from frame 48: hdmi: polls 192472 poll_errors 0 xfers 6403287 retries 0 resyncs 0 runs 33840 lock_polls 22
+      watch: +75.7 ms from frame 48: hdmi it6805: state STABLE power NORMAL audio ON armed 0 sync 1 debounce 0 wait 0 released 1 polls 192472 entries 46 losses 45 releases 46 restarts 0
+      ring: -33.409 ms from frame 48, status 0x00011023 ctrl 0x00000013 done 1 armed 3
+      ring: -16.740 ms from frame 48, status 0x00011024 ctrl 0x00000007 done 1 armed 3
+      ring: +0.000 ms from frame 48, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+      ring: +22.898 ms from frame 48, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+      ring: +39.584 ms from frame 48, status 0x00011023 ctrl 0x00000013 done 1 armed 3
+      ring: +56.322 ms from frame 48, status 0x00011024 ctrl 0x00000007 done 1 armed 3
+    1080p-2 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    1080p-2 mean interval of the first 40: 16.6686 ms (59.993 Hz); of the last 40: 16.6850 ms (59.934 Hz)
+  INFO start_to_first_frame_ms=142.2
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.730 min=16.593 max=22.897 frames_not_overwritten=0
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 16 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-start-720p-1          FAIL (120 frames, interval median 16.675 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2357 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-1         PASS (120 frames, interval median 16.680 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2509 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-720p-2          FAIL (120 frames, interval median 16.679 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2457 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-2         FAIL (120 frames, interval median 16.679 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2557 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=4 fail=3 skip=1

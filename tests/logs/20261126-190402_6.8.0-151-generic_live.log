@@ -1,0 +1,61 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 19:04:02 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     113477ec9bfd
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 0
+steps:   rokustart
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokustart
+RESULT roku-start-720p-1          PASS (120 frames, interval median 16.684 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-1 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    720p-1 mean interval of the first 40: 16.6832 ms (59.941 Hz); of the last 40: 16.6834 ms (59.940 Hz)
+  INFO start_to_first_frame_ms=153.6
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.600 max=16.766 frames_not_overwritten=0
+RESULT roku-start-1080p-1         PASS (120 frames, interval median 16.681 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    1080p-1 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    1080p-1 mean interval of the first 40: 16.6834 ms (59.940 Hz); of the last 40: 16.6836 ms (59.939 Hz)
+  INFO start_to_first_frame_ms=152.8
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.607 max=16.770 frames_not_overwritten=0
+RESULT roku-start-720p-2          PASS (120 frames, interval median 16.684 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-2 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    720p-2 mean interval of the first 40: 16.6833 ms (59.940 Hz); of the last 40: 16.6846 ms (59.935 Hz)
+  INFO start_to_first_frame_ms=146.7
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.593 max=16.776 frames_not_overwritten=0
+RESULT roku-start-1080p-2         PASS (120 frames, interval median 16.682 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    1080p-2 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    1080p-2 mean interval of the first 40: 16.6833 ms (59.940 Hz); of the last 40: 16.6833 ms (59.940 Hz)
+  INFO start_to_first_frame_ms=147.3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.593 max=16.769 frames_not_overwritten=0
+RESULT roku-start-720p-3          PASS (120 frames, interval median 16.687 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-3 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    720p-3 mean interval of the first 40: 16.6834 ms (59.940 Hz); of the last 40: 16.6834 ms (59.940 Hz)
+  INFO start_to_first_frame_ms=147.0
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.603 max=16.775 frames_not_overwritten=0
+RESULT roku-start-1080p-3         PASS (120 frames, interval median 16.683 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    1080p-3 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    1080p-3 mean interval of the first 40: 16.6834 ms (59.940 Hz); of the last 40: 16.6817 ms (59.946 Hz)
+  INFO start_to_first_frame_ms=152.9
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.595 max=16.765 frames_not_overwritten=0
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 25 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-start-720p-1          PASS (120 frames, interval median 16.684 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-1         PASS (120 frames, interval median 16.681 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-720p-2          PASS (120 frames, interval median 16.684 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-2         PASS (120 frames, interval median 16.682 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-720p-3          PASS (120 frames, interval median 16.687 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-3         PASS (120 frames, interval median 16.683 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=0 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=9 fail=0 skip=1

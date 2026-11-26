@@ -1,0 +1,172 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 18:51:19 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     fbd8880a78f6
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 0
+steps:   rokustart
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokustart
+RESULT roku-start-720p-1          FAIL (120 frames, interval median 16.676 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2256 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-1 interval off: frame 49 of 120 (0.803 s in), seq 47 -> 48, 19.691 ms (median 16.676)
+      phase against the median cadence, frames 47 to 50: -0.422 -0.441 +2.574 +2.596 ms; untouched 32-byte blocks 0 0 0 0
+      frame 49 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>>>>>>>>>>>>>>>
+      ring: -33.265 ms from frame 48, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: -16.657 ms from frame 48, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: +0.001 ms from frame 48, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +19.691 ms from frame 48, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +36.389 ms from frame 48, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: +53.005 ms from frame 48, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+  INFO start_to_first_frame_ms=147.0
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.702 min=16.600 max=19.691 frames_not_overwritten=0
+RESULT roku-start-1080p-1         PASS (120 frames, interval median 16.680 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2556 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+  INFO start_to_first_frame_ms=142.0
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.676 min=16.439 max=16.765 frames_not_overwritten=0
+RESULT roku-start-720p-2          FAIL (120 frames, interval median 16.674 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2508 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-2 interval off: frame 50 of 120 (0.812 s in), seq 48 -> 49, 11.822 ms (median 16.674)
+      phase against the median cadence, frames 48 to 51: -0.408 -0.414 -5.266 +9.749 ms; untouched 32-byte blocks 0 0 0 0
+      frame 50 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): <<<<<<<<<<<<<<<<<<
+      ring: -33.265 ms from frame 49, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: -16.668 ms from frame 49, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +0.001 ms from frame 49, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +11.823 ms from frame 49, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: +43.512 ms from frame 49, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: +60.206 ms from frame 49, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+    720p-2 interval off: frame 51 of 120 (0.843 s in), seq 49 -> 50, 31.689 ms (median 16.674)
+      phase against the median cadence, frames 49 to 52: -0.414 -5.266 +9.749 +9.769 ms; untouched 32-byte blocks 0 0 0 0
+      frame 51 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >x>xxxxx>>>>>>>>>>
+      ring: -28.490 ms from frame 50, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: -11.821 ms from frame 50, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +0.001 ms from frame 50, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: +31.690 ms from frame 50, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: +48.384 ms from frame 50, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +65.108 ms from frame 50, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+  INFO start_to_first_frame_ms=146.2
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.761 min=11.822 max=31.689 frames_not_overwritten=0
+RESULT roku-start-1080p-2         PASS (120 frames, interval median 16.680 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2558 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+  INFO start_to_first_frame_ms=141.2
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.667 min=15.563 max=16.772 frames_not_overwritten=0
+RESULT roku-start-720p-3          FAIL (120 frames, interval median 16.676 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2458 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-3 interval off: frame 51 of 120 (0.836 s in), seq 49 -> 50, 18.887 ms (median 16.676)
+      phase against the median cadence, frames 49 to 52: -0.435 -0.454 +1.757 +1.830 ms; untouched 32-byte blocks 0 0 0 0
+      frame 51 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>xxxxxxxxxxxxx>
+      ring: -33.397 ms from frame 50, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: -16.657 ms from frame 50, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +0.000 ms from frame 50, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: +18.887 ms from frame 50, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: +35.637 ms from frame 50, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +52.353 ms from frame 50, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+  INFO start_to_first_frame_ms=145.7
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.695 min=16.586 max=18.887 frames_not_overwritten=0
+RESULT roku-start-1080p-3         FAIL (120 frames, interval median 16.674 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2507 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    1080p-3 interval off: frame 48 of 120 (0.779 s in), seq 46 -> 47, 11.898 ms (median 16.674)
+      phase against the median cadence, frames 46 to 49: -0.273 -0.337 -5.113 +7.982 ms; untouched 32-byte blocks 0 0 0 0
+      frame 48 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): <<<<<<<<<<<<<<<<<<
+      ring: -33.265 ms from frame 47, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+      ring: -16.610 ms from frame 47, status 0x00011023 ctrl 0x00000013 done 1 armed 3
+      ring: +0.001 ms from frame 47, status 0x00011024 ctrl 0x00000007 done 1 armed 3
+      ring: +11.898 ms from frame 47, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+      ring: +41.668 ms from frame 47, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+      ring: +58.357 ms from frame 47, status 0x00011023 ctrl 0x00000013 done 1 armed 3
+    1080p-3 interval off: frame 49 of 120 (0.808 s in), seq 47 -> 48, 29.769 ms (median 16.674)
+      phase against the median cadence, frames 47 to 50: -0.337 -5.113 +7.982 +7.997 ms; untouched 32-byte blocks 0 0 0 0
+      frame 49 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>>>>>>>>>>>>>>>
+      ring: -28.508 ms from frame 48, status 0x00011023 ctrl 0x00000013 done 1 armed 3
+      ring: -11.897 ms from frame 48, status 0x00011024 ctrl 0x00000007 done 1 armed 3
+      ring: +0.000 ms from frame 48, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+      ring: +29.770 ms from frame 48, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+      ring: +46.459 ms from frame 48, status 0x00011023 ctrl 0x00000013 done 1 armed 3
+      ring: +63.119 ms from frame 48, status 0x00011024 ctrl 0x00000007 done 1 armed 3
+  INFO start_to_first_frame_ms=141.7
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.747 min=11.898 max=29.769 frames_not_overwritten=0
+RESULT roku-start-720p-4          FAIL (120 frames, interval median 16.680 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2559 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-4 interval off: frame 49 of 120 (0.804 s in), seq 47 -> 48, 20.253 ms (median 16.680)
+      phase against the median cadence, frames 47 to 50: -0.616 -0.567 +3.006 +3.009 ms; untouched 32-byte blocks 0 0 0 0
+      frame 49 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>>>>>>>>>>>>>>>
+      ring: -33.393 ms from frame 48, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: -16.728 ms from frame 48, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: +0.000 ms from frame 48, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +20.253 ms from frame 48, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +36.936 ms from frame 48, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: +53.684 ms from frame 48, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+  INFO start_to_first_frame_ms=145.8
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.707 min=16.596 max=20.253 frames_not_overwritten=0
+RESULT roku-start-1080p-4         FAIL (120 frames, interval median 16.669 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2559 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    1080p-4 interval off: frame 50 of 120 (0.811 s in), seq 48 -> 49, 11.555 ms (median 16.669)
+      phase against the median cadence, frames 48 to 51: -0.168 -0.170 -5.284 +7.748 ms; untouched 32-byte blocks 0 0 0 0
+      frame 50 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): <<<<<<<<<<<<<<<<<<
+      ring: -33.264 ms from frame 49, status 0x00011024 ctrl 0x00000007 done 1 armed 3
+      ring: -16.667 ms from frame 49, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+      ring: +0.000 ms from frame 49, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+      ring: +11.556 ms from frame 49, status 0x00011023 ctrl 0x00000013 done 1 armed 2
+      ring: +41.256 ms from frame 49, status 0x00011024 ctrl 0x00000003 done 1 armed 3
+      ring: +57.948 ms from frame 49, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+    1080p-4 interval off: frame 51 of 120 (0.841 s in), seq 49 -> 50, 29.701 ms (median 16.669)
+      phase against the median cadence, frames 49 to 52: -0.170 -5.284 +7.748 +7.770 ms; untouched 32-byte blocks 0 0 0 0
+      frame 51 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>xxxxxxxxxxxxx>
+      ring: -28.222 ms from frame 50, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+      ring: -11.555 ms from frame 50, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+      ring: +0.001 ms from frame 50, status 0x00011023 ctrl 0x00000013 done 1 armed 2
+      ring: +29.701 ms from frame 50, status 0x00011024 ctrl 0x00000003 done 1 armed 3
+      ring: +46.393 ms from frame 50, status 0x00011021 ctrl 0x0000000d done 1 armed 3
+      ring: +63.144 ms from frame 50, status 0x00011022 ctrl 0x00000019 done 1 armed 3
+  INFO start_to_first_frame_ms=142.4
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.742 min=11.555 max=29.701 frames_not_overwritten=0
+RESULT roku-start-720p-5          FAIL (120 frames, interval median 16.679 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2557 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-5 interval off: frame 47 of 120 (0.769 s in), seq 45 -> 46, 19.472 ms (median 16.679)
+      phase against the median cadence, frames 45 to 48: -0.603 -0.614 +2.179 +2.115 ms; untouched 32-byte blocks 0 0 0 0
+      frame 47 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>xxxxxxxxxxxxx>
+      ring: -33.265 ms from frame 46, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: -16.668 ms from frame 46, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +0.001 ms from frame 46, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: +19.473 ms from frame 46, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: +36.087 ms from frame 46, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +52.778 ms from frame 46, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+  INFO start_to_first_frame_ms=146.0
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.700 min=16.552 max=19.472 frames_not_overwritten=0
+RESULT roku-start-1080p-5         PASS (120 frames, interval median 16.670 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2507 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+  INFO start_to_first_frame_ms=142.4
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.682 min=16.584 max=17.422 frames_not_overwritten=0
+RESULT roku-start-720p-6          FAIL (120 frames, interval median 16.676 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2509 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+    720p-6 interval off: frame 50 of 120 (0.831 s in), seq 48 -> 49, 31.700 ms (median 16.676)
+      phase against the median cadence, frames 48 to 51: -0.498 -1.304 +13.720 +13.721 ms; untouched 32-byte blocks 0 0 0 0
+      frame 50 by band, top to bottom (< as the frame before, > as the one after, = both, x neither): >>>>xxxxxxxxxxxxx>
+      ring: -32.535 ms from frame 49, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: -15.869 ms from frame 49, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+      ring: +0.000 ms from frame 49, status 0x00009022 ctrl 0x00000019 done 1 armed 3
+      ring: +31.701 ms from frame 49, status 0x00009023 ctrl 0x00000013 done 1 armed 3
+      ring: +48.378 ms from frame 49, status 0x00009024 ctrl 0x00000007 done 1 armed 3
+      ring: +65.066 ms from frame 49, status 0x00009021 ctrl 0x0000000d done 1 armed 3
+  INFO start_to_first_frame_ms=145.7
+  RESULT capture fmt=YUYV 1280x720 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.796 min=15.870 max=31.700 frames_not_overwritten=0
+RESULT roku-start-1080p-6         PASS (120 frames, interval median 16.673 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2508 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+  INFO start_to_first_frame_ms=141.4
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.690 min=16.607 max=18.230 frames_not_overwritten=0
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 48 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-start-720p-1          FAIL (120 frames, interval median 16.676 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2256 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-1         PASS (120 frames, interval median 16.680 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2556 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-720p-2          FAIL (120 frames, interval median 16.674 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2508 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-2         PASS (120 frames, interval median 16.680 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2558 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-720p-3          FAIL (120 frames, interval median 16.676 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2458 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-3         FAIL (120 frames, interval median 16.674 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2507 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-720p-4          FAIL (120 frames, interval median 16.680 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2559 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-4         FAIL (120 frames, interval median 16.669 ms, 2 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2559 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-720p-5          FAIL (120 frames, interval median 16.679 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2557 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-5         PASS (120 frames, interval median 16.670 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2507 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-720p-6          FAIL (120 frames, interval median 16.676 ms, 1 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2509 1280x720p pixelclock=74250000 flags=0x296 vic=4 fps=59.9401 tpf=1001/60000 h=110/40/220 v=5/5/20 pol=0x3)
+RESULT roku-start-1080p-6         PASS (120 frames, interval median 16.673 ms, 0 more than 10 % off; 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=2508 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=7 fail=8 skip=1
