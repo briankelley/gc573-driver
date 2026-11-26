@@ -1,0 +1,10 @@
+gc573-dev	prepare	PASS	override 0000:07:00.0 -> vfio-pci saved, card not bound to gc573, nothing installed
+gc573-dev	pw-install	PASS	the udev rule lifted, no override: gc573 has the card and WirePlumber holds it (9192 wireplumber )
+gc573-dev	pw-update	PASS	install.sh again while WirePlumber held the card: the card taken from the old gc573, which unloaded; the new one has the card, WirePlumber holds it again
+gc573-dev	holder-refused	PASS	sleep (pid 14068) with /dev/video0 open: install.sh and uninstall.sh without --yes exit 1 and name it; the card stays with gc573, still installed
+gc573-dev	holder-yes	PASS	uninstall.sh --yes: sleep lost the card's node; gc573 could not unload while sleep kept it open, so it has the card again (its files removed); once sleep ended, uninstall.sh again unloaded it; nothing left
+gc573-dev	pw-uninstall	PASS	uninstall.sh without --yes while WirePlumber held the card: the card taken from gc573, gc573 unloaded, nothing left
+gc573-dev	pw-stream-refused	PASS	pw-record from alsa_input.pci-0000_07_00.0.stereo-fallback: PipeWire held the card's PCM (pid 1072); install.sh and uninstall.sh without --yes exit 1, name it as PipeWire streaming the card's audio, and the stream runs on; with --yes the update went through, and uninstall.sh --yes on a new recording left nothing
+gc573-dev	pw-this-boot	PASS	override saved, --this-boot while WirePlumber held the card, then again (an update): taken from the old gc573, the new one has the card for this boot, held again
+gc573-dev	pw-uninstall-this-boot	PASS	uninstall.sh while WirePlumber held the card: the card taken from gc573, the saved override loaded again, nothing left
+gc573-dev	cleanup	PASS	no override, driverctl purged, rebooted
