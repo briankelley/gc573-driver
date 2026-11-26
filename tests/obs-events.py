@@ -34,6 +34,7 @@ the screenshot after it must be good too.
       changes (in the format OBS was started with: tests/obs-run.sh)
   obs-events.py [--host H] soak SECS [--every S] [--shot S] [--rotation A,B,..]
                 [--keep-source] [--no-restore] [--rec-dir DIR] [--no-bridge]
+                [--inject T:MODE:RATE]
       the event soak: a recording across SECS seconds, a screenshot every
       --shot seconds (default 2), and every --every seconds (default 180)
       the next change from a rotation (default: of all kinds; --rotation
@@ -56,7 +57,13 @@ the screenshot after it must be good too.
       same source sessions as the recording's first and last segments.
       --rec-dir: OBS records to DIR (SetRecordDirectory), and gets its
       directory back after the recording. The V4L2 source's color_range
-      is put back as it was (the reopens toggle it)
+      is put back as it was (the reopens toggle it). --inject: T seconds
+      into the recording, a change the harness is not told of (a trial of
+      the recovery): avsync.sh --pattern in MODE at RATE, from a thread,
+      retried until its player has started (window mapped by place.so,
+      audio linked: avsync.sh exits 0) as for every source start. An
+      INJECT line says on which attempt, or that it never did; each
+      failed attempt is in the event log with avsync.sh's reason
   obs-events.py recheck FILE [--every S] [--across]
       where OBS runs, on a recording of the counter pattern: every S
       seconds (default 10) a frame against the pattern and the counter's
@@ -77,8 +84,9 @@ GC573_EVENT_LOG) and runs tools/testsrc/guard.py on itself, unless
 GC573_GUARDED says a caller's guard (live.sh) already watches it.
 
 The bridge (events and soak; --no-bridge: without it): tests/obsbridge.py
-where the driver runs (here in host-local mode, in gc573-dev over ssh from
-~/gc573-driver/tests, which tools/vmbuild.sh keeps up to date). It reopens
+where the driver runs (here in host-local mode; in gc573-dev over ssh from
+GC573_BRIDGE_PATH, default /tmp/gc573-live/obsbridge.py, where live.sh puts
+it with tests/obsws.py). It reopens
 the source from the input's timings, not from the picture: once the input
 has been still for 2 s, when its timings differ from the stream's or the
 driver has failed the stream. It is the first trigger; the screenshots
@@ -293,6 +301,8 @@ ENV = dict(os.environ, DISPLAY=os.environ.get('DISPLAY', ':0'),
            XAUTHORITY=os.environ.get('XAUTHORITY', os.path.expanduser('~/.Xauthority')))
 GUARD = os.path.join(ROOT, 'tools', 'testsrc', 'guard.py')
 BRIDGE = os.path.join(ROOT, 'tests', 'obsbridge.py')
+# in gc573-dev: where live.sh puts it (its work directory)
+BRIDGE_VM = os.environ.get('GC573_BRIDGE_PATH', '/tmp/gc573-live/obsbridge.py')
 EV_LOCK = threading.Lock()	# the bridge's reader thread logs too
 
 
@@ -346,14 +356,19 @@ def src_on(mode, rate):
     return False
 
 
-def av_on(mode, rate):
+def av_on(mode, rate, tries=30):
     """avsync.sh --pattern, the picture with the bursts, once the HDMI audio
-    port has a valid ELD again (a moment after a mode change)"""
-    for _ in range(30):
-        if sh(AVSYNC, '--pattern', OUT, mode, rate).returncode == 0:
-            return True
+    port has a valid ELD again (a moment after a mode change). Each failed
+    start goes to the event log with avsync.sh's reason. Returns the
+    attempt that started (1 ...), or 0"""
+    for i in range(tries):
+        r = sh(AVSYNC, '--pattern', OUT, mode, rate)
+        if r.returncode == 0:
+            return i + 1
+        ev(f'avsync.sh --pattern {mode} {rate}: attempt {i + 1} failed (exit {r.returncode}): '
+           + ' '.join(r.stderr.split())[:400])
         time.sleep(0.5)
-    return False
+    return 0
 
 
 def src_stop():
@@ -431,7 +446,7 @@ class BridgeProc:
         if LOCAL:
             cmd = [sys.executable, '-u', BRIDGE, '--host', HOST] + args
         else:
-            cmd = ['ssh', '-o', 'BatchMode=yes', VM, 'exec python3 -u ~/gc573-driver/tests/obsbridge.py '
+            cmd = ['ssh', '-o', 'BatchMode=yes', VM, f'exec python3 -u {shlex.quote(BRIDGE_VM)} '
                    '--host 127.0.0.1 ' + ' '.join(shlex.quote(a) for a in args)]
         self.p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, text=True, bufsize=1, start_new_session=True)
@@ -926,9 +941,29 @@ SOAK_ROT = ['sleep', 'rate-59.94', 'colour-ycbcr444', 'edid-same', 'rate-60', 'c
             'edid-default', 'colour-rgb-full']
 
 
+class Inject(threading.Thread):
+    """soak --inject: the outside change, its player checked"""
+
+    def __init__(self, spec):
+        super().__init__(daemon=True)
+        t, self.mode, self.rate = spec.split(':')
+        self.at = float(t)
+        self.result = None
+
+    def run(self):
+        ev(f'inject: avsync.sh --pattern {self.mode} {self.rate} (the harness is not told)')
+        t0 = time.monotonic()
+        n = av_on(self.mode, self.rate)
+        self.result = (f'avsync.sh --pattern {self.mode} {self.rate}: '
+                       + (f'player started on attempt {n}, {time.monotonic() - t0:.1f} s' if n else
+                          f'no player in 30 attempts ({time.monotonic() - t0:.0f} s): see the event log'))
+        print(f'INJECT at {self.at:.1f} s: {self.result}', flush=True)
+
+
 def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=True,
-             rec_dir=None, bridge=True):
+             rec_dir=None, bridge=True, inject=None):
     rot = rot or SOAK_ROT
+    inject = Inject(inject) if inject else None
     bridge = start_bridge(bridge)
     r = Runner(obs, audio=True, colours=any(k.startswith('colour-') for k in rot), bridge=bridge)
     if not keep_source:
@@ -951,7 +986,12 @@ def cmd_soak(obs, secs, every, shot_every, rot=None, keep_source=False, restore=
             t_good = time.monotonic()
             while time.monotonic() - t_start < secs:
                 now = time.monotonic()
+                if inject and not inject.is_alive() and inject.result is None and \
+                        now - t_start >= inject.at:
+                    inject.start()
                 if now >= next_ev:
+                    if inject and inject.is_alive():
+                        inject.join()	# no change while its player starts
                     print(f'MARK {now - t_start:.1f}', flush=True)
                     ev(f'event {rot[k % len(rot)]}')
                     r.run(rot[k % len(rot)])
@@ -1171,6 +1211,7 @@ def main():
     p.add_argument('--no-restore', action='store_true', help='leave the last source running')
     p.add_argument('--rec-dir', default='', help='OBS records here, for this soak only')
     p.add_argument('--no-bridge', action='store_true', help='without tests/obsbridge.py')
+    p.add_argument('--inject', default='', help='T:MODE:RATE, an outside change T s into the recording')
     sub.add_parser('selftest')
     p = sub.add_parser('recheck')
     p.add_argument('file')
@@ -1204,7 +1245,7 @@ def main():
             if bad:
                 sys.exit(f'unknown changes in --rotation: {bad} (known: {ORDER})')
             ok = cmd_soak(obs, a.secs, a.every, a.shot, rot, a.keep_source, not a.no_restore,
-                          a.rec_dir or None, not a.no_bridge)
+                          a.rec_dir or None, not a.no_bridge, a.inject or None)
     finally:
         obs.close()
         if guard:

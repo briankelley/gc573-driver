@@ -85,7 +85,9 @@
 #             stream restart) under one avsync.sh session: within 1 ms
 #   obssoak   the event soak with OBS: GC573_OBSSOAK_SECS (7200) recorded, a
 #             screenshot every 2 s, a change every GC573_OBSSOAK_EVERY (180)
-#             s; memory, CPU, the recording (not in the default steps)
+#             s; memory, CPU, the recording (not in the default steps).
+#             GC573_OBSSOAK_INJECT=T:MODE:RATE adds an outside change T s in
+#             (obs-events.py soak --inject: a trial of the recovery)
 #   soak      GC573_SOAK_SECS (7200) of audio and video (1080p60 YUYV)
 #             together with avsync.sh, as avsync, and every minute the
 #             kernel's memory (MemAvailable, Slab, SUnreclaim) and the CPU
@@ -110,6 +112,8 @@
 # offset (gc573-aud -V -P) in the source sessions of the first and last
 # segments. sudo: SUDO_ASKPASS (sudo -A), else cached credentials (sudo -n).
 # GC573_OBS_BUFFERING defaults to 0 here, the README's recommendation.
+# GC573_OBS_BRIDGE=0: obsevents and obssoak without tests/obsbridge.py (the
+# reopen from the input's timings; default on).
 # Prints RESULT lines and a SUMMARY; log: tests/logs/<UTC>_<kernel>_live.log.
 # Event log: tests/logs/<UTC>_<kernel>_live-events.log, every action that
 # changes the card's input or its streams (UTC, ms), and the lines of
@@ -134,6 +138,9 @@ LOCAL=0
 OBS_BUFFERING=${GC573_OBS_BUFFERING:-$((1 - LOCAL))}
 OBSSOAK_SECS=${GC573_OBSSOAK_SECS:-7200}
 OBSSOAK_EVERY=${GC573_OBSSOAK_EVERY:-180}
+OBSSOAK_INJECT=${GC573_OBSSOAK_INJECT:-}
+OBSEV_ARGS=()
+[ "${GC573_OBS_BRIDGE:-1}" = 1 ] || OBSEV_ARGS+=(--no-bridge)
 SOAK_SECS=${GC573_SOAK_SECS:-7200}
 PW_SECS=${GC573_PW_SECS:-120}
 # tools/devvm: keeps PipeWire (ACP_IGNORE) and PulseAudio off the card
@@ -363,7 +370,8 @@ setup() {
 	put "$ROOT/tools/testsrc/pattern.py" \
 		"$ROOT/tests/live-compare.py" "$ROOT/tests/live-av.py" \
 		"$ROOT/tests/obsws.py" "$ROOT/tests/obs-check.py" \
-		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" "$W/"
+		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" \
+		"$ROOT/tests/obsbridge.py" "$W/"
 }
 
 # The frame interval G_PARM must report for the timings in a gc573-cap
@@ -1332,7 +1340,7 @@ step_obsevents() {
 	local out m lg f
 	obs_up || { result obsevents-start FAIL "(OBS with obs-websocket)"; obs_down; return; }
 	m=$(obs_log_mark)
-	out=$(python3 "$ROOT/tests/obs-events.py" events --reps "$OBSEV_REPS" 2>&1)
+	out=$(python3 "$ROOT/tests/obs-events.py" events --reps "$OBSEV_REPS" "${OBSEV_ARGS[@]}" 2>&1)
 	av_results obsevents "$out"
 	lg=$(obs_log_since "$m")
 	echo "  obs: $(grep -c 'select timed out' <<< "$lg") select timeouts, $(grep -c 'failed to dequeue' <<< "$lg") dequeue failures, $(grep -c 'Start capture' <<< "$lg") device opens"
@@ -1341,7 +1349,8 @@ step_obsevents() {
 	# recording, which must play the pattern before and after. MKV runs the
 	# obs-ffmpeg-mux helper, which holds OBS's descriptor of the device: the
 	# reopen cannot work until the recording stops (report only)
-	out=$(python3 "$ROOT/tests/obs-events.py" events --reps 1 --only res-720p,res-1080p --record 2>&1)
+	out=$(python3 "$ROOT/tests/obs-events.py" events --reps 1 --only res-720p,res-1080p --record \
+		"${OBSEV_ARGS[@]}" 2>&1)
 	grep '^RECFORMAT' <<< "$out" | sed 's/^/  /'
 	av_results obsevents-hybrid "$(grep -v '^RECFORMAT' <<< "$out")"
 	f=$(sed -n 's/^RECORDING //p' <<< "$out")
@@ -1353,7 +1362,8 @@ step_obsevents() {
 	obs_down
 	obs_up mkv > /dev/null || { result obsevents-mkv-start FAIL "(OBS with obs-websocket)"; obs_down; return; }
 	m=$(obs_log_mark)
-	out=$(python3 "$ROOT/tests/obs-events.py" events --reps 1 --only res-720p,res-1080p --record 2>&1)
+	out=$(python3 "$ROOT/tests/obs-events.py" events --reps 1 --only res-720p,res-1080p --record \
+		"${OBSEV_ARGS[@]}" 2>&1)
 	grep -E '^RECFORMAT|^ *EVENT|^RESULT' <<< "$out" |
 		sed 's/^RESULT/  INFO mkv (report only):/; s/^ *EVENT/  mkv: EVENT/; s/^RECFORMAT/  RECFORMAT/'
 	f=$(sed -n 's/^RECORDING //p' <<< "$out")
@@ -1386,7 +1396,8 @@ step_obssoak() {
 		sleep 60
 	done' > $W/obssoak-mem.txt 2>&1 < /dev/null & echo \$! > $W/obssoak-sampler.pid"
 	echo "  obssoak: $OBSSOAK_SECS s from $(date -u '+%H:%M:%S UTC'), a change every $OBSSOAK_EVERY s"
-	out=$(python3 "$ROOT/tests/obs-events.py" soak "$OBSSOAK_SECS" --every "$OBSSOAK_EVERY" 2>&1)
+	out=$(python3 "$ROOT/tests/obs-events.py" soak "$OBSSOAK_SECS" --every "$OBSSOAK_EVERY" \
+		"${OBSEV_ARGS[@]}" ${OBSSOAK_INJECT:+--inject "$OBSSOAK_INJECT"} 2>&1)
 	vm "sudo kill \$(cat $W/obssoak-sampler.pid)"
 	av_results obssoak "$(grep -v '^SHOT ' <<< "$out")"
 	echo "  screenshots that were not good: $(grep -c '^SHOT ' <<< "$out") (SHOT lines in the event log's run)"
@@ -1506,7 +1517,8 @@ obssoak_local() {
 	local sampler=$!
 	echo "  obssoak: $OBSSOAK_SECS s from $(date -u '+%H:%M:%S UTC'), a change every $OBSSOAK_EVERY s"
 	out=$(python3 "$ROOT/tests/obs-events.py" soak "$OBSSOAK_SECS" --every "$OBSSOAK_EVERY" \
-		--rotation "$OBSSOAK_ROTATION" --keep-source --no-restore --rec-dir "$REC_DIR" 2>&1)
+		--rotation "$OBSSOAK_ROTATION" --keep-source --no-restore --rec-dir "$REC_DIR" \
+		"${OBSEV_ARGS[@]}" ${OBSSOAK_INJECT:+--inject "$OBSSOAK_INJECT"} 2>&1)
 	host_sample >> "$sp" 2>&1
 	kill "$sampler" 2>/dev/null
 	wait "$sampler" 2>/dev/null
