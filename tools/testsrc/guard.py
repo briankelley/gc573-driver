@@ -15,10 +15,17 @@ sees (UTC, milliseconds):
 - Audio, every 50 ms: every test audio stream (a PipeWire node named
   gc573-*, or one of ffplay's) is linked to the NVIDIA HDMI sink and
   nothing else.
+- Cameras: tools/testsrc/camwatch.py (fanotify, root: started through sudo
+  -A with SUDO_ASKPASS, else sudo -n) logs every open of a video, media or
+  sound node that is not the GC573's or the NVIDIA HDMI audio's. An open by
+  anything but PipeWire's own processes or udev's hot-plug work is a
+  breach, and so is a camera watch that does not start within 10 s or ends
+  before the run. GC573_CAMWATCH=0 runs without it (logged), for a machine
+  where it cannot run.
 On a breach it logs it, closes every test player, and stops the run: the
 process PID and all its descendants (SIGTERM, then SIGKILL after 1 s). It
-then exits with status 3. A window watcher that cannot start, or that
-fails, counts as a breach. The guard ends by itself when PID ends (status
+then exits with status 3. A window or camera watcher that cannot start, or
+that fails, counts as a breach. The guard ends by itself when PID ends (status
 0), with a summary.
 --other-outputs: for runs that pull OUTPUT away under a running player on
 purpose (to test the players' own watchdog and the audio routing). A window
@@ -40,6 +47,7 @@ import time
 from xwatch import Watcher
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+CAMWATCH = os.path.join(HERE, 'camwatch.py')
 ENV = dict(os.environ, DISPLAY=os.environ.get('DISPLAY', ':0'),
            XAUTHORITY=os.environ.get('XAUTHORITY', os.path.expanduser('~/.Xauthority')))
 
@@ -118,6 +126,39 @@ def close_players():
     run(os.path.join(HERE, 'avsync.sh'), '--off')
     run(os.path.join(HERE, 'show.sh'), '--off')
     run('pkill', '-f', 'window_title gc573-')
+
+
+def start_camwatch(pid, log_path, say, found, alive):
+    """camwatch.py for run PID, writing to LOG_PATH; returns the process
+    (None when GC573_CAMWATCH=0)"""
+    if os.environ.get('GC573_CAMWATCH', '1') == '0':
+        say('camwatch: off (GC573_CAMWATCH=0): opens of the cameras are not watched')
+        return None
+    how = '-A' if os.environ.get('SUDO_ASKPASS') else '-n'
+    p = subprocess.Popen(['sudo', how, sys.executable, CAMWATCH, '--log', log_path, '--pid', str(pid)],
+                         stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                         text=True, start_new_session=True)
+    up = threading.Event()
+
+    def reader():
+        tail = []
+        for line in p.stdout:
+            line = line.rstrip('\n')
+            if ' camwatch start ' in line:
+                up.set()
+            elif ' camwatch BREACH ' in line:
+                found(['camera watch: ' + line.split(' camwatch BREACH ', 1)[1]])
+            else:
+                tail = (tail + [line])[-3:]
+        rc = p.wait()
+        if alive():
+            found([f'the camera watcher ended (exit {rc}): {" | ".join(tail)[:300]}'])
+        up.set()
+
+    threading.Thread(target=reader, daemon=True).start()
+    if not up.wait(10) or p.poll() is not None:
+        found([f'the camera watcher did not start in 10 s (sudo {how}, fanotify)'])
+    return p
 
 
 def stop_run(pid):
@@ -201,6 +242,8 @@ def main():
     say(f'start: run pid {a.pid}, output {a.output}, audio allowed to {sink}*; windows event-driven '
         '(X11), audio polled every 50 ms' + (', windows: a breach where they overlap another output'
                                               if a.other_outputs else ''))
+    log.flush()
+    start_camwatch(a.pid, a.log, say, found, alive)
     try:
         watcher = Watcher(a.output, lambda m: say('x11 ' + m), lambda m: found([m]),
                           overlap=a.other_outputs)
