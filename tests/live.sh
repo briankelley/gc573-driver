@@ -728,6 +728,13 @@ step_relock() {
 FPGA_PARAM=/sys/module/gc573/parameters/exp_fpga_invalid
 fpga_param() { vm "echo $1 | sudo tee $FPGA_PARAM > /dev/null"; }
 kmsg_mark() { vm "echo 'gc573-live: $1' | sudo tee /dev/kmsg > /dev/null"; }
+# KMSG_BAD and KMSG_DRV_BAD as tests/lib.sh has them, without sourcing it:
+# its kmsg_mark and kmsg_since (run.sh's, as root where the driver runs)
+# would replace live.sh's for the rest of the run, and it runs lspci
+lib_kmsg_patterns() {
+	local GC573_MOD=gc573
+	eval "$(grep -E '^KMSG_(DRV_)?BAD\+?=' "$ROOT/tests/lib.sh")"
+}
 # the kernel log after the LAST mark $1 (nothing without one): a step that
 # runs twice in one boot (fpgawait for two modules) writes each mark twice
 kmsg_since() {
@@ -2187,8 +2194,7 @@ drv_mem_check() {
 
 obssoak_local() {
 	local out f m lg sm marks refa="" refc="" seg sp avail first last mem0 mem1 top drv0 drv1
-	# shellcheck source=tests/lib.sh
-	. "$ROOT/tests/lib.sh"	# KMSG_BAD, KMSG_DRV_BAD for host_sample
+	lib_kmsg_patterns	# for host_sample
 	mkdir -p "$REC_DIR" || { result obssoak-recdir FAIL "(cannot make $REC_DIR)"; return; }
 	# OBS's Simple output: about 6.2 Mb/s; room for three times that
 	avail=$(df -k --output=avail "$REC_DIR" | tail -1)
@@ -2404,8 +2410,7 @@ step_compliance() {
 # (tests/lib.sh KMSG_BAD, KMSG_DRV_BAD)
 kmsg_check() {
 	local log bad
-	# shellcheck source=tests/lib.sh
-	. "$ROOT/tests/lib.sh"
+	lib_kmsg_patterns
 	log=$(vm "sudo dmesg | awk -v m='gc573-live: $kmark' 'f; index(\$0, m) { f = 1 }'")
 	bad=$( { echo "$log" | grep -E "$KMSG_BAD"; echo "$log" | grep -E "$KMSG_DRV_BAD"; } | head -10)
 	echo "  kernel log: $(echo "$log" | grep -c gc573) driver lines"
@@ -3448,8 +3453,7 @@ soak_change() {
 step_rokusoakany() {
 	local sp sampler m lg out f mem0 mem1 drv0 drv1 kinds kind t0 t_end now ended="" avail obs0 err rs
 	roku_go || { roku_skip roku-soak "puts the Roku to sleep and wakes it during the soak"; return; }
-	# shellcheck source=tests/lib.sh
-	. "$ROOT/tests/lib.sh"	# KMSG_BAD, KMSG_DRV_BAD for host_sample
+	lib_kmsg_patterns	# for host_sample
 	time_to_lock 30 > /dev/null || { result roku-soak SKIP "(no input: $(roku_card))"; return; }
 	mkdir -p "$REC_DIR" || { result roku-soak-recdir FAIL "(cannot make $REC_DIR)"; return; }
 	avail=$(df -k --output=avail "$REC_DIR" | tail -1)
