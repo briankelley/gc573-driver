@@ -1505,8 +1505,28 @@ mem_snapshot() {
 	vm "sudo cat /proc/slabinfo" | awk 'NR > 2 { printf "%s %d\n", $1, $2 * $4 / 1024 }'
 }
 
+# The driver's own video buffer memory live now, over all its cards
+# (debugfs video "mem": vb2 buffers, their pages and kernel mappings, DMA
+# descriptor lists): "bufs N pages N vmaps N dlists N dl_bytes N". All 0
+# while no application has buffers. Empty for a module built before it
+drv_mem() { vm "sudo cat $dbgdir/video" 2>/dev/null | sed -n 's/^mem (live, all cards): //p'; }
+DRV_MEM_ZERO="bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0"
+
+# After the steps, with no stream: nothing of the driver's own buffer
+# memory left (a leak check that other programs cannot move; kmemleak on
+# the debug kernel covers the rest)
+drv_mem_check() {
+	local m
+	m=$(drv_mem)
+	if [ -z "$m" ]; then
+		result driver-mem SKIP "(the loaded gc573 has no live-memory line in debugfs video: built before it)"
+	else
+		check driver-mem "$([ "$m" = "$DRV_MEM_ZERO" ]; echo $?)" "(live after the steps: $m)"
+	fi
+}
+
 obssoak_local() {
-	local out f m lg sm marks refa="" refc="" seg sp avail first last mem0 mem1 top
+	local out f m lg sm marks refa="" refc="" seg sp avail first last mem0 mem1 top drv0 drv1
 	# shellcheck source=tests/lib.sh
 	. "$ROOT/tests/lib.sh"	# KMSG_BAD, KMSG_DRV_BAD for host_sample
 	mkdir -p "$REC_DIR" || { result obssoak-recdir FAIL "(cannot make $REC_DIR)"; return; }
@@ -1523,6 +1543,7 @@ obssoak_local() {
 	# recording are gone (the recording's page cache grows SUnreclaim on
 	# any file system: tests/logs/20261126T0017Z-host-slab-attribution.log)
 	mem0=$(mem_snapshot)
+	drv0=$(drv_mem)
 	obs_up || { result obssoak-start FAIL "(OBS minimized, with the sources expected)"; obs_down; av_off; return; }
 	m=$(obs_log_mark)
 	sp=${log%.log}-obssoak-samples.txt
@@ -1573,18 +1594,28 @@ obssoak_local() {
 	sync
 	sleep 10
 	mem1=$(mem_snapshot)
+	drv1=$(drv_mem)
 	top=$(join <(sort <<< "$mem0") <(sort <<< "$mem1") |
 		awk '$1 != "SUnreclaim" { d = $3 - $2; if (d >= 128 || d <= -128) printf "%s %+d\n", $1, d }' |
 		sort -k2 -n -r | head -8 | paste -sd, | sed 's/,/, /g')
-	# the driver allocates from the kmalloc caches (GFP_KERNEL, not
-	# accounted): their live objects, from before OBS to after it
+	# the kmalloc caches' live objects, from before OBS to after it, for
+	# context: every program's (the 2-hour soak's +1798 kB could not be
+	# told apart: tests/logs/20261126-004854_6.8.0-151-generic_live.log)
 	out=$(join <(sort <<< "$mem0") <(sort <<< "$mem1") | awk -v top="$top" '
 		$1 == "SUnreclaim" { a = $2; b = $3; next }
 		$1 ~ /^kmalloc-([0-9]+k?|rnd-[0-9]+-[0-9]+k?)$/ { k0 += $2; k1 += $3 }
 		END {
-			printf "RESULT memory %s (live objects in the kmalloc caches, where a driver leak would show: %d kB before OBS started, %d kB after OBS exited and the recording was deleted, %+d kB (limit 2048); SUnreclaim %d -> %d kB (%+d, other programs too); slab caches that moved by 128 kB or more (kB): %s)\n",
-				k1 - k0 <= 2048 ? "PASS" : "FAIL", k0, k1, k1 - k0, a, b, b - a, top == "" ? "none" : top }')
+			printf "INFO memory-kmalloc live objects in the kmalloc caches: %d kB before OBS started, %d kB after OBS exited and the recording was deleted, %+d kB (every program: the random kmalloc caches cannot be told apart); SUnreclaim %d -> %d kB (%+d); slab caches that moved by 128 kB or more (kB): %s\n",
+				k0, k1, k1 - k0, a, b, b - a, top == "" ? "none" : top }')
 	av_results obssoak "$out"
+	# the leak check: the driver's own buffer memory (debugfs video
+	# "mem"), all of it given back once OBS has gone
+	if [ -z "$drv0" ] || [ -z "$drv1" ]; then
+		result obssoak-memory SKIP "(the loaded gc573 has no live-memory line in debugfs video: built before it; the kmalloc caches above are INFO only)"
+	else
+		check obssoak-memory "$([ "$drv1" = "$DRV_MEM_ZERO" ] && [ "$drv0" = "$DRV_MEM_ZERO" ]; echo $?)" \
+			"(the driver's own buffer memory, debugfs video \"mem\": before OBS $drv0; after OBS exited $drv1)"
+	fi
 	# memory, CPU and the driver's counters over the soak (host_sample)
 	sm=$(cat "$sp")
 	awk 'NR == 1 || NR % 10 == 0 { print "  mem: " $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 }' <<< "$sm"
@@ -1792,6 +1823,7 @@ fi
 	echo
 	echo "## test source"
 	testsrc_check
+	drv_mem_check
 	echo
 	echo "## kernel log"
 	kmsg_check
