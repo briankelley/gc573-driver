@@ -3198,6 +3198,18 @@ roku_edids() {
 		python3 "$ROOT/tools/roku/edid-variant.py" "$1/default.bin" "$1/720p.bin" --only-720p
 }
 roku_edid_set() { vm "v4l2-ctl -d $vdev --set-edid=file=$1,format=raw" > /dev/null; }
+# an EDID set and the lock after it: first the hot-plug's loss (none within
+# 10 s when the card had that EDID already), then the lock (60 s). Without
+# the wait for the loss, time_to_lock returns at once on the lock before
+# it. The 10 min soak's last capture (20261126-214248) started 2 s after
+# its EDID set, between the loss and the new lock, which the delivery
+# settle puts about 1 s later than before: no DV timings, and gc573-aud
+# did not start
+roku_edid_relock() {
+	roku_edid_set "$1"
+	wait_unlocked
+	time_to_lock 60 > /dev/null
+}
 
 # rokuwhich: is the saved Roku the one cabled to the card? Passive: the
 # card's EDID set to 720p only. If our EDID reaches the saved Roku, its
@@ -3528,8 +3540,7 @@ step_rokusoakany() {
 	wait "$sampler" 2>/dev/null
 	obs_down
 	lg=$(vm "tail -n +$((m + 1)) \"\$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)\"")
-	roku_edid_set "$sk_e/default.bin"
-	time_to_lock 60 > /dev/null
+	roku_edid_relock "$sk_e/default.bin"
 	vm "rm -rf $sk_e"
 	sleep 2
 	roku_drv roku-soak-driver-last 60
@@ -3734,8 +3745,7 @@ step_rokustart() {
 		roku_start_one "$b-$i" "$e/default.bin" "${GC573_ROKU_START_DELAY:-0}"
 		sleep 2
 	done
-	roku_edid_set "$e/default.bin"
-	time_to_lock 60 > /dev/null
+	roku_edid_relock "$e/default.bin"
 	vm "rm -rf $e"
 }
 
@@ -3841,8 +3851,7 @@ step_rokurelock() {
 		vm "rm -f $W/relock.txt $W/relock-watch.txt"
 		sleep 3
 	done
-	roku_edid_set "$e/default.bin"
-	time_to_lock 60 > /dev/null
+	roku_edid_relock "$e/default.bin"
 	vm "rm -rf $e"
 }
 
