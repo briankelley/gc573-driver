@@ -255,10 +255,12 @@ static inline void gc573_block_drivers(struct pci_dev *pdev,
 	}
 	/*
 	 * Never put: the work must not run, or return, into freed code, and
-	 * gc573_card_dead()'s own __module_get() comes after this
+	 * gc573_card_dead()'s own __module_get() comes after this. While the
+	 * module unloads, its exit unbinds the card, and that teardown's
+	 * gc573_quiesce() writes the block in place (final review F8)
 	 */
 	if (!try_module_get(THIS_MODULE)) {
-		dev_err(&pdev->dev, "cannot block other drivers: the module is unloading\n");
+		dev_warn(&pdev->dev, "the module is unloading: the block of other drivers is deferred to the teardown's end\n");
 		return;
 	}
 	bw = kzalloc(sizeof(*bw), GFP_KERNEL);
