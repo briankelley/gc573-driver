@@ -157,6 +157,14 @@ udev or PipeWire USB name (`usb-<vendor>_<model>_<serial>-00`,
 and path-based USB names stay as they are. The Python filter and the bash
 function must agree, and scrubbing twice must change nothing.
 
+`live-lib-check.sh` (host, no device touched): `live.sh` keeps its own
+kernel-log helpers and never sources `lib.sh`; its `setup` puts into the
+VM every module of this tree that the scripts it puts there import (such
+as `tools/testsrc/scrub.py` for `obs-events.py`); and `av_results` fails
+`STEP-check` when a checker gives no RESULT line, naming its error (a
+recheck in the VM died that way and failed nothing:
+`logs/20261127-094342_6.8.12-gc573dbg_live.log`).
+
 ## Live input (`live.sh`, host)
 `tests/live.sh [STEP...]` runs on the host: it drives the loopback output
 (`DVI-D-0`, never the primary) with `tools/testsrc/show.sh`, `avsync.sh` and xrandr, and runs

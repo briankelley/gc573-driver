@@ -443,13 +443,23 @@ testsrc_check() {
 # One counter from the driver's debugfs "audio" text $1, e.g. aud_stat "$d" late
 aud_stat() { grep -o "\b$2 [0-9]*" <<< "$1" | head -1 | cut -d' ' -f2; }
 
-# live-av.py's RESULT lines ($2) as RESULT $1-NAME, other lines indented
+# live-av.py's RESULT lines ($2) as RESULT $1-NAME, other lines indented.
+# A checker that gave no RESULT line (it died: a traceback, a module not
+# found) fails $1-check, naming its error: the exception line of a Python
+# traceback, else the first error line, else the first line. Without
+# this, the recording's recheck in the VM died and nothing failed
+# (tests/logs/20261127-094342_6.8.12-gc573dbg_live.log, obsevents)
 av_results() {
-	local name st detail
+	local name st detail err
 	while read -r _ name st detail; do
 		result "$1-$name" "$st" "$detail"
 	done < <(grep '^RESULT' <<< "$2")
 	grep -v '^RESULT' <<< "$2" | sed 's/^/  /'
+	grep -q '^RESULT' <<< "$2" && return 0
+	err=$(awk '/^Traceback/ { t = 1; next } t && /^[^ \t]/ { print; exit }' <<< "$2")
+	[ -n "$err" ] || err=$(grep -m1 -E '[a-z]Error\b|[Ee]rror:|No such file|[Pp]ermission denied|not found|[Cc]annot ' <<< "$2")
+	[ -n "$err" ] || err=$(grep -m1 '[^[:space:]]' <<< "$2")
+	result "$1-check" FAIL "(the checker gave no RESULT line: ${err:-no output})"
 }
 
 # Seconds from now until QUERY_DV_TIMINGS succeeds (limit $1), or "none"
@@ -499,7 +509,8 @@ setup() {
 		"$ROOT/tests/live-compare.py" "$ROOT/tests/live-av.py" \
 		"$ROOT/tests/obsws.py" "$ROOT/tests/obs-check.py" \
 		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" \
-		"$ROOT/tests/obsbridge.py" "$ROOT/tests/app-check.py" "$W/"
+		"$ROOT/tests/obsbridge.py" "$ROOT/tests/app-check.py" \
+		"$ROOT/tools/testsrc/scrub.py" "$W/"
 }
 
 # The frame interval G_PARM must report for the timings in a gc573-cap
