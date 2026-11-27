@@ -144,10 +144,35 @@ int gc573_i2c1_transfer(struct gc573 *gc, u8 addr8, u8 reg, u8 *buf, u16 len,
 }
 
 /*
+ * The devices the adapter (i2c-dev: root, the i2c group) may address, 7-bit:
+ * the HDMI chips gc573_chip.h names (spec/i2c.md "Device inventory"). IT6805
+ * 0x48 and its EDID RAM 0x54; splitter main 0x2c, RX core 0x38, TX ports 1
+ * and 2 0x35 and 0x36, RX EDID RAM 0x6c. The inventory's other addresses
+ * (0x34 and 0x37, TX ports 0 and 3; 0x4b, TX common; 0x70) are left out:
+ * monitor tools send DDC/CI to 0x37 on every bus they find, as they read
+ * an EDID at 0x50, and the scanners probe everything. The chip code does
+ * not go through here (gc573_i2c1_transfer()).
+ */
+static const u8 gc573_i2c1_ext_addrs[] = {
+	0x2c, 0x35, 0x36, 0x38, 0x48, 0x54, 0x6c,
+};
+
+static bool gc573_i2c1_ext_addr_ok(u16 addr)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(gc573_i2c1_ext_addrs); i++)
+		if (addr == gc573_i2c1_ext_addrs[i])
+			return true;
+	return false;
+}
+
+/*
  * The engine only does register-addressed transfers, so it takes exactly
  * two message shapes: write [reg] then read n bytes from the same device,
  * or a single write of [reg, data...]. The quirks below let the I2C core
- * reject most other shapes before they get here.
+ * reject most other shapes before they get here. The adapter lock is
+ * held (the I2C core takes it).
  */
 static int gc573_i2c1_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
 			   int num)
@@ -161,19 +186,28 @@ static int gc573_i2c1_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
 			return -EOPNOTSUPP;
 		if (msgs[i].addr > 0x7f)
 			return -EINVAL;
+		if (!gc573_i2c1_ext_addr_ok(msgs[i].addr)) {
+			dev_notice_ratelimited(&gc->pdev->dev,
+					       "I2C bus 1: transfer to 0x%02x refused: not one of the card's HDMI chips\n",
+					       msgs[i].addr);
+			return -EPERM;
+		}
 	}
 
 	if (num == 2 && !(m->flags & I2C_M_RD) && m->len == 1 &&
 	    (msgs[1].flags & I2C_M_RD) && msgs[1].addr == m->addr &&
-	    msgs[1].len >= 1 && msgs[1].len <= GC573_I2C1_MAX_READ)
+	    msgs[1].len >= 1 && msgs[1].len <= GC573_I2C1_MAX_READ) {
 		ret = gc573_i2c1_transfer(gc, m->addr << 1, m->buf[0],
 					  msgs[1].buf, msgs[1].len, true, NULL);
-	else if (num == 1 && !(m->flags & I2C_M_RD) &&
-		 m->len >= 2 && m->len <= 1 + GC573_I2C1_MAX_WRITE)
+	} else if (num == 1 && !(m->flags & I2C_M_RD) &&
+		   m->len >= 2 && m->len <= 1 + GC573_I2C1_MAX_WRITE) {
+		/* it may select a bank: the chip code selects them again */
+		gc->i2c1_ext_write = true;
 		ret = gc573_i2c1_transfer(gc, m->addr << 1, m->buf[0],
 					  m->buf + 1, m->len - 1, false, NULL);
-	else
+	} else {
 		return -EOPNOTSUPP;
+	}
 
 	return ret ? ret : num;
 }

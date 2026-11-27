@@ -390,6 +390,8 @@ struct gc573 {
 	struct i2c_adapter i2c1;	/* bus 1 engine: HDMI chips */
 	struct completion i2c1_done;	/* bus 1 transfer ended (INT bit 11) */
 	u8 i2c1_status;			/* GC573_I2C1_STATUS latched at INT bit 11 */
+	/* bus 1 written through the adapter (i2c-dev) since the chip code held it */
+	bool i2c1_ext_write;
 	struct gc573_ocbus i2c0;	/* byte master, devices unknown */
 	struct gc573_ocbus i2c2;	/* byte master, devices unknown */
 

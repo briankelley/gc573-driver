@@ -8,7 +8,10 @@
  * bank register is rewritten and read back before the next banked access;
  * the bus-1 adapter lock is held across a sequence, so an i2c-dev user
  * never lands between a bank select and the accesses that depend on it,
- * and every device is back in bank 0 when the lock is released.
+ * and every device is back in bank 0 when the lock is released. The lock
+ * is free between sequences and during their delays (gc573_chip_sleep()):
+ * after an i2c-dev write in such a window, which may have selected another
+ * bank, every bank is selected and read back again before its next use.
  *
  * The engine runs one segment of a spec/seq table (src/gc573_seq.c, from
  * tools/gen-seq.py): W, M, R, D, P rows as the table header defines them,
@@ -156,8 +159,18 @@ int gc573_chip_mod(struct gc573_hdmi *h, u8 dev, u8 bank, u8 reg, u8 mask,
 
 void gc573_chip_begin(struct gc573_hdmi *h)
 {
+	unsigned int i;
+
 	i2c_lock_bus(&h->gc->i2c1, I2C_LOCK_ROOT_ADAPTER);
 	h->bus_held = true;
+	/* an i2c-dev write while the bus was free: the bank cache is stale */
+	if (h->gc->i2c1_ext_write) {
+		h->gc->i2c1_ext_write = false;
+		for (i = 0; i < ARRAY_SIZE(h->bank); i++) {
+			h->bank[i].cur = -1;
+			h->bank[i].resync = true;
+		}
+	}
 }
 
 /* RD's convention: every banked device back in bank 0 between sequences */
