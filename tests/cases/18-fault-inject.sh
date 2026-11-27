@@ -72,6 +72,18 @@
 #   snd_pcm_new_stream(): ALSA ignores that failure (sound/core/control.c,
 #   pcm.c in 6.8), and its nameless device fails device_add() with
 #   -EINVAL when the card registers;
+# - the probe's "error -EINVAL: cannot register video device" after a
+#   failure in dev_set_name() under __video_register_device(), which
+#   ignores it the same way (drivers/media/v4l2-core/v4l2-dev.c line 1038
+#   in 6.8);
+# - after a failure under devtmpfs_create_node(): a smoke that fails while
+#   the card is bound, and sound nodes made directly in /dev. A class's
+#   devnode name that cannot be allocated (sound_devnode(): "snd/...")
+#   makes device_get_devnode() fall back to the bare device name, so
+#   devtmpfs makes /dev/pcmC1D0c instead of /dev/snd/pcmC1D0c; device_add()
+#   ignores devtmpfs_create_node()'s result, and the node stays after the
+#   device has gone (drivers/base/core.c, devtmpfs.c in 6.8). The case
+#   names such nodes in a NOTE and, in a VM, removes them;
 # - for run.sh's kmemleak check, after a failure in device_register()
 #   inside __video_register_device(): the 8-byte name of the video device
 #   (dev_set_name()) that task allocated, which videodev leaks there
@@ -102,6 +114,12 @@ tmp=$(mktemp -d)
 fi=$tmp/gc573-fault
 problems=0
 note=""
+smoke_bad=""
+in_vm=0
+if systemd-detect-virt --vm -q 2>/dev/null || grep -qw hypervisor /proc/cpuinfo; then
+	in_vm=1
+fi
+strays=""
 
 # ---- the fault-injection settings, saved and put back on exit ----
 FILES="probability interval times space verbose verbose_ratelimit_interval_ms
@@ -418,6 +436,55 @@ explained() {
 		allow_line "$1" "$line" "-EINVAL from the card's registration after a failure in dev_set_name() that ALSA ignored"
 		k=$((k + 1))
 	done < <(grep -E "\] $GC573_MOD [^ ]+: error -EINVAL: cannot register sound card$" <<< "$bad")
+	n=$(grep -cE ' dev_set_name __video_register_device( |$)' <<< "$stacks")
+	k=0
+	while read -r line; do
+		[ "$k" -lt "$n" ] || break
+		allow_line "$1" "$line" "-EINVAL from the video device's registration after a failure in dev_set_name() that videodev ignored"
+		k=$((k + 1))
+	done < <(grep -E "\] $GC573_MOD [^ ]+: error -EINVAL: cannot register video device$" <<< "$bad")
+}
+
+# Sound nodes directly in /dev: a class's devnode name (sound_devnode():
+# "snd/pcmC1D0c") that could not be allocated makes device_get_devnode()
+# fall back to the bare device name, so devtmpfs makes /dev/pcmC1D0c, and
+# removes /dev/snd/pcmC1D0c at the device's end, which leaves the stray
+stray_nodes() {
+	find /dev -maxdepth 1 -type c \( -name 'controlC[0-9]*' -o -name 'pcmC[0-9]*D[0-9]*[cp]' \) 2>/dev/null | sort
+}
+
+# Step $1 after its kernel log check (klog_bad: $stacks): a smoke that
+# failed while bound (after_fault, $smoke_bad) is allowed when a failure
+# of the step ran under devtmpfs_create_node(), as is a stray sound node
+# new in it (stray_nodes), named in a NOTE and in a VM removed; without
+# such a failure either is a problem
+devnode_check() {
+	local n new f
+	n=$(grep -cE ' devtmpfs_create_node( |$)' <<< "$stacks")
+	if [ -n "$smoke_bad" ]; then
+		if [ "$n" -gt 0 ]; then
+			echo "  $1: allowed, a smoke that failed after a failure under devtmpfs_create_node(): ${smoke_bad#"$1: "}"
+		else
+			problem "$smoke_bad"
+		fi
+		smoke_bad=""
+	fi
+	new=$(stray_nodes | grep -vxF -f <(printf '%s\n' "$strays") || true)
+	[ -n "$new" ] || return 0
+	if [ "$n" = 0 ]; then
+		problem "$1: sound nodes directly in /dev: $(tr '\n' ' ' <<< "$new")"
+	else
+		echo "  NOTE: $1: after a failure under devtmpfs_create_node(), sound nodes made directly in /dev (the kernel's fallback to the bare name): $(tr '\n' ' ' <<< "$new")"
+	fi
+	if [ "$in_vm" = 1 ]; then
+		for f in $new; do
+			rm -f -- "$f"
+		done
+		echo "  removed (in a VM): $(tr '\n' ' ' <<< "$new")"
+	else
+		strays=$(printf '%s\n%s' "$strays" "$new" | sed '/^$/d')
+		echo "  left in place (not a VM): reboot to remove them"
+	fi
 }
 # The kernel's lines of step $1 (klog_bad), each a problem; at the step's
 # end, after its unload or unbind, so the lines that undoing it brings are
@@ -425,6 +492,7 @@ explained() {
 klog_step() {
 	klog_bad "$1"
 	[ -z "$bad" ] || problem "$1: kernel: $(tr '\n' '|' <<< "$bad")"
+	devnode_check "$1"
 }
 
 problem() {
@@ -485,11 +553,12 @@ smoke() {
 
 # After a load or bind with a fault (step $1, its result $2): bound and
 # working, or nothing left. The kernel log is checked once the step is
-# undone (klog_step)
+# undone (klog_step), and a failed smoke judged then, with the step's
+# stacks (devnode_check)
 after_fault() {
 	local left out
 	if gc573_bound; then
-		out=$(smoke) || problem "$1: bound, but $out"
+		out=$(smoke) || smoke_bad="$1: bound, but $out"
 	else
 		left=$(leftovers)
 		[ -z "$left" ] || problem "$1 ($2): left behind: $(tr '\n' ';' <<< "$left")"
@@ -510,6 +579,8 @@ fi
 gc573_loaded && gc573_unload
 filter_modules
 koff=$(stat -c %s "$klogf")
+strays=$(stray_nodes)	# from before the case: not its own
+[ -z "$strays" ] || echo "sound nodes directly in /dev before the case (not judged): $(tr '\n' ' ' <<< "$strays")"
 
 # A load without a fault and an unload first. Before any probe the device
 # has the boot's state (in gc573-dev COMMAND 0x0007, bus mastering on),
