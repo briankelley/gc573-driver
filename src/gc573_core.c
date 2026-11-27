@@ -565,10 +565,13 @@ MODULE_PARM_DESC(dead_cards,
  *   leaves the device enabled and bus mastering on (pci_disable_device()
  *   turns it off only with the last enable gone).
  * - No driver takes the card again: not this one, and not vfio-pci, whose
- *   release (a VM's end) turns bus mastering off. A new pci_dev of it, after
- *   a remove and rescan, gets refused by this driver's record.
+ *   release (a VM's end) turns bus mastering off (gc573_block_drivers(),
+ *   compat.h: complete up to v6.15, weaker from v6.16 and on RHEL 10).
+ *   A new pci_dev of it, after a remove and rescan, gets refused by this
+ *   driver's record.
  * - The module stays loaded, and with it the record. A stop that fails
- *   while the module unloads cannot hold it: then only match_driver does.
+ *   while the module unloads cannot hold it: then only
+ *   gc573_block_drivers() does.
  * No stream starts again; bus 1 and the HDMI poll stop too.
  * Process context.
  */
@@ -581,7 +584,7 @@ static void gc573_card_dead(struct gc573 *gc, const char *why)
 	WRITE_ONCE(gc->hdmi.polling, false);
 	if (pci_enable_device(pdev))
 		dev_err(&pdev->dev, "cannot keep the device enabled: its teardown will turn bus mastering off\n");
-	pdev->match_driver = false;
+	gc573_block_drivers(pdev);
 	gc573_dead_add(pdev);
 	__module_get(THIS_MODULE);
 	dev_err(&pdev->dev, "%s: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again\n",

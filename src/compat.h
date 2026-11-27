@@ -21,8 +21,12 @@
 #define GC573_COMPAT_H
 
 #include <linux/io.h>
+#include <linux/module.h>
 #include <linux/pci.h>
+#include <linux/slab.h>
+#include <linux/string.h>
 #include <linux/version.h>
+#include <linux/workqueue.h>
 
 #define GC573_RHEL(major, minor)	(((major) << 8) + (minor))
 
@@ -73,6 +77,89 @@ gc573_pcim_iomap_region(struct pci_dev *pdev, int bar, const char *name)
 	.wait_finish	= vb2_ops_wait_finish,
 #else
 #define GC573_VB2_WAIT_OPS
+#endif
+
+/*
+ * gc573_block_drivers(): no driver may take a card whose DMA may still run
+ * (gc573_card_dead()); vfio-pci's release would turn its bus mastering off.
+ * Process context.
+ *
+ * Up to v6.15, and EL9: pci_dev.match_driver = false. pci_bus_match()
+ * then refuses every driver, whatever binds it: a sysfs bind, a
+ * driver_override, driverctl, libvirt's managed hostdev. The flag is the
+ * PCI core's own, and upstream objects to drivers using it: 3be5fa236649
+ * reverted the one in-tree use (iommu/amd) for that reason, and v6.16
+ * hid the flag in the core's priv_flags (ce45dc4bb22e). An upstream
+ * submission would drop this and ask for an API.
+ *
+ * v6.16 and later, and RHEL 10 (with the change backported): there is
+ * no such API. A driver_override naming no driver refuses a plain bind
+ * and new_id, but driverctl and libvirt write their own over it (README,
+ * Known limitations). From v7.1 PCI keeps the override in struct device
+ * (cb3d1049f4ea): device_set_driver_override() takes a spinlock of its
+ * own. Before that, driver_set_override() takes the device lock, which
+ * probe, remove and shutdown hold where a stop fails: from a work item,
+ * which waits for that lock, so a bind queued behind the same remove can
+ * come first. gc573_card_dead() keeps the module for good, and with it
+ * the work's code; while the module unloads only remove gets here, with
+ * the device lock held, and the override is written in place.
+ */
+#define GC573_NO_DRIVER		"gc573-dead-card"
+
+#if KERNEL_VERSION(6, 16, 0) > LINUX_VERSION_CODE && GC573_RHEL(10, 0) > GC573_RHEL_CODE
+static inline void gc573_block_drivers(struct pci_dev *pdev)
+{
+	pdev->match_driver = false;
+}
+#elif KERNEL_VERSION(7, 1, 0) <= LINUX_VERSION_CODE
+static inline void gc573_block_drivers(struct pci_dev *pdev)
+{
+	int ret = device_set_driver_override(&pdev->dev, GC573_NO_DRIVER);
+
+	if (ret)
+		dev_err(&pdev->dev, "cannot set driver_override: %d\n", ret);
+}
+#else
+struct gc573_block_work {
+	struct work_struct work;
+	struct pci_dev *pdev;
+};
+
+static inline void gc573_block_drivers_work(struct work_struct *work)
+{
+	struct gc573_block_work *bw = container_of(work, struct gc573_block_work, work);
+	int ret = driver_set_override(&bw->pdev->dev, &bw->pdev->driver_override,
+				      GC573_NO_DRIVER, strlen(GC573_NO_DRIVER));
+
+	if (ret)
+		dev_err(&bw->pdev->dev, "cannot set driver_override: %d\n", ret);
+	pci_dev_put(bw->pdev);
+	kfree(bw);
+}
+
+static inline void gc573_block_drivers(struct pci_dev *pdev)
+{
+	struct gc573_block_work *bw;
+	const char *old, *name;
+
+	if (!try_module_get(THIS_MODULE)) {
+		/* unloading: remove, under the device lock */
+		name = kstrdup(GC573_NO_DRIVER, GFP_KERNEL);
+		if (!name)
+			return;
+		old = pdev->driver_override;
+		pdev->driver_override = name;
+		kfree(old);
+		return;
+	}
+	module_put(THIS_MODULE);
+	bw = kzalloc(sizeof(*bw), GFP_KERNEL);
+	if (!bw)
+		return;
+	INIT_WORK(&bw->work, gc573_block_drivers_work);
+	bw->pdev = pci_dev_get(pdev);
+	schedule_work(&bw->work);
+}
 #endif
 
 #endif /* GC573_COMPAT_H */
