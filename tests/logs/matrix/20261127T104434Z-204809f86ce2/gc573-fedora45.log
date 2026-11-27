@@ -1,0 +1,57 @@
+vm: gc573-fedora45  ref: 204809f86ce2  date: 2026-11-27T10:46:20Z
+distro: Fedora Linux 45 (Cloud Edition)
+running: 7.3.4-300.fc45.x86_64
+cc: gcc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)
+=== build 7.3.4-300.fc45.x86_64
+make -C /lib/modules/7.3.4-300.fc45.x86_64/build M=/home/dev/gc573-matrix/gc573 CC=gcc modules
+make[1]: Entering directory '/usr/src/kernels/7.3.4-300.fc45.x86_64'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+src/gc573_core.c: In function ‘gc573_card_dead’:
+src/gc573_core.c:584:13: error: ‘struct pci_dev’ has no member named ‘match_driver’
+  584 |         pdev->match_driver = false;
+      |             ^~
+make[4]: *** [/usr/src/kernels/7.3.4-300.fc45.x86_64/scripts/Makefile.build:290: src/gc573_core.o] Error 1
+make[3]: *** [/usr/src/kernels/7.3.4-300.fc45.x86_64/Makefile:2265: .] Error 2
+make[2]: *** [/usr/src/kernels/7.3.4-300.fc45.x86_64/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/kernels/7.3.4-300.fc45.x86_64'
+make: *** [Makefile:26: modules] Error 2
+RESULT	7.3.4-300.fc45.x86_64	build	FAIL	rc=2 warnings=0
+=== dkms gc573/0.1
+Failed command:
+make -j4 KERNELRELEASE=7.3.4-300.fc45.x86_64 KDIR=/lib/modules/7.3.4-300.fc45.x86_64/build modules
+
+Error! Bad return status for module build on kernel: 7.3.4-300.fc45.x86_64 (x86_64)
+Consult /var/lib/dkms/gc573/0.1/build/make.log for more information.
+DKMS (dkms-3.4.4) make.log for gc573/0.1 for kernel 7.3.4-300.fc45.x86_64 (x86_64)
+Fri Nov 27 10:46:30 AM UTC 2026
+
+Building module(s)
+# command: make -j4 KERNELRELEASE=7.3.4-300.fc45.x86_64 KDIR=/lib/modules/7.3.4-300.fc45.x86_64/build modules
+make -C /lib/modules/7.3.4-300.fc45.x86_64/build M=/var/lib/dkms/gc573/0.1/build  modules
+make[1]: Entering directory '/usr/src/kernels/7.3.4-300.fc45.x86_64'
+make[2]: Entering directory '/var/lib/dkms/gc573/0.1/build'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+src/gc573_core.c: In function ‘gc573_card_dead’:
+src/gc573_core.c:584:13: error: ‘struct pci_dev’ has no member named ‘match_driver’
+  584 |         pdev->match_driver = false;
+      |             ^~
+make[4]: *** [/usr/src/kernels/7.3.4-300.fc45.x86_64/scripts/Makefile.build:290: src/gc573_core.o] Error 1
+make[4]: *** Waiting for unfinished jobs....
+make[3]: *** [/usr/src/kernels/7.3.4-300.fc45.x86_64/Makefile:2265: .] Error 2
+make[2]: *** [/usr/src/kernels/7.3.4-300.fc45.x86_64/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/var/lib/dkms/gc573/0.1/build'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/kernels/7.3.4-300.fc45.x86_64'
+make: *** [Makefile:26: modules] Error 2
+
+# exit code: 2
+# elapsed time: 00:00:01
+----------------------------------------------------------------
+RESULT	7.3.4-300.fc45.x86_64	dkms	FAIL	build
+card-idle: no GC573 in this VM: safe

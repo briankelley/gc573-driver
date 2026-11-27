@@ -17,6 +17,7 @@
 #include <linux/io.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
+#include <linux/notifier.h>
 #include <linux/sizes.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
@@ -56,6 +57,14 @@ struct snd_pcm_substream;
 #define GC573_RESET_DOMAIN_8		BIT(8)
 #define GC573_RESET_DOMAIN_9		BIT(9)
 #define GC573_RESET_DOMAINS		(GC573_RESET_DOMAIN_0 | GC573_RESET_DOMAIN_8 | \
+					 GC573_RESET_DOMAIN_9)
+/* sets with domain 0's reset; meaning unknown */
+#define GC573_RESET_BIT3		BIT(3)
+/*
+ * Sticky: set by a driver's domain resets, cleared only by a device reset
+ * (0x001 after one, 0x309 after any bring-up; spec/init.md step 2)
+ */
+#define GC573_RESET_STICKY		(GC573_RESET_BIT3 | GC573_RESET_DOMAIN_8 | \
 					 GC573_RESET_DOMAIN_9)
 
 /* Interrupt bits, spec/interrupts.md */
@@ -252,6 +261,7 @@ struct gc573_vbuf {
 	struct sg_table *sgt;		/* pages, DMA-mapped from buf_init on */
 	struct gc573_dlist dl[GC573_VCH_NUM];
 	u64 armed;			/* gc573_video.arm_seq when armed */
+	bool exposed;			/* its lists were given to the card */
 };
 
 /* Last few slot completions, for debugfs (experiments, bring-up) */
@@ -313,6 +323,10 @@ struct gc573_video {
 	unsigned int next_arm;		/* slots are armed round-robin */
 	u64 arm_seq;
 	u32 ch_ctrl[GC573_VCH_NUM];	/* CH_CTRL values written (ch1, ch2) */
+	__le32 *dummy;			/* the dummy list (coherent page) */
+	dma_addr_t dummy_dma;
+	/* bytes of the buffers given to the card and not freed since */
+	atomic_long_t exposed_bytes;
 	u32 vip_ctrl;			/* VIP_CTRL while streaming, w/o OUT_EN */
 	bool live;			/* streaming from a locked input */
 	u32 input_stops;		/* streams failed by an input change */
@@ -340,6 +354,9 @@ struct gc573_astats {
 	u32 interval_min_us;		/* shortest interval, this stream */
 };
 
+/* The audio DMA's two buffers, a page each (gc573_audio.c) */
+#define GC573_AUD_BUF_BYTES		(2 * PAGE_SIZE)
+
 /* Audio capture, src/gc573_audio.c */
 struct gc573_audio {
 	struct snd_card *card;
@@ -357,7 +374,9 @@ struct gc573_audio {
 	unsigned int part;		/* bytes into the current ALSA period */
 	unsigned int rate;
 	bool running;			/* periods are being delivered */
-	bool stopping;			/* stopped, INT bit 4 not waited for */
+	bool stopping;			/* stopped, its sync's verdict not in */
+	/* that stop in gc573_stop_begin()'s count: until INT bit 4 or the sync */
+	bool stop_counted;
 	bool dead;			/* quiesced: never start again */
 	bool resync;			/* restarted: fill the gap first */
 	unsigned int pause_us;		/* a late period: pause or latency? */
@@ -372,7 +391,21 @@ struct gc573 {
 	struct pci_dev *pdev;
 	void __iomem *mmio;
 	int irq;
-	u32 fw_version;
+	u32 fw_version;			/* VERSION, read before bus mastering */
+	bool dma_stopped;		/* gc573_dma_stop() ran: teardown */
+	/* a stop failed: the card stays as it is until reboot */
+	bool dma_dead;
+	/* probe: bus mastering was on, the engines not yet seen stopped */
+	bool master_unchecked;
+	/* probe: bus mastering was off when it started */
+	bool master_was_off;
+	/* a system sleep is under way: no stream starts (vid.lock, aud.lock) */
+	bool sleeping;
+	struct notifier_block pm_nb;	/* gc573_pm_notify() */
+	/* tests only, exp_mmio_ones: register reads return all-ones */
+	bool mmio_ones;
+	bool mmio_ones_timed;		/* until mmio_ones_until (jiffies) */
+	unsigned long mmio_ones_until;
 	struct v4l2_device v4l2_dev;	/* refcount owner of this struct */
 	struct dentry *debugfs;
 
@@ -388,8 +421,11 @@ struct gc573 {
 	/* serialises the I2C masters: one transfer on the card at a time */
 	struct mutex i2c_lock;
 	struct i2c_adapter i2c1;	/* bus 1 engine: HDMI chips */
+	bool i2c1_on;			/* i2c1 registered (i2c_bus1) */
 	struct completion i2c1_done;	/* bus 1 transfer ended (INT bit 11) */
 	u8 i2c1_status;			/* GC573_I2C1_STATUS latched at INT bit 11 */
+	/* bus 1 written through the adapter (i2c-dev) since the chip code held it */
+	bool i2c1_ext_write;
 	struct gc573_ocbus i2c0;	/* byte master, devices unknown */
 	struct gc573_ocbus i2c2;	/* byte master, devices unknown */
 
@@ -398,8 +434,44 @@ struct gc573 {
 	struct gc573_audio aud;
 };
 
+/*
+ * exp_stop_fault (gc573_core.c), tests only: a stop that fails. The stop
+ * is carried out in full and must be confirmed; only then is what each
+ * bit names counted as failed. A stop that was not confirmed is a real
+ * failure, and nothing is simulated.
+ */
+#define GC573_STOP_FAULT_TERM		BIT(0)	/* video: no INT bit 0 */
+#define GC573_STOP_FAULT_RESET		BIT(1)	/* video: domain 0 reset failed */
+#define GC573_STOP_FAULT_AUDIO		BIT(2)	/* teardown: audio DMA still on */
+#define GC573_STOP_FAULT_PROBE		BIT(3)	/* probe: audio DMA still on */
+/* a video stop counted as failed (bits 0, 1) is so only this much later */
+#define GC573_STOP_FAULT_SLOW		BIT(4)
+#define GC573_STOP_FAULT_SLOW_MS	2000
+/* an audio stop: no INT bit 4, and the audio DMA still on */
+#define GC573_STOP_FAULT_AUD_SYNC	BIT(5)
+/* the teardown's stop (gc573_dma_stop()) starts GC573_STOP_FAULT_SLOW_MS late */
+#define GC573_STOP_FAULT_LATE		BIT(6)
+/* the teardown's stop, once done, holds its verdict that long */
+#define GC573_STOP_FAULT_HOLD		BIT(7)
+extern unsigned int gc573_exp_stop_fault;
+
+/*
+ * exp_mmio_ones (gc573_core.c), tests only: every register read returns
+ * all-ones, as from a card that does not answer, from the point named
+ */
+#define GC573_MMIO_ONES_PROBE		1	/* the start of the probe */
+#define GC573_MMIO_ONES_BRIEF		2	/* bus mastering on, 1.5 s */
+#define GC573_MMIO_ONES_LONG		3	/* bus mastering on, 25 s */
+#define GC573_MMIO_ONES_INIT		4	/* the check after it, for good */
+bool gc573_mmio_ones_now(struct gc573 *gc);
+
 int gc573_reset_domain_mask(struct gc573 *gc, u32 mask);
 int gc573_reset_domains(struct gc573 *gc);
+void gc573_dma_stop(struct gc573 *gc);
+void gc573_dma_dead(struct gc573 *gc, const char *why, bool locked);
+/* a DMA stop from its first write to its verdict: no system sleep */
+void gc573_stop_begin(void);
+void gc573_stop_end(void);
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val);
 void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val);
 
@@ -424,7 +496,9 @@ extern const struct vb2_mem_ops gc573_vb2_mem_ops;
  * buffers (gc573_vb2.c) with their pages and kernel mappings, and the DMA
  * descriptor lists (gc573_video.c). debugfs "video" prints them ("mem:").
  * With no buffers requested they are all 0: a leak check that other
- * programs' memory cannot move (tests/live.sh obssoak).
+ * programs' memory cannot move (tests/live.sh obssoak). Memory kept after
+ * a stop the card did not confirm (gc573_dma_dead()) leaves these counts
+ * for "kept": bytes never freed, still DMA-mapped, until reboot.
  */
 struct gc573_mem_live {
 	atomic_t bufs;
@@ -432,13 +506,18 @@ struct gc573_mem_live {
 	atomic_t vmaps;
 	atomic_t dlists;
 	atomic_long_t dl_bytes;
+	atomic_long_t kept;
 };
+
+void gc573_mem_keep(struct sg_table *sgt);
 
 extern struct gc573_mem_live gc573_mem_live;
 
 void gc573_video_early_init(struct gc573 *gc);
+int gc573_video_alloc(struct gc573 *gc);
 int gc573_video_init(struct gc573 *gc);
-void gc573_video_hw_stop(struct gc573 *gc);
+int gc573_video_hw_stop(struct gc573 *gc, bool locked);
+void gc573_video_disarm(struct gc573 *gc);
 void gc573_video_irq_done(struct gc573 *gc);
 void gc573_video_irq_term(struct gc573 *gc);
 void gc573_video_debugfs(struct gc573 *gc);
@@ -446,15 +525,24 @@ void gc573_video_input_changed(struct gc573 *gc);
 void gc573_video_release(struct gc573 *gc);
 
 void gc573_audio_early_init(struct gc573 *gc);
+int gc573_audio_alloc(struct gc573 *gc);
 int gc573_audio_init(struct gc573 *gc);
 void gc573_audio_quiesce(struct gc573 *gc);
 bool gc573_audio_running(struct gc573 *gc);
+bool gc573_audio_stop_unconfirmed(struct gc573 *gc);
 void gc573_audio_reset_done(struct gc573 *gc);
 void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns);
 void gc573_audio_debugfs(struct gc573 *gc);
 
+/*
+ * A card that does not answer reads all-ones (a completion timeout), and
+ * every read of it can stall the CPU: readiness checks take all-ones as
+ * a failure, never as ready, and no read-modify-write writes it back.
+ */
 static inline u32 gc573_rd(struct gc573 *gc, u32 off)
 {
+	if (unlikely(READ_ONCE(gc->mmio_ones)) && gc573_mmio_ones_now(gc))
+		return U32_MAX;
 	return ioread32(gc->mmio + off);
 }
 

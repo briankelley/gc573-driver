@@ -1,0 +1,42 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-27 11:34:29 UTC
+vm:      gc573-dev, kernel 6.8.12-gc573dbg
+rev:     f031db118d29
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   stress
+module:  srcversion A243769A9C6C795F6B2B491 loaded, A243769A9C6C795F6B2B491 in ~/gc573-driver, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## stress
+  PARAMS bdf=0000:07:00.0 secs=600 video=3 audio=2 ctl=1 edid=1 bind=1 seed=1795779288 watchdog_ms=10000
+  WORKER video.0 ops=33440 errs=ENOENT:4531,EIO:9,EBUSY:4344,ENODEV:37,EINVAL:73,ENOLCK:440,ENOLINK:125 unexpected=0 stalls=0 slowest=close:778 ms
+  WORKER video.1 ops=31953 errs=ENOENT:5342,EBUSY:5100,ENODEV:32,EINVAL:80,EPIPE:1,ENOLCK:567,ENOLINK:148 unexpected=0 stalls=0 slowest=DQEVENT:638 ms
+  WORKER video.2 ops=32001 errs=ENOENT:5115,EIO:2,EBUSY:4517,ENODEV:32,EINVAL:82,EPIPE:1,ENOLCK:443,ENOLINK:153 unexpected=0 stalls=0 slowest=SUBSCRIBE_EVENT:771 ms
+  WORKER audio.0 ops=7565 errs=ENOENT:3,EBUSY:1326,ENODEV:18 unexpected=0 stalls=0 slowest=read:175 ms
+  WORKER audio.1 ops=7880 errs=ENOENT:4,EBUSY:1012,ENODEV:18 unexpected=0 stalls=0 slowest=read:194 ms
+  WORKER ctl.0 ops=18167 errs=ENOENT:310,EIO:1,EINVAL:159,ENOLCK:332,ENOLINK:136 unexpected=0 stalls=0 slowest=debugfs:813 ms
+  WORKER edid.0 ops=267 errs=none unexpected=0 stalls=0 slowest=S_EDID:816 ms
+  WORKER bind.0 ops=54 errs=none unexpected=0 stalls=0 slowest=unbind:785 ms
+RESULT stress-workers             PASS (PASS workers=8 ops=131327 unexpected=0 hangs=0 stalls=0 binds=18 edids=88; exit 0; 54 output changes on the host)
+RESULT stress-kernel-log          PASS (1386 lines, 1386 with gc573, bad 0, LOST 0)
+RESULT stress-capture-after       PASS (locked 40 ms after the source came back; RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.434 max=16.890 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=1 )
+RESULT stress-driver-mem          PASS (after the stress: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 1398 driver lines
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+
+## summary
+RESULT stress-workers             PASS (PASS workers=8 ops=131327 unexpected=0 hangs=0 stalls=0 binds=18 edids=88; exit 0; 54 output changes on the host)
+RESULT stress-kernel-log          PASS (1386 lines, 1386 with gc573, bad 0, LOST 0)
+RESULT stress-capture-after       PASS (locked 40 ms after the source came back; RESULT capture fmt=YUYV 1920x1080 frames=60 seq_gaps=0 err_flags=0 ivl_ms_mean=16.666 min=16.434 max=16.890 frames_not_overwritten=0 ch0_bytes=4147200 ch0_untouched_blocks_max=0 ch0_top_word=80eb80eb(6.2%) distinct_frames=1 )
+RESULT stress-driver-mem          PASS (after the stress: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+SUMMARY pass=8 fail=0 skip=0

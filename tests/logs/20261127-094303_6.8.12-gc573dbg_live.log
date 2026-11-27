@@ -1,0 +1,6 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-27 09:43:03 UTC
+vm:      gc573-dev, kernel 6.8.12-gc573dbg
+rev:     bb8c0da0709c
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   blip fpgawait fpgaheal avchange obsevents remnant stress compliance

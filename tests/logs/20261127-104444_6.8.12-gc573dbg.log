@@ -1,0 +1,2137 @@
+# GC573 regression suite
+date:    2026-11-27 10:44:45 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #5 SMP PREEMPT_DYNAMIC Thu Nov 26 19:04:38 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 55945F0B09B4F42AA4C5171
+rev:     204809f86ce2
+input:   none
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+
+## 18-fault-inject
+  ACPICA's text rejected in the load and bind sweeps: 0xffffffff96693e40-0xffffffff96761fc0, 1684 symbols (__pfx_acpi_ds_execute_arguments to acpi_rs_dump_irq_list; then __pfx_acpi_ac_get_state)
+  dma-debug's text rejected in the ioctl sweeps and random cycles: 0xffffffff94eeafc0-0xffffffff94ef4b70, 48 symbols (__pfx_dma_debug_create_entries to debug_dma_sync_sg_for_device; then __pfx___traceiter_swiotlb_bounced)
+  device 0000:07:00.0 numa_node -1
+    load n=31: allowed, -EBUSY from BAR0's region request after a failure in __request_region(): gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+    load: 50 faults so far (n=50)
+    load n=80: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+    load: 100 faults so far (n=460)
+    load n=610: a failure in device_register() under __video_register_device() (pid 10298): its leak of the device's name is allowed for that task
+    load n=630: a failure in device_register() under __video_register_device() (pid 10433): its leak of the device's name is allowed for that task
+    load n=640: a failure in device_register() under __video_register_device() (pid 10502): its leak of the device's name is allowed for that task
+    load n=650: a failure in device_register() under __video_register_device() (pid 10571): its leak of the device's name is allowed for that task
+    load n=660: a failure in device_register() under __video_register_device() (pid 10640): its leak of the device's name is allowed for that task
+    load n=680: a failure in device_register() under __video_register_device() (pid 10773): its leak of the device's name is allowed for that task
+    load n=920: allowed, a smoke that failed after a failure under devtmpfs_create_node(): bound, but audio: 
+    NOTE: load n=920: after a failure under devtmpfs_create_node(), sound nodes made directly in /dev (the kernel's fallback to the bare name): /dev/controlC3 
+    removed (in a VM): /dev/controlC3 
+    load: 150 faults so far (n=960)
+  load: 156 faults (n=1..1029, every point to 60, then every 10-th): module loaded 150 times (bound 108), errnos 0:150,ENOMEM:6; 330 s
+    bind n=11: allowed, -EBUSY from BAR0's region request after a failure in __request_region(): gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+    bind: 50 faults so far (n=50)
+    bind n=52: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+    bind n=54: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+    bind n=56: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+    bind n=58: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+    bind n=60: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+    bind n=68: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+    bind n=69: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+    bind n=95: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+    bind n=97: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+    bind n=98: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+    bind n=99: allowed, the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors(): gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+    bind: 100 faults so far (n=100)
+    bind n=128: allowed, remove_proc_entry('smp_affinity_list') after a failure in register_irq_proc(): WARNING: CPU: 3 PID: 21072 at fs/proc/generic.c:733 remove_proc_entry+0x187/0x4a0
+    bind n=136: allowed, remove_proc_entry('effective_affinity_list') after a failure in register_irq_proc(): WARNING: CPU: 0 PID: 21621 at fs/proc/generic.c:733 remove_proc_entry+0x187/0x4a0
+    bind: 150 faults so far (n=150)
+    bind: 200 faults so far (n=200)
+    bind: 250 faults so far (n=250)
+    bind: 300 faults so far (n=300)
+    bind: 350 faults so far (n=350)
+    bind: 400 faults so far (n=400)
+    bind: 450 faults so far (n=450)
+    bind: 500 faults so far (n=500)
+    bind: 550 faults so far (n=550)
+    bind n=578: allowed, -EINVAL from the video device's registration after a failure in dev_set_name() that videodev ignored: gc573 0000:07:00.0: error -EINVAL: cannot register video device
+    bind n=580: allowed, -EINVAL from the video device's registration after a failure in dev_set_name() that videodev ignored: gc573 0000:07:00.0: error -EINVAL: cannot register video device
+    bind n=583: a failure in device_register() under __video_register_device() (pid 50178): its leak of the device's name is allowed for that task
+    bind n=586: a failure in device_register() under __video_register_device() (pid 50350): its leak of the device's name is allowed for that task
+    bind n=588: allowed, -EINVAL from the video device's registration after a failure in dev_set_name() that videodev ignored: gc573 0000:07:00.0: error -EINVAL: cannot register video device
+    bind n=591: a failure in device_register() under __video_register_device() (pid 50674): its leak of the device's name is allowed for that task
+    bind n=592: a failure in device_register() under __video_register_device() (pid 50727): its leak of the device's name is allowed for that task
+    bind n=598: a failure in device_register() under __video_register_device() (pid 51111): its leak of the device's name is allowed for that task
+    bind n=599: a failure in device_register() under __video_register_device() (pid 51164): its leak of the device's name is allowed for that task
+    bind: 600 faults so far (n=600)
+    bind n=601: a failure in device_register() under __video_register_device() (pid 51365): its leak of the device's name is allowed for that task
+    bind n=602: a failure in device_register() under __video_register_device() (pid 51418): its leak of the device's name is allowed for that task
+    bind n=604: a failure in device_register() under __video_register_device() (pid 51537): its leak of the device's name is allowed for that task
+    bind n=606: a failure in device_register() under __video_register_device() (pid 51660): its leak of the device's name is allowed for that task
+    bind n=607: a failure in device_register() under __video_register_device() (pid 51714): its leak of the device's name is allowed for that task
+    bind n=608: a failure in device_register() under __video_register_device() (pid 51767): its leak of the device's name is allowed for that task
+    bind n=609: a failure in device_register() under __video_register_device() (pid 51820): its leak of the device's name is allowed for that task
+    bind n=612: a failure in device_register() under __video_register_device() (pid 52005): its leak of the device's name is allowed for that task
+    bind n=614: a failure in device_register() under __video_register_device() (pid 52125): its leak of the device's name is allowed for that task
+    bind n=615: a failure in device_register() under __video_register_device() (pid 52178): its leak of the device's name is allowed for that task
+    bind n=616: a failure in device_register() under __video_register_device() (pid 52231): its leak of the device's name is allowed for that task
+    bind n=617: a failure in device_register() under __video_register_device() (pid 52284): its leak of the device's name is allowed for that task
+    bind n=618: a failure in device_register() under __video_register_device() (pid 52337): its leak of the device's name is allowed for that task
+    bind n=622: a failure in device_register() under __video_register_device() (pid 52588): its leak of the device's name is allowed for that task
+    bind n=623: a failure in device_register() under __video_register_device() (pid 52641): its leak of the device's name is allowed for that task
+    bind n=624: a failure in device_register() under __video_register_device() (pid 52694): its leak of the device's name is allowed for that task
+    bind n=625: a failure in device_register() under __video_register_device() (pid 52747): its leak of the device's name is allowed for that task
+    bind n=628: a failure in device_register() under __video_register_device() (pid 52932): its leak of the device's name is allowed for that task
+    bind n=632: a failure in device_register() under __video_register_device() (pid 53184): its leak of the device's name is allowed for that task
+    bind n=634: a failure in device_register() under __video_register_device() (pid 53303): its leak of the device's name is allowed for that task
+    bind n=636: a failure in device_register() under __video_register_device() (pid 53422): its leak of the device's name is allowed for that task
+    bind n=637: a failure in device_register() under __video_register_device() (pid 53476): its leak of the device's name is allowed for that task
+    bind n=638: a failure in device_register() under __video_register_device() (pid 53529): its leak of the device's name is allowed for that task
+    bind n=641: a failure in device_register() under __video_register_device() (pid 53714): its leak of the device's name is allowed for that task
+    bind n=643: a failure in device_register() under __video_register_device() (pid 53833): its leak of the device's name is allowed for that task
+    bind n=646: a failure in device_register() under __video_register_device() (pid 54018): its leak of the device's name is allowed for that task
+    bind n=648: a failure in device_register() under __video_register_device() (pid 54149): its leak of the device's name is allowed for that task
+    bind n=650: a failure in device_register() under __video_register_device() (pid 54280): its leak of the device's name is allowed for that task
+    bind: 650 faults so far (n=650)
+    bind n=653: a failure in device_register() under __video_register_device() (pid 54478): its leak of the device's name is allowed for that task
+    bind n=654: a failure in device_register() under __video_register_device() (pid 54543): its leak of the device's name is allowed for that task
+    bind n=655: a failure in device_register() under __video_register_device() (pid 54608): its leak of the device's name is allowed for that task
+    bind n=684: allowed, -EINVAL from the card's registration after a failure in dev_set_name() that ALSA ignored: gc573 0000:07:00.0: error -EINVAL: cannot register sound card
+    bind n=685: allowed, -EINVAL from the card's registration after a failure in dev_set_name() that ALSA ignored: gc573 0000:07:00.0: error -EINVAL: cannot register sound card
+    bind: 700 faults so far (n=700)
+    bind: 750 faults so far (n=750)
+    bind: 800 faults so far (n=800)
+    bind: 850 faults so far (n=850)
+    bind: 900 faults so far (n=900)
+    bind: 950 faults so far (n=950)
+  bind: 962 faults (n=1..962), bound anyway 707, errnos 0:707,EBUSY:1,EINVAL:5,ENODEV:5,ENOMEM:238,ENOSPC:6; 2076 s
+  FI edid-save blocks=2
+    FI vopen points=2 injected=2 op_failed=1 errnos=ENOMEM:1 recover_fail=0
+    FI reqbufs points=71 injected=71 op_failed=5 errnos=ENOMEM:5 recover_fail=0
+    FI s_fmt points=2 injected=2 op_failed=1 errnos=ENOMEM:1 recover_fail=0
+    FI streamon points=0 injected=0 op_failed=0 errnos=none recover_fail=0
+    FI s_edid points=2 injected=2 op_failed=1 errnos=ENOMEM:1 recover_fail=0
+    FI pcm_open points=25 injected=25 op_failed=11 errnos=ENOENT:3,ENOMEM:8 recover_fail=0
+    FI hw_params points=27 injected=27 op_failed=10 errnos=ENOMEM:10 recover_fail=0
+  ioctl sweeps: 37 s
+  random: 20 cycles at 5 %: bound 20, captures through 13, EDID set and cleared 20, audio 20 (failures there are the injection's); 70 s
+  after the faults: bind, capture and audio OK; driver memory: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0
+  every injected failure unwound cleanly
+  -- kernel log (72036 lines)
+  | [  219.805063] mc: Linux media interface: v0.10
+  | [  219.820021] videodev: Linux video capture interface: v2.00
+  | [  219.879877] gc573: loading out-of-tree module taints kernel.
+  | [  220.000666] gc573 0000:07:00.0: using MSI, irq 60
+  | [  220.000689] gc573 0000:07:00.0: FPGA version 20200811
+  | [  220.138673] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  220.140987] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  220.253011] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  220.254004] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  220.360848] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  220.507875] gc573 0000:07:00.0: video device video0
+  | [  220.514719] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  220.526991] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  220.990946] gc573-test: 1795776451749867874-4590 18-fault-inject the load and unload before the sweeps
+  | [  221.110369] FAULT_INJECTION: forcing a failure.
+  | [  221.110369] name failslab, interval 1, probability 0, space 0, times 1
+  | [  221.110381] CPU: 0 PID: 3010 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  221.110385] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  221.110388] Call Trace:
+  | [  221.110390]  <TASK>
+  | [  221.110392]  dump_stack_lvl+0xc1/0xf0
+  | [  221.110398]  dump_stack+0x10/0x20
+  | [  221.110401]  should_fail_ex+0x4f4/0x5f0
+  | [  221.110405]  ? __pfx_lock_release+0x10/0x10
+  | [  221.110410]  ? bus_add_driver+0xe4/0x650
+  | [  221.110414]  __should_failslab+0xee/0x150
+  | [  221.110417]  ? __might_sleep+0xb4/0x180
+  | [  221.110422]  should_failslab+0xe/0x20
+  | [  221.110425]  kmalloc_trace+0x72/0x440
+  | [  221.110432]  bus_add_driver+0xe4/0x650
+  | [  221.110435]  ? bus_add_driver+0xe4/0x650
+  | [  221.110439]  driver_register+0x135/0x480
+  | [  221.110444]  __pci_register_driver+0x1d7/0x280
+  | [  221.110448]  ? blocking_notifier_chain_register+0x6a/0xc0
+  | [  221.110452]  ? __pfx_gc573_init+0x10/0x10 [gc573]
+  | [  221.110462]  gc573_init+0x48/0xff0 [gc573]
+  | [  221.110470]  do_one_initcall+0xef/0x4a0
+  | [  221.110475]  ? __pfx_do_one_initcall+0x10/0x10
+  | [  221.110480]  ? kasan_unpoison+0x45/0x80
+  | [  221.110485]  ? kasan_poison+0x3a/0x70
+  | [  221.110488]  ? __asan_register_globals+0x5e/0x90
+  | [  221.110493]  do_init_module+0x2a7/0x7c0
+  | [  221.110496]  ? klp_module_coming+0x3f4/0x780
+  | [  221.110504]  load_module+0x86c2/0x89f0
+  | [  221.110516]  ? __pfx_load_module+0x10/0x10
+  | [  221.110521]  ? rw_verify_area+0x24e/0x490
+  | [  221.110527]  ? security_kernel_post_read_file+0xae/0xe0
+  | [  221.110533]  ? kernel_read_file+0x272/0x980
+  | [  221.110536]  ? vfs_write+0xbf1/0x1360
+  | [  221.110542]  ? __pfx_kernel_read_file+0x10/0x10
+  | [  221.110548]  init_module_from_file+0xf6/0x180
+  | [  221.110551]  ? init_module_from_file+0xf6/0x180
+  | [  221.110554]  ? __pfx_init_module_from_file+0x10/0x10
+  | [  221.110557]  ? find_held_lock+0x36/0x140
+  | [  221.110568]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  221.110572]  idempotent_init_module+0x283/0x8f0
+  | [  221.110577]  ? __pfx_idempotent_init_module+0x10/0x10
+  | [  221.110584]  ? __kasan_check_read+0x11/0x20
+  | [  221.110591]  ? __fget_light+0x59/0x200
+  | [  221.110596]  __x64_sys_finit_module+0xc0/0x140
+  | [  221.110600]  x64_sys_call+0x2019/0x25a0
+  | [  221.110603]  do_syscall_64+0x9a/0x1a0
+  | [  221.110607]  ? do_syscall_64+0xa7/0x1a0
+  | [  221.110609]  ? do_user_addr_fault+0x483/0xc40
+  | [  221.110614]  ? lock_release+0x203/0x7e0
+  | [  221.110616]  ? __up_read+0x1b4/0x7e0
+  | [  221.110620]  ? __pfx_lock_release+0x10/0x10
+  | [  221.110622]  ? __pfx___up_read+0x10/0x10
+  | [  221.110626]  ? rcu_read_unlock+0x26/0x80
+  | [  221.110629]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  221.110636]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  221.110640]  ? irqentry_exit+0x77/0xb0
+  | [  221.110642]  ? clear_bhb_loop+0x40/0x90
+  | [  221.110646]  ? clear_bhb_loop+0x40/0x90
+  | [  221.110649]  ? clear_bhb_loop+0x40/0x90
+  | [  221.110653]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  221.110656] RIP: 0033:0x724e495274ed
+  | [  221.110660] Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d fb c8 0d 00 f7 d8 64 89 01 48
+  | [  221.110663] RSP: 002b:00007ffdc9598f98 EFLAGS: 00000246 ORIG_RAX: 0000000000000139
+  | [  221.110667] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000724e495274ed
+  | [  221.110670] RDX: 0000000000000000 RSI: 00007ffdc9599de2 RDI: 0000000000000003
+  | [  221.110672] RBP: 00007ffdc9599dc2 R08: 0000000000000000 R09: 0000000001000000
+  | [  221.110674] R10: 0000000000000075 R11: 0000000000000246 R12: 00007ffdc9599de2
+  | [  221.110676] R13: 00005c48c1ecd2e5 R14: 0000000000000001 R15: 0000000000000025
+  | [  221.110683]  </TASK>
+  | [  221.294237] gc573-test: 1795776452052002355-26228 18-fault-inject load n=1
+  | [  221.536427] gc573 0000:07:00.0: using MSI, irq 60
+  | [  221.536450] gc573 0000:07:00.0: FPGA version 20200811
+  | [  221.671387] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  221.674991] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  221.783375] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  221.784116] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  221.887889] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  222.035527] gc573 0000:07:00.0: video device video0
+  | [  222.037619] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  222.049771] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  222.759031] gc573 0000:07:00.0: splitter: EQ search found no valid channel (d0 = 2a), attempt 1
+  | [  223.759761] gc573-test: 1795776454518591674-21883 18-fault-inject load n=2
+  | [  223.868035] FAULT_INJECTION: forcing a failure.
+  | [  223.868035] name failslab, interval 1, probability 0, space 0, times 0
+  | [  223.868046] CPU: 3 PID: 3120 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  223.868050] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  223.868053] Call Trace:
+  | [  223.868055]  <TASK>
+  | [  223.868057]  dump_stack_lvl+0xc1/0xf0
+  | [  223.868063]  dump_stack+0x10/0x20
+  | [  223.868066]  should_fail_ex+0x4f4/0x5f0
+  | [  223.868070]  ? idempotent_init_module+0x283/0x8f0
+  | [  223.868074]  ? __x64_sys_finit_module+0xc0/0x140
+  | [  223.868078]  __should_failslab+0xee/0x150
+  | [  223.868081]  ? __might_sleep+0xb4/0x180
+  | [  223.868086]  should_failslab+0xe/0x20
+  | [  223.868089]  __kmalloc_node_track_caller+0xfc/0x5d0
+  | [  223.868093]  ? kstrdup_const+0x2c/0x40
+  | [  223.868100]  kstrdup+0x36/0x70
+  | [  223.868103]  ? kstrdup+0x36/0x70
+  | [  223.868107]  kstrdup_const+0x2c/0x40
+  | [  223.868110]  kvasprintf_const+0xd8/0x150
+  | [  223.868114]  kobject_set_name_vargs+0x44/0x120
+  | [  223.868118]  ? kobject_init+0x69/0x200
+  | [  223.868122]  kobject_init_and_add+0xce/0x170
+  | [  223.868125]  ? __pfx_kobject_init_and_add+0x10/0x10
+  | [  223.868130]  ? __kasan_kmalloc+0xc3/0xd0
+  | [  223.868141]  bus_add_driver+0x1d3/0x650
+  | [  223.868148]  driver_register+0x135/0x480
+  | [  223.868153]  __pci_register_driver+0x1d7/0x280
+  | [  223.868157]  ? blocking_notifier_chain_register+0x6a/0xc0
+  | [  223.868161]  ? __pfx_gc573_init+0x10/0x10 [gc573]
+  | [  223.868172]  gc573_init+0x48/0xff0 [gc573]
+  | [  223.868182]  do_one_initcall+0xef/0x4a0
+  | [  223.868187]  ? __pfx_do_one_initcall+0x10/0x10
+  | [  223.868194]  ? kasan_unpoison+0x45/0x80
+  | [  223.868198]  ? kasan_poison+0x3a/0x70
+  | [  223.868201]  ? __asan_register_globals+0x5e/0x90
+  | [  223.868207]  do_init_module+0x2a7/0x7c0
+  | [  223.868210]  ? klp_module_coming+0x3f4/0x780
+  | [  223.868219]  load_module+0x86c2/0x89f0
+  | [  223.868235]  ? __pfx_load_module+0x10/0x10
+  | [  223.868242]  ? rw_verify_area+0x24e/0x490
+  | [  223.868249]  ? security_kernel_post_read_file+0xae/0xe0
+  | [  223.868255]  ? kernel_read_file+0x272/0x980
+  | [  223.868263]  ? __pfx_kernel_read_file+0x10/0x10
+  | [  223.868270]  init_module_from_file+0xf6/0x180
+  | [  223.868273]  ? init_module_from_file+0xf6/0x180
+  | [  223.868277]  ? __pfx_init_module_from_file+0x10/0x10
+  | [  223.868281]  ? find_held_lock+0x36/0x140
+  | [  223.868295]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  223.868300]  idempotent_init_module+0x283/0x8f0
+  | [  223.868305]  ? __pfx_idempotent_init_module+0x10/0x10
+  | [  223.868308]  ? __pfx_vfs_write+0x10/0x10
+  | [  223.868318]  ? __kasan_check_read+0x11/0x20
+  | [  223.868321]  ? __fget_light+0x59/0x200
+  | [  223.868328]  __x64_sys_finit_module+0xc0/0x140
+  | [  223.868332]  x64_sys_call+0x2019/0x25a0
+  | [  223.868336]  do_syscall_64+0x9a/0x1a0
+  | [  223.868342]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [  223.868346]  ? do_syscall_64+0xa7/0x1a0
+  | [  223.868350]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  223.868355]  ? irqentry_exit+0x77/0xb0
+  | [  223.868357]  ? clear_bhb_loop+0x40/0x90
+  | [  223.868361]  ? clear_bhb_loop+0x40/0x90
+  | [  223.868364]  ? clear_bhb_loop+0x40/0x90
+  | [  223.868368]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  223.868372] RIP: 0033:0x7760baf274ed
+  | [  223.868375] Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d fb c8 0d 00 f7 d8 64 89 01 48
+  | [  223.868378] RSP: 002b:00007ffcc0e1e2f8 EFLAGS: 00000246 ORIG_RAX: 0000000000000139
+  | [  223.868383] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007760baf274ed
+  | [  223.868385] RDX: 0000000000000000 RSI: 00007ffcc0e1ede2 RDI: 0000000000000003
+  | [  223.868388] RBP: 00007ffcc0e1edc2 R08: 0000000000000000 R09: 0000000001000000
+  | [  223.868390] R10: 0000000000000075 R11: 0000000000000246 R12: 00007ffcc0e1ede2
+  | [  223.868392] R13: 00005c5d506b22e5 R14: 0000000000000003 R15: 0000000000000025
+  | [  223.868403]  </TASK>
+  | [  223.868427] kobject: can not set name properly!
+  | [  224.048104] gc573-test: 1795776454807154633-12436 18-fault-inject load n=3
+  | [  224.279795] gc573 0000:07:00.0: using MSI, irq 60
+  | [  224.279813] gc573 0000:07:00.0: FPGA version 20200811
+  | [  224.419364] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  224.420395] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  224.539265] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  224.540010] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  224.635572] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  224.786340] gc573 0000:07:00.0: video device video0
+  | [  224.797713] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  224.827891] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  226.006476] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 148277 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  226.597700] gc573-test: 1795776457355832117-1712 18-fault-inject load n=4
+  | [  226.731955] FAULT_INJECTION: forcing a failure.
+  | [  226.731955] name failslab, interval 1, probability 0, space 0, times 0
+  | [  226.731969] CPU: 0 PID: 3229 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  226.731973] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  226.731976] Call Trace:
+  | [  226.731978]  <TASK>
+  | [  226.731981]  dump_stack_lvl+0xc1/0xf0
+  | [  226.731990]  dump_stack+0x10/0x20
+  | [  226.731993]  should_fail_ex+0x4f4/0x5f0
+  | [  226.731998]  ? mark_lock+0xfd/0x17c0
+  | [  226.732005]  __should_failslab+0xee/0x150
+  | [  226.732009]  ? __might_sleep+0xb4/0x180
+  | [  226.732014]  should_failslab+0xe/0x20
+  | [  226.732019]  __kmalloc_node_track_caller+0xfc/0x5d0
+  | [  226.732022]  ? __kmalloc_node_track_caller+0x268/0x5d0
+  | [  226.732024]  ? kstrdup+0x36/0x70
+  | [  226.732028]  ? kstrdup_const+0x2c/0x40
+  | [  226.732031]  ? kstrdup_const+0x2c/0x40
+  | [  226.732038]  kstrdup+0x36/0x70
+  | [  226.732040]  ? kstrdup+0x36/0x70
+  | [  226.732045]  kstrdup_const+0x2c/0x40
+  | [  226.732048]  __kernfs_new_node+0xaf/0x7f0
+  | [  226.732053]  ? __kasan_check_read+0x11/0x20
+  | [  226.732059]  ? __pfx___kernfs_new_node+0x10/0x10
+  | [  226.732067]  ? __pfx___lock_acquire+0x10/0x10
+  | [  226.732075]  kernfs_new_node+0x130/0x2b0
+  | [  226.732078]  ? find_held_lock+0x36/0x140
+  | [  226.732084]  kernfs_create_dir_ns+0x2c/0x150
+  | [  226.732088]  sysfs_create_dir_ns+0x12d/0x2a0
+  | [  226.732092]  ? __pfx_lock_release+0x10/0x10
+  | [  226.732096]  ? __pfx_sysfs_create_dir_ns+0x10/0x10
+  | [  226.732100]  ? __asan_memcpy+0x4d/0x80
+  | [  226.732106]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  226.732111]  kobject_add_internal+0x280/0x8d0
+  | [  226.732118]  kobject_init_and_add+0xf2/0x170
+  | [  226.732122]  ? __pfx_kobject_init_and_add+0x10/0x10
+  | [  226.732127]  ? __kasan_kmalloc+0xc3/0xd0
+  | [  226.732138]  bus_add_driver+0x1d3/0x650
+  | [  226.732144]  driver_register+0x135/0x480
+  | [  226.732150]  __pci_register_driver+0x1d7/0x280
+  | [  226.732154]  ? blocking_notifier_chain_register+0x6a/0xc0
+  | [  226.732157]  ? __pfx_gc573_init+0x10/0x10 [gc573]
+  | [  226.732169]  gc573_init+0x48/0xff0 [gc573]
+  | [  226.732178]  do_one_initcall+0xef/0x4a0
+  | [  226.732184]  ? __pfx_do_one_initcall+0x10/0x10
+  | [  226.732191]  ? kasan_unpoison+0x45/0x80
+  | [  226.732195]  ? kasan_poison+0x3a/0x70
+  | [  226.732198]  ? __asan_register_globals+0x5e/0x90
+  | [  226.732204]  do_init_module+0x2a7/0x7c0
+  | [  226.732208]  ? klp_module_coming+0x3f4/0x780
+  | [  226.732216]  load_module+0x86c2/0x89f0
+  | [  226.732234]  ? __pfx_load_module+0x10/0x10
+  | [  226.732240]  ? rw_verify_area+0x24e/0x490
+  | [  226.732247]  ? security_kernel_post_read_file+0xae/0xe0
+  | [  226.732253]  ? kernel_read_file+0x272/0x980
+  | [  226.732257]  ? vfs_write+0xbf1/0x1360
+  | [  226.732264]  ? __pfx_kernel_read_file+0x10/0x10
+  | [  226.732271]  init_module_from_file+0xf6/0x180
+  | [  226.732274]  ? init_module_from_file+0xf6/0x180
+  | [  226.732278]  ? __pfx_init_module_from_file+0x10/0x10
+  | [  226.732281]  ? find_held_lock+0x36/0x140
+  | [  226.732295]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  226.732300]  idempotent_init_module+0x283/0x8f0
+  | [  226.732303]  ? lock_release+0x203/0x7e0
+  | [  226.732307]  ? __pfx_idempotent_init_module+0x10/0x10
+  | [  226.732317]  ? __kasan_check_read+0x11/0x20
+  | [  226.732320]  ? __fget_light+0x59/0x200
+  | [  226.732327]  __x64_sys_finit_module+0xc0/0x140
+  | [  226.732332]  x64_sys_call+0x2019/0x25a0
+  | [  226.732335]  do_syscall_64+0x9a/0x1a0
+  | [  226.732340]  ? do_user_addr_fault+0x411/0xc40
+  | [  226.732344]  ? reacquire_held_locks+0x219/0x4e0
+  | [  226.732347]  ? do_user_addr_fault+0x411/0xc40
+  | [  226.732354]  ? find_held_lock+0x36/0x140
+  | [  226.732358]  ? do_user_addr_fault+0x483/0xc40
+  | [  226.732362]  ? lock_release+0x203/0x7e0
+  | [  226.732365]  ? __up_read+0x1b4/0x7e0
+  | [  226.732369]  ? __pfx_lock_release+0x10/0x10
+  | [  226.732371]  ? __pfx___up_read+0x10/0x10
+  | [  226.732375]  ? rcu_read_unlock+0x26/0x80
+  | [  226.732379]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  226.732387]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  226.732392]  ? irqentry_exit+0x77/0xb0
+  | [  226.732394]  ? clear_bhb_loop+0x40/0x90
+  | [  226.732398]  ? clear_bhb_loop+0x40/0x90
+  | [  226.732401]  ? clear_bhb_loop+0x40/0x90
+  | [  226.732406]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  226.732409] RIP: 0033:0x77df987274ed
+  | [  226.732413] Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d fb c8 0d 00 f7 d8 64 89 01 48
+  | [  226.732416] RSP: 002b:00007ffe9684a058 EFLAGS: 00000246 ORIG_RAX: 0000000000000139
+  | [  226.732420] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 000077df987274ed
+  | [  226.732423] RDX: 0000000000000000 RSI: 00007ffe9684bde2 RDI: 0000000000000003
+  | [  226.732425] RBP: 00007ffe9684bdc2 R08: 0000000000000000 R09: 0000000001000000
+  | [  226.732427] R10: 0000000000000075 R11: 0000000000000246 R12: 00007ffe9684bde2
+  | [  226.732430] R13: 00005bcff59a92e5 R14: 0000000000000005 R15: 0000000000000025
+  | [  226.732439]  </TASK>
+  | [  226.732465] kobject: kobject_add_internal failed for gc573 (error: -12 parent: drivers)
+  | [  226.926211] gc573-test: 1795776457685267016-183 18-fault-inject load n=5
+  | [  227.046714] FAULT_INJECTION: forcing a failure.
+  | [  227.046714] name failslab, interval 1, probability 0, space 0, times 0
+  | [  227.046726] CPU: 2 PID: 3273 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  227.046730] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  227.046732] Call Trace:
+  | [  227.046735]  <TASK>
+  | [  227.046738]  dump_stack_lvl+0xc1/0xf0
+  | [  227.046744]  dump_stack+0x10/0x20
+  | [  227.046747]  should_fail_ex+0x4f4/0x5f0
+  | [  227.046751]  ? mark_lock+0xfd/0x17c0
+  | [  227.046756]  __should_failslab+0xee/0x150
+  | [  227.046760]  ? __might_sleep+0xb4/0x180
+  | [  227.046764]  should_failslab+0xe/0x20
+  | [  227.046768]  __kmalloc_node_track_caller+0xfc/0x5d0
+  | [  227.046770]  ? __kmalloc_node_track_caller+0x268/0x5d0
+  | [  227.046773]  ? kstrdup+0x36/0x70
+  | [  227.046776]  ? kstrdup_const+0x2c/0x40
+  | [  227.046779]  ? kstrdup_const+0x2c/0x40
+  | [  227.046784]  kstrdup+0x36/0x70
+  | [  227.046787]  ? kstrdup+0x36/0x70
+  | [  227.046791]  kstrdup_const+0x2c/0x40
+  | [  227.046794]  __kernfs_new_node+0xaf/0x7f0
+  | [  227.046798]  ? __kasan_check_read+0x11/0x20
+  | [  227.046803]  ? __pfx___kernfs_new_node+0x10/0x10
+  | [  227.046810]  ? __pfx___lock_acquire+0x10/0x10
+  | [  227.046816]  kernfs_new_node+0x130/0x2b0
+  | [  227.046819]  ? find_held_lock+0x36/0x140
+  | [  227.046824]  kernfs_create_dir_ns+0x2c/0x150
+  | [  227.046828]  sysfs_create_dir_ns+0x12d/0x2a0
+  | [  227.046833]  ? __pfx_lock_release+0x10/0x10
+  | [  227.046836]  ? __pfx_sysfs_create_dir_ns+0x10/0x10
+  | [  227.046840]  ? __asan_memcpy+0x4d/0x80
+  | [  227.046844]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  227.046849]  kobject_add_internal+0x280/0x8d0
+  | [  227.046855]  kobject_init_and_add+0xf2/0x170
+  | [  227.046858]  ? __pfx_kobject_init_and_add+0x10/0x10
+  | [  227.046863]  ? __kasan_kmalloc+0xc3/0xd0
+  | [  227.046872]  bus_add_driver+0x1d3/0x650
+  | [  227.046878]  driver_register+0x135/0x480
+  | [  227.046883]  __pci_register_driver+0x1d7/0x280
+  | [  227.046887]  ? blocking_notifier_chain_register+0x6a/0xc0
+  | [  227.046892]  ? __pfx_gc573_init+0x10/0x10 [gc573]
+  | [  227.046902]  gc573_init+0x48/0xff0 [gc573]
+  | [  227.046910]  do_one_initcall+0xef/0x4a0
+  | [  227.046915]  ? __pfx_do_one_initcall+0x10/0x10
+  | [  227.046921]  ? kasan_unpoison+0x45/0x80
+  | [  227.046924]  ? kasan_poison+0x3a/0x70
+  | [  227.046927]  ? __asan_register_globals+0x5e/0x90
+  | [  227.046932]  do_init_module+0x2a7/0x7c0
+  | [  227.046936]  ? klp_module_coming+0x3f4/0x780
+  | [  227.046944]  load_module+0x86c2/0x89f0
+  | [  227.046956]  ? __pfx_load_module+0x10/0x10
+  | [  227.046962]  ? rw_verify_area+0x24e/0x490
+  | [  227.046967]  ? security_kernel_post_read_file+0xae/0xe0
+  | [  227.046976]  ? kernel_read_file+0x272/0x980
+  | [  227.046979]  ? lock_release+0x203/0x7e0
+  | [  227.046985]  ? __pfx_kernel_read_file+0x10/0x10
+  | [  227.046993]  init_module_from_file+0xf6/0x180
+  | [  227.046996]  ? init_module_from_file+0xf6/0x180
+  | [  227.046999]  ? __pfx_init_module_from_file+0x10/0x10
+  | [  227.047003]  ? find_held_lock+0x36/0x140
+  | [  227.047018]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  227.047023]  idempotent_init_module+0x283/0x8f0
+  | [  227.047028]  ? __pfx_idempotent_init_module+0x10/0x10
+  | [  227.047038]  ? __kasan_check_read+0x11/0x20
+  | [  227.047042]  ? __fget_light+0x59/0x200
+  | [  227.047048]  __x64_sys_finit_module+0xc0/0x140
+  | [  227.047053]  x64_sys_call+0x2019/0x25a0
+  | [  227.047056]  do_syscall_64+0x9a/0x1a0
+  | [  227.047060]  ? __pfx_lock_release+0x10/0x10
+  | [  227.047063]  ? __pfx___up_read+0x10/0x10
+  | [  227.047067]  ? rcu_read_unlock+0x26/0x80
+  | [  227.047070]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  227.047079]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  227.047083]  ? irqentry_exit+0x77/0xb0
+  | [  227.047086]  ? clear_bhb_loop+0x40/0x90
+  | [  227.047090]  ? clear_bhb_loop+0x40/0x90
+  | [  227.047093]  ? clear_bhb_loop+0x40/0x90
+  | [  227.047098]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  227.047101] RIP: 0033:0x73c8073274ed
+  | [  227.047105] Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d fb c8 0d 00 f7 d8 64 89 01 48
+  | [  227.047108] RSP: 002b:00007ffd76cad7d8 EFLAGS: 00000246 ORIG_RAX: 0000000000000139
+  | [  227.047113] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 000073c8073274ed
+  | [  227.047115] RDX: 0000000000000000 RSI: 00007ffd76cadde2 RDI: 0000000000000003
+  | [  227.047117] RBP: 00007ffd76caddc2 R08: 0000000000000000 R09: 0000000001000000
+  | [  227.047120] R10: 0000000000000075 R11: 0000000000000246 R12: 00007ffd76cadde2
+  | [  227.047122] R13: 0000569fed5d42e5 R14: 0000000000000006 R15: 0000000000000025
+  | [  227.047132]  </TASK>
+  | [  227.047162] kobject: kobject_add_internal failed for gc573 (error: -12 parent: drivers)
+  | [  227.224519] gc573-test: 1795776457983770235-26999 18-fault-inject load n=6
+  | [  227.340609] FAULT_INJECTION: forcing a failure.
+  | [  227.340609] name failslab, interval 1, probability 0, space 0, times 0
+  | [  227.340619] CPU: 2 PID: 3317 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  227.340623] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  227.340625] Call Trace:
+  | [  227.340627]  <TASK>
+  | [  227.340630]  dump_stack_lvl+0xc1/0xf0
+  | [  227.340636]  dump_stack+0x10/0x20
+  | [  227.340638]  should_fail_ex+0x4f4/0x5f0
+  | [  227.340642]  ? __kasan_kmalloc+0xc3/0xd0
+  | [  227.340648]  ? __kernfs_new_node+0xea/0x7f0
+  | [  227.340652]  __should_failslab+0xee/0x150
+  | [  227.340655]  ? __might_sleep+0xb4/0x180
+  | [  227.340659]  should_failslab+0xe/0x20
+  | [  227.340663]  kmem_cache_alloc+0x6b/0x420
+  | [  227.340667]  ? kstrdup+0x4c/0x70
+  | [  227.340672]  __kernfs_new_node+0xea/0x7f0
+  | [  227.340675]  ? __kasan_check_read+0x11/0x20
+  | [  227.340680]  ? __pfx___kernfs_new_node+0x10/0x10
+  | [  227.340686]  ? __pfx___lock_acquire+0x10/0x10
+  | [  227.340693]  kernfs_new_node+0x130/0x2b0
+  | [  227.340696]  ? find_held_lock+0x36/0x140
+  | [  227.340701]  kernfs_create_dir_ns+0x2c/0x150
+  | [  227.340705]  sysfs_create_dir_ns+0x12d/0x2a0
+  | [  227.340709]  ? __pfx_lock_release+0x10/0x10
+  | [  227.340711]  ? __pfx_sysfs_create_dir_ns+0x10/0x10
+  | ... lines 401-71636 not shown (all checked); among them these match KMSG_BAD or KMSG_DRV_BAD, or say LOST:
+  | 482: [  230.249321] Call Trace:
+  | 580: [  233.283845] Call Trace:
+  | 679: [  238.797202] Call Trace:
+  | 782: [  244.149147] Call Trace:
+  | 879: [  247.165367] Call Trace:
+  | 992: [  250.273526] Call Trace:
+  | 1103: [  253.365503] Call Trace:
+  | 1261: [  261.594498] Call Trace:
+  | 1383: [  264.778744] Call Trace:
+  | 1529: [  270.009473] Call Trace:
+  | 1652: [  273.099631] Call Trace:
+  | 1749: [  273.100208] gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+  | 1768: [  276.274440] Call Trace:
+  | 1918: [  284.623399] Call Trace:
+  | 2055: [  290.368527] Call Trace:
+  | 2266: [  311.891610] Call Trace:
+  | 2391: [  315.035295] Call Trace:
+  | 2625: [  336.536071] Call Trace:
+  | 2742: [  337.081505] Call Trace:
+  | 2854: [  337.824575] Call Trace:
+  | 2960: [  337.826480] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  | 3001: [  346.417143] Call Trace:
+  | 3131: [  346.973711] Call Trace:
+  | 3294: [  358.073226] Call Trace:
+  | 3461: [  364.445916] Call Trace:
+  | 3609: [  370.763656] Call Trace:
+  | 3787: [  381.358417] Call Trace:
+  | 4008: [  404.990212] Call Trace:
+  | 4165: [  410.158780] Call Trace:
+  | 4416: [  433.961454] Call Trace:
+  | 4548: [  436.512445] Call Trace:
+  | 4744: [  444.594858] Call Trace:
+  | 4889: [  447.085158] Call Trace:
+  | 5054: [  452.399121] Call Trace:
+  | 5205: [  460.583554] Call Trace:
+  | 5362: [  467.120770] Call Trace:
+  | 5399: [  467.121800]  ? lockdep_init_map_type+0x169/0x7f0
+  | 5538: [  471.185325] Call Trace:
+  | 5684: [  472.560913] Call Trace:
+  | 5834: [  473.969414] Call Trace:
+  | 5970: [  475.327003] Call Trace:
+  | 6129: [  479.266474] Call Trace:
+  | 6265: [  481.834737] Call Trace:
+  | 6386: [  483.244930] Call Trace:
+  | 6500: [  484.556343] Call Trace:
+  | 6633: [  485.942966] Call Trace:
+  | 6760: [  488.610977] Call Trace:
+  | 6875: [  491.261904] Call Trace:
+  | 7025: [  492.692925] Call Trace:
+  | 7190: [  499.335435] Call Trace:
+  | 7331: [  500.705749] Call Trace:
+  | 7484: [  504.853377] Call Trace:
+  | 7619: [  506.126740] Call Trace:
+  | 7768: [  507.375559] Call Trace:
+  | 7918: [  511.549003] Call Trace:
+  | 8044: [  512.864095] Call Trace:
+  | 8193: [  518.094534] Call Trace:
+  | 8282: [  518.096401]  ? lockdep_hardirqs_on_prepare+0x331/0x410
+  | 8349: [  522.151878] Call Trace:
+  | 8493: [  523.482679] Call Trace:
+  | 8626: [  524.795523] Call Trace:
+  | 8792: [  529.475585] Call Trace:
+  | 8934: [  533.633966] Call Trace:
+  | 8953: [  533.634353]  ? lockdep_init_map_type+0x169/0x7f0
+  | 8954: [  533.634374]  ? lockdep_init_map_type+0x169/0x7f0
+  | 9074: [  536.273413] Call Trace:
+  | 9185: [  538.903072] Call Trace:
+  | 9301: [  540.330020] Call Trace:
+  | 9420: [  545.737982] Call Trace:
+  | 9462: [  545.738737]  ? lockdep_hardirqs_on_prepare+0x331/0x410
+  | 9510: [  546.945015] Call Trace:
+  | 9610: [  551.421595] Call Trace:
+  | 9719: [  554.292366] Call Trace:
+  | 9827: [  557.007384] Call Trace:
+  | 9938: [  559.935300] Call Trace:
+  | 10073: [  565.222885] Call Trace:
+  | 10178: [  568.166440] Call Trace:
+  | 10269: [  568.166876] gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+  | 10288: [  571.180552] Call Trace:
+  | 10405: [  574.051412] Call Trace:
+  | 10520: [  576.890002] Call Trace:
+  | 10639: [  582.351002] Call Trace:
+  | 10743: [  585.173377] Call Trace:
+  | 10926: [  600.861795] Call Trace:
+  | 11043: [  603.811107] Call Trace:
+  | 11138: [  606.653381] Call Trace:
+  | 11318: [  622.591919] Call Trace:
+  | 11416: [  625.656978] Call Trace:
+  | 11517: [  628.648052] Call Trace:
+  | 11638: [  631.690004] Call Trace:
+  | 11759: [  634.726982] Call Trace:
+  | 11866: [  637.812605] Call Trace:
+  | 11982: [  640.780877] Call Trace:
+  | 12073: [  640.781537] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  | 12091: [  643.887929] Call Trace:
+  | 12178: [  643.888398] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  | 12196: [  646.958030] Call Trace:
+  | 12293: [  646.959695] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  | 12311: [  650.086860] Call Trace:
+  | 12400: [  650.087367] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  | 12418: [  653.307070] Call Trace:
+  | 12525: [  653.307937] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  | 12543: [  656.434217] Call Trace:
+  | 12666: [  659.513720] Call Trace:
+  | 12780: [  659.985296] Call Trace:
+  | 12885: [  660.421510] Call Trace:
+  | 13009: [  663.421749] Call Trace:
+  | 13123: [  663.422481] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  | 13130: [  663.936833] Call Trace:
+  | 13239: [  663.937577] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  | 13303: [  677.490049] Call Trace:
+  | 13449: [  682.721525] Call Trace:
+  | 13597: [  687.925449] Call Trace:
+  | 13759: [  693.139487] Call Trace:
+  | 13924: [  698.326203] Call Trace:
+  | 14083: [  703.557584] Call Trace:
+  | 14256: [  708.667010] Call Trace:
+  | 14429: [  713.951975] Call Trace:
+  | 14611: [  724.327803] Call Trace:
+  | 14765: [  729.431694] Call Trace:
+  | 14877: [  729.432460] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  | 14896: [  732.522600] Call Trace:
+  | 15015: [  732.523391] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  | 15022: [  733.044333] Call Trace:
+  | 15130: [  733.047633] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  | 15137: [  733.601698] Call Trace:
+  | 15256: [  733.609744] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  | 15323: [  747.041139] Call Trace:
+  | 15526: [  765.673851] Call Trace:
+  | 15689: [  781.504616] Call Trace:
+  | 15883: [  800.079477] Call Trace:
+  | 15990: [  802.223659] WARNING: CPU: 3 PID: 21072 at fs/proc/generic.c:733 remove_proc_entry+0x187/0x4a0
+  | 16007: [  802.225162] Call Trace:
+  | 16185: [  820.937748] Call Trace:
+  | 16290: [  823.073325] WARNING: CPU: 0 PID: 21621 at fs/proc/generic.c:733 remove_proc_entry+0x187/0x4a0
+  | 16307: [  823.073791] Call Trace:
+  | 16435: [  831.292242] Call Trace:
+  | 16552: [  833.863400] Call Trace:
+  | 16695: [  841.749341] Call Trace:
+  | 16715: [  841.749961]  ? lockdep_init_map_type+0x169/0x7f0
+  | 16716: [  841.749995]  ? lockdep_init_map_type+0x169/0x7f0
+  | 16857: [  852.126045] Call Trace:
+  | 16991: [  862.442792] Call Trace:
+  | 17101: [  863.276651] Call Trace:
+  | 17228: [  871.076901] Call Trace:
+  | 17344: [  871.890372] Call Trace:
+  | 17449: [  872.630104] Call Trace:
+  | 17594: [  878.818671] Call Trace:
+  | 17737: [  887.194008] Call Trace:
+  | 17938: [  903.693814] Call Trace:
+  | 18130: [  920.039723] Call Trace:
+  | 18262: [  923.540420] Call Trace:
+  | 18402: [  926.911224] Call Trace:
+  | 18543: [  932.823255] Call Trace:
+  | 18683: [  938.838664] Call Trace:
+  | 18809: [  942.207978] Call Trace:
+  | 18929: [  945.640869] Call Trace:
+  | 19053: [  950.780215] Call Trace:
+  | 19186: [  955.946332] Call Trace:
+  | 19327: [  961.263575] Call Trace:
+  | 19452: [  966.533987] Call Trace:
+  | 19574: [  969.056377] Call Trace:
+  | 19724: [  971.670750] Call Trace:
+  | 19872: [  976.798560] Call Trace:
+  | 20030: [  982.039049] Call Trace:
+  | 20162: [  984.664089] Call Trace:
+  | 20300: [  987.187536] Call Trace:
+  | 20449: [  992.326116] Call Trace:
+  | 20595: [  997.485456] Call Trace:
+  | 20724: [ 1000.079223] Call Trace:
+  | 20869: [ 1002.654535] Call Trace:
+  | 21004: [ 1007.933317] Call Trace:
+  | 21149: [ 1013.203201] Call Trace:
+  | 21275: [ 1015.839463] Call Trace:
+  | 21415: [ 1018.512337] Call Trace:
+  | 21579: [ 1028.881028] Call Trace:
+  | 21720: [ 1031.483347] Call Trace:
+  | 21846: [ 1034.082726] Call Trace:
+  | 21998: [ 1039.194611] Call Trace:
+  | 22155: [ 1044.441529] Call Trace:
+  | 22326: [ 1054.694961] Call Trace:
+  | 22468: [ 1059.899390] Call Trace:
+  | 22625: [ 1065.116316] Call Trace:
+  | 22774: [ 1070.357714] Call Trace:
+  | 22902: [ 1072.938413] Call Trace:
+  | 23085: [ 1083.264799] Call Trace:
+  | 23205: [ 1085.809034] Call Trace:
+  | 23336: [ 1088.374685] Call Trace:
+  | 23454: [ 1090.954150] Call Trace:
+  | 23607: [ 1101.403260] Call Trace:
+  | 23745: [ 1106.576196] Call Trace:
+  | 23882: [ 1111.735316] Call Trace:
+  | 24000: [ 1116.798548] Call Trace:
+  | 24134: [ 1122.056242] Call Trace:
+  | 24268: [ 1127.243039] Call Trace:
+  | 24385: [ 1132.613204] Call Trace:
+  | 24524: [ 1142.936933] Call Trace:
+  | 24634: [ 1145.560057] Call Trace:
+  | 24745: [ 1148.038379] Call Trace:
+  | 24845: [ 1150.598428] Call Trace:
+  | ... and 407 more of them
+  | ...
+  | [ 2711.878941]  ? __pfx_video_usercopy+0x10/0x10 [videodev]
+  | [ 2711.878967]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2711.878977]  video_ioctl2+0x15/0x30 [videodev]
+  | [ 2711.878995]  v4l2_ioctl+0x1af/0x250 [videodev]
+  | [ 2711.879016]  __x64_sys_ioctl+0x140/0x1c0
+  | [ 2711.879024]  x64_sys_call+0x12a3/0x25a0
+  | [ 2711.879029]  do_syscall_64+0x9a/0x1a0
+  | [ 2711.879034]  ? irqentry_exit+0x77/0xb0
+  | [ 2711.879038]  ? clear_bhb_loop+0x40/0x90
+  | [ 2711.879043]  ? clear_bhb_loop+0x40/0x90
+  | [ 2711.879048]  ? clear_bhb_loop+0x40/0x90
+  | [ 2711.879054]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [ 2711.879058] RIP: 0033:0x730e1912507d
+  | [ 2711.879064] Code: 04 25 28 00 00 00 48 89 45 c8 31 c0 48 8d 45 10 c7 45 b0 10 00 00 00 48 89 45 b8 48 8d 45 d0 48 89 45 c0 b8 10 00 00 00 0f 05 <89> c2 3d 00 f0 ff ff 77 1a 48 8b 45 c8 64 48 2b 04 25 28 00 00 00
+  | [ 2711.879068] RSP: 002b:00007ffcd3287690 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+  | [ 2711.879074] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000730e1912507d
+  | [ 2711.879078] RDX: 00007ffcd32876f0 RSI: 00000000c0145608 RDI: 0000000000000003
+  | [ 2711.879081] RBP: 00007ffcd32876e0 R08: 0000000000000073 R09: 0000000000000000
+  | [ 2711.879084] R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffcd32876f0
+  | [ 2711.879088] R13: 0000000000000001 R14: 000000003231564e R15: 0000000000000000
+  | [ 2711.879099]  </TASK>
+  | [ 2713.946502] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 2714.612316] gc573-test: 1795778945435611662-21499 18-fault-inject random cycle 14
+  | [ 2715.287524] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2715.287595] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2715.427223] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [ 2715.429280] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2715.545864] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2715.547355] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2715.653370] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2715.802390] gc573 0000:07:00.0: video device video0
+  | [ 2715.806116] gc573 0000:07:00.0: audio: ALSA card 10 (GC573)
+  | [ 2715.822072] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 2716.876773] gc573 0000:07:00.0: splitter: EQ search found no valid channel (d0 = 2a), attempt 1
+  | [ 2717.882083] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 2718.520424] gc573-test: 1795778949342421635-18795 18-fault-inject random cycle 15
+  | [ 2719.222112] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2719.222169] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2719.367181] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [ 2719.370439] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2719.490329] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2719.491071] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2719.595982] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2719.741346] gc573 0000:07:00.0: video device video0
+  | [ 2719.755599] gc573 0000:07:00.0: audio: ALSA card 10 (GC573)
+  | [ 2719.773604] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 2719.818568] FAULT_INJECTION: forcing a failure.
+  | [ 2719.818568] name failslab, interval 1, probability 5, space 0, times -1
+  | [ 2719.818579] CPU: 2 PID: 75964 Comm: gc573-cap Tainted: G        W  OE      6.8.12-gc573dbg #5
+  | [ 2719.818585] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [ 2719.818588] Call Trace:
+  | [ 2719.818591]  <TASK>
+  | [ 2719.818597]  dump_stack_lvl+0xc1/0xf0
+  | [ 2719.818604]  dump_stack+0x10/0x20
+  | [ 2719.818608]  should_fail_ex+0x4f4/0x5f0
+  | [ 2719.818615]  ? ptlock_alloc+0x22/0x70
+  | [ 2719.818621]  __should_failslab+0xee/0x150
+  | [ 2719.818625]  ? __might_sleep+0xb4/0x180
+  | [ 2719.818631]  should_failslab+0xe/0x20
+  | [ 2719.818636]  kmem_cache_alloc+0x6b/0x420
+  | [ 2719.818639]  ? rcu_read_unlock+0x26/0x80
+  | [ 2719.818647]  ptlock_alloc+0x22/0x70
+  | [ 2719.818652]  pte_alloc_one+0x2d/0x1c0
+  | [ 2719.818657]  __pte_alloc+0x69/0x240
+  | [ 2719.818661]  ? __pfx___pte_alloc+0x10/0x10
+  | [ 2719.818667]  ? walk_to_pmd+0x1b1/0x3c0
+  | [ 2719.818673]  __get_locked_pte+0x79/0xb0
+  | [ 2719.818678]  vm_insert_page+0x482/0x6f0
+  | [ 2719.818684]  ? __pfx_vm_insert_page+0x10/0x10
+  | [ 2719.818688]  ? __pfx___mutex_lock+0x10/0x10
+  | [ 2719.818693]  ? mark_held_locks+0x9a/0xf0
+  | [ 2719.818699]  ? sysvec_apic_timer_interrupt+0xa6/0xd0
+  | [ 2719.818706]  __vm_map_pages+0xcf/0x140
+  | [ 2719.818713]  vm_map_pages+0x3b/0x70
+  | [ 2719.818718]  gc573_mem_mmap+0x73/0x3b0 [gc573]
+  | [ 2719.818732]  ? __pfx_gc573_mem_mmap+0x10/0x10 [gc573]
+  | [ 2719.818743]  vb2_mmap+0x401/0x780 [videobuf2_common]
+  | [ 2719.818756]  vb2_fop_mmap+0x43/0x70 [videobuf2_v4l2]
+  | [ 2719.818763]  v4l2_mmap+0x194/0x2f0 [videodev]
+  | [ 2719.818787]  mmap_region+0x5ca/0x2130
+  | [ 2719.818799]  ? __pfx_mmap_region+0x10/0x10
+  | [ 2719.818808]  ? get_unmapped_area+0x1ff/0x370
+  | [ 2719.818815]  do_mmap+0x7d9/0x10f0
+  | [ 2719.818823]  ? __pfx_do_mmap+0x10/0x10
+  | [ 2719.818827]  ? __kasan_check_write+0x14/0x30
+  | [ 2719.818832]  ? down_write_killable+0x11d/0x240
+  | [ 2719.818837]  ? __pfx_down_write_killable+0x10/0x10
+  | [ 2719.818845]  vm_mmap_pgoff+0x1b0/0x350
+  | [ 2719.818854]  ? __pfx_vm_mmap_pgoff+0x10/0x10
+  | [ 2719.818859]  ? __fget_files+0x1db/0x370
+  | [ 2719.818869]  ksys_mmap_pgoff+0x31d/0x520
+  | [ 2719.818877]  __x64_sys_mmap+0xf6/0x1c0
+  | [ 2719.818882]  ? do_syscall_64+0x5a/0x1a0
+  | [ 2719.818887]  x64_sys_call+0x1fce/0x25a0
+  | [ 2719.818891]  do_syscall_64+0x9a/0x1a0
+  | [ 2719.818894]  ? video_usercopy+0x5aa/0xf80 [videodev]
+  | [ 2719.818913]  ? __pfx___video_do_ioctl+0x10/0x10 [videodev]
+  | [ 2719.818931]  ? __pfx_video_usercopy+0x10/0x10 [videodev]
+  | [ 2719.818954]  ? lock_release+0x203/0x7e0
+  | [ 2719.818961]  ? video_ioctl2+0x15/0x30 [videodev]
+  | [ 2719.818982]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2719.818991]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2719.818994]  ? __rseq_handle_notify_resume+0x9ee/0xca0
+  | [ 2719.819002]  ? __pfx___rseq_handle_notify_resume+0x10/0x10
+  | [ 2719.819008]  ? __pfx_mem_cgroup_handle_over_high+0x10/0x10
+  | [ 2719.819017]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2719.819022]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2719.819027]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2719.819031]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2719.819036]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [ 2719.819041]  ? irqentry_exit+0x77/0xb0
+  | [ 2719.819044]  ? clear_bhb_loop+0x40/0x90
+  | [ 2719.819049]  ? clear_bhb_loop+0x40/0x90
+  | [ 2719.819053]  ? clear_bhb_loop+0x40/0x90
+  | [ 2719.819058]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [ 2719.819062] RIP: 0033:0x7ad0a67255ac
+  | [ 2719.819066] Code: 1e fa 41 f7 c1 ff 0f 00 00 75 33 55 48 89 e5 41 54 41 89 cc 53 48 89 fb 48 85 ff 74 41 45 89 e2 48 89 df b8 09 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 7c 5b 41 5c 5d c3 0f 1f 80 00 00 00 00 48 8b
+  | [ 2719.819070] RSP: 002b:00007ffe594b62a0 EFLAGS: 00000246 ORIG_RAX: 0000000000000009
+  | [ 2719.819076] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007ad0a67255ac
+  | [ 2719.819079] RDX: 0000000000000003 RSI: 00000000002f7600 RDI: 0000000000000000
+  | [ 2719.819082] RBP: 00007ffe594b62b0 R08: 0000000000000003 R09: 0000000000000000
+  | [ 2719.819085] R10: 0000000000000001 R11: 0000000000000246 R12: 0000000000000001
+  | [ 2719.819087] R13: 000060da2c007100 R14: 0000000000000000 R15: 0000000000000004
+  | [ 2719.819098]  </TASK>
+  | [ 2720.507582] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 2721.282599] gc573-test: 1795778952103844675-24580 18-fault-inject random cycle 16
+  | [ 2721.979922] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2721.979948] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2722.116584] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [ 2722.119425] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2722.235612] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2722.237151] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2722.343008] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2722.492558] gc573 0000:07:00.0: video device video0
+  | [ 2722.499850] gc573 0000:07:00.0: audio: ALSA card 10 (GC573)
+  | [ 2722.514914] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 2723.553841] gc573 0000:07:00.0: splitter: EQ search found no valid channel (d0 = 2a), attempt 1
+  | [ 2724.666122] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 2725.326182] gc573-test: 1795778956149556024-5296 18-fault-inject random cycle 17
+  | [ 2726.014490] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2726.014512] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2726.149325] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [ 2726.150983] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2726.258644] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2726.260261] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2726.364106] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2726.514229] gc573 0000:07:00.0: video device video0
+  | [ 2726.517754] gc573 0000:07:00.0: audio: ALSA card 10 (GC573)
+  | [ 2726.536127] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 2726.569115] FAULT_INJECTION: forcing a failure.
+  | [ 2726.569115] name failslab, interval 1, probability 5, space 0, times -1
+  | [ 2726.569127] CPU: 3 PID: 76137 Comm: gc573-cap Tainted: G        W  OE      6.8.12-gc573dbg #5
+  | [ 2726.569132] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [ 2726.569134] Call Trace:
+  | [ 2726.569137]  <TASK>
+  | [ 2726.569139]  dump_stack_lvl+0xc1/0xf0
+  | [ 2726.569147]  dump_stack+0x10/0x20
+  | [ 2726.569150]  should_fail_ex+0x4f4/0x5f0
+  | [ 2726.569156]  ? gc573_mem_alloc+0x52/0x5f0 [gc573]
+  | [ 2726.569167]  __should_failslab+0xee/0x150
+  | [ 2726.569171]  ? __might_sleep+0xb4/0x180
+  | [ 2726.569176]  should_failslab+0xe/0x20
+  | [ 2726.569180]  kmalloc_trace+0x72/0x440
+  | [ 2726.569186]  gc573_mem_alloc+0x52/0x5f0 [gc573]
+  | [ 2726.569194]  ? gc573_mem_alloc+0x52/0x5f0 [gc573]
+  | [ 2726.569204]  __vb2_queue_alloc+0x610/0x1440 [videobuf2_common]
+  | [ 2726.569218]  vb2_core_reqbufs+0x704/0xfa0 [videobuf2_common]
+  | [ 2726.569228]  ? __pfx_vb2_core_reqbufs+0x10/0x10 [videobuf2_common]
+  | [ 2726.569236]  ? do_syscall_64+0x9a/0x1a0
+  | [ 2726.569239]  ? entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [ 2726.569243]  ? __video_do_ioctl+0x43c/0xe20 [videodev]
+  | [ 2726.569262]  vb2_ioctl_reqbufs+0x294/0x4d0 [videobuf2_v4l2]
+  | [ 2726.569269]  ? __pfx_vb2_ioctl_reqbufs+0x10/0x10 [videobuf2_v4l2]
+  | [ 2726.569277]  gc573_reqbufs+0x55/0x90 [gc573]
+  | [ 2726.569288]  v4l_reqbufs+0x98/0xc0 [videodev]
+  | [ 2726.569302]  __video_do_ioctl+0xa7f/0xe20 [videodev]
+  | [ 2726.569320]  ? __pfx___video_do_ioctl+0x10/0x10 [videodev]
+  | [ 2726.569336]  ? __kasan_check_write+0x14/0x30
+  | [ 2726.569342]  video_usercopy+0x453/0xf80 [videodev]
+  | [ 2726.569356]  ? __pfx___video_do_ioctl+0x10/0x10 [videodev]
+  | [ 2726.569371]  ? __pfx_video_usercopy+0x10/0x10 [videodev]
+  | [ 2726.569384]  ? __pfx___video_do_ioctl+0x10/0x10 [videodev]
+  | [ 2726.569405]  video_ioctl2+0x15/0x30 [videodev]
+  | [ 2726.569419]  v4l2_ioctl+0x1af/0x250 [videodev]
+  | [ 2726.569433]  __x64_sys_ioctl+0x140/0x1c0
+  | [ 2726.569439]  x64_sys_call+0x12a3/0x25a0
+  | [ 2726.569443]  do_syscall_64+0x9a/0x1a0
+  | [ 2726.569446]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2726.569451]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2726.569456]  ? kfree+0x262/0x3e0
+  | [ 2726.569462]  ? video_usercopy+0x5aa/0xf80 [videodev]
+  | [ 2726.569476]  ? __pfx___video_do_ioctl+0x10/0x10 [videodev]
+  | [ 2726.569491]  ? __pfx_video_usercopy+0x10/0x10 [videodev]
+  | [ 2726.569513]  ? video_ioctl2+0x15/0x30 [videodev]
+  | [ 2726.569530]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2726.569533]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2726.569539]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [ 2726.569543]  ? irqentry_exit+0x77/0xb0
+  | [ 2726.569546]  ? clear_bhb_loop+0x40/0x90
+  | [ 2726.569549]  ? clear_bhb_loop+0x40/0x90
+  | [ 2726.569552]  ? clear_bhb_loop+0x40/0x90
+  | [ 2726.569556]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [ 2726.569560] RIP: 0033:0x7afa5f52507d
+  | [ 2726.569563] Code: 04 25 28 00 00 00 48 89 45 c8 31 c0 48 8d 45 10 c7 45 b0 10 00 00 00 48 89 45 b8 48 8d 45 d0 48 89 45 c0 b8 10 00 00 00 0f 05 <89> c2 3d 00 f0 ff ff 77 1a 48 8b 45 c8 64 48 2b 04 25 28 00 00 00
+  | [ 2726.569566] RSP: 002b:00007ffeb0647cd0 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+  | [ 2726.569571] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007afa5f52507d
+  | [ 2726.569573] RDX: 00007ffeb0647d30 RSI: 00000000c0145608 RDI: 0000000000000003
+  | [ 2726.569576] RBP: 00007ffeb0647d20 R08: 0000000000000073 R09: 0000000000000000
+  | [ 2726.569578] R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffeb0647d30
+  | [ 2726.569580] R13: 0000000000000001 R14: 000000003231564e R15: 0000000000000000
+  | [ 2726.569589]  </TASK>
+  | [ 2727.590440] gc573 0000:07:00.0: splitter: EQ search found no valid channel (d0 = 2a), attempt 1
+  | [ 2728.577970] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 2729.234726] gc573-test: 1795778960058592809-16431 18-fault-inject random cycle 18
+  | [ 2729.955425] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2729.955447] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2730.095525] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [ 2730.096869] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2730.215370] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2730.216125] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2730.321816] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2730.468236] gc573 0000:07:00.0: video device video0
+  | [ 2730.479400] gc573 0000:07:00.0: audio: ALSA card 10 (GC573)
+  | [ 2730.499339] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 2730.538165] FAULT_INJECTION: forcing a failure.
+  | [ 2730.538165] name failslab, interval 1, probability 5, space 0, times -1
+  | [ 2730.538174] CPU: 0 PID: 76228 Comm: gc573-cap Tainted: G        W  OE      6.8.12-gc573dbg #5
+  | [ 2730.538178] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [ 2730.538181] Call Trace:
+  | [ 2730.538183]  <TASK>
+  | [ 2730.538186]  dump_stack_lvl+0xc1/0xf0
+  | [ 2730.538193]  dump_stack+0x10/0x20
+  | [ 2730.538196]  should_fail_ex+0x4f4/0x5f0
+  | [ 2730.538202]  ? gc573_mem_alloc+0x52/0x5f0 [gc573]
+  | [ 2730.538212]  __should_failslab+0xee/0x150
+  | [ 2730.538216]  ? __might_sleep+0xb4/0x180
+  | [ 2730.538221]  should_failslab+0xe/0x20
+  | [ 2730.538225]  kmalloc_trace+0x72/0x440
+  | [ 2730.538231]  gc573_mem_alloc+0x52/0x5f0 [gc573]
+  | [ 2730.538238]  ? gc573_mem_alloc+0x52/0x5f0 [gc573]
+  | [ 2730.538249]  __vb2_queue_alloc+0x610/0x1440 [videobuf2_common]
+  | [ 2730.538262]  vb2_core_reqbufs+0x704/0xfa0 [videobuf2_common]
+  | [ 2730.538272]  ? __pfx_vb2_core_reqbufs+0x10/0x10 [videobuf2_common]
+  | [ 2730.538281]  ? __video_do_ioctl+0x43c/0xe20 [videodev]
+  | [ 2730.538299]  vb2_ioctl_reqbufs+0x294/0x4d0 [videobuf2_v4l2]
+  | [ 2730.538305]  ? __pfx_vb2_ioctl_reqbufs+0x10/0x10 [videobuf2_v4l2]
+  | [ 2730.538314]  gc573_reqbufs+0x55/0x90 [gc573]
+  | [ 2730.538324]  v4l_reqbufs+0x98/0xc0 [videodev]
+  | [ 2730.538338]  __video_do_ioctl+0xa7f/0xe20 [videodev]
+  | [ 2730.538355]  ? __pfx___video_do_ioctl+0x10/0x10 [videodev]
+  | [ 2730.538371]  ? __kasan_check_write+0x14/0x30
+  | [ 2730.538377]  video_usercopy+0x453/0xf80 [videodev]
+  | [ 2730.538391]  ? __pfx___video_do_ioctl+0x10/0x10 [videodev]
+  | [ 2730.538405]  ? __pfx_video_usercopy+0x10/0x10 [videodev]
+  | [ 2730.538423]  ? video_ioctl2+0x15/0x30 [videodev]
+  | [ 2730.538439]  video_ioctl2+0x15/0x30 [videodev]
+  | [ 2730.538452]  v4l2_ioctl+0x1af/0x250 [videodev]
+  | [ 2730.538467]  __x64_sys_ioctl+0x140/0x1c0
+  | [ 2730.538472]  x64_sys_call+0x12a3/0x25a0
+  | [ 2730.538476]  do_syscall_64+0x9a/0x1a0
+  | [ 2730.538483]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2730.538489]  ? video_ioctl2+0x15/0x30 [videodev]
+  | [ 2730.538505]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2730.538509]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2730.538512]  ? lock_release+0x203/0x7e0
+  | [ 2730.538515]  ? __up_read+0x1b4/0x7e0
+  | [ 2730.538519]  ? __pfx_lock_release+0x10/0x10
+  | [ 2730.538522]  ? __pfx___up_read+0x10/0x10
+  | [ 2730.538525]  ? rcu_read_unlock+0x26/0x80
+  | [ 2730.538529]  ? handle_mm_fault+0x1b5/0x9c0
+  | [ 2730.538536]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [ 2730.538540]  ? irqentry_exit+0x77/0xb0
+  | [ 2730.538543]  ? clear_bhb_loop+0x40/0x90
+  | [ 2730.538547]  ? clear_bhb_loop+0x40/0x90
+  | [ 2730.538550]  ? clear_bhb_loop+0x40/0x90
+  | [ 2730.538554]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [ 2730.538557] RIP: 0033:0x751c9af2507d
+  | [ 2730.538561] Code: 04 25 28 00 00 00 48 89 45 c8 31 c0 48 8d 45 10 c7 45 b0 10 00 00 00 48 89 45 b8 48 8d 45 d0 48 89 45 c0 b8 10 00 00 00 0f 05 <89> c2 3d 00 f0 ff ff 77 1a 48 8b 45 c8 64 48 2b 04 25 28 00 00 00
+  | [ 2730.538564] RSP: 002b:00007fff8c95bd00 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+  | [ 2730.538568] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000751c9af2507d
+  | [ 2730.538571] RDX: 00007fff8c95bd60 RSI: 00000000c0145608 RDI: 0000000000000003
+  | [ 2730.538573] RBP: 00007fff8c95bd50 R08: 0000000000000073 R09: 0000000000000000
+  | [ 2730.538576] R10: 0000000000000000 R11: 0000000000000246 R12: 00007fff8c95bd60
+  | [ 2730.538578] R13: 0000000000000001 R14: 000000003231564e R15: 0000000000000000
+  | [ 2730.538586]  </TASK>
+  | [ 2732.529734] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 2733.219522] gc573-test: 1795778964043049753-30409 18-fault-inject random cycle 19
+  | [ 2733.909776] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2733.909960] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2734.054481] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [ 2734.055773] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2734.169076] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2734.169849] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2734.275663] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2734.420178] gc573 0000:07:00.0: video device video0
+  | [ 2734.431122] gc573 0000:07:00.0: audio: ALSA card 10 (GC573)
+  | [ 2734.444447] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 2734.499977] FAULT_INJECTION: forcing a failure.
+  | [ 2734.499977] name fail_page_alloc, interval 1, probability 5, space 0, times -1
+  | [ 2734.499988] CPU: 2 PID: 76317 Comm: gc573-cap Tainted: G        W  OE      6.8.12-gc573dbg #5
+  | [ 2734.499993] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [ 2734.499995] Call Trace:
+  | [ 2734.499998]  <TASK>
+  | [ 2734.500000]  dump_stack_lvl+0xc1/0xf0
+  | [ 2734.500007]  dump_stack+0x10/0x20
+  | [ 2734.500010]  should_fail_ex+0x4f4/0x5f0
+  | [ 2734.500017]  __should_fail_alloc_page+0x81/0xd0
+  | [ 2734.500023]  should_fail_alloc_page+0xe/0x20
+  | [ 2734.500027]  __alloc_pages+0x232/0x28c0
+  | [ 2734.500030]  ? update_stack_state+0x2a1/0x670
+  | [ 2734.500036]  ? register_lock_class+0xbb/0x1190
+  | [ 2734.500040]  ? __pfx_mark_lock+0x10/0x10
+  | [ 2734.500043]  ? is_bpf_text_address+0x74/0x140
+  | [ 2734.500048]  ? __pfx_register_lock_class+0x10/0x10
+  | [ 2734.500052]  ? __kernel_text_address+0x12/0x50
+  | [ 2734.500057]  ? __pfx___alloc_pages+0x10/0x10
+  | [ 2734.500061]  ? __kasan_check_read+0x11/0x20
+  | [ 2734.500073]  ? policy_nodemask+0x225/0x2e0
+  | [ 2734.500078]  alloc_pages_mpol+0x1c1/0x510
+  | [ 2734.500084]  ? __pfx_alloc_pages_mpol+0x10/0x10
+  | [ 2734.500088]  ? find_held_lock+0x36/0x140
+  | [ 2734.500093]  ? vm_insert_page+0x33f/0x6f0
+  | [ 2734.500099]  alloc_pages+0x107/0x140
+  | [ 2734.500103]  pte_alloc_one+0x1d/0x1c0
+  | [ 2734.500106]  __pte_alloc+0x69/0x240
+  | [ 2734.500110]  ? __pfx___pte_alloc+0x10/0x10
+  | [ 2734.500113]  ? __kasan_check_write+0x14/0x30
+  | [ 2734.500116]  ? down_write+0x11a/0x210
+  | [ 2734.500121]  ? walk_to_pmd+0x1b1/0x3c0
+  | [ 2734.500126]  __get_locked_pte+0x79/0xb0
+  | [ 2734.500131]  vm_insert_page+0x482/0x6f0
+  | [ 2734.500136]  ? __pfx_vm_insert_page+0x10/0x10
+  | [ 2734.500139]  ? __pfx___mutex_lock+0x10/0x10
+  | [ 2734.500142]  ? mas_alloc_nodes+0x3f0/0x770
+  | [ 2734.500149]  __vm_map_pages+0xcf/0x140
+  | [ 2734.500155]  vm_map_pages+0x3b/0x70
+  | [ 2734.500159]  gc573_mem_mmap+0x73/0x3b0 [gc573]
+  | [ 2734.500170]  ? __pfx_gc573_mem_mmap+0x10/0x10 [gc573]
+  | [ 2734.500179]  vb2_mmap+0x401/0x780 [videobuf2_common]
+  | [ 2734.500189]  vb2_fop_mmap+0x43/0x70 [videobuf2_v4l2]
+  | [ 2734.500195]  v4l2_mmap+0x194/0x2f0 [videodev]
+  | [ 2734.500213]  mmap_region+0x5ca/0x2130
+  | [ 2734.500222]  ? __pfx_mmap_region+0x10/0x10
+  | [ 2734.500230]  ? get_unmapped_area+0x1ff/0x370
+  | [ 2734.500236]  do_mmap+0x7d9/0x10f0
+  | [ 2734.500243]  ? __pfx_do_mmap+0x10/0x10
+  | [ 2734.500247]  ? __kasan_check_write+0x14/0x30
+  | [ 2734.500250]  ? down_write_killable+0x11d/0x240
+  | [ 2734.500254]  ? __pfx_down_write_killable+0x10/0x10
+  | [ 2734.500260]  vm_mmap_pgoff+0x1b0/0x350
+  | [ 2734.500268]  ? __pfx_vm_mmap_pgoff+0x10/0x10
+  | [ 2734.500272]  ? __fget_files+0x1db/0x370
+  | [ 2734.500281]  ksys_mmap_pgoff+0x31d/0x520
+  | [ 2734.500287]  __x64_sys_mmap+0xf6/0x1c0
+  | [ 2734.500292]  ? do_syscall_64+0x5a/0x1a0
+  | [ 2734.500296]  x64_sys_call+0x1fce/0x25a0
+  | [ 2734.500300]  do_syscall_64+0x9a/0x1a0
+  | [ 2734.500305]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2734.500310]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2734.500312]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2734.500317]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2734.500322]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2734.500328]  ? do_user_addr_fault+0x411/0xc40
+  | [ 2734.500332]  ? reacquire_held_locks+0x219/0x4e0
+  | [ 2734.500337]  ? video_ioctl2+0x15/0x30 [videodev]
+  | [ 2734.500355]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [ 2734.500359]  ? do_syscall_64+0xa7/0x1a0
+  | [ 2734.500362]  ? __pfx_lock_release+0x10/0x10
+  | [ 2734.500365]  ? __pfx___up_read+0x10/0x10
+  | [ 2734.500368]  ? rcu_read_unlock+0x26/0x80
+  | [ 2734.500372]  ? handle_mm_fault+0x1b5/0x9c0
+  | [ 2734.500379]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [ 2734.500383]  ? irqentry_exit+0x77/0xb0
+  | [ 2734.500386]  ? clear_bhb_loop+0x40/0x90
+  | [ 2734.500390]  ? clear_bhb_loop+0x40/0x90
+  | [ 2734.500393]  ? clear_bhb_loop+0x40/0x90
+  | [ 2734.500398]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [ 2734.500401] RIP: 0033:0x78df549255ac
+  | [ 2734.500405] Code: 1e fa 41 f7 c1 ff 0f 00 00 75 33 55 48 89 e5 41 54 41 89 cc 53 48 89 fb 48 85 ff 74 41 45 89 e2 48 89 df b8 09 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 7c 5b 41 5c 5d c3 0f 1f 80 00 00 00 00 48 8b
+  | [ 2734.500408] RSP: 002b:00007ffc962b8c40 EFLAGS: 00000246 ORIG_RAX: 0000000000000009
+  | [ 2734.500413] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 000078df549255ac
+  | [ 2734.500415] RDX: 0000000000000003 RSI: 00000000002f7600 RDI: 0000000000000000
+  | [ 2734.500418] RBP: 00007ffc962b8c50 R08: 0000000000000003 R09: 0000000000000000
+  | [ 2734.500420] R10: 0000000000000001 R11: 0000000000000246 R12: 0000000000000001
+  | [ 2734.500422] R13: 0000606ec803a100 R14: 0000000000000000 R15: 0000000000000004
+  | [ 2734.500431]  </TASK>
+  | [ 2735.299124] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 2736.024921] gc573-test: 1795778966848534094-16939 18-fault-inject random cycle 20
+  | [ 2736.570615] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 2736.570644] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 2736.708044] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [ 2736.709686] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 2736.825206] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 2736.826078] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 2736.931440] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 2737.076900] gc573 0000:07:00.0: video device video0
+  | [ 2737.091399] gc573 0000:07:00.0: audio: ALSA card 10 (GC573)
+  | [ 2737.109807] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 2738.141950] gc573 0000:07:00.0: splitter: EQ search found no valid channel (d0 = 2a), attempt 1
+  | [ 2739.456761] gc573-test: 1795778970279628458-20025 18-fault-inject the clean bind and unload
+  expected: (allowed warning) [  802.223659] WARNING: CPU: 3 PID: 21072 at fs/proc/generic.c:733 remove_proc_entry+0x187/0x4a0
+  expected: (allowed warning) [  802.225162] Call Trace:
+  expected: (allowed warning) [  823.073325] WARNING: CPU: 0 PID: 21621 at fs/proc/generic.c:733 remove_proc_entry+0x187/0x4a0
+  expected: (allowed warning) [  823.073791] Call Trace:
+  expected: [  221.110388] Call Trace:
+  expected: [  223.868053] Call Trace:
+  expected: [  226.731976] Call Trace:
+  expected: [  227.046732] Call Trace:
+  expected: [  227.340625] Call Trace:
+  expected: [  230.249321] Call Trace:
+  expected: [  233.283845] Call Trace:
+  expected: [  238.797202] Call Trace:
+  expected: [  244.149147] Call Trace:
+  expected: [  247.165367] Call Trace:
+  expected: [  250.273526] Call Trace:
+  expected: [  253.365503] Call Trace:
+  expected: [  261.594498] Call Trace:
+  expected: [  264.778744] Call Trace:
+  expected: [  270.009473] Call Trace:
+  expected: [  273.099631] Call Trace:
+  expected: [  273.100208] gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+  expected: [  276.274440] Call Trace:
+  expected: [  284.623399] Call Trace:
+  expected: [  290.368527] Call Trace:
+  expected: [  311.891610] Call Trace:
+  expected: [  315.035295] Call Trace:
+  expected: [  336.536071] Call Trace:
+  expected: [  337.081505] Call Trace:
+  expected: [  337.824575] Call Trace:
+  expected: [  337.826480] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  expected: [  346.417143] Call Trace:
+  expected: [  346.973711] Call Trace:
+  expected: [  358.073226] Call Trace:
+  expected: [  364.445916] Call Trace:
+  expected: [  370.763656] Call Trace:
+  expected: [  381.358417] Call Trace:
+  expected: [  404.990212] Call Trace:
+  expected: [  410.158780] Call Trace:
+  expected: [  433.961454] Call Trace:
+  expected: [  436.512445] Call Trace:
+  expected: [  444.594858] Call Trace:
+  expected: [  447.085158] Call Trace:
+  expected: [  452.399121] Call Trace:
+  expected: [  460.583554] Call Trace:
+  expected: [  467.120770] Call Trace:
+  expected: [  467.121800]  ? lockdep_init_map_type+0x169/0x7f0
+  expected: [  471.185325] Call Trace:
+  expected: [  472.560913] Call Trace:
+  expected: [  473.969414] Call Trace:
+  expected: [  475.327003] Call Trace:
+  expected: [  479.266474] Call Trace:
+  expected: [  481.834737] Call Trace:
+  expected: [  483.244930] Call Trace:
+  expected: [  484.556343] Call Trace:
+  expected: [  485.942966] Call Trace:
+  expected: [  488.610977] Call Trace:
+  expected: [  491.261904] Call Trace:
+  expected: [  492.692925] Call Trace:
+  expected: [  499.335435] Call Trace:
+  expected: [  500.705749] Call Trace:
+  expected: [  504.853377] Call Trace:
+  expected: [  506.126740] Call Trace:
+  expected: [  507.375559] Call Trace:
+  expected: [  511.549003] Call Trace:
+  expected: [  512.864095] Call Trace:
+  expected: [  518.094534] Call Trace:
+  expected: [  518.096401]  ? lockdep_hardirqs_on_prepare+0x331/0x410
+  expected: [  522.151878] Call Trace:
+  expected: [  523.482679] Call Trace:
+  expected: [  524.795523] Call Trace:
+  expected: [  529.475585] Call Trace:
+  expected: [  533.633966] Call Trace:
+  expected: [  533.634353]  ? lockdep_init_map_type+0x169/0x7f0
+  expected: [  533.634374]  ? lockdep_init_map_type+0x169/0x7f0
+  expected: [  536.273413] Call Trace:
+  expected: [  538.903072] Call Trace:
+  expected: [  540.330020] Call Trace:
+  expected: [  545.737982] Call Trace:
+  expected: [  545.738737]  ? lockdep_hardirqs_on_prepare+0x331/0x410
+  expected: [  546.945015] Call Trace:
+  expected: [  551.421595] Call Trace:
+  expected: [  554.292366] Call Trace:
+  expected: [  557.007384] Call Trace:
+  expected: [  559.935300] Call Trace:
+  expected: [  565.222885] Call Trace:
+  expected: [  568.166440] Call Trace:
+  expected: [  568.166876] gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+  expected: [  571.180552] Call Trace:
+  expected: [  574.051412] Call Trace:
+  expected: [  576.890002] Call Trace:
+  expected: [  582.351002] Call Trace:
+  expected: [  585.173377] Call Trace:
+  expected: [  600.861795] Call Trace:
+  expected: [  603.811107] Call Trace:
+  expected: [  606.653381] Call Trace:
+  expected: [  622.591919] Call Trace:
+  expected: [  625.656978] Call Trace:
+  expected: [  628.648052] Call Trace:
+  expected: [  631.690004] Call Trace:
+  expected: [  634.726982] Call Trace:
+  expected: [  637.812605] Call Trace:
+  expected: [  640.780877] Call Trace:
+  expected: [  640.781537] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  expected: [  643.887929] Call Trace:
+  expected: [  643.888398] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  expected: [  646.958030] Call Trace:
+  expected: [  646.959695] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  expected: [  650.086860] Call Trace:
+  expected: [  650.087367] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  expected: [  653.307070] Call Trace:
+  expected: [  653.307937] gc573 0000:07:00.0: error -ENODEV: cannot allocate the interrupt vector
+  expected: [  656.434217] Call Trace:
+  expected: [  659.513720] Call Trace:
+  expected: [  659.985296] Call Trace:
+  expected: [  660.421510] Call Trace:
+  expected: [  663.421749] Call Trace:
+  expected: [  663.422481] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  expected: [  663.936833] Call Trace:
+  expected: [  663.937577] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  expected: [  677.490049] Call Trace:
+  expected: [  682.721525] Call Trace:
+  expected: [  687.925449] Call Trace:
+  expected: [  693.139487] Call Trace:
+  expected: [  698.326203] Call Trace:
+  expected: [  703.557584] Call Trace:
+  expected: [  708.667010] Call Trace:
+  expected: [  713.951975] Call Trace:
+  expected: [  724.327803] Call Trace:
+  expected: [  729.431694] Call Trace:
+  expected: [  729.432460] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  expected: [  732.522600] Call Trace:
+  expected: [  732.523391] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  expected: [  733.044333] Call Trace:
+  expected: [  733.047633] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  expected: [  733.601698] Call Trace:
+  expected: [  733.609744] gc573 0000:07:00.0: error -ENOSPC: cannot allocate the interrupt vector
+  expected: [  747.041139] Call Trace:
+  expected: [  765.673851] Call Trace:
+  expected: [  781.504616] Call Trace:
+  expected: [  800.079477] Call Trace:
+  expected: [  820.937748] Call Trace:
+  expected: [  831.292242] Call Trace:
+  expected: [  833.863400] Call Trace:
+  expected: [  841.749341] Call Trace:
+  expected: [  841.749961]  ? lockdep_init_map_type+0x169/0x7f0
+  expected: [  841.749995]  ? lockdep_init_map_type+0x169/0x7f0
+  expected: [  852.126045] Call Trace:
+  expected: [  862.442792] Call Trace:
+  expected: [  863.276651] Call Trace:
+  expected: [  871.076901] Call Trace:
+  expected: [  871.890372] Call Trace:
+  expected: [  872.630104] Call Trace:
+  expected: [  878.818671] Call Trace:
+  expected: [  887.194008] Call Trace:
+  expected: [  903.693814] Call Trace:
+  expected: [  920.039723] Call Trace:
+  expected: [  923.540420] Call Trace:
+  expected: [  926.911224] Call Trace:
+  expected: [  932.823255] Call Trace:
+  expected: [  938.838664] Call Trace:
+  expected: [  942.207978] Call Trace:
+  expected: [  945.640869] Call Trace:
+  expected: [  950.780215] Call Trace:
+  expected: [  955.946332] Call Trace:
+  expected: [  961.263575] Call Trace:
+  expected: [  966.533987] Call Trace:
+  expected: [  969.056377] Call Trace:
+  expected: [  971.670750] Call Trace:
+  expected: [  976.798560] Call Trace:
+  expected: [  982.039049] Call Trace:
+  expected: [  984.664089] Call Trace:
+  expected: [  987.187536] Call Trace:
+  expected: [  992.326116] Call Trace:
+  expected: [  997.485456] Call Trace:
+  expected: [ 1000.079223] Call Trace:
+  expected: [ 1002.654535] Call Trace:
+  expected: [ 1007.933317] Call Trace:
+  expected: [ 1013.203201] Call Trace:
+  expected: [ 1015.839463] Call Trace:
+  expected: [ 1018.512337] Call Trace:
+  expected: [ 1028.881028] Call Trace:
+  expected: [ 1031.483347] Call Trace:
+  expected: [ 1034.082726] Call Trace:
+  expected: [ 1039.194611] Call Trace:
+  expected: [ 1044.441529] Call Trace:
+  expected: [ 1054.694961] Call Trace:
+  expected: [ 1059.899390] Call Trace:
+  expected: [ 1065.116316] Call Trace:
+  expected: [ 1070.357714] Call Trace:
+  expected: [ 1072.938413] Call Trace:
+  expected: [ 1083.264799] Call Trace:
+  expected: [ 1085.809034] Call Trace:
+  expected: [ 1088.374685] Call Trace:
+  expected: [ 1090.954150] Call Trace:
+  expected: [ 1101.403260] Call Trace:
+  expected: [ 1106.576196] Call Trace:
+  expected: [ 1111.735316] Call Trace:
+  expected: [ 1116.798548] Call Trace:
+  expected: [ 1122.056242] Call Trace:
+  expected: [ 1127.243039] Call Trace:
+  expected: ... and 416 more
+RESULT 18-fault-inject      PASS (2677s)
+
+## kmemleak (whole suite)
+  allowed, the kernel's own leaks after a failure a case injected (36 objects):
+  unreferenced object 0xffff8881184575e0 (size 8):
+    comm "gc573-fault", pid 10298, jiffies 4295133777
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      driver_probe_device+0x4f/0x150
+      __driver_attach+0x21d/0x500
+      bus_for_each_dev+0x115/0x1b0
+  why: videodev's name of a video device whose device_register() failed (pid 10298, step load n=610): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff888117e39880 (size 8):
+    comm "gc573-fault", pid 10433, jiffies 4295137842
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      driver_probe_device+0x4f/0x150
+      __driver_attach+0x21d/0x500
+      bus_for_each_dev+0x115/0x1b0
+  why: videodev's name of a video device whose device_register() failed (pid 10433, step load n=630): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88811eafab20 (size 8):
+    comm "gc573-fault", pid 10502, jiffies 4295139217
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      driver_probe_device+0x4f/0x150
+      __driver_attach+0x21d/0x500
+      bus_for_each_dev+0x115/0x1b0
+  why: videodev's name of a video device whose device_register() failed (pid 10502, step load n=640): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff888118457ae0 (size 8):
+    comm "gc573-fault", pid 10571, jiffies 4295140625
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      driver_probe_device+0x4f/0x150
+      __driver_attach+0x21d/0x500
+      bus_for_each_dev+0x115/0x1b0
+  why: videodev's name of a video device whose device_register() failed (pid 10571, step load n=650): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff888118457280 (size 8):
+    comm "gc573-fault", pid 10640, jiffies 4295141984
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      driver_probe_device+0x4f/0x150
+      __driver_attach+0x21d/0x500
+      bus_for_each_dev+0x115/0x1b0
+  why: videodev's name of a video device whose device_register() failed (pid 10640, step load n=660): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88810ea49260 (size 8):
+    comm "gc573-fault", pid 50178, jiffies 4296499009
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 50178, step bind n=583): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff888118457d60 (size 8):
+    comm "gc573-fault", pid 50350, jiffies 4296503688
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 50350, step bind n=586): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88810ea49800 (size 8):
+    comm "gc573-fault", pid 50674, jiffies 4296513440
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 50674, step bind n=591): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff888118457000 (size 8):
+    comm "gc573-fault", pid 50727, jiffies 4296514488
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 50727, step bind n=592): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b7a00 (size 8):
+    comm "gc573-fault", pid 51111, jiffies 4296528217
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 51111, step bind n=598): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b7bc0 (size 8):
+    comm "gc573-fault", pid 51164, jiffies 4296529424
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 51164, step bind n=599): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88811636c6a0 (size 8):
+    comm "gc573-fault", pid 51365, jiffies 4296533128
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 51365, step bind n=601): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88811636ce60 (size 8):
+    comm "gc573-fault", pid 51418, jiffies 4296534184
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 51418, step bind n=602): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88810ea49780 (size 8):
+    comm "gc573-fault", pid 51537, jiffies 4296537728
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 51537, step bind n=604): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88811636c8a0 (size 8):
+    comm "gc573-fault", pid 51660, jiffies 4296541376
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 51660, step bind n=606): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b7de0 (size 8):
+    comm "gc573-fault", pid 51714, jiffies 4296542520
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 51714, step bind n=607): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88811636ca20 (size 8):
+    comm "gc573-fault", pid 51767, jiffies 4296543584
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 51767, step bind n=608): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88811636cce0 (size 8):
+    comm "gc573-fault", pid 51820, jiffies 4296544672
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 51820, step bind n=609): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff888118457580 (size 8):
+    comm "gc573-fault", pid 52005, jiffies 4296550864
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52005, step bind n=612): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88810ea49060 (size 8):
+    comm "gc573-fault", pid 52125, jiffies 4296554641
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52125, step bind n=614): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b7520 (size 8):
+    comm "gc573-fault", pid 52178, jiffies 4296555777
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52178, step bind n=615): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff888118457700 (size 8):
+    comm "gc573-fault", pid 52231, jiffies 4296556969
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52231, step bind n=616): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88811636cb80 (size 8):
+    comm "gc573-fault", pid 52284, jiffies 4296558146
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52284, step bind n=617): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88810ea49f60 (size 8):
+    comm "gc573-fault", pid 52337, jiffies 4296559329
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52337, step bind n=618): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b7f00 (size 8):
+    comm "gc573-fault", pid 52588, jiffies 4296568249
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52588, step bind n=622): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b7200 (size 8):
+    comm "gc573-fault", pid 52641, jiffies 4296569385
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52641, step bind n=623): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88811636c0c0 (size 8):
+    comm "gc573-fault", pid 52694, jiffies 4296570601
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52694, step bind n=624): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b7b00 (size 8):
+    comm "gc573-fault", pid 52747, jiffies 4296571785
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52747, step bind n=625): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff888118457dc0 (size 8):
+    comm "gc573-fault", pid 52932, jiffies 4296578154
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 52932, step bind n=628): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88810ea49d00 (size 8):
+    comm "gc573-fault", pid 53184, jiffies 4296587225
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 53184, step bind n=632): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b7900 (size 8):
+    comm "gc573-fault", pid 53303, jiffies 4296591081
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 53303, step bind n=634): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88811636c100 (size 8):
+    comm "gc573-fault", pid 53422, jiffies 4296594753
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 53422, step bind n=636): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b77a0 (size 8):
+    comm "gc573-fault", pid 53476, jiffies 4296596001
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 53476, step bind n=637): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff8881174b7600 (size 8):
+    comm "gc573-fault", pid 53529, jiffies 4296597193
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 53529, step bind n=638): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88810ea49e00 (size 8):
+    comm "gc573-fault", pid 53714, jiffies 4296603496
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 53714, step bind n=641): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  unreferenced object 0xffff88810ea49de0 (size 8):
+    comm "gc573-fault", pid 53833, jiffies 4296607257
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc22eeeee
+      0xffffffffc22e66f8
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      device_driver_attach+0xc9/0x1f0
+      bind_store+0xd2/0x150
+      drv_attr_store+0x6d/0xc0
+  why: videodev's name of a video device whose device_register() failed (pid 53833, step bind n=643): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  no other new unreferenced objects
+RESULT kmemleak             PASS (36 allowed)
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  DMA-API errors reported and allowed in the cases: 0
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 18-fault-inject      PASS (2677s)
+RESULT kmemleak             PASS (36 allowed)
+RESULT debug-checkers       PASS 
+SUMMARY pass=3 fail=0 skip=0

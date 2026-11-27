@@ -1,0 +1,248 @@
+# GC573 regression suite
+date:    2026-11-27 04:14:35 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 8A714E644888F2BE3A174DC
+rev:     259ad5b77bd0-dirty
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 03-chip-id
+  by default: no I2C adapters (i2c_bus1=N i2c_bus02=N)
+  interrupts until unload: 1529 (chip init and HDMI polling)
+  match: 0x90 (IT6805): id 54 49 05 68
+  match: 0x58 (splitter): id 54 49 63 66
+  i2c_bus1=1: gc573 0000:07:00.0 bus 1;
+  i2c_bus02=1: gc573 0000:07:00.0 bus 0;gc573 0000:07:00.0 bus 2;
+  -- kernel log (31 lines)
+  | [ 5009.251028] gc573-test: 1795752875388634667-12983 chip-id
+  | [ 5009.376664] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5009.376704] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 5009.509847] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 5009.511801] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 5009.625666] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 5009.626377] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 5009.729277] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 5009.868273] gc573 0000:07:00.0: video device video0
+  | [ 5009.868643] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 5009.892937] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 5010.254586] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5010.254608] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 5010.388325] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 i2c-1, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 5010.389794] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 5010.496558] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 5010.497265] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 5010.593861] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 5010.731887] gc573 0000:07:00.0: video device video0
+  | [ 5010.731986] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 5010.753743] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 5011.129590] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5011.129613] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 5011.263584] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 off, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [ 5011.266102] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 5011.372688] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 5011.373409] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 5011.467369] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 5011.611886] gc573 0000:07:00.0: video device video0
+  | [ 5011.612045] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 5011.623944] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT 03-chip-id           PASS (3s)
+
+## 25-card-release
+  -- i2c-dev holder, --yes
+    > the card's audio or I2C nodes are open in sleep (pid 26155): an unbind would wait until they close them, so the card is left alone (--yes too). Close them and run this again
+  ok:   i2c-dev holder: refused, holder named
+  -- ALSA control holder, --yes
+    > the card's audio or I2C nodes are open in sleep (pid 26245): an unbind would wait until they close them, so the card is left alone (--yes too). Close them and run this again
+  ok:   ALSA holder: refused, holder named
+  -- ALSA control holder through a private bind mount of /dev/snd, --yes
+  its fd's path: /tmp/tmp.BhU1sCOjhg/snd/controlC1
+    > the card's audio or I2C nodes are open in sleep (pid 26343): an unbind would wait until they close them, so the card is left alone (--yes too). Close them and run this again
+  ok:   bind-mount ALSA holder: refused, holder named
+  -- a regular file named /dev/snd/controlC1 on a private tmpfs over /dev
+  its fd's path: /dev/snd/controlC1
+  ok:   the fake node is no holder
+  -- ALSA holder that calls itself wireplumber, --yes
+  comm: wireplumber
+    > the card's audio or I2C nodes are open in wireplumber (pid 26480): an unbind would wait until they close them, so the card is left alone (--yes too). Close them and run this again
+  ok:   fake wireplumber: refused, holder named
+  -- ALSA holder that runs another executable mounted over /usr/bin/pipewire, --yes
+  its exe: /usr/bin/pipewire, comm pipewire
+    > the card's audio or I2C nodes are open in pipewire (pid 26595): an unbind would wait until they close them, so the card is left alone (--yes too). Close them and run this again
+  ok:   executable mounted over /usr/bin/pipewire: refused, holder named
+  ok:   the desktop's wireplumber (pid 1141) is PipeWire
+  -- video holder with escapes in its comm
+    > the card is in use by [2J]0;xfake (pid 26707): close it and run this again, or run this with --yes, and it loses the card
+  ok:   escape-laden comm: refused, holder named
+  ok:   no control characters in the output
+  -- a file named like a holder record
+  ok:   no holder found
+  -- the VFIO check under /proc churn and an early head, set -euo pipefail
+  ok:   found the holder 100 times out of 100
+  -- an i2c-dev node in flight in a unix socket, --yes
+    > the unbind of 0000:07:00.0 has not finished after 10 s: a program holds the card (no process shows it open: one may be in flight between programs); it finishes once that program closes it. Run this again after that. Nothing else was changed
+  ok:   the unbind did not finish within 10 s: status 3
+  ok:   pending: the unbind of 0000:07:00.0 that an earlier run started (pid 39283) has not finished
+    > the unbind of 0000:07:00.0 that an earlier run started (pid 39283) has not finished: a program holds the card; it finishes once that program closes it. Nothing was changed
+  ok:   a second release refused at once: status 3
+  ok:   without the record, from the card: 0000:07:00.0 has no driver but still has msi_irqs/60: an unbind has not finished
+  ok:   the unbind finished once the holder ended; nothing pending
+  every holder was handled
+  -- kernel log (13 lines)
+  | [ 5012.266180] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5012.266195] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 5012.398880] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 i2c-1, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 5012.399952] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 5012.503354] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 5012.504058] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 5012.603047] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 5012.748009] gc573 0000:07:00.0: video device video0
+  | [ 5012.748226] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 5012.769152] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 5014.064542] gc573 0000:07:00.0: IT6805: stable: 1024x768p total 1344x806, 64761 kHz, DVI, AVI 00 00 00 00 00, single pixel
+  | [ 5014.064548] gc573 0000:07:00.0: IT6805: DVI input is untraced (open question 31)
+  | [ 5015.404317] gc573 0000:07:00.0: HDMI: locked: 1024x768p, 65000000 Hz pixel clock, frame period 0x196d3e (60.010 Hz), DVI, RGB, full range; FPGA 1004 0x3 1008 0x400 100c 0x300
+RESULT 25-card-release      PASS (15s)
+
+## 26-no-answer
+  -- mode 1: no answer from the probe's start
+  mode 1: bind refused (No such device)
+    | [ 5028.901925] Setting dangerous option exp_mmio_ones - tainting kernel
+    | [ 5028.902296] gc573 0000:07:00.0: exp_mmio_ones 1: register reads return all-ones from now on
+    | [ 5028.902317] gc573 0000:07:00.0: the card does not answer (VERSION ffffffff DMA_RUN 0xffffffff VIP_CTRL 0xffffffff): not used, bus mastering off
+    | [ 5028.904263] Setting dangerous option exp_mmio_ones - tainting kernel
+  bind after mode 1: bound, bus mastering on, 30 frames pattern-checked
+  -- mode 2: no answer for 1.5 s once bus mastering is on
+    | [ 5032.082909] Setting dangerous option exp_mmio_ones - tainting kernel
+    | [ 5032.187564] gc573 0000:07:00.0: exp_mmio_ones 2: register reads return all-ones for 1500 ms
+    | [ 5032.189595] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+    | [ 5033.747479] gc573 0000:07:00.0: the card answers again, 1560 ms after bus mastering went on
+    | [ 5033.749430] gc573 0000:07:00.0: FPGA version 20200811
+    | [ 5034.244719] Setting dangerous option exp_mmio_ones - tainting kernel
+  mode 2: bound, bus mastering on, 30 frames pattern-checked
+  -- mode 3: no answer for 25 s once bus mastering is on
+  mode 3: bind refused (No such device)
+  mode 3: the bind took 21 s
+    | [ 5036.751914] Setting dangerous option exp_mmio_ones - tainting kernel
+    | [ 5036.856264] gc573 0000:07:00.0: exp_mmio_ones 3: register reads return all-ones for 25000 ms
+    | [ 5036.858457] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+    | [ 5056.931043] gc573 0000:07:00.0: DMA_RUN update: the card does not answer (reads all-ones): not written
+    | [ 5056.935034] gc573 0000:07:00.0: the card stopped answering after bus mastering was enabled: bus mastering off; reboot before using the card again
+    | [ 5056.939082] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (a rebind is safe with it kept, but the card may stall at first)
+    | [ 5056.940075] Setting dangerous option exp_mmio_ones - tainting kernel
+  bind after mode 3: bound, bus mastering on, 30 frames pattern-checked
+  -- mode 4: no answer from the probe's check after bus mastering on, for good
+  mode 4: bind refused (No such device)
+    | [ 5060.072498] Setting dangerous option exp_mmio_ones - tainting kernel
+    | [ 5060.178156] gc573 0000:07:00.0: exp_mmio_ones 4: register reads return all-ones from now on
+    | [ 5060.179516] gc573 0000:07:00.0: DDR check: the card does not answer (DDR_STATUS reads all-ones)
+    | [ 5060.182769] gc573 0000:07:00.0: video stop: the card does not answer (VIP_CTRL reads all-ones)
+    | [ 5060.183905] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+    | [ 5060.189502] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: bus mastering off; reboot before using the card again
+    | [ 5060.192802] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (a rebind is safe with it kept, but the card may stall at first)
+    | [ 5060.195971] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+    | [ 5060.198217] gc573 0000:07:00.0: teardown stop failed: the card does not answer, DMA_RUN 0xffffffff VIP_CTRL 0xffffffff
+    | [ 5060.201912] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+    | [ 5060.204483] Setting dangerous option exp_mmio_ones - tainting kernel
+  bind after mode 4: bound, bus mastering on, 30 frames pattern-checked
+  every mode refused or waited as it should, and the card came back after each
+  -- kernel log (89 lines)
+  | [ 5028.157462] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5028.157480] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 5028.289455] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 5028.290510] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 5028.393243] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 5028.393949] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 5028.493736] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 5028.635966] gc573 0000:07:00.0: video device video0
+  | [ 5028.636369] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 5028.659618] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 5028.877795] gc573-test: 1795752895015665860-3904 no-answer taint
+  | [ 5028.878850] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [ 5028.901650] gc573-test: 1795752895039942060-11606 no-answer 1
+  | [ 5028.901925] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [ 5028.902296] gc573 0000:07:00.0: exp_mmio_ones 1: register reads return all-ones from now on
+  | [ 5028.902317] gc573 0000:07:00.0: the card does not answer (VERSION ffffffff DMA_RUN 0xffffffff VIP_CTRL 0xffffffff): not used, bus mastering off
+  | [ 5028.904263] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [ 5029.060061] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5029.060082] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 5029.193528] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 5029.195825] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 5029.309574] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 5029.310304] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 5029.412933] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 5029.555651] gc573 0000:07:00.0: video device video0
+  | [ 5029.555794] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 5029.567551] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 5030.109011] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 5032.082109] gc573-test: 1795752898220064528-28313 no-answer 2
+  | [ 5032.082909] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [ 5032.187564] gc573 0000:07:00.0: exp_mmio_ones 2: register reads return all-ones for 1500 ms
+  | [ 5032.189595] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+  | [ 5033.747479] gc573 0000:07:00.0: the card answers again, 1560 ms after bus mastering went on
+  | [ 5033.749407] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5033.749430] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 5033.882471] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 5033.884032] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 5033.994501] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 5033.995211] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 5034.098652] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 5034.243835] gc573 0000:07:00.0: video device video0
+  | [ 5034.244427] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 5034.244719] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [ 5034.259260] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 5034.796419] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 5036.747590] gc573-test: 1795752902885593413-24111 no-answer 3
+  | [ 5036.751914] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [ 5036.856264] gc573 0000:07:00.0: exp_mmio_ones 3: register reads return all-ones for 25000 ms
+  | [ 5036.858457] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+  | [ 5056.931043] gc573 0000:07:00.0: DMA_RUN update: the card does not answer (reads all-ones): not written
+  | [ 5056.935034] gc573 0000:07:00.0: the card stopped answering after bus mastering was enabled: bus mastering off; reboot before using the card again
+  | [ 5056.939082] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (a rebind is safe with it kept, but the card may stall at first)
+  | [ 5056.940075] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [ 5057.102233] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5057.102255] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 5057.236082] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 5057.237940] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 5057.353305] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 5057.354096] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 5057.447755] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 5057.587211] gc573 0000:07:00.0: video device video0
+  | [ 5057.587347] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 5057.601207] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 5058.139817] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 5060.071426] gc573-test: 1795752926209655953-31977 no-answer 4
+  | [ 5060.072498] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [ 5060.178156] gc573 0000:07:00.0: exp_mmio_ones 4: register reads return all-ones from now on
+  | [ 5060.179505] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5060.179516] gc573 0000:07:00.0: DDR check: the card does not answer (DDR_STATUS reads all-ones)
+  | [ 5060.182769] gc573 0000:07:00.0: video stop: the card does not answer (VIP_CTRL reads all-ones)
+  | [ 5060.183905] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+  | [ 5060.189502] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: bus mastering off; reboot before using the card again
+  | [ 5060.192802] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (a rebind is safe with it kept, but the card may stall at first)
+  | [ 5060.195971] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+  | [ 5060.198217] gc573 0000:07:00.0: teardown stop failed: the card does not answer, DMA_RUN 0xffffffff VIP_CTRL 0xffffffff
+  | [ 5060.201912] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+  | [ 5060.204483] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [ 5060.343382] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 5060.343403] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 5060.477028] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 5060.478675] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 5060.592701] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 5060.593411] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 5060.695378] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 5060.835255] gc573 0000:07:00.0: video device video0
+  | [ 5060.835495] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 5060.850563] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 5061.388554] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 5063.350661] Setting dangerous option exp_mmio_ones - tainting kernel
+  expected: [ 5032.189595] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+  expected: [ 5036.858457] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+  expected: [ 5060.189502] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: bus mastering off; reboot before using the card again
+  expected: [ 5060.198217] gc573 0000:07:00.0: teardown stop failed: the card does not answer, DMA_RUN 0xffffffff VIP_CTRL 0xffffffff
+RESULT 26-no-answer         PASS (36s)
+
+## 22-stop-fault

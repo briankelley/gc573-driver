@@ -5,7 +5,7 @@
  * gc573-cap -d /dev/videoN [-f FMT[,FMT..]|all] [-b BUFS] [-n FRAMES]
  *           [-p] [-T IDX|all|@FILE] [-t FILE] [-L SECS] [-o FILE]
  *           [-c CYCLES] [-u] [-w MS] [-X SECS [-A MS] [-H SECS] [-r]]
- *           [-D DEBUGFS_FILE]
+ *           [-F [-B] [-M FILE]] [-K PFX] [-D DEBUGFS_FILE]
  *
  *   default  capture -n frames per format (requeue each buffer at once);
  *            formats ENUM_FMT does not offer at the timings are skipped
@@ -60,6 +60,14 @@
  *            resource0, mapped read-only) and print them (REGS line;
  *            spec/open-questions.md #33)
  *   -D FILE  the driver's debugfs "video" file, printed at key points
+ *   -K PFX   capture mode: keep the first frame delivered and every frame
+ *            whose signature differs from the frame before it (at most
+ *            KEEP_MAX), each as PFX-SEQ.FMT, with a "KEPT seq=N ts_ms=T
+ *            from_streamon_ms=D sig=S file=F" line (D: from just before
+ *            STREAMON, CLOCK_MONOTONIC); writes "gc573-cap: STREAMON PFX"
+ *            to /dev/kmsg just before STREAMON (root), so that the kernel
+ *            log places it against the driver's lines (tests/live.sh
+ *            remnant)
  *
  * Output: "RESULT ..." lines with key=value pairs; "FAIL ..." lines for
  * failed checks. Exit status: 0 = all checks passed, 1 = a check failed,
@@ -545,8 +553,9 @@ static void bar_log(unsigned int seq)
 	printf("\n");
 }
 
-static void check_frame(struct run *r, const struct v4l2_buffer *b,
-			int pattern)
+/* the frame's signature (every plane's words), as printed with -F */
+static uint64_t check_frame(struct run *r, const struct v4l2_buffer *b,
+			    int pattern)
 {
 	size_t off[3], len[3];
 	unsigned int np = planes(off, len), c;
@@ -607,6 +616,7 @@ static void check_frame(struct run *r, const struct v4l2_buffer *b,
 		}
 		printf("\n");
 	}
+	return sig;
 }
 
 static unsigned long distinct(uint64_t *v, unsigned long n)
@@ -651,19 +661,68 @@ static void print_run(const char *tag, struct run *r, int pattern)
 /* ---- modes ---- */
 
 static const char *outfile;
+static const char *keep_pfx;
 
-static void save_frame(const struct buf *b)
+#define KEEP_MAX	16
+
+static void write_frame(const struct buf *b, const char *name)
 {
-	char name[512];
 	FILE *f;
 
-	snprintf(name, sizeof(name), "%s.%.4s", outfile,
-		 (char *)&pix.pixelformat);
 	f = fopen(name, "wb");
 	if (!f || fwrite(b->p, 1, pix.sizeimage, f) != pix.sizeimage)
 		die(name);
 	fclose(f);
+}
+
+static void save_frame(const struct buf *b)
+{
+	char name[512];
+
+	snprintf(name, sizeof(name), "%s.%.4s", outfile,
+		 (char *)&pix.pixelformat);
+	write_frame(b, name);
 	printf("INFO saved %s (%u bytes)\n", name, pix.sizeimage);
+}
+
+/* -K: the first frame and each whose signature changed, and the mark */
+struct keep {
+	unsigned int n, dropped;
+	uint64_t prev;
+};
+
+static void keep_mark(void)
+{
+	char line[600];
+	int k = open("/dev/kmsg", O_WRONLY);
+
+	snprintf(line, sizeof(line), "gc573-cap: STREAMON %s\n", keep_pfx);
+	if (k < 0 || write(k, line, strlen(line)) < 0)
+		printf("INFO no kernel log mark: %s\n", strerror(errno));
+	if (k >= 0)
+		close(k);
+}
+
+static void keep_frame(struct keep *kp, const struct buf *b,
+		       const struct v4l2_buffer *vb, uint64_t sig, double t0,
+		       unsigned long nth)
+{
+	char name[512];
+
+	if (nth > 1 && sig == kp->prev)
+		return;
+	kp->prev = sig;
+	if (kp->n >= KEEP_MAX) {
+		kp->dropped++;
+		return;
+	}
+	kp->n++;
+	snprintf(name, sizeof(name), "%s-%u.%.4s", keep_pfx, vb->sequence,
+		 (char *)&pix.pixelformat);
+	write_frame(b, name);
+	printf("KEPT seq=%u ts_ms=%.3f from_streamon_ms=%.3f sig=%016llx file=%s\n",
+	       vb->sequence, ts_ms(vb), ts_ms(vb) - t0,
+	       (unsigned long long)sig, name);
 }
 
 static int capture(uint32_t fourcc, unsigned int nb, unsigned long n,
@@ -671,8 +730,10 @@ static int capture(uint32_t fourcc, unsigned int nb, unsigned long n,
 {
 	struct v4l2_buffer b;
 	struct run r;
+	struct keep kp = { 0 };
 	unsigned int i, last = 0;
 	double t0, first = 0;
+	uint64_t sig;
 	int ret = 0, e;
 
 	if (!fmt_offered(fourcc)) {
@@ -689,6 +750,8 @@ static int capture(uint32_t fourcc, unsigned int nb, unsigned long n,
 	run_init(&r);
 	for (i = 0; i < nbufs; i++)
 		qbuf(i, pattern);
+	if (keep_pfx)
+		keep_mark();
 	t0 = now_ms();
 	stream(1);
 	while (r.frames < n) {
@@ -701,13 +764,18 @@ static int capture(uint32_t fourcc, unsigned int nb, unsigned long n,
 		}
 		if (!r.frames)
 			first = now_ms() - t0;
-		check_frame(&r, &b, pattern);
+		sig = check_frame(&r, &b, pattern);
+		if (keep_pfx)
+			keep_frame(&kp, &bufs[b.index], &b, sig, t0, r.frames);
 		last = b.index;
 		if (outfile && r.frames == n)
 			break;
 		qbuf(b.index, pattern);
 	}
 	dump_debugfs("streaming");
+	if (kp.dropped)
+		printf("INFO not kept: %u more frames with a new signature (at most %u kept)\n",
+		       kp.dropped, KEEP_MAX);
 	if (outfile && r.frames == n)
 		save_frame(&bufs[last]);
 	stream(0);
@@ -1149,7 +1217,7 @@ int main(int argc, char **argv)
 	uint32_t list[NFMTS];
 	int opt, pattern = 0, under = 0, restart = 0;
 
-	while ((opt = getopt(argc, argv, "d:f:b:n:pT:t:L:o:c:uw:R:X:A:H:rFBD:M:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:f:b:n:pT:t:L:o:c:uw:R:X:A:H:rFBD:M:K:")) != -1) {
 		switch (opt) {
 		case 'd': dev = optarg; break;
 		case 'f': fl = optarg; break;
@@ -1164,6 +1232,7 @@ int main(int argc, char **argv)
 		case 'R': rb = strtoul(optarg, NULL, 0); break;
 		case 'L': lock_secs = atof(optarg); break;
 		case 'o': outfile = optarg; break;
+		case 'K': keep_pfx = optarg; break;
 		case 'X': xsecs = atof(optarg); break;
 		case 'A': after_ms = atof(optarg); break;
 		case 'H': hold_secs = atof(optarg); break;

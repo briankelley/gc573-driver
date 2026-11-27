@@ -1,0 +1,90 @@
+# GC573 regression suite
+date:    2026-11-27 09:36:49 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #5 SMP PREEMPT_DYNAMIC Thu Nov 26 19:04:38 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 55945F0B09B4F42AA4C5171
+rev:     01c01d7942d1-dirty
+input:   none
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+
+## 27-no-answer-dead
+  mode 4: bind refused (No such device) after 0 s
+    | [   40.107472] Setting dangerous option exp_mmio_ones - tainting kernel
+    | [   40.250189] gc573 0000:07:00.0: exp_mmio_ones 4: register reads return all-ones from now on
+    | [   40.252332] gc573 0000:07:00.0: DDR check: the card does not answer (DDR_STATUS reads all-ones)
+    | [   40.253402] gc573 0000:07:00.0: video stop: the card does not answer (VIP_CTRL reads all-ones)
+    | [   40.254822] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+    | [   40.257648] gc573 0000:07:00.0: DMA_RUN update: the card does not answer (reads all-ones): not written
+    | [   40.258832] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+    | [   40.260211] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0xffffffff VIP_CTRL 0xffffffff)
+    | [   40.263827] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+    | [   40.264256] gc573 0000:07:00.0: teardown stop failed: the card does not answer, DMA_RUN 0xffffffff VIP_CTRL 0xffffffff
+    | [   40.266752] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+    | [   40.270092] Setting dangerous option exp_mmio_ones - tainting kernel
+  BAR0 (past the driver): DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  dead: PCI enable count 1, bus mastering on, in dead_cards
+  rmmod refused: rmmod: ERROR: Module gc573 is in use
+  bind refused: No such device
+  system sleep refused: /home/dev/gc573-driver/tests/cases/../lib.sh: line 197: echo: write error: Device or resource busy
+  mode 4 left the card as it is until reboot: bus mastering on, the memory it was given kept
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (33 lines)
+  | [   39.148069] mc: Linux media interface: v0.10
+  | [   39.161820] videodev: Linux video capture interface: v2.00
+  | [   39.173914] gc573: loading out-of-tree module taints kernel.
+  | [   39.299218] gc573 0000:07:00.0: using MSI, irq 60
+  | [   39.299290] gc573 0000:07:00.0: FPGA version 20200811
+  | [   39.431036] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [   39.434053] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [   39.557938] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [   39.558670] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [   39.663838] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [   39.814681] gc573 0000:07:00.0: video device video0
+  | [   39.820813] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [   39.843360] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [   40.106194] gc573-test: 1795772219167489314-23841 no-answer 4
+  | [   40.107472] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [   40.250189] gc573 0000:07:00.0: exp_mmio_ones 4: register reads return all-ones from now on
+  | [   40.252321] gc573 0000:07:00.0: using MSI, irq 60
+  | [   40.252332] gc573 0000:07:00.0: DDR check: the card does not answer (DDR_STATUS reads all-ones)
+  | [   40.253402] gc573 0000:07:00.0: video stop: the card does not answer (VIP_CTRL reads all-ones)
+  | [   40.254822] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+  | [   40.257648] gc573 0000:07:00.0: DMA_RUN update: the card does not answer (reads all-ones): not written
+  | [   40.258832] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  | [   40.260211] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0xffffffff VIP_CTRL 0xffffffff)
+  | [   40.263827] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+  | [   40.264256] gc573 0000:07:00.0: teardown stop failed: the card does not answer, DMA_RUN 0xffffffff VIP_CTRL 0xffffffff
+  | [   40.266752] gc573 0000:07:00.0: reset domain 0x1: the card does not answer (RESET reads all-ones)
+  | [   40.270092] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [   40.435924] PM: suspend entry (s2idle)
+  | [   40.470487] Filesystems sync: 0.034 seconds
+  | [   40.472250] gc573: system sleep refused: 1 card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first
+  | [   40.472265] random: crng reseeded on system resumption
+  | [   40.472273] PM: suspend exit
+  | [   40.478687] Setting dangerous option exp_mmio_ones - tainting kernel
+  expected: [   40.258832] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  expected: [   40.264256] gc573 0000:07:00.0: teardown stop failed: the card does not answer, DMA_RUN 0xffffffff VIP_CTRL 0xffffffff
+RESULT 27-no-answer-dead    PASS (1s)
+
+## kmemleak (whole suite)
+  no other new unreferenced objects
+RESULT kmemleak             PASS 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  DMA-API errors reported and allowed in the cases: 0
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 27-no-answer-dead    PASS (1s)
+RESULT kmemleak             PASS 
+RESULT debug-checkers       PASS 
+NOTE: 27-no-answer-dead left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=3 fail=0 skip=0

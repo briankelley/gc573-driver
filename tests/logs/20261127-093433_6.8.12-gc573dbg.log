@@ -1,0 +1,78 @@
+# GC573 regression suite
+date:    2026-11-27 09:34:34 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #5 SMP PREEMPT_DYNAMIC Thu Nov 26 19:04:38 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 55945F0B09B4F42AA4C5171
+rev:     e21b9909d466
+input:   none
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+
+## 27-no-answer-dead
+  mode 3: bind refused (No such device) after 20 s
+    | [   46.471122] Setting dangerous option exp_mmio_ones - tainting kernel
+    | [   46.604409] gc573 0000:07:00.0: exp_mmio_ones 3: register reads return all-ones for 25000 ms
+    | [   46.607181] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+    | [   66.756267] gc573 0000:07:00.0: DMA_RUN update: the card does not answer (reads all-ones): not written
+    | [   66.758532] gc573 0000:07:00.0: the card stopped answering after bus mastering was enabled: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+    | [   66.763740] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0xffffffff VIP_CTRL 0xffffffff)
+    | [   66.764707] Setting dangerous option exp_mmio_ones - tainting kernel
+  BAR0 (past the driver): DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  dead: PCI enable count 1, bus mastering on, in dead_cards
+  rmmod refused: rmmod: ERROR: Module gc573 is in use
+  bind refused: No such device
+  system sleep refused: /home/dev/gc573-driver/tests/cases/../lib.sh: line 197: echo: write error: Device or resource busy
+  mode 3 left the card as it is until reboot: bus mastering on, the memory it was given kept
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (27 lines)
+  | [   45.529830] mc: Linux media interface: v0.10
+  | [   45.543275] videodev: Linux video capture interface: v2.00
+  | [   45.555026] gc573: loading out-of-tree module taints kernel.
+  | [   45.682069] gc573 0000:07:00.0: using MSI, irq 60
+  | [   45.682145] gc573 0000:07:00.0: FPGA version 20200811
+  | [   45.815507] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [   45.818355] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [   45.934301] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [   45.935063] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [   46.030941] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [   46.178418] gc573 0000:07:00.0: video device video0
+  | [   46.186794] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [   46.204016] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [   46.469985] gc573-test: 1795772083421693135-30718 no-answer 3
+  | [   46.471122] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [   46.604409] gc573 0000:07:00.0: exp_mmio_ones 3: register reads return all-ones for 25000 ms
+  | [   46.607181] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+  | [   66.756267] gc573 0000:07:00.0: DMA_RUN update: the card does not answer (reads all-ones): not written
+  | [   66.758532] gc573 0000:07:00.0: the card stopped answering after bus mastering was enabled: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  | [   66.763740] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0xffffffff VIP_CTRL 0xffffffff)
+  | [   66.764707] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [   66.911561] PM: suspend entry (s2idle)
+  | [   66.940849] Filesystems sync: 0.029 seconds
+  | [   66.942596] gc573: system sleep refused: 1 card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first
+  | [   66.942615] random: crng reseeded on system resumption
+  | [   66.942626] PM: suspend exit
+  | [   66.949265] Setting dangerous option exp_mmio_ones - tainting kernel
+  expected: [   46.607181] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+RESULT 27-no-answer-dead    PASS (21s)
+
+## kmemleak (whole suite)
+  no other new unreferenced objects
+RESULT kmemleak             PASS 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  DMA-API errors reported and allowed in the cases: 0
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 27-no-answer-dead    PASS (21s)
+RESULT kmemleak             PASS 
+RESULT debug-checkers       PASS 
+NOTE: 27-no-answer-dead left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=3 fail=0 skip=0

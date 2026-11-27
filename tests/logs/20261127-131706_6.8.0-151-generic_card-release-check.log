@@ -1,0 +1,14 @@
+# tests/card-release-check.sh in gc573-dev (Ubuntu 24.04, 6.8.0-151-generic): the scripts with the D2, D8, D16 and D5 fixes
+device /dev/full (1:7): open in pid 8 (sleep), O_PATH in pid 9 (python3)
+RESULT	crc-d2-export	PASS	install.sh: export LC_ALL=C at line 51, card-release.sh sourced at line 84
+RESULT	crc-d2-export	PASS	uninstall.sh: export LC_ALL=C at line 27, card-release.sh sourced at line 49
+RESULT	crc-d2-catalog	PASS	LANG=en_US.UTF-8 LANGUAGE=xx, stat -c %F says 'zeichenorientierte Spezialdatei': the holder is found (pid 8)
+RESULT	crc-d8-opath	PASS	holders: pid 8 (open); not pid 9 (O_PATH)
+RESULT	crc-vfio-user	PASS	'process 8 (sleep)'
+RESULT	crc-d16-timeout	PASS	holders: status 2 after 2 s
+RESULT	crc-d16-timeout	PASS	vfio: status 2 after 2 s, 'the scan of open files did not finish within 2 s (a file on a network mount that does not answer?)'
+RESULT	crc-d5-dead	PASS	listed: status 0, '0000:07:00.0: gc573 could not confirm that the card's DMA stopped (dead_cards), so it is left as it is until reboot'
+RESULT	crc-d5-dead	PASS	driver_override: status 0, '0000:07:00.0: its driver_override is gc573-dead-card: gc573 could not confirm that the card's DMA stopped, so it is left as it is until reboot'
+RESULT	crc-d5-dead	PASS	neither: status 1
+RESULT	crc-d5-dead	PASS	nothing: status 1
+exit 0

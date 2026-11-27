@@ -1,0 +1,77 @@
+vm: gc573-ubuntu2604  ref: 9f4a64813894  date: 2026-11-27T12:45:10Z
+distro: Ubuntu 26.04.1 LTS
+running: 7.0.0-44-generic
+cc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+=== build 6.18.65-061865-generic
+make -C /lib/modules/6.18.65-061865-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc-15 modules
+make[1]: Entering directory '/usr/src/linux-headers-6.18.65-061865-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+In file included from src/gc573_core.c:42:
+src/compat.h: In function ‘gc573_block_drivers_work’:
+src/compat.h:141:64: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  141 |         int ret = driver_set_override(&bw->pdev->dev, &bw->pdev->driver_override,
+      |                                                                ^~
+src/compat.h: In function ‘gc573_block_drivers’:
+src/compat.h:160:27: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  160 |                 old = pdev->driver_override;
+      |                           ^~
+src/compat.h:161:21: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  161 |                 pdev->driver_override = name;
+      |                     ^~
+make[4]: *** [/usr/src/linux-headers-6.18.65-061865-generic/scripts/Makefile.build:287: src/gc573_core.o] Error 1
+make[3]: *** [/usr/src/linux-headers-6.18.65-061865-generic/Makefile:2058: .] Error 2
+make[2]: *** [/usr/src/linux-headers-6.18.65-061865-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-6.18.65-061865-generic'
+make: *** [Makefile:26: modules] Error 2
+RESULT	6.18.65-061865-generic	build	FAIL	rc=2 warnings=0
+=== build 7.0.0-43-generic
+make -C /lib/modules/7.0.0-43-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-43-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-43-generic'
+RESULT	7.0.0-43-generic	build	PASS	7.0.0-43-generic dead_block=
+=== build 7.0.0-44-generic
+make -C /lib/modules/7.0.0-44-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-44-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-44-generic'
+RESULT	7.0.0-44-generic	build	PASS	7.0.0-44-generic dead_block=

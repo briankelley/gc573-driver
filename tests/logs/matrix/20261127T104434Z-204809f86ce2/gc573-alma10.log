@@ -1,0 +1,51 @@
+vm: gc573-alma10  ref: 204809f86ce2  date: 2026-11-27T10:44:34Z
+distro: AlmaLinux 10.3 (Mauve Lion)
+running: 6.12.0-264.20.1.el10_3.x86_64
+cc: gcc (GCC) 14.4.1 20260724 (Red Hat 14.4.1-5)
+=== build 6.12.0-264.20.1.el10_3.x86_64
+make -C /lib/modules/6.12.0-264.20.1.el10_3.x86_64/build M=/home/dev/gc573-matrix/gc573 CC=gcc modules
+make[1]: Entering directory '/usr/src/kernels/6.12.0-264.20.1.el10_3.x86_64'
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_core.o
+/home/dev/gc573-matrix/gc573/src/gc573_core.c: In function ‘gc573_card_dead’:
+/home/dev/gc573-matrix/gc573/src/gc573_core.c:584:13: error: ‘struct pci_dev’ has no member named ‘match_driver’
+  584 |         pdev->match_driver = false;
+      |             ^~
+make[3]: *** [scripts/Makefile.build:229: /home/dev/gc573-matrix/gc573/src/gc573_core.o] Error 1
+make[2]: *** [/usr/src/kernels/6.12.0-264.20.1.el10_3.x86_64/Makefile:2003: /home/dev/gc573-matrix/gc573] Error 2
+make[1]: *** [Makefile:242: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/kernels/6.12.0-264.20.1.el10_3.x86_64'
+make: *** [Makefile:26: modules] Error 2
+RESULT	6.12.0-264.20.1.el10_3.x86_64	build	FAIL	rc=2 warnings=0
+=== dkms gc573/0.1
+Failed command:
+make -j4 KERNELRELEASE=6.12.0-264.20.1.el10_3.x86_64 KDIR=/lib/modules/6.12.0-264.20.1.el10_3.x86_64/build modules
+
+Error! Bad return status for module build on kernel: 6.12.0-264.20.1.el10_3.x86_64 (x86_64)
+Consult /var/lib/dkms/gc573/0.1/build/make.log for more information.
+DKMS (dkms-3.4.4) make.log for gc573/0.1 for kernel 6.12.0-264.20.1.el10_3.x86_64 (x86_64)
+Fri Nov 27 10:44:47 AM UTC 2026
+
+Building module(s)
+# command: make -j4 KERNELRELEASE=6.12.0-264.20.1.el10_3.x86_64 KDIR=/lib/modules/6.12.0-264.20.1.el10_3.x86_64/build modules
+make -C /lib/modules/6.12.0-264.20.1.el10_3.x86_64/build M=/var/lib/dkms/gc573/0.1/build  modules
+make[1]: Entering directory '/usr/src/kernels/6.12.0-264.20.1.el10_3.x86_64'
+  CC [M]  /var/lib/dkms/gc573/0.1/build/src/gc573_core.o
+  CC [M]  /var/lib/dkms/gc573/0.1/build/src/gc573_i2c.o
+  CC [M]  /var/lib/dkms/gc573/0.1/build/src/gc573_vb2.o
+  CC [M]  /var/lib/dkms/gc573/0.1/build/src/gc573_video.o
+/var/lib/dkms/gc573/0.1/build/src/gc573_core.c: In function ‘gc573_card_dead’:
+/var/lib/dkms/gc573/0.1/build/src/gc573_core.c:584:13: error: ‘struct pci_dev’ has no member named ‘match_driver’
+  584 |         pdev->match_driver = false;
+      |             ^~
+make[3]: *** [scripts/Makefile.build:229: /var/lib/dkms/gc573/0.1/build/src/gc573_core.o] Error 1
+make[3]: *** Waiting for unfinished jobs....
+make[2]: *** [/usr/src/kernels/6.12.0-264.20.1.el10_3.x86_64/Makefile:2003: /var/lib/dkms/gc573/0.1/build] Error 2
+make[1]: *** [Makefile:242: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/kernels/6.12.0-264.20.1.el10_3.x86_64'
+make: *** [Makefile:26: modules] Error 2
+
+# exit code: 2
+# elapsed time: 00:00:01
+----------------------------------------------------------------
+RESULT	6.12.0-264.20.1.el10_3.x86_64	dkms	FAIL	build
+card-idle: no GC573 in this VM: safe

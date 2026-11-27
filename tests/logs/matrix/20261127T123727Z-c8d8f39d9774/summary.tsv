@@ -1,0 +1,5 @@
+vm	distro	kernel	step	result	detail
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	6.12.0-264.20.1.el10_3.x86_64	build	PASS	6.12.0-264.20.1.el10_3.x86_64 dead_block=pci_dev
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	7.3.4-300.fc45.x86_64	build	PASS	7.3.4-300.fc45.x86_64 dead_block=none
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	7.0.0-43-generic	build	PASS	7.0.0-43-generic dead_block=none
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	7.0.0-44-generic	build	PASS	7.0.0-44-generic dead_block=none

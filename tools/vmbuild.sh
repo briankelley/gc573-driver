@@ -5,14 +5,19 @@
 # The module is never loaded on the host.
 #
 # Usage: tools/vmbuild.sh [ACTION...]
-#   (none)        sync tree to the VM, clean W=1 build; any compiler warning fails
+#   (none)        sync tree to the VM, clean W=1 build; any compiler warning fails,
+#                 and so does a modinfo dead_block other than the kernel's
+#                 (6.8: match_driver)
 #   load          build, then (re)load gc573.ko and print the probe's dmesg
 #   unload        rmmod gc573 and print its dmesg (no build)
 #   check         build, then checkpatch --strict on src/ and a sparse (C=2) build
 #   test [CASE..] build, then run tests/run.sh as root; log -> tests/logs/
 # Env: VM (ssh alias, default gc573-dev), VMDIR (dir under the VM user's home,
 #      default gc573-driver), INSMOD_ARGS (module parameters for load),
-#      GC573_INPUT (HDMI input description recorded in test logs, default none)
+#      GC573_INPUT (HDMI input description recorded in test logs, default none),
+#      GC573_TEST_* (a case's choices, passed to tests/run.sh: GC573_TEST_STOP
+#      for 22-stop-fault, GC573_TEST_NOANSWER for 27-no-answer-dead,
+#      GC573_TEST_ENTRY for 30-probe-entry)
 set -euo pipefail
 
 VM=${VM:-gc573-dev}
@@ -32,19 +37,33 @@ sync_tree() {
 		--exclude='.*.cmd' --exclude='modules.order' --exclude='Module.symvers' \
 		--exclude='/tests/logs/' \
 		--include='/Makefile' --include='/Kbuild' --include='/dkms.conf' \
-		--include='/src/***' --include='/tests/***' --exclude='*' \
+		--include='/src/***' --include='/tests/***' \
+		--include='/tools/' --include='/tools/card-release.sh' --exclude='*' \
 		-e "ssh -o BatchMode=yes" "$ROOT/" "$VM:$VMDIR/"
 }
 
 build() {
-	local out
-	echo "== build ($VM, $(vm uname -r))"
+	local out krel got want
+	krel=$(vm uname -r)
+	echo "== build ($VM, $krel)"
 	vm "make -s -C $VMDIR clean >/dev/null"
 	out=$(vm "make -C $VMDIR W=1 2>&1") || { echo "$out"; die "build failed"; }
 	echo "$out" | grep -vE '^make(\[[0-9]+\])?: (Entering|Leaving) directory' || true
 	if echo "$out" | grep -qE 'warning:|error:'; then
 		die "build has warnings"
 	fi
+	# the way this build keeps other drivers off a dead card (src/compat.h):
+	# a Kbuild header probe that stops matching changes it with no error.
+	# The 6.8 kernels here (generic, debug) have match_driver, and Ubuntu's
+	# also the override in struct device, which would hide a lost probe
+	case $krel in
+	6.8.*) want=match_driver ;;
+	*) die "no expected dead_block for kernel $krel here (tools/vmbuild.sh; the matrix kernels' are in tools/vms/matrix-build.sh)" ;;
+	esac
+	got=$(vm "modinfo -F dead_block $VMDIR/gc573.ko")
+	[ "$got" = "$want" ] ||
+		die "dead_block is '${got:-none}' for $krel, not $want: a Kbuild header probe (GC573_HAVE_*) no longer matches"
+	echo "dead_block: $got"
 }
 
 check() {
@@ -82,13 +101,18 @@ unload() {
 }
 
 run_tests() {
-	local krel stamp log rev rc=0
+	local krel stamp log rev v testenv="" rc=0
 	krel=$(vm uname -r)
 	stamp=$(date -u +%Y%m%d-%H%M%S)
 	rev=$(git -C "$ROOT" describe --always --dirty --abbrev=12)
+	# a case's choices (GC573_TEST_STOP=teardown ...), plain words only
+	for v in $(compgen -v GC573_TEST_ || true); do
+		[[ ${!v} =~ ^[A-Za-z0-9_.-]*$ ]] || die "$v: letters, digits, _ . - only"
+		testenv+=" $v=${!v}"
+	done
 	mkdir -p "$ROOT/tests/logs"
 	log="$ROOT/tests/logs/${stamp}_${krel}.log"
-	vm "cd $VMDIR && sudo GC573_REV=$rev GC573_INPUT='${GC573_INPUT:-none}' tests/run.sh $*" \
+	vm "cd $VMDIR && sudo GC573_REV=$rev GC573_INPUT='${GC573_INPUT:-none}'$testenv tests/run.sh $*" \
 		2>&1 | tee "$log" || rc=$?
 	echo "log: ${log#"$ROOT"/}"
 	return "$rc"

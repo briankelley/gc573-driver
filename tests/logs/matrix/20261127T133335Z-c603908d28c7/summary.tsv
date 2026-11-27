@@ -1,0 +1,6 @@
+vm	distro	kernel	step	result	detail
+gc573-mint223	Linux Mint 22.3	6.14.0-37-generic	build	PASS	6.14.0-37-generic dead_block=match_driver
+gc573-mint223	Linux Mint 22.3	6.17.0-14-generic	build	FAIL	rc=2 warnings=0
+gc573-mint223	Linux Mint 22.3	6.14.0-37-generic	dead_block	PASS	match_driver
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	6.12.0-264.20.1.el10_3.x86_64	build	PASS	6.12.0-264.20.1.el10_3.x86_64 dead_block=generic
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	6.12.0-264.20.1.el10_3.x86_64	dead_block	FAIL	generic, not generic,pci_dev: a Kbuild header probe (GC573_HAVE_*) no longer matches

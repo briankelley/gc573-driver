@@ -12,10 +12,11 @@
 #   bringup   load; the output connects; its EDID (xrandr --verbose) equals
 #             VIDIOC_G_EDID byte for byte, and edid-decode passes it
 #   lock      1080p60 and 1080p59.94: QUERY_DV_TIMINGS CTA 1080p60 (with the
-#             1000/1001 flag at 59.94) within 3 s of the mode switch;
+#             1000/1001 flag at 59.94) within LOCK_MS (4 s) of the mode
+#             switch;
 #             POWER_PRESENT = 1; SOURCE_CHANGE on lock, loss and mode change
 #   relock    GC573_RELOCKS (25) x 2 mode switches 1080p60 <-> 1080p59.94
-#             with show.sh: each locks to the new rate within 3 s
+#             with show.sh: each locks to the new rate within LOCK_MS
 #   fpgawait  the lock policy with the FPGA's input measurement held not
 #             valid (module parameter exp_fpga_invalid, the boot race of
 #             2026-11-25): no lock and one warning while it is not valid;
@@ -111,7 +112,18 @@
 #             sleep and wake, 60 <-> 59.94, 1080p <-> 720p (reopened through
 #             the websocket), colour format, EDID; time to the first good
 #             frame (GC573_OBSEV_REPS, 2, rounds). Then 1080p <-> 720p
-#             while OBS records, in Hybrid MP4 and (report only) in MKV
+#             while OBS records, in Hybrid MP4 and (report only) in MKV:
+#             the recording starts once OBS has shown the counter live for
+#             1 s (obsrec-baseline, within 10 s of the source's restart);
+#             a sample every 2 s, the first and last live, any other one
+#             not live only inside a change's window (from its step to its
+#             first good frame; none for a change that did not recover by
+#             itself within its budget), progress against the source's
+#             rate at the time
+#             A recording whose checks fail (obsws, obsevents) is kept with
+#             OBS's log in ~/gc573-kept where OBS runs, never in the repo:
+#             the newest 5; one of the Roku's picture is never committed
+#             or copied, and goes once its failure is explained
 #   avchange  the driver's A/V offset across 3 colour-format changes (each a
 #             stream restart) under one avsync.sh session: within 1 ms
 #   obssoak   the event soak with OBS: GC573_OBSSOAK_SECS (7200) recorded, a
@@ -131,6 +143,28 @@
 #   unload    unload while streaming video and audio
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
+#   stress    (VM only, not in the default steps) tests/gc573-stress.c in
+#             the VM for GC573_STRESS_SECS (600): video, audio, control and
+#             EDID workers at random (S_EDID every 2-10 s: hot-plugs) and
+#             the bind role (unbind and bind every 15-45 s; off with
+#             GC573_STRESS_BIND=0), while the host sets the output at
+#             random every 3-15 s, with no test player: 1080p60, 1080p59.94
+#             (rate only: the stream restarts), 720p60 and 720p59.94 (other
+#             timings: a stream holds, and the hold expires), or off for
+#             2-6 s. The VM's hung_task_timeout_secs is 30 for the step.
+#             PASS: no unexpected error and no hang in the workers, no
+#             KMSG_BAD line in the VM's whole kernel log over the step
+#             (followed with tests/kmsg-tail.py; the driver's error lines
+#             are INFO), then a verified capture at 1080p60 and the
+#             driver's memory at 0
+#   remnant   (not in the default steps) no earlier user's picture in a
+#             new stream (security review, section 3 test 5): user A
+#             captures the pattern at 1080p60 (checked), filling the
+#             card's frame store; then each the first stream after it:
+#             with the source off, B's frames, the first delivered one
+#             too, must all be one uniform (black) frame; with the source
+#             at 720p60 (locked 3 s, no capture in between), every frame
+#             B gets must carry the same picture, the 720p pattern
 # Host-local mode (GC573_LOCAL=1, or VM=local): the driver runs on this
 # machine, bound by the user (tools/install.sh), and the checks run here
 # with no ssh. live.sh then never loads, unloads, binds or unbinds the
@@ -146,7 +180,9 @@
 # OBS open every /dev/video* node, cameras too), and the driver's own A/V
 # offset (gc573-aud -V -P) in the source sessions of the first and last
 # segments. sudo: SUDO_ASKPASS (sudo -A), else cached credentials (sudo -n).
-# GC573_OBS_BUFFERING defaults to 0 here, the README's recommendation.
+# GC573_OBS_BUFFERING defaults to 0 here: with OBS's buffering off, each
+# frame is shown as it arrives, so the driver's pauses at source changes
+# do not add to OBS's video delay.
 # GC573_OBS_BRIDGE=0: obsevents and obssoak without tests/obsbridge.py (the
 # reopen from the input's timings; default on).
 # Roku mode (GC573_SOURCE=roku, host-local only; M6): the source is the
@@ -180,7 +216,11 @@
 #             default): the Roku's mode after each hot-plug (INFO when it
 #             does not follow), the lock, 10 s of gc573-aud -V
 #   rokustart (any picture) streams started at a fresh 720p or 1080p lock:
-#             intervals, untouched bytes, band signatures, the ring
+#             every interval within 10 % of IN_FRAME_PERIOD, the first 40 at
+#             its rate (the delivery settle); untouched blocks, band
+#             signatures, the ring, the HDMI worker
+#   rokurelock  (any picture) a stream across a same-timings relock: the
+#             same checks from the driver's live restart on
 #   rokuobsany  (any picture) OBS: screenshots, meters, a 60 s recording
 #             (deleted), the driver's stream, intervals and counters
 #   rokureboot  the Roku restarted (GC573_ROKU_REBOOT_KEYS: ECP has no
@@ -195,6 +235,9 @@
 #             capture that neither hangs nor delivers garbage (the unbind
 #             is the coordinator's)
 #   q25back   the filter back: the lock without a reload, and the pattern
+# Every run ends with live-holders: no process may hold the card's nodes
+# open then but the sound server's own (tests/card-holders.sh), so that a
+# test process that outlived its step fails the run.
 # Prints RESULT lines and a SUMMARY; log: tests/logs/<UTC>_<kernel>_live.log.
 # Event log: tests/logs/<UTC>_<kernel>_live-events.log, every action that
 # changes the card's input or its streams (UTC, ms), and the lines of
@@ -416,13 +459,49 @@ testsrc_check() {
 # One counter from the driver's debugfs "audio" text $1, e.g. aud_stat "$d" late
 aud_stat() { grep -o "\b$2 [0-9]*" <<< "$1" | head -1 | cut -d' ' -f2; }
 
-# live-av.py's RESULT lines ($2) as RESULT $1-NAME, other lines indented
+# live-av.py's RESULT lines ($2) as RESULT $1-NAME, other lines indented.
+# A checker that gave no RESULT line (it died: a traceback, a module not
+# found) fails $1-check, naming its error: the exception line of a Python
+# traceback, else the first error line, else the first line. Without
+# this, the recording's recheck in the VM died and nothing failed
+# (tests/logs/20261127-094342_6.8.12-gc573dbg_live.log, obsevents)
 av_results() {
-	local name st detail
+	local name st detail err
 	while read -r _ name st detail; do
 		result "$1-$name" "$st" "$detail"
 	done < <(grep '^RESULT' <<< "$2")
 	grep -v '^RESULT' <<< "$2" | sed 's/^/  /'
+	grep -q '^RESULT' <<< "$2" && return 0
+	err=$(awk '/^Traceback/ { t = 1; next } t && /^[^ \t]/ { print; exit }' <<< "$2")
+	[ -n "$err" ] || err=$(grep -m1 -E '[a-z]Error\b|[Ee]rror:|No such file|[Pp]ermission denied|not found|[Cc]annot ' <<< "$2")
+	[ -n "$err" ] || err=$(grep -m1 '[^[:space:]]' <<< "$2")
+	result "$1-check" FAIL "(the checker gave no RESULT line: ${err:-no output})"
+}
+
+# A recording ($2) where OBS runs, after its checks: kept with the run's OBS
+# log in ~/gc573-kept/<UTC>-$1/ (outside the repo, never committed) when a
+# RESULT in the checkers' outputs ($3...) failed, to be looked at; else
+# deleted. The newest REC_KEEP_MAX (5) are kept, so that failures again
+# and again cannot fill the disk. One of the Roku's picture holds what the
+# user watches: never commit or copy it, and delete it once its failure is
+# explained
+REC_KEEP_MAX=5
+rec_keep() {
+	local step=$1 f=$2 d
+	shift 2
+	if ! printf '%s\n' "$@" | grep -q -E '^RESULT [^ ]+ +FAIL'; then
+		vm "rm -f '$f'"
+		return
+	fi
+	d=gc573-kept/$(date -u +%Y%m%dT%H%M%SZ)-$step
+	if vm "mkdir -p ~/$d && mv '$f' ~/$d/ && cp \"\$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)\" ~/$d/"; then
+		echo "  kept (a check failed): the recording and OBS's log in ~/$d $([ "$LOCAL" = 1 ] && echo here || echo "in $VM"), not in the repo"
+		[ "$SOURCE" != roku ] ||
+			echo "  it holds the Roku's picture (what the user watches): never commit or copy it; delete it once the failure is explained"
+	else
+		echo "  could not keep the recording in ~/$d: $f left as it is"
+	fi
+	vm "cd ~/gc573-kept && ls -1t | tail -n +$((REC_KEEP_MAX + 1)) | while read -r x; do rm -rf -- \"\$x\"; done"
 }
 
 # Seconds from now until QUERY_DV_TIMINGS succeeds (limit $1), or "none"
@@ -472,7 +551,27 @@ setup() {
 		"$ROOT/tests/live-compare.py" "$ROOT/tests/live-av.py" \
 		"$ROOT/tests/obsws.py" "$ROOT/tests/obs-check.py" \
 		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" \
-		"$ROOT/tests/obsbridge.py" "$ROOT/tests/app-check.py" "$W/"
+		"$ROOT/tests/obsbridge.py" "$ROOT/tests/app-check.py" \
+		"$ROOT/tools/testsrc/scrub.py" "$ROOT/tests/remnant-frames.py" \
+		"$ROOT/tests/card-holders.sh" "$ROOT/tools/card-release.sh" "$W/"
+}
+
+# At the run's end no process may hold the card's nodes open but the
+# sound server's own (tests/card-holders.sh: tools/card-release.sh's scan
+# of open files): a test process that outlived its step, as the OBS bridge
+# did in the VM (2d533cf), holds the module and the card from the next
+# unload, unbind or dead case
+holders_check() {
+	local out rc
+	out=$(vm "sudo $W/card-holders.sh" 2>&1)
+	rc=$?
+	[ -z "$out" ] || sed 's/^/  /' <<< "$out"
+	case $rc in
+	0) result live-holders PASS "(no process holds the card's nodes but the sound server's own)" ;;
+	1) result live-holders FAIL "(processes hold the card's nodes at the run's end: $(paste -sd ';' <<< "$out"))" ;;
+	3) result live-holders SKIP "(no GC573)" ;;
+	*) result live-holders FAIL "(the scan of open files did not finish, status $rc: $out)" ;;
+	esac
 }
 
 # The frame interval G_PARM must report for the timings in a gc573-cap
@@ -639,6 +738,11 @@ cta1080p60() {
 		grep -q 'CTA-861 VIC: 16' <<< "$1"
 }
 
+# the longest a lock may take from the output on or a mode switch: 1.6-1.9 s
+# measured before the delivery settle (spec/hdmi-chips.md "Lock policy"),
+# which publishes a lock no earlier than 1.25 s after the stable entry,
+# about 1 s later than before
+LOCK_MS=${GC573_LOCK_MS:-4000}
 step_lock() {
 	local t q t0
 	src_on 1920x1080 60
@@ -652,7 +756,7 @@ step_lock() {
 	q=$(query)
 	echo "$q" | sed 's/^/  /'
 	check lock-1080p60 "$(cta1080p60 "$q" && ! grep -q 'framerate is reduced' <<< "$q" &&
-		[ "$t" -le 3000 ]; echo $?)" "($t ms from output on)"
+		[ "$t" -le "$LOCK_MS" ]; echo $?)" "($t ms from output on, at most $LOCK_MS)"
 	t0=$(date +%s%N)
 	src_on 1920x1080 59.94
 	wait_unlocked
@@ -661,7 +765,7 @@ step_lock() {
 	q=$(query)
 	echo "$q" | sed 's/^/  /'
 	check lock-1080p59.94 "$(cta1080p60 "$q" && grep -q 'framerate is reduced by 1/1.001' <<< "$q" &&
-		[ "$t" -le 3000 ]; echo $?)" "($t ms from the mode switch)"
+		[ "$t" -le "$LOCK_MS" ]; echo $?)" "($t ms from the mode switch, at most $LOCK_MS)"
 	q=$(vm "v4l2-ctl -d $vdev --get-ctrl=power_present" 2>&1)
 	check lock-power-present "$(grep -q 'power_present: 1' <<< "$q"; echo $?)" "($q)"
 	event_during lock-event-mode-change src_on 1920x1080 60
@@ -712,12 +816,12 @@ step_relock() {
 			ms=$((($(date +%s%N) - t0) / 1000000))
 			times="$times $ms"
 			[ "$ms" -gt "$tmax" ] && tmax=$ms
-			[ "$ms" -le 3000 ] || bad=$((bad + 1))
+			[ "$ms" -le "$LOCK_MS" ] || bad=$((bad + 1))
 		done
 	done
 	echo "  ms from the switch to the new rate:$times"
 	check relock "$([ $bad = 0 ]; echo $?)" \
-		"($((n - bad)) of $n switches locked within 3 s, slowest $tmax ms; $(hdmi_dbg | grep -oE '(level_changes|fpga_rejects) [0-9]+' | tr '\n' ' '))"
+		"($((n - bad)) of $n switches locked within $LOCK_MS ms, slowest $tmax ms; $(hdmi_dbg | grep -oE '(level_changes|fpga_rejects) [0-9]+' | tr '\n' ' '))"
 }
 
 # fpgawait: the lock policy (spec/hdmi-chips.md "Lock policy") with the
@@ -1147,6 +1251,18 @@ change_while_streaming() {
 	esac
 	[ "$rc" = 0 ] || ok=1
 	check "$tag" "$ok" "($want: $line$(grep -q -- -r <<< "$opts" && echo "; restart: $(echo "$out" | grep '^RESULT capture ' | grep -oE 'fmt=[^ ]+ [0-9x]+ frames=[0-9]+')"))"
+	# the restart starts at the lock: every interval within 10 % of the
+	# input's (hdmi-chips.md "Lock policy", delivery settle)
+	if grep -q -- -r <<< "$opts"; then
+		local cl fps
+		cl=$(grep '^RESULT capture ' <<< "$out" | tail -1)
+		fps=$(grep '^LOCK ' <<< "$out" | tail -1 | sed -nE 's/.* fps=([0-9.]+) .*/\1/p')
+		check "$tag-restart-intervals" "$(awk -v fps="${fps:-0}" -v l="$cl" 'BEGIN {
+			n = split(l, f, " "); for (i = 1; i <= n; i++) { split(f[i], kv, "="); v[kv[1]] = kv[2] }
+			want = fps ? 1000 / fps : 0
+			exit !(want && v["min"] >= want * 0.9 && v["max"] <= want * 1.1) }'; echo $?)" \
+			"(the restart at the lock: intervals $(grep -oE 'min=[0-9.]+ max=[0-9.]+' <<< "$cl") ms, the input's $(awk -v f="${fps:-0}" 'BEGIN { if (f) printf "%.3f", 1000 / f; else print "?" }') ms, within 10 %)"
+	fi
 }
 
 # A frame gc573-cap -o kept ($2, YUYV 1920x1080) against pattern.py; $1: tag
@@ -1665,17 +1781,31 @@ obsc() { vm "cd $W && GC573_OBS_BUFFERING=$OBS_BUFFERING python3 obs-check.py $*
 # obs_up [FORMAT]: the recording format (tests/obs-run.sh), default hybrid_mp4
 obs_up() {
 	if [ "$LOCAL" = 1 ]; then
-		# the user's OBS: started minimized, its sources checked, not set up
+		# the user's OBS: started minimized, its sources checked, not set
+		# up; the settings the reopens change saved for obs_down
 		vm "GC573_OBS_RECFORMAT=${1:-hybrid_mp4} bash $W/obs-run.sh start --keep-config" | sed 's/^/  /' &&
-			obsc "verify /dev/v4l/by-path/pci-${dbgdir#*/gc573-}-video-index0 $pcm" | sed 's/^/  /'
+			obsc "verify /dev/v4l/by-path/pci-${dbgdir#*/gc573-}-video-index0 $pcm" | sed 's/^/  /' &&
+			obsany settings-save | sed 's/^/  /'
 		return
 	fi
 	vm "GC573_OBS_RECFORMAT=${1:-hybrid_mp4} bash $W/obs-run.sh start" | sed 's/^/  /' &&
 		obsc "setup /dev/v4l/by-path/pci-${dbgdir#*/gc573-}-video-index0 $pcm" | sed 's/^/  /'
 }
 
-# OBS holds the device while it runs: each OBS step stops it at the end
-obs_down() { vm "bash $W/obs-run.sh stop$([ "$LOCAL" = 0 ] || echo ' --keep-config')" > /dev/null; }
+# OBS holds the device while it runs: each OBS step stops it at the end.
+# The user's OBS (local mode) first gets back the source settings that
+# obs_up saved: OBS saves its sources at exit, and a reopen (color_range,
+# custom_pcm toggled) would stay in the user's scene collection
+OBS_SETTINGS=${XDG_RUNTIME_DIR:-/tmp}/gc573-obs-any-settings.json
+obs_down() {
+	local out
+	if [ "$LOCAL" = 1 ] && [ -e "$OBS_SETTINGS" ]; then
+		out=$(obsany settings-restore 2>&1) ||
+			result obs-settings FAIL "(the user's OBS sources not as obs_up found them: $(tr '\n' ' ' <<< "$out"))"
+		sed 's/^/  /' <<< "$out"
+	fi
+	vm "bash $W/obs-run.sh stop$([ "$LOCAL" = 0 ] || echo ' --keep-config')" > /dev/null
+}
 
 # Lines in OBS's current log, and OBS's capture-source lines after line $1
 obs_log_mark() { vm 'wc -l < "$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)"'; }
@@ -1953,7 +2083,7 @@ step_soak() {
 # one, 0.2-0.4 s without frames). One gc573-aud -V capture; per segment
 # between the changes the offset (live-av.py --segments, corrected by whole
 # frames as in avsync) must stay within 1 ms of the first segment's. OBS
-# with buffering on adds every such gap to its video delay (README); the
+# with buffering on adds every such gap to its video delay for good; the
 # driver's timestamps must not
 step_avchange() {
 	local out p t0 k st n dmax offs rc
@@ -1973,7 +2103,11 @@ step_avchange() {
 	check avchange-capture $rc "($(vm "grep -E '^(PARAMS|RESULT)' $W/avc.txt" | tr '\n' ' '))"
 	out=$(vm "python3 $W/live-av.py $W/avc.txt $W/avc.raw --segments 20,40,60")
 	vm "rm -f $W/avc.raw"
-	grep -E '^SEGMENT|raw offsets|^RESULT (video|gaps)' <<< "$out" | sed 's/^/  /'
+	# live-av.py's video and gaps checks take the capture whole, and this
+	# one restarts three times on purpose: informational here (no verdict
+	# word), the segments are what is judged
+	grep -E '^SEGMENT|raw offsets|^RESULT (video|gaps)' <<< "$out" |
+		sed -E "s/^RESULT (video|gaps) +(PASS|FAIL|SKIP) /INFO whole-capture \\1, across the step's restarts (not judged): /; s/^/  /"
 	out=$(awk '/^SEGMENT/ { for (i = 1; i <= NF; i++) if ($i ~ /^corr=/) { c = substr($i, 6) + 0; n++
 			if (n == 1) c0 = c; d = c - c0; if (d < 0) d = -d; if (d > dmax) dmax = d; s = s sprintf(" %+.3f", c) } }
 		END { printf "%s %d %.3f%s", (n == 4 && dmax <= 1) ? "PASS" : "FAIL", n, dmax, s }' <<< "$out")
@@ -1991,7 +2125,7 @@ step_avchange() {
 # recording: its image (pattern, counter steps) and its A/V offset (the
 # source's own offset needs avsync.sh's full-frame flash: step obsav)
 step_obsws() {
-	local out f
+	local out f rc
 	av_on --pattern || { result obsws-source FAIL "(avsync.sh --pattern or the IT6805 audio state ON)"; av_off; return; }
 	sleep 3
 	obs_up || { result obsws-start FAIL "(OBS with obs-websocket)"; obs_down; av_off; return; }
@@ -2002,10 +2136,11 @@ step_obsws() {
 	f=$(sed -n 's/^RECORDING //p' <<< "$out")
 	check obsws-record "$([ -n "$f" ]; echo $?)" "($(grep '^STATS' <<< "$out"))"
 	if [ -n "$f" ]; then
-		av_results obsws "$(vm "cd $W && python3 obs-events.py recheck '$f' --every 5" 2>&1)"
+		rc=$(vm "cd $W && python3 obs-events.py recheck '$f' --every 5" 2>&1)
+		av_results obsws "$rc"
 		out=$(vm "python3 $W/obs-av.py '$f' --box 0.70,0.88,0.92,0.92 --min-secs 55" 2>&1)
 		av_results obsws-rec "$out"
-		vm "rm -f '$f'"
+		rec_keep obsws "$f" "$rc" "$out"
 	fi
 	obs_down
 	av_off
@@ -2017,7 +2152,7 @@ step_obsws() {
 # colour format, and EDID re-sets (tests/obs-events.py events). TTFGF per
 # change; OBS's own log lines for its capture.
 step_obsevents() {
-	local out m lg f
+	local out m lg f rc wins rates
 	obs_up || { result obsevents-start FAIL "(OBS with obs-websocket)"; obs_down; return; }
 	m=$(obs_log_mark)
 	out=$(python3 "$ROOT/tests/obs-events.py" events --reps "$OBSEV_REPS" "${OBSEV_ARGS[@]}" 2>&1)
@@ -2035,8 +2170,15 @@ step_obsevents() {
 	av_results obsevents-hybrid "$(grep -v '^RECFORMAT' <<< "$out")"
 	f=$(sed -n 's/^RECORDING //p' <<< "$out")
 	if [ -n "$f" ]; then
-		av_results obsevents-hybrid "$(vm "cd $W && python3 obs-events.py recheck '$f' --every 2 --across" 2>&1)"
-		vm "rm -f '$f'"
+		# a sample that is not live passes only in a change's window, from
+		# its step to its first good frame (none for a change that did not
+		# recover by itself within its budget); progress against the
+		# source's rate at the sample's time (RECWINDOW, RECRATE)
+		wins=$(awk '$1 == "RECWINDOW" { printf "%s%s:%s:%s", n++ ? "," : "", $2, $3, $4 }' <<< "$out")
+		rates=$(awk '$1 == "RECRATE" { printf "%s%s:%s", n++ ? "," : "", $2, $3 }' <<< "$out")
+		rc=$(vm "cd $W && python3 obs-events.py recheck '$f' --every 2 --across --windows '$wins' --rates '$rates'" 2>&1)
+		av_results obsevents-hybrid "$rc"
+		rec_keep obsevents-hybrid "$f" "$out" "$rc"
 	fi
 	obs_log_since "$m" | grep -E 'Unable to set format|failed to|busy' | sed 's/^/  obs log: /' | head -8
 	obs_down
@@ -2045,7 +2187,7 @@ step_obsevents() {
 	out=$(python3 "$ROOT/tests/obs-events.py" events --reps 1 --only res-720p,res-1080p --record \
 		"${OBSEV_ARGS[@]}" 2>&1)
 	grep -E '^RECFORMAT|^ *EVENT|^RESULT' <<< "$out" |
-		sed 's/^RESULT/  INFO mkv (report only):/; s/^ *EVENT/  mkv: EVENT/; s/^RECFORMAT/  RECFORMAT/'
+		sed -E 's/^RESULT ([^ ]+) +(PASS|FAIL|SKIP) /  INFO mkv (report only, not judged): \1: /; s/^ *EVENT/  mkv: EVENT/; s/^RECFORMAT/  RECFORMAT/'
 	f=$(sed -n 's/^RECORDING //p' <<< "$out")
 	[ -z "$f" ] || vm "rm -f '$f'"
 	obs_log_since "$m" | grep -E 'Unable to set format|failed to|busy' | sed 's/^/  mkv: obs log: /' | head -8
@@ -2283,7 +2425,9 @@ obssoak_local() {
 		END {
 			printf "INFO memory-kmalloc live objects in the kmalloc caches: %d kB before OBS started, %d kB after OBS exited and the recording was deleted, %+d kB (every program: the random kmalloc caches cannot be told apart); SUnreclaim %d -> %d kB (%+d); slab caches that moved by 128 kB or more (kB): %s\n",
 				k0, k1, k1 - k0, a, b, b - a, top == "" ? "none" : top }')
-	av_results obssoak "$out"
+	# INFO only: not through av_results, which takes output without a
+	# RESULT line for a checker that died
+	sed 's/^/  /' <<< "$out"
 	# the leak check: the driver's own buffer memory (debugfs video
 	# "mem"), all of it given back once OBS has gone
 	if [ -z "$drv0" ] || [ -z "$drv1" ]; then
@@ -2299,7 +2443,11 @@ obssoak_local() {
 		$14 == "|" { n++; t[n] = $1; avail[n] = $2; slab[n] = $3; sunr[n] = $4; vm[n] = $5; rss[n] = $7
 			obs[n] = $8; irq[n] = $9; split($10, c, ":"); busy[n] = c[1]; idle[n] = c[2] }
 		END {
-			if (n < 7) { print "INFO memory while recording: " n " samples, fewer than 7"; exit }
+			if (n < 7) {
+				print "INFO memory while recording: " n + 0 " samples, fewer than 7"
+				print "RESULT cpu SKIP (report only: " n + 0 " samples, fewer than 7)"
+				exit
+			}
 			s = 6
 			du = sunr[n] - sunr[s]
 			printf "INFO memory while recording, from minute 5 to the end: SUnreclaim %+d kB (the page cache of the recording counts: memcg vectors, about 600 x 512 bytes per 100 MiB written), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB\n",
@@ -2392,6 +2540,247 @@ step_reload() {
 	done
 	check reload "$([ $ok = "$RELOADS" ]; echo $?)" \
 		"($ok of $RELOADS locked, host output lost $hostfail, no lock $lockfail, slowest lock $tmax ms after the output came back)"
+}
+
+# The output to a mode with no test player, right of the primary output as
+# show.sh puts it (an HPD pulse can drop the mode, and the window manager
+# would move a player's window to the primary output)
+STRESS_SECS=${GC573_STRESS_SECS:-600}
+STRESS_BIND=${GC573_STRESS_BIND:-1}
+stress_out() {
+	local primary
+	primary=$(xrandr --query | awk '/ connected primary/ { print $1; exit }')
+	[ -n "$primary" ] && [ "$primary" != "$OUT" ] || return 1
+	ev "output $OUT $1@$2 (stress)"
+	xrandr --output "$OUT" --mode "$1" --rate "$2" --right-of "$primary" 2>/dev/null
+}
+step_stress() {
+	local bdf pid rc=0 kpid hung0 t0 i n=0 mark out res log bad drv lost m lt
+	if [ "$LOCAL" = 1 ]; then
+		result stress SKIP "(VM only: the bind role unbinds the driver)"
+		return
+	fi
+	bdf=${dbgdir##*/gc573-}
+	vm "gcc -O2 -Wall -o $W/gc573-stress $VMDIR/tests/gc573-stress.c -lasound" ||
+		{ result stress FAIL "(cannot build gc573-stress in the VM)"; return; }
+	"$ROOT/tools/testsrc/avsync.sh" --off
+	"$ROOT/tools/testsrc/show.sh" --off
+	hung0=$(vm "cat /proc/sys/kernel/hung_task_timeout_secs")
+	vm "echo 30 | sudo tee /proc/sys/kernel/hung_task_timeout_secs > /dev/null"
+	# the VM's whole kernel log over the step: more than its ring buffer holds
+	kpid=$(vm "sudo rm -f $W/stress.klog; sudo sh -c 'python3 $VMDIR/tests/kmsg-tail.py $W/stress.klog > /dev/null 2>&1 & echo \$!'")
+	for i in $(seq 50); do
+		vm "sudo grep -q '^# kmsg-tail: following' $W/stress.klog 2>/dev/null" && break
+		sleep 0.1
+	done
+	mark=stress-$(date +%s%N)
+	kmsg_mark "$mark"
+	ev "stress start: $STRESS_SECS s, bind role $STRESS_BIND"
+	vm "sudo $W/gc573-stress -B $bdf -t $STRESS_SECS $([ "$STRESS_BIND" = 1 ] && echo -U)" \
+		> /tmp/gc573-live-stress.txt 2>&1 &
+	pid=$!
+	t0=$(date +%s)
+	while kill -0 "$pid" 2>/dev/null; do
+		sleep $((3 + RANDOM % 13))
+		kill -0 "$pid" 2>/dev/null || break
+		[ $(($(date +%s) - t0)) -lt $((STRESS_SECS + 180)) ] || break
+		# HPD low (an EDID change, an unbind): nothing to set
+		connected || continue
+		n=$((n + 1))
+		case $((RANDOM % 5)) in
+		0) stress_out 1920x1080 60 ;;
+		1) stress_out 1920x1080 59.94 ;;
+		2) stress_out 1280x720 60 ;;
+		3) stress_out 1280x720 59.94 ;;
+		*)
+			ev "output off $OUT (stress)"
+			xrandr --output "$OUT" --off
+			sleep $((2 + RANDOM % 5))
+			! connected || stress_out 1920x1080 60
+			;;
+		esac
+	done
+	if kill -0 "$pid" 2>/dev/null; then
+		kill "$pid"
+		rc=hung
+	else
+		wait "$pid"
+		rc=$?
+	fi
+	ev "stress end (exit $rc)"
+	vm "echo $hung0 | sudo tee /proc/sys/kernel/hung_task_timeout_secs > /dev/null"
+	grep -E '^(PARAMS|WORKER|UNEXPECTED|HANG)' /tmp/gc573-live-stress.txt | sed 's/^/  /'
+	res=$(grep '^RESULT stress ' /tmp/gc573-live-stress.txt)
+	check stress-workers "$([ "$rc" = 0 ] && grep -q '^RESULT stress PASS ' <<< "$res"; echo $?)" \
+		"(${res#RESULT stress }; exit $rc; $n output changes on the host)"
+
+	# the log from the step's mark to an end mark the follower has seen
+	kmsg_mark "$mark-end"
+	for i in $(seq 30); do
+		vm "sudo grep -qF 'gc573-live: $mark-end' $W/stress.klog" && break
+		sleep 0.1
+	done
+	vm "sudo kill $kpid" 2>/dev/null
+	log=$(vm "sudo cat $W/stress.klog" | awk -v s="gc573-live: $mark" -v e="gc573-live: $mark-end" '
+		index($0, e) { exit } f; index($0, s) { f = 1 }')
+	lib_kmsg_patterns
+	lost=$(grep -c '^LOST ' <<< "$log")
+	bad=$(grep -E "$KMSG_BAD" <<< "$log" | head -20)
+	drv=$(grep -E "$KMSG_DRV_BAD" <<< "$log")
+	[ -z "$bad" ] || sed 's/^/  | /' <<< "$bad"
+	[ -z "$drv" ] || {
+		echo "  INFO the driver's error lines over the stress: $(grep -c . <<< "$drv"), the first 10:"
+		head -10 <<< "$drv" | sed 's/^/  | /'
+	}
+	check stress-kernel-log "$([ -z "$bad" ] && [ "$lost" = 0 ] && [ -n "$log" ]; echo $?)" \
+		"($(grep -c . <<< "$log") lines, $(grep -c gc573 <<< "$log") with gc573, bad $(grep -c . <<< "$bad"), LOST $lost)"
+
+	# afterwards: the source back, a verified capture, no driver memory left
+	wait_connected 15
+	src_on 1920x1080 60
+	find_vdev
+	lt=$(time_to_lock 15)
+	out=$(cap "-L 10 -f YUYV -b 4 -n 60 -p" 2>&1)
+	check stress-capture-after "$(grep -q '^RESULT capture fmt=YUYV 1920x1080 frames=60 ' <<< "$out"; echo $?)" \
+		"(locked $lt ms after the source came back; $(grep -E '^(RESULT capture|FAIL)' <<< "$out" | head -2 | tr '\n' ' '))"
+	m=$(drv_mem)
+	check stress-driver-mem "$([ "$m" = "$DRV_MEM_ZERO" ]; echo $?)" "(after the stress: ${m:-no mem line})"
+}
+
+# ---- remnant: a new stream shows nothing of an earlier user's ----
+# "frames signatures": the number of FRAME lines and of distinct
+# signatures in gc573-cap -F output ($1)
+frame_sigs() {
+	local sigs
+	sigs=$(sed -nE 's/^FRAME seq=[0-9]+ .*sig=([0-9a-fx]+).*/\1/p' <<< "$1")
+	echo "$(grep -c . <<< "$sigs") $(sort -u <<< "$sigs" | grep -c .)"
+}
+# the frames of gc573-cap -F output ($1) as runs of one signature, each
+# with its first frame's timestamp, and the driver's stats (debugfs)
+frame_runs() {
+	sed -nE 's/^FRAME seq=([0-9]+) ts_ms=([0-9.]+) sig=([0-9a-f]+).*/\1 \2 \3/p' <<< "$1" |
+		awk 'function out() { printf "  frames: seq %s-%s sig=%s (%d, the first at ts_ms %s)\n", a, p, s, n, t }
+			$3 != s { if (n) out(); a = $1; s = $3; t = $2; n = 0 }
+			{ p = $1; n++ }
+			END { if (n) out() }'
+	grep '^  | stats:' <<< "$1" | sed 's/^  | /  driver: /'
+}
+# the size (W H) of gc573-cap output $1's YUYV capture, default 1920 1080
+cap_size() {
+	local s
+	s=$(sed -nE 's/^RESULT .*fmt=YUYV ([0-9]+)x([0-9]+) .*/\1 \2/p' <<< "$1" | head -1)
+	echo "${s:-1920 1080}"
+}
+# the pattern at WxH ($1, $2) compared with frame file $3 (YUYV)
+remnant_compare() {
+	vm "[ -f $W/p-$1x$2.png ] || python3 $W/pattern.py $W/p-$1x$2.png $1 $2 >/dev/null"
+	vm "python3 $W/live-compare.py $W/p-$1x$2.png $3 YUYV $1 $2 709" 2>&1
+}
+# The frames gc573-cap -K PFX kept (output $1, PFX $2): the first and each
+# whose signature changed, with seq and time from STREAMON; with a size $3
+# (WxH) also from the driver's last "HDMI: locked: WxH" line before
+# gc573-cap's STREAMON mark (kernel log, the kernel's clock). Then each
+# frame against A's (tests/remnant-frames.py; $4 the expected pattern's
+# PNG or - for the free-run black, $5 $6 the size) as RESULT $7-a-content.
+# REMNANT_RUNS: per kept frame "SEQ MS_AFTER_STREAMON MS_AFTER_LOCK|-
+# CLASS", CLASS black (the free-run black, 0x80108010 in every word),
+# expected, a-content, a-frame, other or uniform-WORD
+REMNANT_RUNS=
+remnant_kept() {
+	local lk="" files cmp
+	REMNANT_RUNS=
+	if [ -n "$3" ]; then
+		lk=$(vm "sudo dmesg" | awk -v m="gc573-cap: STREAMON $2" -v l="HDMI: locked: $3" '
+			function ts(x) { sub(/^\[ */, "", x); sub(/\].*/, "", x); return x + 0 }
+			index($0, l) { last = ts($0) }
+			index($0, m) { s = ts($0); at = last }
+			END { if (s && at) printf "%.1f", (s - at) * 1000 }')
+		[ -n "$lk" ] || echo "  kept: no \"HDMI: locked: $3\" line before the STREAMON mark"
+	fi
+	sed -nE 's/^KEPT seq=([0-9]+) ts_ms=[0-9.]+ from_streamon_ms=([0-9.-]+) sig=([0-9a-f]+) file=(.*)/\1 \2 \3 \4/p' <<< "$1" |
+		awk -v lk="$lk" '{ printf "  kept: seq %s at %.1f ms after STREAMON%s, sig=%s %s\n", $1, $2,
+			lk == "" ? "" : sprintf(", %.1f ms after the lock", lk + $2), $3, $4 }'
+	grep '^INFO not kept' <<< "$1" | sed 's/^/  /'
+	files=$(sed -nE 's/^KEPT .* file=(.*)/\1/p' <<< "$1" | paste -sd' ')
+	if [ -z "$files" ]; then
+		result "$7-a-content" FAIL "(gc573-cap kept no frame)"
+		return
+	fi
+	cmp=$(vm "python3 $W/remnant-frames.py $W/remnant-a.YUYV 1920 1080 $4 $5 $6 $files" 2>&1)
+	av_results "$7" "$cmp"
+	# the classifier's FRAME lines come in the order of the files
+	REMNANT_RUNS=$(paste -d' ' \
+		<(sed -nE 's/^KEPT seq=([0-9]+) ts_ms=[0-9.]+ from_streamon_ms=([0-9.-]+) .*/\1 \2/p' <<< "$1") \
+		<(sed -nE 's/^FRAME file=[^ ]+ class=([a-z-]+)( word=([0-9a-f]+))?.*/\1 \3/p' <<< "$cmp") |
+		awk -v lk="$lk" '{ c = $3
+			if (c == "uniform") c = $4 == "80108010" ? "black" : "uniform-" $4
+			printf "%s %.1f %s %s\n", $1, $2, lk == "" ? "-" : sprintf("%.1f", lk + $2), c == "" ? "none" : c }')
+}
+# The verdict on B's frames at 720p from REMNANT_RUNS and gc573-cap
+# output $1: every frame the free-run black or the expected pattern, the
+# black only before the first pattern frame, and every signature change
+# kept (no "INFO not kept"). Prints "OK|BAD ORDER" (ORDER: the kept
+# frames' classes in turn, repeats merged) and, after a black start,
+# "INFO" with its length: frames, and the first pattern frame's time
+# after STREAMON and after the lock
+remnant_order() {
+	local order first fseq fms flk
+	order=$(awk '{ print $4 }' <<< "$REMNANT_RUNS" | uniq | paste -sd' ' -)
+	if grep -qxE '(black )?expected' <<< "$order" && ! grep -q '^INFO not kept' <<< "$1"; then
+		echo "OK $order"
+	else
+		echo "BAD ${order:-none}$(grep -q '^INFO not kept' <<< "$1" && echo ', not every change kept')"
+	fi
+	first=$(awk '$4 == "expected" { print; exit }' <<< "$REMNANT_RUNS")
+	read -r fseq fms flk _ <<< "$first"
+	[ -z "$fseq" ] || [ "$order" != "black expected" ] ||
+		echo "INFO black start: $fseq frames (seq 0-$((fseq - 1))), the pattern from seq $fseq, $fms ms after STREAMON, $flk ms after the lock"
+}
+step_remnant() {
+	local out n u cmp rc t v st order
+	vm "sudo rm -f $W/remnant-b0k-*.YUYV $W/remnant-b1k-*.YUYV"
+	# A: the pattern at 1080p60, the last frame checked
+	src_mode 1920x1080 60
+	out=$(cap "-L 10 -f YUYV -b 4 -n 60 -o $W/remnant-a -F" 2>&1)
+	cmp=$(remnant_compare 1920 1080 "$W/remnant-a.YUYV")
+	rc=$?
+	echo "$cmp" | grep '^RESULT' | sed 's/^/  A: /'
+	read -r n u <<< "$(frame_sigs "$out")"
+	[ "$u" = 1 ] || frame_runs "$out"
+	check remnant-a "$([ "$rc" = 0 ]; echo $?)" "(user A's frames are the 1080p pattern: $n $u frames/signatures)"
+
+	# B, no input: the first stream after A
+	src_off
+	wait_unlocked || { result remnant-noinput FAIL "(the input did not go away)"; return; }
+	out=$(cap "-f YUYV -b 4 -n 60 -o $W/remnant-b0 -F -K $W/remnant-b0k" 2>&1)
+	read -r n u <<< "$(frame_sigs "$out")"
+	[ "$u" = 1 ] || frame_runs "$out"
+	cmp=$(vm "python3 $VMDIR/tests/frame-uniform.py $W/remnant-b0.YUYV" 2>&1)
+	rc=$?
+	check remnant-noinput "$([ "$n" -ge 60 ] && [ "$u" = 1 ] && [ "$rc" = 0 ]; echo $?)" \
+		"(no input: $n frames, $u distinct; last frame: $cmp)"
+	# shellcheck disable=SC2046 # the size: two words
+	remnant_kept "$out" "$W/remnant-b0k" "" - $(cap_size "$out") remnant-noinput
+
+	# B, a smaller input: locked 3 s, no stream in between
+	src_on 1280x720 60
+	t=$(time_to_lock 15)
+	sleep 3
+	out=$(cap "-L 10 -f YUYV -b 4 -n 60 -o $W/remnant-b1 -F -K $W/remnant-b1k" 2>&1)
+	read -r n u <<< "$(frame_sigs "$out")"
+	[ "$u" = 1 ] || frame_runs "$out"
+	cmp=$(remnant_compare 1280 720 "$W/remnant-b1.YUYV")
+	rc=$?
+	echo "$cmp" | grep '^RESULT' | sed 's/^/  B: /'
+	remnant_kept "$out" "$W/remnant-b1k" 1280x720 "$W/p-1280x720.png" 1280 720 remnant-720p
+	# a black start is the card's after a mode change (spec question;
+	# tests/logs/20261127-103242, -103652): INFO, not a failure
+	v=$(remnant_order "$out")
+	grep '^INFO ' <<< "$v" | sed 's/^INFO /  INFO remnant-720p /'
+	read -r st order <<< "$(head -1 <<< "$v")"
+	check remnant-720p "$([ "$n" -ge 60 ] && [ "$st" = OK ] && [ "$rc" = 0 ]; echo $?)" \
+		"(720p60 locked $t ms after the mode set: $n frames, $u distinct, in turn: $order; the last the 720p pattern: rc $rc)"
+	src_mode 1920x1080 60
 }
 
 step_compliance() {
@@ -3176,6 +3565,18 @@ roku_edids() {
 		python3 "$ROOT/tools/roku/edid-variant.py" "$1/default.bin" "$1/720p.bin" --only-720p
 }
 roku_edid_set() { vm "v4l2-ctl -d $vdev --set-edid=file=$1,format=raw" > /dev/null; }
+# an EDID set and the lock after it: first the hot-plug's loss (none within
+# 10 s when the card had that EDID already), then the lock (60 s). Without
+# the wait for the loss, time_to_lock returns at once on the lock before
+# it. The 10 min soak's last capture (20261126-214248) started 2 s after
+# its EDID set, between the loss and the new lock, which the delivery
+# settle puts about 1 s later than before: no DV timings, and gc573-aud
+# did not start
+roku_edid_relock() {
+	roku_edid_set "$1"
+	wait_unlocked
+	time_to_lock 60 > /dev/null
+}
 
 # rokuwhich: is the saved Roku the one cabled to the card? Passive: the
 # card's EDID set to 720p only. If our EDID reaches the saved Roku, its
@@ -3506,8 +3907,7 @@ step_rokusoakany() {
 	wait "$sampler" 2>/dev/null
 	obs_down
 	lg=$(vm "tail -n +$((m + 1)) \"\$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)\"")
-	roku_edid_set "$sk_e/default.bin"
-	time_to_lock 60 > /dev/null
+	roku_edid_relock "$sk_e/default.bin"
 	vm "rm -rf $sk_e"
 	sleep 2
 	roku_drv roku-soak-driver-last 60
@@ -3538,7 +3938,9 @@ step_rokusoakany() {
 		$1 == "SUnreclaim" { a = $2; b = $3; next }
 		$1 ~ /^kmalloc-([0-9]+k?|rnd-[0-9]+-[0-9]+k?)$/ { k0 += $2; k1 += $3 }
 		END { printf "INFO memory-kmalloc live objects in the kmalloc caches: %d kB before OBS started, %d kB after OBS exited and the recording was deleted, %+d kB (every program'"'"'s); SUnreclaim %d -> %d kB (%+d)\n", k0, k1, k1 - k0, a, b, b - a }')
-	av_results roku-soak "$out"
+	# INFO only: not through av_results (no RESULT line reads as a dead
+	# checker there)
+	sed 's/^/  /' <<< "$out"
 	if [ -z "$drv0" ] || [ -z "$drv1" ]; then
 		result roku-soak-memory SKIP "(the loaded gc573 has no live-memory line in debugfs video)"
 	else
@@ -3563,14 +3965,19 @@ soak_samples() {
 				last[k] = x }
 			kall = $11; kdrv = $12; kbad = $13 }
 		END {
-			if (n < 7) { print "INFO memory: " n " samples, fewer than 7"; exit }
-			s = 6
-			printf "INFO memory from minute 5 to the end: SUnreclaim %+d kB (the recording'"'"'s page cache counts), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB\n",
-				sunr[n] - sunr[s], slab[n] - slab[s], vm[n] - vm[s], avail[n] - avail[s], rss[n] - rss[s]
-			wall = t[n] - t[1]
-			printf "RESULT cpu PASS (report only: OBS %.1f %% of one CPU, the IRQ thread %.2f %%, the host %.1f %% of its CPUs, over %d s)\n",
-				(obs[n] - obs[1]) / hz / wall * 100, (irq[n] - irq[1]) / hz / wall * 100,
-				(busy[n] - busy[1]) / ((busy[n] - busy[1]) + (idle[n] - idle[1])) * 100, wall
+			# fewer than 7: no memory or CPU figures, the counters all the same
+			if (n < 7) {
+				print "INFO memory: " n + 0 " samples, fewer than 7"
+				print "RESULT cpu SKIP (report only: " n + 0 " samples, fewer than 7)"
+			} else {
+				s = 6
+				printf "INFO memory from minute 5 to the end: SUnreclaim %+d kB (the recording'"'"'s page cache counts), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB\n",
+					sunr[n] - sunr[s], slab[n] - slab[s], vm[n] - vm[s], avail[n] - avail[s], rss[n] - rss[s]
+				wall = t[n] - t[1]
+				printf "RESULT cpu PASS (report only: OBS %.1f %% of one CPU, the IRQ thread %.2f %%, the host %.1f %% of its CPUs, over %d s)\n",
+					(obs[n] - obs[1]) / hz / wall * 100, (irq[n] - irq[1]) / hz / wall * 100,
+					(busy[n] - busy[1]) / ((busy[n] - busy[1]) + (idle[n] - idle[1])) * 100, wall
+			}
 			split("v_bad_status v_unarmed v_order a_bad_done a_order h_poll_errors h_xfer_errors", errs, " ")
 			for (i in errs) iserr[errs[i]] = 1
 			for (k in names) {
@@ -3600,8 +4007,15 @@ soak_samples() {
 # sequence runs, the IT6805's and the splitter's states, with their
 # CLOCK_MONOTONIC times, so that a step lines up with the worker's work
 # or not. Then the same at 1080p
-# (the default EDID set again). Per stream: its frame intervals against the
-# median; for each one more than 10 % off, the phase of the frames around
+# (the default EDID set again). GC573_ROKU_START_FIRST=serial: the EDID
+# with another serial number instead of the 720p one, a hot-plug the Roku
+# answers in the same mode (streams started at a lock in the same timings;
+# tags serial-N and serial-back-N). A stream passes (hdmi-chips.md "Lock policy",
+# delivery settle) when every frame interval is within 10 % of
+# IN_FRAME_PERIOD and its first 40 intervals' mean within 0.05 % of it:
+# the input's frames from the first frame after the published lock, not
+# the card's own 60.000 Hz. Per stream, for each interval more than 10 %
+# off, the phase of the frames around
 # it, their untouched bytes, which bands of the off frame match the frame
 # before (<), the frame after (>), both (=) or neither (x), and the ring of
 # that time. No Roku action but the EDID sets; numbers only
@@ -3644,9 +4058,11 @@ roku_start_one() {	# TAG EDIDFILE [DELAY: s from the lock to the stream]
 			m = n - 1
 			for (i = 2; i <= m; i++) { t = x[i]; for (j = i - 1; j >= 1 && x[j] > t; j--) x[j + 1] = x[j]; x[j + 1] = t }
 			med = x[int((m + 1) / 2)]
-			for (i = 2; i <= n; i++) if (d[i] > med * 1.1 || d[i] < med * 0.9) {
+			# the reference: the input period the FPGA measures (else the median)
+			ref = pmin ? pmin / 1e5 : med
+			for (i = 2; i <= n; i++) if (d[i] > ref * 1.1 || d[i] < ref * 0.9) {
 				off++
-				printf "  %s interval off: frame %d of %d (%.3f s in), seq %d -> %d, %.3f ms (median %.3f)\n", tag, i, n, (ts[i] - ts[1]) / 1e3, seq[i - 1], seq[i], d[i], med
+				printf "  %s interval off: frame %d of %d (%.3f s in), seq %d -> %d, %.3f ms (input period %.3f, median %.3f)\n", tag, i, n, (ts[i] - ts[1]) / 1e3, seq[i - 1], seq[i], d[i], ref, med
 				ph = ""
 				for (k = i - 2; k <= i + 1; k++) ph = ph (k >= 1 && k <= n ? sprintf(" %+.3f", ts[k] - ts[1] - (k - 1) * med) : " -")
 				printf "    phase against the median cadence, frames %d to %d:%s ms; untouched 32-byte blocks%s\n", i - 2, i + 1, ph,
@@ -3674,19 +4090,23 @@ roku_start_one() {	# TAG EDIDFILE [DELAY: s from the lock to the stream]
 			}
 			printf "  %s IN_FRAME_PERIOD over the stream: %d to %d ticks (%.4f to %.4f ms)\n", tag, pmin, pmax, pmin / 1e5, pmax / 1e5
 			# the delivery rate before and after: the first and last 40 intervals
+			slow = 0
 			if (n > 81) {
 				a1 = (ts[41] - ts[1]) / 40; a2 = (ts[n] - ts[n - 40]) / 40
 				printf "  %s mean interval of the first 40: %.4f ms (%.3f Hz); of the last 40: %.4f ms (%.3f Hz)\n", tag, a1, 1000 / a1, a2, 1000 / a2
+				slow = a1 < ref * 0.9995 || a1 > ref * 1.0005
 			}
-			printf "RESULT %s %s (%d frames, interval median %.3f ms, %d more than 10 %% off; %d frames with 32-byte blocks the DMA did not write; %s)\n",
-				tag, off || nun ? "FAIL" : "PASS", n, med, off, nun, lk }' "$W/start-ring.u" "$W/start-watch.txt" "$W/start.txt")
+			printf "RESULT %s %s (%d frames, input period %.4f ms, %d intervals more than 10 %% off it, the first 40 %s; %d frames with 32-byte blocks the DMA did not write; %s)\n",
+				tag, (off || nun || slow) ? "FAIL" : "PASS", n, ref, off,
+				(n > 81 ? sprintf("at %.4f ms (%s 0.05 %%)", a1, slow ? "not within" : "within") : "not measured"), nun, lk }' "$W/start-ring.u" "$W/start-watch.txt" "$W/start.txt")
 	av_results roku-start "$(sed 's/^RESULT /RESULT /' <<< "$out")"
 	grep -E '^(INFO start_to_first|RESULT capture)' "$W/start.txt" | sed 's/ ch0_bytes.*//; s/^/  /'
 	grep -v '^W ' "$W/start-watch.txt" | head -3 | sed 's/^/  dbg-watch: /'
 	vm "rm -f $W/start.txt $W/start-ring.txt $W/start-ring.u $W/start-watch.txt"
 }
 step_rokustart() {
-	local e i
+	local e i a=${GC573_ROKU_START_FIRST:-720p} b
+	b=$([ "$a" = 720p ] && echo 1080p || echo "$a-back")
 	e=$W/roku-edid
 	time_to_lock 30 > /dev/null || { result roku-start SKIP "(no input: $(roku_card))"; return; }
 	roku_edids "$e" || { result roku-start FAIL "(G_EDID or edid-variant.py)"; return; }
@@ -3694,13 +4114,118 @@ step_rokustart() {
 		roku_edid_set "$e/default.bin"
 		time_to_lock 60 > /dev/null
 		sleep 5
-		roku_start_one "720p-$i" "$e/720p.bin" "${GC573_ROKU_START_DELAY:-0}"
+		roku_start_one "$a-$i" "$e/$a.bin" "${GC573_ROKU_START_DELAY:-0}"
 		sleep 5
-		roku_start_one "1080p-$i" "$e/default.bin" "${GC573_ROKU_START_DELAY:-0}"
+		roku_start_one "$b-$i" "$e/default.bin" "${GC573_ROKU_START_DELAY:-0}"
 		sleep 2
 	done
-	roku_edid_set "$e/default.bin"
-	time_to_lock 60 > /dev/null
+	roku_edid_relock "$e/default.bin"
+	vm "rm -rf $e"
+}
+
+# rokurelock: a stream across a relock in the same timings, the restart the
+# stream policy makes (hdmi-chips.md "Stream policy on input changes").
+# GC573_ROKU_TRIALS (3) times: gc573-cap -L (720 YUYV frames, -p -F -M) on
+# the locked input; 3 s in, an EDID with another serial number (then the
+# default again, in turn): a new display, which the Roku answers with a
+# loss and the same mode (the same EDID set again brings no loss: the soak
+# 20261126-190906). The driver restarts the stream free-running at
+# the loss and live at the relock; tests/dbg-watch.py reads debugfs video's
+# "stream:" line every 25 ms for the time of the live restart, and hdmi's
+# input and IT6805 lines for the loss, the stable entry and the published
+# lock (an INFO timeline from the stable entry, with the longest interval
+# and each change of the FPGA's status and frame period, 0x1004 and 0x1010,
+# as the frames' register reads saw them; and the free-run frames from the
+# stable entry to the live restart, with the input there but no lock
+# published: their intervals against 60 Hz, where a re-phase would show).
+# From 0.1 s after the live restart to the end every interval within 10 %
+# of IN_FRAME_PERIOD, and the first 40 within 0.05 % of it on average (the
+# delivery settle). Numbers only; no Roku action but the EDID set
+step_rokurelock() {
+	local e i wp cp out
+	e=$W/roku-edid
+	time_to_lock 30 > /dev/null || { result roku-relock SKIP "(no input: $(roku_card))"; return; }
+	roku_edids "$e" || { result roku-relock FAIL "(G_EDID or edid-variant.py)"; return; }
+	for i in $(seq "${GC573_ROKU_TRIALS:-3}"); do
+		vm "sudo python3 $ROOT/tests/dbg-watch.py --secs 15 --every 25 '$dbgdir/video=^stream:' '$dbgdir/hdmi=^(it6805: state|input:)'" \
+			> "$W/relock-watch.txt" 2>&1 &
+		wp=$!
+		vm "sudo $W/gc573-cap -d $vdev -L 10 -f YUYV -b 4 -n 720 -p -F -M /sys/bus/pci/devices/${dbgdir##*/gc573-}/resource0 > $W/relock.txt 2>&1" &
+		cp=$!
+		sleep 3
+		kmsg_mark "rokurelock-$i-"
+		roku_edid_set "$e/$([ $((i % 2)) = 1 ] && echo serial || echo default).bin"
+		wait "$cp"
+		wait "$wp"
+		out=$(awk -v tag="$i" 'FILENAME == ARGV[1] {
+				if ($1 != "W") next
+				t = $2 / 1e6
+				if ($3 == "video") {
+					if ($0 !~ / live 1 /) { was0 = 1; if (!tf) tf = t }
+					else if (was0 && !tl) tl = t
+				} else if ($4 == "input:") {
+					if ($0 ~ / locked 0 /) { if (!tlo) tlo = t }
+					else if (tlo && !tp) tp = t
+				} else if ($4 == "it6805:" && match($0, / entries [0-9]+/)) {
+					en = substr($0, RSTART + 9, RLENGTH - 9) + 0
+					if (ens && en > en0 && !tp) te = t
+					en0 = en; ens = 1
+				}
+				next }
+			/^REGS / { split($2, rq, "="); per[rq[2]] = strtonum("0x" $71); fst[rq[2]] = $68 "/" $71 }
+			/^FRAME / { for (k = 2; k <= NF; k++) { split($k, kv, "="); v[kv[1]] = kv[2] }
+				# the timeline: the longest interval, the first frame after the restart,
+				# the FPGA status and period changes
+				# (a period within 2 ticks of the last one listed is no change)
+				split(fst[v["seq"]], sp, "/"); fpn = strtonum("0x" sp[2])
+				if ((!nfc || sp[1] != fls || fpn > flp + 2 || fpn < flp - 2) && nfc < 8) {
+					fc[++nfc] = v["ts_ms"]; fv[nfc] = fst[v["seq"]]; fls = sp[1]; flp = fpn }
+				if (lt && v["ts_ms"] - lt > dmax) { dmax = v["ts_ms"] - lt; dend = v["ts_ms"] }
+				# the free-run frames between the stable entry and the live restart
+				if (te && lt && v["ts_ms"] > te && (!tl || v["ts_ms"] < tl)) {
+					d0 = v["ts_ms"] - lt; nfr++
+					if (!fmin || d0 < fmin) fmin = d0
+					if (d0 > fmax) fmax = d0
+					if (d0 > 1000 / 60 * 1.1 || d0 < 1000 / 60 * 0.9) {
+						froff++
+						if (nfo < 4) fo = fo sprintf("%s%.1f ms ending at %+.0f ms", nfo++ ? ", " : "", d0, v["ts_ms"] - te)
+					}
+				}
+				lt = v["ts_ms"]
+				if (tl && !t1 && lt >= tl) t1 = lt
+				if (!tl || v["ts_ms"] < tl + 100) next
+				n++; ts[n] = v["ts_ms"]; seq[n] = v["seq"]; p = per[v["seq"]]
+				if (p && (!pmin || p < pmin)) pmin = p
+				if (v["untouched"] > 0) nun++ }
+			END {
+				b = te ? te : tl
+				printf "  %s timeline from the %s: loss %s, free-run restart %s, published lock %s, live restart %s, its first frame %s; longest interval %.1f ms, ending at %s\n",
+					tag, te ? "stable entry" : "live restart", rel(tlo, b), rel(tf, b), rel(tp, b), rel(tl, b), rel(t1, b), dmax, rel(dend, b)
+				fs = ""
+				for (k = 1; k <= nfc; k++) fs = fs sprintf("%s%s %s", k > 1 ? ", " : "", fv[k], rel(fc[k], b))
+				printf "  %s FPGA status/frame period (0x1004/0x1010) from frame reads: %s\n", tag, fs
+				if (nfr) printf "  %s free-run frames from the stable entry to the live restart: %d intervals, %.3f to %.3f ms, %d more than 10 %% off 16.667%s\n", tag, nfr, fmin, fmax, froff + 0, fo != "" ? " (" fo ")" : ""
+				else printf "  %s free-run frames from the stable entry to the live restart: none\n", tag
+				if (!tl) { printf "RESULT %s FAIL (no live restart seen in debugfs video)\n", tag; exit }
+				if (n < 42) { printf "RESULT %s FAIL (%d frames after the live restart)\n", tag, n; exit }
+				ref = pmin / 1e5
+				for (k = 2; k <= n; k++) { d = ts[k] - ts[k - 1]
+					if (d > ref * 1.1 || d < ref * 0.9) {
+						off++
+						printf "  %s interval off: frame %d after the restart (%.3f s after it), seq %d -> %d, %.3f ms (input period %.3f)\n", tag, k, (ts[k] - tl) / 1e3, seq[k - 1], seq[k], d, ref
+					} }
+				a1 = (ts[41] - ts[1]) / 40
+				slow = a1 < ref * 0.9995 || a1 > ref * 1.0005
+				printf "RESULT %s %s (%d frames from 0.1 s after the live restart, input period %.4f ms: %d intervals more than 10 %% off it, the first 40 at %.4f ms (%s 0.05 %%); %d frames with 32-byte blocks the DMA did not write)\n",
+					tag, (off || slow || nun) ? "FAIL" : "PASS", n, ref, off, a1, slow ? "not within" : "within", nun }
+			function rel(x, b) { return x ? sprintf("%+.0f ms", x - b) : "not seen" }' \
+			"$W/relock-watch.txt" "$W/relock.txt")
+		av_results roku-relock "$out"
+		echo "  $(lock_rates "$(kmsg_since "rokurelock-$i-")"); $(grep -E '^RESULT capture' "$W/relock.txt" | sed 's/ ch0_bytes.*//')"
+		vm "rm -f $W/relock.txt $W/relock-watch.txt"
+		sleep 3
+	done
+	roku_edid_relock "$e/default.bin"
 	vm "rm -rf $e"
 }
 
@@ -3832,7 +4357,7 @@ fi
 all="bringup lock relock fpgawait fpgaheal capture modes change blip loss colour colorimetry audio exact avsync audioloss"
 all+=" obs obsav obschange obsws obsevents avchange unload reload compliance"
 [ "$LOCAL" = 0 ] || all="bringup lock relock capture modes change blip loss audio exact avsync audioloss compliance"
-ROKU_STEPS="rokuwhich rokuwhichkey rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes rokustart rokuobsany rokureboot rokuobssoak rokusoakany q25 q25back"
+ROKU_STEPS="rokuwhich rokuwhichkey rokulock rokucompliance rokucapture rokuobs rokusleep rokumodes rokustart rokurelock rokuobsany rokureboot rokuobssoak rokusoakany q25 q25back"
 [ "$SOURCE" != roku ] || { all="rokulock rokucompliance rokusleep rokumodes rokuobsany"; LOCAL_STEPS=$ROKU_STEPS; }
 [ $# -gt 0 ] || set -- $all
 for s in "$@"; do
@@ -3897,6 +4422,9 @@ fi
 		echo "## $s"
 		"step_$s"
 	done
+	echo
+	echo "## card holders"
+	holders_check
 	echo
 	echo "## test source"
 	testsrc_check

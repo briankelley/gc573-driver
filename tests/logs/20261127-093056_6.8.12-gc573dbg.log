@@ -1,0 +1,172 @@
+# GC573 regression suite
+date:    2026-11-27 09:30:56 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #5 SMP PREEMPT_DYNAMIC Thu Nov 26 19:04:38 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 55945F0B09B4F42AA4C5171
+rev:     2f8c2a6490ee
+input:   none
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+
+## 22-stop-fault
+  -- unbind while streaming, the teardown's stop confirmed, then counted as the audio DMA still on
+    | [  178.163402] Setting dangerous option exp_stop_fault - tainting kernel
+    | [  178.373306] gc573 0000:07:00.0: exp_stop_fault 0x4: the teardown stop was confirmed (DMA_RUN 0x00000000 VIP_CTRL 0x00000000), counted as the audio DMA still on
+    | [  178.373373] gc573 0000:07:00.0: teardown stop failed: DMA still on, DMA_RUN 0x00000002 VIP_CTRL 0x00000000
+    | [  178.377153] gc573 0000:07:00.0: teardown stop failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+    | [  178.380515] gc573 0000:07:00.0: 16236 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+    | [  178.516879] Setting dangerous option exp_stop_fault - tainting kernel
+  stop confirmed, then counted as failed; BAR0 idle: DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  capture: gc573-cap: STREAMOFF: No such device
+  audio:   RESULT audio frames=101760 secs=2.110 rate=47995.771 xruns=0 restarts=0
+  kept at the teardown: 16236 KiB
+  rmmod refused: rmmod: ERROR: Module gc573 is in use
+  bind refused: No such device
+  unbound: PCI enable count 1, bus mastering on
+  system sleep refused: /home/dev/gc573-driver/tests/cases/../lib.sh: line 197: echo: write error: Device or resource busy
+  the failed teardown stop kept the memory and bus mastering, and the card is left until reboot
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (110 lines)
+  | [  173.894862] gc573 0000:07:00.0: using MSI, irq 60
+  | [  173.894937] gc573 0000:07:00.0: FPGA version 20200811
+  | [  174.024344] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  174.027440] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  174.139503] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  174.140283] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  174.244496] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  174.390178] gc573 0000:07:00.0: video device video0
+  | [  174.392885] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  174.422052] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  174.966196] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [  178.162193] gc573-test: 1795771870375414400-14133 stop-fault teardown
+  | [  178.163402] Setting dangerous option exp_stop_fault - tainting kernel
+  | [  178.373306] gc573 0000:07:00.0: exp_stop_fault 0x4: the teardown stop was confirmed (DMA_RUN 0x00000000 VIP_CTRL 0x00000000), counted as the audio DMA still on
+  | [  178.373373] gc573 0000:07:00.0: teardown stop failed: DMA still on, DMA_RUN 0x00000002 VIP_CTRL 0x00000000
+  | [  178.377153] gc573 0000:07:00.0: teardown stop failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  | [  178.380515] gc573 0000:07:00.0: 16236 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+  | [  178.386160] gc573 0000:07:00.0: HDMI: 0x70 bank 3 select failed: -19
+  | [  178.386692] gc573 0000:07:00.0: HDMI: sp_hpd_low row 0 failed: -19
+  | [  178.387251] gc573 0000:07:00.0: HDMI: 0x70 bank 0 select failed: -19
+  | [  178.512142] ------------[ cut here ]------------
+  | [  178.512159] DMA-API: pci 0000:07:00.0: device driver has pending DMA allocations while released from device [count=28]
+  | [  178.512159] One of leaked entries details: [device address=0x00000000743f0000] [size=65536 bytes] [mapped with DMA_FROM_DEVICE] [mapped as scatter-gather]
+  | [  178.512184] WARNING: CPU: 3 PID: 4353 at kernel/dma/debug.c:870 dma_debug_device_change+0x337/0x590
+  | [  178.512197] Modules linked in: gc573(OE) v4l2_dv_timings(E) videobuf2_v4l2(E) videodev(E) videobuf2_common(E) mc(E) snd_seq_dummy(E) snd_hrtimer(E) qrtr(E) intel_rapl_msr(E) intel_rapl_common(E) snd_hda_codec_generic(E) intel_uncore_frequency_common(E) intel_pmc_core(E) intel_vsec(E) pmt_telemetry(E) pmt_class(E) snd_hda_intel(E) snd_intel_dspcfg(E) snd_hda_codec(E) snd_hwdep(E) kvm_intel(E) snd_hda_core(E) kvm(E) snd_pcm(E) snd_seq(E) irqbypass(E) snd_seq_device(E) snd_timer(E) rapl(E) cfg80211(E) snd(E) i2c_i801(E) i2c_smbus(E) lpc_ich(E) soundcore(E) binfmt_misc(E) nls_iso8859_1(E) joydev(E) input_leds(E) mac_hid(E) serio_raw(E) sch_fq_codel(E) dm_multipath(E) msr(E) parport_pc(E) ppdev(E) lp(E) parport(E) efi_pstore(E) nfnetlink(E) dmi_sysfs(E) qemu_fw_cfg(E) ip_tables(E) x_tables(E) autofs4(E) btrfs(E) blake2b_generic(E) raid10(E) raid456(E) async_raid6_recov(E) async_memcpy(E) async_pq(E) async_xor(E) async_tx(E) libcrc32c(E) xor(E) raid6_pq(E) raid1(E) raid0(E) hid_generic(E) usbhid(E) hid(E)
+  | [  178.512438]  crct10dif_pclmul(E) crc32_pclmul(E) polyval_clmulni(E) polyval_generic(E) ghash_clmulni_intel(E) sha256_ssse3(E) sha1_ssse3(E) psmouse(E) virtio_gpu(E) virtio_dma_buf(E) virtio_rng(E) ahci(E) libahci(E) xhci_pci(E) xhci_pci_renesas(E) aesni_intel(E) crypto_simd(E) cryptd(E) [last unloaded: gc573(OE)]
+  | [  178.512502] CPU: 3 PID: 4353 Comm: sh Tainted: G     U     OE      6.8.12-gc573dbg #5
+  | [  178.512509] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  178.512514] RIP: 0010:dma_debug_device_change+0x337/0x590
+  | [  178.512521] Code: 00 00 4c 89 e7 e8 59 fb b7 01 48 89 c6 41 56 89 d9 4c 89 fa 48 c7 c7 e0 dd 4d 9a 41 55 4c 8b 4d d0 4c 8b 45 c0 e8 69 19 d5 ff <0f> 0b 48 8b 5d c8 5a 59 48 85 db 74 4c 48 c7 c7 60 d9 4d 9a e8 b0
+  | [  178.512527] RSP: 0018:ffff88814ce17760 EFLAGS: 00010246
+  | [  178.512535] RAX: 0000000000000000 RBX: 000000000000001c RCX: 0000000000000000
+  | [  178.512540] RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+  | [  178.512544] RBP: ffff88814ce177c0 R08: 0000000000000000 R09: 0000000000000000
+  | [  178.512548] R10: 0000000000000000 R11: 0000000000000000 R12: ffff8881035ec0c8
+  | [  178.512553] R13: ffffffff9a4dea40 R14: ffffffff9a4deb40 R15: ffff8881036b4d20
+  | [  178.512557] FS:  00007712985ee740(0000) GS:ffff888236f80000(0000) knlGS:0000000000000000
+  | [  178.512562] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  | [  178.512567] CR2: 000072ac3000c048 CR3: 000000014d2ea005 CR4: 0000000000770ef0
+  | [  178.512574] PKRU: 55555554
+  | [  178.512579] Call Trace:
+  | [  178.512583]  <TASK>
+  | [  178.512595]  notifier_call_chain+0x9c/0x270
+  | [  178.512610]  blocking_notifier_call_chain+0x66/0xa0
+  | [  178.512620]  bus_notify+0x53/0x80
+  | [  178.512629]  device_release_driver_internal+0x496/0x5b0
+  | [  178.512644]  device_driver_detach+0x36/0x50
+  | [  178.512651]  unbind_store+0xe0/0x100
+  | [  178.512657]  ? __pfx_unbind_store+0x10/0x10
+  | [  178.512662]  ? __pfx_drv_attr_store+0x10/0x10
+  | [  178.512670]  drv_attr_store+0x6d/0xc0
+  | [  178.512680]  sysfs_kf_write+0x106/0x160
+  | [  178.512691]  kernfs_fop_write_iter+0x399/0x5a0
+  | [  178.512703]  vfs_write+0x65b/0x1360
+  | [  178.512718]  ? __pfx_vfs_write+0x10/0x10
+  | [  178.512730]  ? __kasan_check_read+0x11/0x20
+  | [  178.512741]  ? __kasan_check_read+0x11/0x20
+  | [  178.512748]  ? __fget_light+0x59/0x200
+  | [  178.512761]  ksys_write+0x11b/0x250
+  | [  178.512770]  ? __pfx_ksys_write+0x10/0x10
+  | [  178.512784]  __x64_sys_write+0x72/0xc0
+  | [  178.512790]  ? trace_hardirqs_on+0x22/0x120
+  | [  178.512798]  x64_sys_call+0x7e/0x25a0
+  | [  178.512805]  do_syscall_64+0x9a/0x1a0
+  | [  178.512821]  ? __pfx___lock_acquire+0x10/0x10
+  | [  178.512835]  ? do_user_addr_fault+0x411/0xc40
+  | [  178.512843]  ? reacquire_held_locks+0x219/0x4e0
+  | [  178.512849]  ? do_user_addr_fault+0x411/0xc40
+  | [  178.512862]  ? find_held_lock+0x36/0x140
+  | [  178.512871]  ? do_user_addr_fault+0x483/0xc40
+  | [  178.512879]  ? lock_release+0x203/0x7e0
+  | [  178.512884]  ? __up_read+0x1b4/0x7e0
+  | [  178.512893]  ? __pfx_lock_release+0x10/0x10
+  | [  178.512897]  ? __pfx___up_read+0x10/0x10
+  | [  178.512905]  ? rcu_read_unlock+0x26/0x80
+  | [  178.512912]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  178.512968]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  178.512977]  ? irqentry_exit+0x77/0xb0
+  | [  178.512983]  ? clear_bhb_loop+0x40/0x90
+  | [  178.512990]  ? clear_bhb_loop+0x40/0x90
+  | [  178.512996]  ? clear_bhb_loop+0x40/0x90
+  | [  178.513004]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  178.513011] RIP: 0033:0x77129831c804
+  | [  178.513018] Code: c7 00 16 00 00 00 b8 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 f3 0f 1e fa 80 3d 45 f8 0e 00 00 74 13 b8 01 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 54 c3 0f 1f 00 55 48 89 e5 48 83 ec 20 48 89
+  | [  178.513023] RSP: 002b:00007ffcaa029758 EFLAGS: 00000202 ORIG_RAX: 0000000000000001
+  | [  178.513031] RAX: ffffffffffffffda RBX: 000000000000000d RCX: 000077129831c804
+  | [  178.513035] RDX: 000000000000000d RSI: 0000597e02d0d7d0 RDI: 0000000000000001
+  | [  178.513040] RBP: 00007ffcaa0298a0 R08: 0000771298404b20 R09: 0000000000000000
+  | [  178.513044] R10: 0000000000000001 R11: 0000000000000202 R12: 0000597e02d0d7d0
+  | [  178.513049] R13: 0000000000000001 R14: 000000000000000d R15: 0000000000000000
+  | [  178.513067]  </TASK>
+  | [  178.513072] irq event stamp: 41691
+  | [  178.513076] hardirqs last  enabled at (41697): [<ffffffff9724c453>] console_unlock+0x213/0x290
+  | [  178.513083] hardirqs last disabled at (41702): [<ffffffff9724c438>] console_unlock+0x1f8/0x290
+  | [  178.513088] softirqs last  enabled at (8742): [<ffffffff9705cbb5>] __irq_exit_rcu+0x185/0x1d0
+  | [  178.513094] softirqs last disabled at (8737): [<ffffffff9705cbb5>] __irq_exit_rcu+0x185/0x1d0
+  | [  178.513099] ---[ end trace 0000000000000000 ]---
+  | [  178.513104] DMA-API: Mapped at:
+  | [  178.513108]  debug_dma_map_sg+0x210/0xb90
+  | [  178.513113]  __dma_map_sg_attrs+0x1a9/0x230
+  | [  178.513118]  dma_map_sgtable+0x70/0xf0
+  | [  178.513122]  gc573_buf_init+0x15d/0xb00 [gc573]
+  | [  178.513137]  __vb2_queue_alloc+0xa61/0x1440 [videobuf2_common]
+  | [  178.516879] Setting dangerous option exp_stop_fault - tainting kernel
+  | [  178.765445] PM: suspend entry (s2idle)
+  | [  178.844378] Filesystems sync: 0.078 seconds
+  | [  178.848566] gc573: system sleep refused: 1 card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first
+  | [  178.848599] random: crng reseeded on system resumption
+  | [  178.848621] PM: suspend exit
+  | [  178.867617] Setting dangerous option exp_stop_fault - tainting kernel
+  expected: (allowed warning) [  178.512159] DMA-API: pci 0000:07:00.0: device driver has pending DMA allocations while released from device [count=28]
+  expected: (allowed warning) [  178.512184] WARNING: CPU: 3 PID: 4353 at kernel/dma/debug.c:870 dma_debug_device_change+0x337/0x590
+  expected: (allowed warning) [  178.512579] Call Trace:
+  expected: [  178.373373] gc573 0000:07:00.0: teardown stop failed: DMA still on, DMA_RUN 0x00000002 VIP_CTRL 0x00000000
+  expected: [  178.377153] gc573 0000:07:00.0: teardown stop failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  expected: [  178.386160] gc573 0000:07:00.0: HDMI: 0x70 bank 3 select failed: -19
+  expected: [  178.386692] gc573 0000:07:00.0: HDMI: sp_hpd_low row 0 failed: -19
+  expected: [  178.387251] gc573 0000:07:00.0: HDMI: 0x70 bank 0 select failed: -19
+  expected: [  178.513104] DMA-API: Mapped at:
+  DMA-API debug: 1 error(s), each reported above and allowed
+RESULT 22-stop-fault        PASS (6s)
+
+## kmemleak (whole suite)
+  no other new unreferenced objects
+RESULT kmemleak             PASS 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=1 disabled=N
+  DMA-API errors reported and allowed in the cases: 1
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 22-stop-fault        PASS (6s)
+RESULT kmemleak             PASS 
+RESULT debug-checkers       PASS 
+NOTE: 22-stop-fault left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=3 fail=0 skip=0

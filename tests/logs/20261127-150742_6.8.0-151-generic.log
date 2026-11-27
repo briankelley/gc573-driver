@@ -1,0 +1,46 @@
+# GC573 regression suite
+date:    2026-11-27 15:07:42 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 20D46A19323C2535E473B9B
+rev:     2d533cf75517
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+gc573 already loaded: unloading
+
+## 02-load-unload
+  FAIL: iteration 1: bus mastering off after the unload (the driver turned it off)
+  -- kernel log (11 lines)
+  | [ 4580.554634] gc573-test: 1795792063196800941-31206 iteration 1
+  | [ 4580.683917] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 4580.683941] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 4580.816967] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 4580.818137] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 4580.920465] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 4580.921336] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 4581.022133] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 4581.165165] gc573 0000:07:00.0: video device video0
+  | [ 4581.166007] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 4581.179095] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT 02-load-unload       FAIL (1s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 02-load-unload       FAIL (1s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=0 fail=1 skip=2

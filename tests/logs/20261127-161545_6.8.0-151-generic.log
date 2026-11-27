@@ -1,0 +1,82 @@
+# GC573 regression suite
+date:    2026-11-27 16:15:45 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 9566EDFE009E7661279F096
+rev:     a0b1797df977
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 30-probe-entry
+  unbound: bus mastering on, PCI enable count 1, BAR0 DMA_RUN 0x00000000 VIP_CTRL 0x00000000, RESET 0x00000309
+  restop: bind refused (No such device)
+    | [   24.749960] Setting dangerous option exp_stop_fault - tainting kernel
+    | [   24.767052] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+    | [   24.869148] gc573 0000:07:00.0: exp_stop_fault 0x8: the probe stop was confirmed (DMA_RUN 0x00000000 VIP_CTRL 0x00000000), counted as the audio DMA still on
+    | [   24.869163] gc573 0000:07:00.0: the stop of the engines at probe is not confirmed: DMA still on, DMA_RUN 0x00000002 VIP_CTRL 0x00000000
+    | [   24.872911] gc573 0000:07:00.0: the stop of the engines at probe failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+    | [   24.876004] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+    | [   24.876121] Setting dangerous option exp_stop_fault - tainting kernel
+  dead: PCI enable count 2, bus mastering on, in dead_cards
+  rmmod refused: rmmod: ERROR: Module gc573 is in use
+  bind refused: No such device
+  runtime PM, control auto: the card active, its port 0000:00:02.6 active (control on)
+  INTx: PCI_COMMAND 0407 (INTx Disable 1), PCI_STATUS 0010 (interrupt status 0); line 22:  0 0 0 0 IO-APIC 22-fasteoi virtio4
+  system sleep refused: /home/dev/gc573-driver/tests/cases/../lib.sh: line 238: echo: write error: Device or resource busy
+  BAR0 (past the driver): DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  restop: the card is dead until reboot, bus mastering on as the probe found it
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (29 lines)
+  | [   23.859979] mc: Linux media interface: v0.10
+  | [   23.866458] videodev: Linux video capture interface: v2.00
+  | [   23.870945] gc573: loading out-of-tree module taints kernel.
+  | [   23.870953] gc573: module verification failed: signature and/or required key missing - tainting kernel
+  | [   23.871981] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000001, GPIO 0x0001f850, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [   23.977506] gc573 0000:07:00.0: using MSI, irq 60
+  | [   23.977528] gc573 0000:07:00.0: FPGA version 20200811
+  | [   24.111135] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [   24.112546] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [   24.221005] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [   24.221707] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [   24.321755] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [   24.464755] gc573 0000:07:00.0: video device video0
+  | [   24.465916] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [   24.491090] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [   24.749318] gc573-test: 1795796146630180322-12508 probe-entry restop
+  | [   24.749960] Setting dangerous option exp_stop_fault - tainting kernel
+  | [   24.767052] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [   24.869148] gc573 0000:07:00.0: exp_stop_fault 0x8: the probe stop was confirmed (DMA_RUN 0x00000000 VIP_CTRL 0x00000000), counted as the audio DMA still on
+  | [   24.869163] gc573 0000:07:00.0: the stop of the engines at probe is not confirmed: DMA still on, DMA_RUN 0x00000002 VIP_CTRL 0x00000000
+  | [   24.872911] gc573 0000:07:00.0: the stop of the engines at probe failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  | [   24.876004] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+  | [   24.876121] Setting dangerous option exp_stop_fault - tainting kernel
+  | [   27.049190] PM: suspend entry (s2idle)
+  | [   27.089959] Filesystems sync: 0.040 seconds
+  | [   27.090469] gc573: system sleep refused: 1 card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first
+  | [   27.090483] random: crng reseeded on system resumption
+  | [   27.090489] PM: suspend exit
+  | [   27.113686] Setting dangerous option exp_stop_fault - tainting kernel
+  expected: [   24.872911] gc573 0000:07:00.0: the stop of the engines at probe failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+RESULT 30-probe-entry       PASS (4s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 30-probe-entry       PASS (4s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+NOTE: 30-probe-entry left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=1 fail=0 skip=2

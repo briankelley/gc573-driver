@@ -1,0 +1,66 @@
+# GC573 regression suite
+date:    2026-11-27 15:08:03 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 20D46A19323C2535E473B9B
+rev:     2d533cf75517
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 30-probe-entry
+  unbound: bus mastering off, PCI enable count 0, BAR0 DMA_RUN 0x00000000 VIP_CTRL 0x00000000, RESET 0x00000309
+  bus mastering already off (DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+    | [ 4602.064600] gc573 0000:07:00.0: using MSI, irq 60
+    | [ 4602.064621] gc573 0000:07:00.0: FPGA version 20200811
+    | [ 4602.190308] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+    | [ 4602.191894] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+    | [ 4602.302125] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+    | [ 4602.302815] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+    | [ 4602.402414] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+    | [ 4602.540479] gc573 0000:07:00.0: video device video0
+    | [ 4602.540706] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  FAIL: bus mastering off after a clean unbind (the driver turned it off); PCI enable count 0 after the unbind, not 1; cut: the bind succeeded
+  -- kernel log (21 lines)
+  | [ 4601.174351] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 4601.174375] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 4601.307470] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 4601.308985] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 4601.416995] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 4601.417704] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 4601.511772] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 4601.652872] gc573 0000:07:00.0: video device video0
+  | [ 4601.654012] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 4601.675462] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 4601.955615] gc573-test: 1795792084598078281-16801 probe-entry cut
+  | [ 4602.064600] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 4602.064621] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 4602.190308] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 4602.191894] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 4602.302125] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 4602.302815] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 4602.402414] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 4602.540479] gc573 0000:07:00.0: video device video0
+  | [ 4602.540706] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 4602.558444] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT 30-probe-entry       FAIL (2s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 30-probe-entry       FAIL (2s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=0 fail=1 skip=2

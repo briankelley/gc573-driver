@@ -1,0 +1,236 @@
+vm	distro	step	result	detail
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d2-export	PASS	install.sh: export LC_ALL=C at line 70, card-release.sh sourced at line 103
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d2-export	PASS	uninstall.sh: export LC_ALL=C at line 31, card-release.sh sourced at line 53
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d2-catalog	PASS	LANG=en_US.UTF-8 LANGUAGE=xx, stat -c %F says 'zeichenorientierte Spezialdatei': the holder is found (pid 10)
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d8-opath	PASS	holders: pid 10 (open); not pid 12 (O_PATH, fd 3)
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-vfio-user	PASS	'process 10 (sleep)'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d16-timeout	PASS	holders: status 2 after 2 s
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d16-timeout	PASS	vfio: status 2 after 2 s, 'the scan of open files did not finish within 2 s, or failed (a file on a network mount that does not answer?)'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	timeout exits 1: status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	timeout exits 125: status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	timeout exits 126: status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	timeout exits 127: status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	find lists no open file: status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	every stat exits 1 after its output (xargs 123): status 0, holders '10 1:7'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': 'GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': 'GC573_SCAN_TIMEOUT is '0', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': 'GC573_SCAN_TIMEOUT is '601', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': 'GC573_SCAN_TIMEOUT is '010', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': 'GC573_SCAN_TIMEOUT is '1.5', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': 'GC573_SCAN_TIMEOUT is '99999999999999999999', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': status 2, holders ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': 'GC573_SCAN_TIMEOUT is '', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=1: status 0, holders '10 1:7'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=600: status 0, holders '10 1:7'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d5-dead	PASS	listed: status 0, '0000:07:00.0: left as it is until reboot (dead_cards): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d5-dead	PASS	driver_override: status 0, '0000:07:00.0: left as it is until reboot (its driver_override is gc573-dead-card): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d5-dead	PASS	neither: status 1
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-d5-dead	PASS	nothing: status 1
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-holders-script	PASS	every card: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-holders-script	PASS	the card's BDF: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-holders-script	PASS	no holder: status 0, ''
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-holders-script	PASS	a bad GC573_SCAN_TIMEOUT: status 2, '0000:07:00.0: GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	crc-holders-script	PASS	no card: status 3, 'no GC573'
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	headers-missing	PASS	exit 1; Install them with: sudo dnf install kernel-devel-6.12.0-264.20.1.el10_3.x86_64; nothing installed
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	dkms-missing	PASS	exit 1; Install it with: sudo dnf install dkms 
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	install	PASS	installed for 1 of 1 kernels with headers: /lib/modules/6.12.0-264.20.1.el10_3.x86_64/extra/gc573.ko.xz
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	install-noload	PASS	not loaded: no card
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/6.12.0-264.20.1.el10_3.x86_64/extra/gc573.ko.xz
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	autoinstall	SKIP	no second kernel with headers, or no Debian-style kernel hook
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+gc573-alma10	AlmaLinux 10.3 (Mauve Lion)	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d2-export	PASS	install.sh: export LC_ALL=C at line 70, card-release.sh sourced at line 103
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d2-export	PASS	uninstall.sh: export LC_ALL=C at line 31, card-release.sh sourced at line 53
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d2-catalog	PASS	LANG=C.UTF-8 LANGUAGE=xx, stat -c %F says 'zeichenorientierte Spezialdatei': the holder is found (pid 10)
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d8-opath	PASS	holders: pid 10 (open); not pid 12 (O_PATH, fd 3)
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-vfio-user	PASS	'process 10 (sleep)'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d16-timeout	PASS	holders: status 2 after 2 s
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d16-timeout	PASS	vfio: status 2 after 2 s, 'the scan of open files did not finish within 2 s, or failed (a file on a network mount that does not answer?)'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	timeout exits 1: status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	timeout exits 125: status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	timeout exits 126: status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	timeout exits 127: status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	find lists no open file: status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	every stat exits 1 after its output (xargs 123): status 0, holders '10 1:7'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': 'GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': 'GC573_SCAN_TIMEOUT is '0', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': 'GC573_SCAN_TIMEOUT is '601', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': 'GC573_SCAN_TIMEOUT is '010', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': 'GC573_SCAN_TIMEOUT is '1.5', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': 'GC573_SCAN_TIMEOUT is '99999999999999999999', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': status 2, holders ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': 'GC573_SCAN_TIMEOUT is '', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=1: status 0, holders '10 1:7'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=600: status 0, holders '10 1:7'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d5-dead	PASS	listed: status 0, '0000:07:00.0: left as it is until reboot (dead_cards): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d5-dead	PASS	driver_override: status 0, '0000:07:00.0: left as it is until reboot (its driver_override is gc573-dead-card): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d5-dead	PASS	neither: status 1
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-d5-dead	PASS	nothing: status 1
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-holders-script	PASS	every card: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-holders-script	PASS	the card's BDF: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-holders-script	PASS	no holder: status 0, ''
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-holders-script	PASS	a bad GC573_SCAN_TIMEOUT: status 2, '0000:07:00.0: GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	crc-holders-script	PASS	no card: status 3, 'no GC573'
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	headers-missing	PASS	exit 1; Install them with: sudo dnf install kernel-devel-5.14.0-741.26.1.el9_9.x86_64; nothing installed
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	dkms-missing	PASS	exit 1; Install it with: sudo dnf install dkms 
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	install	PASS	installed for 1 of 1 kernels with headers: /lib/modules/5.14.0-741.26.1.el9_9.x86_64/extra/gc573.ko.xz
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	install-noload	PASS	not loaded: no card
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/5.14.0-741.26.1.el9_9.x86_64/extra/gc573.ko.xz
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	autoinstall	SKIP	no second kernel with headers, or no Debian-style kernel hook
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+gc573-alma9	AlmaLinux 9.9 (Chartreuse Bobcat)	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d2-export	PASS	install.sh: export LC_ALL=C at line 70, card-release.sh sourced at line 103
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d2-export	PASS	uninstall.sh: export LC_ALL=C at line 31, card-release.sh sourced at line 53
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d2-catalog	SKIP	no installed locale makes stat use the catalog (tried C.UTF-8, en_US.UTF-8)
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d8-opath	PASS	holders: pid 10 (open); not pid 12 (O_PATH, fd 3)
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-vfio-user	PASS	'process 10 (sleep)'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d16-timeout	PASS	holders: status 2 after 2 s
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d16-timeout	PASS	vfio: status 2 after 2 s, 'the scan of open files did not finish within 2 s, or failed (a file on a network mount that does not answer?)'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	timeout exits 1: status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	timeout exits 125: status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	timeout exits 126: status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	timeout exits 127: status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	find lists no open file: status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	every stat exits 1 after its output (xargs 123): status 0, holders '10 1:7'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': 'GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': 'GC573_SCAN_TIMEOUT is '0', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': 'GC573_SCAN_TIMEOUT is '601', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': 'GC573_SCAN_TIMEOUT is '010', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': 'GC573_SCAN_TIMEOUT is '1.5', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': 'GC573_SCAN_TIMEOUT is '99999999999999999999', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': status 2, holders ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': 'GC573_SCAN_TIMEOUT is '', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=1: status 0, holders '10 1:7'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=600: status 0, holders '10 1:7'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d5-dead	PASS	listed: status 0, '0000:07:00.0: left as it is until reboot (dead_cards): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d5-dead	PASS	driver_override: status 0, '0000:07:00.0: left as it is until reboot (its driver_override is gc573-dead-card): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d5-dead	PASS	neither: status 1
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-d5-dead	PASS	nothing: status 1
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-holders-script	PASS	every card: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-holders-script	PASS	the card's BDF: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-holders-script	PASS	no holder: status 0, ''
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-holders-script	PASS	a bad GC573_SCAN_TIMEOUT: status 2, '0000:07:00.0: GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	crc-holders-script	PASS	no card: status 3, 'no GC573'
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	headers-missing	PASS	exit 1; Install them with: sudo dnf install kernel-devel-7.3.4-300.fc45.x86_64; nothing installed
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	dkms-missing	SKIP	dkms is in /usr/bin here
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	install	PASS	installed for 1 of 1 kernels with headers: /lib/modules/7.3.4-300.fc45.x86_64/extra/gc573.ko.xz
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	install-noload	PASS	not loaded: no card
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/7.3.4-300.fc45.x86_64/extra/gc573.ko.xz
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	autoinstall	SKIP	no second kernel with headers, or no Debian-style kernel hook
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+gc573-fedora45	Fedora Linux 45 (Cloud Edition)	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing
+gc573-mint223	Linux Mint 22.3	crc-d2-export	PASS	install.sh: export LC_ALL=C at line 70, card-release.sh sourced at line 103
+gc573-mint223	Linux Mint 22.3	crc-d2-export	PASS	uninstall.sh: export LC_ALL=C at line 31, card-release.sh sourced at line 53
+gc573-mint223	Linux Mint 22.3	crc-d2-catalog	PASS	LANG=en_US.UTF-8 LANGUAGE=xx, stat -c %F says 'zeichenorientierte Spezialdatei': the holder is found (pid 10)
+gc573-mint223	Linux Mint 22.3	crc-d8-opath	PASS	holders: pid 10 (open); not pid 12 (O_PATH, fd 3)
+gc573-mint223	Linux Mint 22.3	crc-vfio-user	PASS	'process 10 (sleep)'
+gc573-mint223	Linux Mint 22.3	crc-d16-timeout	PASS	holders: status 2 after 2 s
+gc573-mint223	Linux Mint 22.3	crc-d16-timeout	PASS	vfio: status 2 after 2 s, 'the scan of open files did not finish within 2 s, or failed (a file on a network mount that does not answer?)'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	timeout exits 1: status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	timeout exits 125: status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	timeout exits 126: status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	timeout exits 127: status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	find lists no open file: status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	every stat exits 1 after its output (xargs 123): status 0, holders '10 1:7'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': 'GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': 'GC573_SCAN_TIMEOUT is '0', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': 'GC573_SCAN_TIMEOUT is '601', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': 'GC573_SCAN_TIMEOUT is '010', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': 'GC573_SCAN_TIMEOUT is '1.5', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': 'GC573_SCAN_TIMEOUT is '99999999999999999999', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': status 2, holders ''
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': 'GC573_SCAN_TIMEOUT is '', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=1: status 0, holders '10 1:7'
+gc573-mint223	Linux Mint 22.3	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=600: status 0, holders '10 1:7'
+gc573-mint223	Linux Mint 22.3	crc-d5-dead	PASS	listed: status 0, '0000:07:00.0: left as it is until reboot (dead_cards): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-mint223	Linux Mint 22.3	crc-d5-dead	PASS	driver_override: status 0, '0000:07:00.0: left as it is until reboot (its driver_override is gc573-dead-card): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-mint223	Linux Mint 22.3	crc-d5-dead	PASS	neither: status 1
+gc573-mint223	Linux Mint 22.3	crc-d5-dead	PASS	nothing: status 1
+gc573-mint223	Linux Mint 22.3	crc-holders-script	PASS	every card: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-mint223	Linux Mint 22.3	crc-holders-script	PASS	the card's BDF: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-mint223	Linux Mint 22.3	crc-holders-script	PASS	no holder: status 0, ''
+gc573-mint223	Linux Mint 22.3	crc-holders-script	PASS	a bad GC573_SCAN_TIMEOUT: status 2, '0000:07:00.0: GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-mint223	Linux Mint 22.3	crc-holders-script	PASS	no card: status 3, 'no GC573'
+gc573-mint223	Linux Mint 22.3	headers-missing	PASS	exit 1; Install them with: sudo apt install linux-headers-6.14.0-37-generic; nothing installed
+gc573-mint223	Linux Mint 22.3	dkms-missing	PASS	exit 1; Install it with: sudo apt install dkms
+gc573-mint223	Linux Mint 22.3	install	PASS	installed for 2 of 2 kernels with headers: /lib/modules/6.14.0-37-generic/updates/dkms/gc573.ko.zst
+gc573-mint223	Linux Mint 22.3	install-noload	PASS	not loaded: no card
+gc573-mint223	Linux Mint 22.3	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/6.14.0-37-generic/updates/dkms/gc573.ko.zst
+gc573-mint223	Linux Mint 22.3	autoinstall	PASS	removed for 6.17.0-14-generic, then the kernel hook built and installed it: gc573/0.1, 6.17.0-14-generic, x86_64: installed
+gc573-mint223	Linux Mint 22.3	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+gc573-mint223	Linux Mint 22.3	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+gc573-mint223	Linux Mint 22.3	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d2-export	PASS	install.sh: export LC_ALL=C at line 70, card-release.sh sourced at line 103
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d2-export	PASS	uninstall.sh: export LC_ALL=C at line 31, card-release.sh sourced at line 53
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d2-catalog	SKIP	no installed locale makes stat use the catalog (tried C.UTF-8, en_US.UTF-8)
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d8-opath	PASS	holders: pid 10 (open); not pid 12 (O_PATH, fd 3)
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-vfio-user	PASS	'process 10 (sleep)'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d16-timeout	PASS	holders: status 2 after 2 s
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d16-timeout	PASS	vfio: status 2 after 3 s, 'the scan of open files did not finish within 2 s, or failed (a file on a network mount that does not answer?)'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	timeout exits 1: status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	timeout exits 125: status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	timeout exits 126: status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	timeout exits 127: status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	find lists no open file: status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	every stat exits 1 after its output (xargs 123): status 0, holders '10 1:7'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': 'GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': 'GC573_SCAN_TIMEOUT is '0', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': 'GC573_SCAN_TIMEOUT is '601', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': 'GC573_SCAN_TIMEOUT is '010', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': 'GC573_SCAN_TIMEOUT is '1.5', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': 'GC573_SCAN_TIMEOUT is '99999999999999999999', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': status 2, holders ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': 'GC573_SCAN_TIMEOUT is '', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=1: status 0, holders '10 1:7'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=600: status 0, holders '10 1:7'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d5-dead	PASS	listed: status 0, '0000:07:00.0: left as it is until reboot (dead_cards): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d5-dead	PASS	driver_override: status 0, '0000:07:00.0: left as it is until reboot (its driver_override is gc573-dead-card): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d5-dead	PASS	neither: status 1
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-d5-dead	PASS	nothing: status 1
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-holders-script	PASS	every card: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-holders-script	PASS	the card's BDF: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-holders-script	PASS	no holder: status 0, ''
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-holders-script	PASS	a bad GC573_SCAN_TIMEOUT: status 2, '0000:07:00.0: GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	crc-holders-script	PASS	no card: status 3, 'no GC573'
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	headers-missing	PASS	exit 1; Install them with: sudo apt install linux-headers-7.0.0-44-generic; nothing installed
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	dkms-missing	PASS	exit 1; Install it with: sudo apt install dkms
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	install	PASS	installed for 3 of 3 kernels with headers: /lib/modules/7.0.0-44-generic/updates/dkms/gc573.ko.zst
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	install-noload	PASS	not loaded: no card
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/7.0.0-44-generic/updates/dkms/gc573.ko.zst
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	autoinstall	PASS	removed for 7.0.0-43-generic, then the kernel hook built and installed it: gc573/0.1, 7.0.0-43-generic, x86_64: installed
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+gc573-ubuntu2604	Ubuntu 26.04.1 LTS	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing

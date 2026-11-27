@@ -13,17 +13,20 @@ T_FAIL=1
 T_SKIP=77
 
 # Kernel messages that fail any case: warnings and oopses, sanitizer, lockdep,
-# atomic-sleep and DMA-API debug reports, IRQ and list corruption trouble.
-# kmemleak is checked separately by run.sh (its automatic scan is paused).
+# atomic-sleep and DMA-API debug reports, IRQ and list corruption trouble,
+# and a freed page written to (page_poison=1: "pagealloc: memory
+# corruption"). kmemleak is checked separately by run.sh (its automatic
+# scan is paused).
 KMSG_BAD='WARNING:|BUG:|Oops|general protection fault|Call Trace:|KASAN|UBSAN'
 KMSG_BAD+='|lockdep|possible (circular|recursive) locking|inconsistent lock state'
 KMSG_BAD+='|non-static key|DEBUG_LOCKS_WARN_ON|DMA-API|nobody cared|Disabling IRQ'
 KMSG_BAD+='|list_(add|del) corruption|refcount_t:|scheduling while atomic'
 KMSG_BAD+='|sleeping function called from invalid context|soft lockup|hard LOCKUP'
-KMSG_BAD+='|blocked for more than|rcu.*stall|sysfs: cannot create'
+KMSG_BAD+='|blocked for more than|rcu.*stall|sysfs: cannot create|memory corruption'
 
 # Driver messages that fail any case: the driver's error and warning wording.
-# "refused": something tried a bus 0/2 I2C transfer, which nothing should do.
+# "refused": an I2C transfer on bus 1 to an address that is none of the
+# card's HDMI chips (i2c-dev, with the i2c_bus1 adapter on).
 KMSG_DRV_BAD="$GC573_MOD [^ ]+: .*(error|timeout|not ready|unexpected|failed|cannot|MISMATCH|refused)"
 
 # kmemleak reports an object only after two consecutive scans found it
@@ -144,6 +147,99 @@ gc573_cap_build() {
 		echo "$1/gc573-cap"
 }
 
+# Build the single-ioctl test tool (tests/gc573-sec.c) into directory $1;
+# print the binary's path.
+gc573_sec_build() {
+	gcc -O2 -Wall -Wextra -o "$1/gc573-sec" "$GC573_TESTS/gc573-sec.c" >&2 &&
+		echo "$1/gc573-sec"
+}
+
+# Build the BAR0 register reader (tests/gc573-regs.c) into directory $1;
+# print the binary's path.
+gc573_regs_build() {
+	gcc -O2 -Wall -Wextra -o "$1/gc573-regs" "$GC573_TESTS/gc573-regs.c" >&2 &&
+		echo "$1/gc573-regs"
+}
+
+# PCI_COMMAND bit 2, bus master enable, as the card's config space has it
+gc573_master_on() {
+	local cmd
+	cmd=$(od -An -tx2 -j4 -N2 "/sys/bus/pci/devices/$GC573_BDF/config" | tr -d ' ')
+	[ -n "$cmd" ] && [ $((0x$cmd & 4)) != 0 ]
+}
+
+# The cards the driver leaves as they are until reboot (parameter
+# dead_cards: a DMA stop not confirmed); empty if none or not loaded
+gc573_dead_cards() { cat "/sys/module/$GC573_MOD/parameters/dead_cards" 2>/dev/null; }
+
+# A dead card with no driver, its runtime PM (delta review D9c): with
+# power/control at auto its runtime status stays active (the driver keeps
+# a usage count), so the port above it cannot suspend under its DMA. Prints
+# the card's and the port's states; status 1 if the card suspended, 2 if
+# power/control cannot be set. power/control is put back.
+gc573_dead_rpm() {
+	local d=/sys/bus/pci/devices/$GC573_BDF ctl st port i
+	ctl=$(cat "$d/power/control")
+	echo auto > "$d/power/control" || return 2
+	for i in $(seq 20); do
+		st=$(cat "$d/power/runtime_status")
+		[ "$st" = suspended ] && break
+		sleep 0.1
+	done
+	port=$(readlink -f "$d/..")
+	echo "runtime PM, control auto: the card $st, its port ${port##*/} $(cat "$port/power/runtime_status" 2>/dev/null) (control $(cat "$port/power/control" 2>/dev/null))"
+	echo "$ctl" > "$d/power/control"
+	[ "$st" = active ]
+}
+
+# A dead card with no driver, its INTx (delta review D14): PCI_COMMAND
+# INTx Disable (bit 10) set after the teardown. Shows PCI_STATUS's
+# interrupt status (bit 3) and the legacy line's counts, read only.
+gc573_dead_intx() {
+	local d=/sys/bus/pci/devices/$GC573_BDF cmd stat irq
+	cmd=$(od -An -tx2 -j4 -N2 "$d/config" | tr -d ' ')
+	stat=$(od -An -tx2 -j6 -N2 "$d/config" | tr -d ' ')
+	irq=$(cat "$d/irq")
+	echo "INTx: PCI_COMMAND $cmd (INTx Disable $(((0x$cmd >> 10) & 1))), PCI_STATUS $stat (interrupt status $(((0x$stat >> 3) & 1))); line $irq: $(awk -v i="$irq:" '$1 == i { $1 = ""; print }' /proc/interrupts | tr -s ' ' | cut -c1-100)"
+	[ $(((0x$cmd >> 10) & 1)) = 1 ]
+}
+
+# Both, for a dead card with no driver: fails the case with every one that
+# does not hold
+gc573_dead_left() {
+	local bad=""
+	gc573_dead_rpm || bad+="the card's runtime PM suspended it (no usage count kept); "
+	gc573_dead_intx || bad+="INTx is enabled on the dead card (INTx Disable clear); "
+	[ -z "$bad" ] || fail "${bad%; }"
+}
+
+# The card's DMA engines idle as BAR0 reads, with register reader $1 and
+# no driver in between: VIP_CTRL output enable (bit 0) and DMA_RUN audio
+# (bit 1) off, neither all-ones. Prints the two values.
+gc573_regs_idle() {
+	local out run vip
+	out=$("$1" "/sys/bus/pci/devices/$GC573_BDF/resource0" 0x008 0x1000) || return 2
+	run=$(awk '$1 == "0x00008" { print $2 }' <<< "$out")
+	vip=$(awk '$1 == "0x01000" { print $2 }' <<< "$out")
+	echo "DMA_RUN $run VIP_CTRL $vip"
+	[ -n "$run" ] && [ -n "$vip" ] && [ "$run" != 0xffffffff ] &&
+		[ "$vip" != 0xffffffff ] && [ $((run & 2)) = 0 ] && [ $((vip & 1)) = 0 ]
+}
+
+# System sleep, as far as the freezer test goes (/sys/power/pm_test
+# "freezer": the notifiers run, then the tasks freeze for its delay and
+# thaw; no device sees a suspend). Status 0 it went through, 1 refused,
+# 77 not available here. Prints the write's error. pm_test is put back.
+gc573_sleep_test() {
+	local p=/sys/power rc old
+	[ -w $p/pm_test ] && grep -qw freeze $p/state 2>/dev/null || return 77
+	old=$(sed -n 's/.*\[\([a-z]*\)\].*/\1/p' $p/pm_test)
+	echo freezer > $p/pm_test || return 77
+	if echo freeze 2>&1 > $p/state; then rc=0; else rc=1; fi
+	echo "${old:-none}" > $p/pm_test
+	return $rc
+}
+
 # Build the audio test tool into directory $1 (alsa-lib headers:
 # libasound2-dev); print the binary's path.
 gc573_aud_build() {
@@ -157,6 +253,18 @@ gc573_pcm() {
 	for c in /sys/bus/pci/devices/"$GC573_BDF"/sound/card*; do
 		[ -e "$c/id" ] || continue
 		echo "hw:CARD=$(cat "$c/id"),DEV=0"
+		return 0
+	done
+	return 1
+}
+
+# The same PCM by card index (hw:N,0): alsa-lib opens that card's control
+# node alone (for a card id it opens every card's before it to compare)
+gc573_pcm_hw() {
+	local c
+	for c in /sys/bus/pci/devices/"$GC573_BDF"/sound/card*; do
+		[ -e "$c/number" ] || continue
+		echo "hw:$(cat "$c/number"),0"
 		return 0
 	done
 	return 1

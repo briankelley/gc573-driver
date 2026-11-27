@@ -1,0 +1,90 @@
+# GC573 regression suite
+date:    2026-11-27 12:24:27 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 62D2066691E07EAF11C4CC0
+rev:     79c09e9b4c37
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 01-probe
+  exp_stop_fault, exp_stop_domains, exp_probe_armed, exp_intx: setting each taints the kernel
+  video node: /dev/video0
+  debugfs: /sys/kernel/debug/gc573-0000:07:00.0/video
+    core: INT_STATUS 0x00000800 INT_ENABLE 0x00000b33 RESET 0x00000309 TLP_ALIGN 0x00000000 INT seen 0x00000800 dma_dead 0
+    input: 1004 0x00000002 1008 0x00000000 100c 0x00000000 1010 0xffffffff
+  FPGA version 20200811 (spec/regmap.md: 20200811)
+  MSI in use
+  quiesce: INT_ENABLE reads 0 after remove
+  MSI disallowed: not bound, no IRQ: MSI unavailable: INTx is untested on this card (exp_intx=1 allows it)
+  MSI allowed again: binds with MSI
+  -- kernel log (46 lines)
+  | [  114.461085] gc573-test: 1795782267487626964-19838 probe
+  | [  114.467179] gc573 0000:07:00.0: state at probe: VERSION=20200811 RESET=0x00000309 INT_ENABLE=0x00000000 INT_STATUS=0x00000000 GPIO=0x0001fd70 DMA_RUN=0x00000000 VIP_CTRL=0x00000000
+  | [  114.468349] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [  114.502403] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [  114.536413] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [  114.573246] gc573 0000:07:00.0: using MSI, irq 60
+  | [  114.573259] gc573 0000:07:00.0: DDR_STATUS=0x3
+  | [  114.573261] gc573 0000:07:00.0: FPGA version 20200811
+  | [  114.705370] gc573 0000:07:00.0: init done: GPIO=0x0001f970
+  | [  114.705376] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  114.706570] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  114.810286] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  114.810992] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  114.911751] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  115.055865] gc573 0000:07:00.0: video device video0
+  | [  115.057385] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  115.064331] gc573 0000:07:00.0: splitter: RX events 47 f1 07 00 00 00 00 00, 13 a1 then a1, 19 20 then 20
+  | [  115.069422] gc573-test: 1795782268095639733-6446 probe: test parameters
+  | [  115.070128] Setting dangerous option exp_stop_fault - tainting kernel
+  | [  115.070171] Setting dangerous option exp_stop_domains - tainting kernel
+  | [  115.070199] Setting dangerous option exp_probe_armed - tainting kernel
+  | [  115.070241] Setting dangerous option exp_intx - tainting kernel
+  | [  115.085398] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  115.087455] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [  115.121490] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [  115.155454] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [  115.192820] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [  115.226318] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [  115.260446] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [  115.292402] gc573 0000:07:00.0: quiesced: INT_ENABLE=0x00000000 INT_STATUS=0x00000000 RESET=0x00000309
+  | [  115.343507] gc573-test: 1795782268369878606-1061 probe: MSI disallowed
+  | [  115.343976] pci 0000:07:00.0: MSI/MSI-X disallowed for future drivers
+  | [  115.463232] gc573 0000:07:00.0: error -EINVAL: MSI unavailable: INTx is untested on this card (exp_intx=1 allows it)
+  | [  115.466786] gc573: probe of 0000:07:00.0 failed with error -22
+  | [  115.495108] pci 0000:07:00.0: MSI/MSI-X allowed for future drivers
+  | [  115.516554] gc573-test: 1795782268542727933-25671 probe: MSI allowed again
+  | [  115.645719] gc573 0000:07:00.0: using MSI, irq 60
+  | [  115.645740] gc573 0000:07:00.0: FPGA version 20200811
+  | [  115.775283] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  115.776535] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  115.879942] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  115.880782] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  115.982029] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  116.127329] gc573 0000:07:00.0: video device video0
+  | [  116.127392] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  116.140179] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  expected: [  115.463232] gc573 0000:07:00.0: error -EINVAL: MSI unavailable: INTx is untested on this card (exp_intx=1 allows it)
+RESULT 01-probe             PASS (2s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 01-probe             PASS (2s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=1 fail=0 skip=2

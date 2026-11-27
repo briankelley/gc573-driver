@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0
 # Test tools/install.sh and tools/uninstall.sh at a git ref on the regression
 # matrix VMs (no card there). Per VM, one at a time:
+#   crc-*            tests/card-release-check.sh: the scripts' holder scan and
+#                    dead-card check, offline (its own processes, a made-up
+#                    sysfs)
 #   headers-missing  the running kernel's build link hidden: install.sh stops
 #                    with the package to install, nothing installed
 #   dkms-missing     dkms not on PATH: install.sh stops with the package to
@@ -27,7 +30,7 @@ REF=HEAD VMS=()
 while [ $# -gt 0 ]; do
   case $1 in
     -r) REF=$2; shift 2 ;;
-    -h|--help) sed -n '3,25p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,26p' "$0"; exit 0 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) VMS+=("$1"); shift ;;
   esac
@@ -61,6 +64,9 @@ echo "kernels with headers: ${kernels[*]}"
 res() { printf 'RESULT\t%s\t%s\t%s\n' "$1" "$2" "$3"; }
 resolve() { modprobe -n -v "$ALIAS" 2>/dev/null | grep -o '[^ ]*gc573\.ko[^ ]*' | tail -1; }
 sudo bash tools/uninstall.sh > /dev/null 2>&1 || true
+
+echo "=== card-release-check"
+sudo bash tests/card-release-check.sh
 
 echo "=== headers-missing"
 b=/lib/modules/$krel/build
@@ -172,16 +178,23 @@ for vm in "${VMS[@]}"; do
       git -C "$root" archive --format=tar --prefix=gc573/ "$sha" |
         "${SSH[@]}" "$vm" 'rm -rf ~/gc573-install && mkdir -p ~/gc573-install && tar -x -C ~/gc573-install'
       "${SSH[@]}" "$vm" bash -s < <(phase1) 2>&1 || true
-      "${SSH[@]}" "$vm" sudo reboot > /dev/null 2>&1 || true
-      sleep 15
-      if wait_ssh "$vm"; then
-        "${SSH[@]}" "$vm" bash -s < <(phase2) 2>&1 || true
+      # a reboot or shutdown turns a held card's bus mastering off (spec/pci.md)
+      if ! "$root/tools/vms/card-idle.sh" "$vm"; then
+        printf 'RESULT\treboot\tFAIL\tnot rebooted: card-idle.sh says the card in it is not idle\n'
       else
-        printf 'RESULT\treboot\tFAIL\tno ssh after the reboot\n'
+        "${SSH[@]}" "$vm" sudo reboot > /dev/null 2>&1 || true
+        sleep 15
+        if wait_ssh "$vm"; then
+          "${SSH[@]}" "$vm" bash -s < <(phase2) 2>&1 || true
+        else
+          printf 'RESULT\treboot\tFAIL\tno ssh after the reboot\n'
+        fi
       fi
       "${SSH[@]}" "$vm" 'rm -rf ~/gc573-install' > /dev/null 2>&1 || true
     fi
-    if [ $started = 1 ]; then
+    if [ $started = 1 ] && ! "$root/tools/vms/card-idle.sh" "$vm"; then
+      echo "note: $vm left running: card-idle.sh says the card in it is not idle"
+    elif [ $started = 1 ]; then
       "${SSH[@]}" "$vm" sudo poweroff > /dev/null 2>&1 || true
       for i in $(seq 1 45); do [ "$(sudo virsh domstate "$vm")" = "shut off" ] && break; sleep 4; done
       [ "$(sudo virsh domstate "$vm")" = "shut off" ] || echo "note: $vm still running after poweroff"

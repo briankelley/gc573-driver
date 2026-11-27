@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0
 # Build the driver at a git ref on the regression-matrix VMs, against every kernel
 # that has headers installed in each VM. W=1; any warning counts as a failure.
+# Each build must give its kernel's way of keeping other drivers off a dead card
+# (modinfo dead_block) as DEAD_BLOCK below has it: a mismatch fails, and so do a
+# kernel built that the table lacks and one in it that its VM did not build.
 # Optional: --load (insmod/rmmod of the running kernel's build; no card needed, so
 # only module init/exit and symbol resolution are tested), --dkms (dkms add/build
 # for every kernel with headers, then remove).
@@ -11,8 +14,25 @@
 # Usage: tools/vms/matrix-build.sh [-r REF] [-j N] [--load] [--dkms] [VM...]
 #   default VMs: every libvirt domain gc573-* except gc573-ref (vendor driver,
 #   kernel 5.4 is outside the supported range) and gc573-dev (agent bring-up VM).
+#   Those two are refused even when named: both claim the card when they start.
 # Needs: sudo (virsh), ssh aliases = VM names (tools/vms/create.sh, mint.sh).
 set -euo pipefail
+
+# The way each kernel must get (src/compat.h, from Kbuild's GC573_HAVE_* header
+# probes), by kernel release: its VM and the dead_block value. A probe that stops
+# matching its headers changes the value with no build error, so this is the
+# check. A kernel added to or gone from a VM: change the table, from what that
+# kernel's headers have (tests/logs/matrix/20261127T125115Z-82ad8565d4dd).
+declare -A DEAD_BLOCK=(
+  [5.14.0-741.26.1.el9_9.x86_64]="gc573-alma9 match_driver"
+  [6.12.0-264.20.1.el10_3.x86_64]="gc573-alma10 generic,pci_dev"
+  [6.14.0-37-generic]="gc573-mint223 match_driver"
+  [6.17.0-14-generic]="gc573-mint223 pci_dev"
+  [6.18.65-061865-generic]="gc573-ubuntu2604 generic"
+  [7.0.0-43-generic]="gc573-ubuntu2604 generic"
+  [7.0.0-44-generic]="gc573-ubuntu2604 generic"
+  [7.3.4-300.fc45.x86_64]="gc573-fedora45 generic"
+)
 
 REF=HEAD J=1 LOAD=0 DKMS=0 VMS=()
 while [ $# -gt 0 ]; do
@@ -21,7 +41,7 @@ while [ $# -gt 0 ]; do
     -j) J=$2; shift 2 ;;
     --load) LOAD=1; shift ;;
     --dkms) DKMS=1; shift ;;
-    -h|--help) sed -n '3,15p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,18p' "$0"; exit 0 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) VMS+=("$1"); shift ;;
   esac
@@ -34,6 +54,9 @@ sudo -n true 2>/dev/null || sudo -v || { echo "sudo: no credential" >&2; exit 2;
 if [ ${#VMS[@]} -eq 0 ]; then
   mapfile -t VMS < <(sudo virsh list --all --name | grep '^gc573-' | grep -vx -e gc573-ref -e gc573-dev)
 fi
+for vm in "${VMS[@]}"; do
+  case $vm in gc573-dev|gc573-ref) echo "refusing $vm (it claims the card at start; not a matrix VM)" >&2; exit 2 ;; esac
+done
 card=$("$root/tools/vms/card.sh" --where 2>/dev/null || true)
 out=$root/tests/logs/matrix/$(date -u +%Y%m%dT%H%M%SZ)-$sha
 mkdir -p "$out"
@@ -59,7 +82,7 @@ for k in "${kernels[@]}"; do
   ko=$(find . -name gc573.ko -newer build.log -o -name gc573.ko -print 2>/dev/null | head -1)
   if [ $rc -ne 0 ]; then echo "RESULT	$k	build	FAIL	rc=$rc warnings=$w"
   elif [ "$w" -gt 0 ]; then echo "RESULT	$k	build	FAIL	warnings=$w"
-  else echo "RESULT	$k	build	PASS	$(modinfo -F vermagic "$ko" 2>/dev/null | cut -d' ' -f1)"; fi
+  else echo "RESULT	$k	build	PASS	$(modinfo -F vermagic "$ko" 2>/dev/null | cut -d' ' -f1) dead_block=$(modinfo -F dead_block "$ko" 2>/dev/null)"; fi
   if [ "$load" = 1 ] && [ "$k" = "$(uname -r)" ] && [ $rc -eq 0 ]; then
     echo "=== load $k"
     deps=$(modinfo -F depends "$ko" | tr ',' ' ')
@@ -103,8 +126,41 @@ wait_ssh() {
   return 1
 }
 
+# dead_block RESULT lines: each kernel whose build passed against DEAD_BLOCK, and
+# DEAD_BLOCK's kernels of this VM that it has no build of. $1: the VM; stdin:
+# the VM's RESULT lines
+dead_block_check() {
+  local vm=$1 tag k step res detail got want seen=" "
+  while IFS=$'\t' read -r tag k step res detail; do
+    [ "$tag" = RESULT ] && [ "$step" = build ] || continue
+    seen="$seen$k "
+    [ "$res" = PASS ] || continue
+    got=
+    case $detail in *dead_block=*) got=${detail##*dead_block=} ;; esac
+    want=${DEAD_BLOCK[$k]:-}
+    if [ -z "$want" ]; then
+      printf 'RESULT\t%s\tdead_block\tFAIL\t%s; this kernel is not in DEAD_BLOCK (matrix-build.sh)\n' "$k" "${got:-none}"
+    elif [ "${want%% *}" != "$vm" ]; then
+      printf 'RESULT\t%s\tdead_block\tFAIL\t%s; DEAD_BLOCK has this kernel for %s\n' "$k" "${got:-none}" "${want%% *}"
+    elif [ "$got" = "${want#* }" ]; then
+      printf 'RESULT\t%s\tdead_block\tPASS\t%s\n' "$k" "$got"
+    else
+      printf 'RESULT\t%s\tdead_block\tFAIL\t%s, not %s: a Kbuild header probe (GC573_HAVE_*) no longer matches\n' \
+        "$k" "${got:-none}" "${want#* }"
+    fi
+  done
+  for k in "${!DEAD_BLOCK[@]}"; do
+    want=${DEAD_BLOCK[$k]}
+    [ "${want%% *}" = "$vm" ] || continue
+    case $seen in
+      *" $k "*) ;;
+      *) printf 'RESULT\t%s\tdead_block\tFAIL\tin DEAD_BLOCK for %s, but no build of it here (headers gone?)\n' "$k" "$vm" ;;
+    esac
+  done
+}
+
 one() {
-  local vm=$1 log=$out/$1.log started=0 load=$LOAD i
+  local vm=$1 log=$out/$1.log started=0 load=$LOAD i o
   [ "$vm" = "$card" ] && load=0
   {
     echo "vm: $vm  ref: $sha  date: $(date -u +%FT%TZ)"
@@ -116,9 +172,14 @@ one() {
     else
       git -C "$root" archive --format=tar --prefix=gc573/ "$sha" |
         "${SSH[@]}" "$vm" 'rm -rf ~/gc573-matrix && mkdir -p ~/gc573-matrix && tar -x -C ~/gc573-matrix'
-      "${SSH[@]}" "$vm" bash -s -- "$load" "$DKMS" < <(remote) 2>&1 || true
+      o=$("${SSH[@]}" "$vm" bash -s -- "$load" "$DKMS" < <(remote) 2>&1) || true
+      printf '%s\n' "$o"
+      { grep -P '^RESULT\t' <<< "$o" || true; } | dead_block_check "$vm" || true
     fi
-    if [ $started = 1 ]; then
+    # a shutdown turns the bus mastering of a card the VM holds off (spec/pci.md)
+    if [ $started = 1 ] && ! "$root/tools/vms/card-idle.sh" "$vm"; then
+      echo "note: $vm left running: card-idle.sh says its card is not idle"
+    elif [ $started = 1 ]; then
       "${SSH[@]}" "$vm" sudo poweroff >/dev/null 2>&1 || true
       for i in $(seq 1 45); do [ "$(sudo virsh domstate "$vm")" = "shut off" ] && break; sleep 4; done
       [ "$(sudo virsh domstate "$vm")" = "shut off" ] || { sudo virsh shutdown "$vm" >/dev/null 2>&1; echo "note: $vm still running after poweroff"; }

@@ -1,0 +1,34 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 21:16:25 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     2af22b7f82d6-dirty
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 0
+steps:   rokurelock
+module:  srcversion 5B3D6A46C710499DCDF4D74 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 5B3D6A46C710499DCDF4D74, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokurelock
+RESULT roku-relock-1              PASS (479 frames from 0.1 s after the live restart, input period 16.6819 ms: 0 intervals more than 10 % off it, the first 40 at 16.6836 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write)
+  frame period 0x19745d (59.945 Hz); RESULT capture fmt=YUYV 1920x1080 frames=720 seq_gaps=0 err_flags=0 ivl_ms_mean=18.280 min=16.593 max=918.759 frames_not_overwritten=0
+RESULT roku-relock-2              PASS (447 frames from 0.1 s after the live restart, input period 16.6819 ms: 0 intervals more than 10 % off it, the first 40 at 16.6834 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write)
+  frame period 0x19745c (59.945 Hz); RESULT capture fmt=YUYV 1920x1080 frames=720 seq_gaps=0 err_flags=0 ivl_ms_mean=18.284 min=16.570 max=916.892 frames_not_overwritten=0
+RESULT roku-relock-3              PASS (448 frames from 0.1 s after the live restart, input period 16.6819 ms: 0 intervals more than 10 % off it, the first 40 at 16.6819 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write)
+  frame period 0x19745d (59.945 Hz); RESULT capture fmt=YUYV 1920x1080 frames=720 seq_gaps=0 err_flags=0 ivl_ms_mean=18.262 min=16.578 max=916.010 frames_not_overwritten=0
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 19 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-relock-1              PASS (479 frames from 0.1 s after the live restart, input period 16.6819 ms: 0 intervals more than 10 % off it, the first 40 at 16.6836 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write)
+RESULT roku-relock-2              PASS (447 frames from 0.1 s after the live restart, input period 16.6819 ms: 0 intervals more than 10 % off it, the first 40 at 16.6834 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write)
+RESULT roku-relock-3              PASS (448 frames from 0.1 s after the live restart, input period 16.6819 ms: 0 intervals more than 10 % off it, the first 40 at 16.6819 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=6 fail=0 skip=1

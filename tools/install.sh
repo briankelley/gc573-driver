@@ -1,19 +1,28 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0
-# Install the GC573 (AVerMedia Live Gamer 4K) driver with DKMS.
+# Install the GC573 (AVerMedia Live Gamer 4K) driver with DKMS. Needs the
+# running kernel's headers, dkms, make and gcc; without the headers or
+# dkms it stops and names the package to install. Kernels 5.14 (AlmaLinux
+# 9) to 7.3 (Fedora 45) build it; capture is tested on 6.8.
 #
-# Builds and installs gc573.ko for the running kernel; DKMS builds it again
-# for every kernel installed later (dkms.conf AUTOINSTALL), as long as that
-# kernel's headers are installed too. The module then loads by itself
-# whenever the card is present (its PCI ID, 1461:0054, is in the module's
-# alias list).
+# Builds and installs gc573.ko for the running kernel and every other
+# installed kernel with headers; DKMS builds it again for every kernel
+# installed later (dkms.conf AUTOINSTALL), as long as that kernel's
+# headers are installed too. It loads the module at once and names the
+# card's video device and ALSA card; with Secure Boot on, a load that
+# fails gets the command to enroll the key DKMS signs with. The module
+# then loads by itself whenever the card is present (its PCI ID,
+# 1461:0054, is in the module's alias list).
 #
 # A reboot is the way back from any trouble, so a crash while gc573 takes
 # the card must never repeat at boot. gc573 loads by itself only once it
 # has taken the card on this system: until then, and while a driverctl
 # override keeps the card for another driver, a modprobe.d entry
 # (/etc/modprobe.d/gc573-no-autoload.conf) keeps it from loading by its
-# alias. "modprobe gc573" and driverctl still load it.
+# alias. "modprobe gc573" and driverctl still load it. If gc573 ever hangs
+# the system at boot anyway, boot once with module_blacklist=gc573 on the
+# kernel command line (in GRUB: press e, add it to the line that starts
+# with "linux"), then run uninstall.sh.
 #
 # A persistent driverctl override that gives the card to another driver
 # (vfio-pci, to pass it to a virtual machine) leaves three choices:
@@ -29,10 +38,23 @@
 # touches the card.
 #
 # An update while an older gc573 has the card takes the card from it
-# (unbind), unloads it and loads the new one. PipeWire, which keeps the
-# card's ALSA control node open on a desktop, lets go of it by itself.
-# Any other program with the card open (OBS, a capture) would lose the
-# card: the script names it and leaves the card alone, unless --yes.
+# (unbind), unloads it and loads the new one. Once, from a gc573 older
+# than this one, the new one then refuses the card until a reboot: the
+# older one turned the card's bus mastering off when it let go of it,
+# which the new one cannot tell from a cut under running DMA. The script
+# says so; reboot and run it again. The sound server (PipeWire,
+# PulseAudio), which keeps the card's ALSA control node open on a desktop,
+# lets go of it by itself. Any other program with the card open (OBS, a
+# capture) would lose the card: the script names it and leaves the card
+# alone, unless --yes. PipeWire streaming the card's audio (OBS's
+# PulseAudio or PipeWire source, pw-record) is named like any other
+# program. A program other than the sound server with the card's sound
+# devices open, or one with its I2C devices open (/dev/i2c-*, with the
+# module parameters i2c_bus1 or i2c_bus02), is never overridden, not even
+# with --yes. An unbind that has not finished (status 3: a program holds
+# the card's I2C or, with an older gc573, sound devices), or one still
+# going after 10 s, stops the script, here or at its next run, before it
+# touches the card.
 #
 # Other ways of reserving the card (vfio-pci.ids on the kernel command
 # line or in modprobe.d) are reported, not changed.
@@ -42,6 +64,10 @@
 #   open lose it at an update
 # Undo:  sudo tools/uninstall.sh [--yes]
 set -euo pipefail
+# The checks read what tools print (stat, among others: card-release.sh),
+# which a language catalog would translate; sudo keeps the caller's LANG,
+# LANGUAGE and LC_*
+export LC_ALL=C
 
 NAME=gc573
 PCI_ID=1461:0054
@@ -75,6 +101,13 @@ tty=0
 root=$(cd "$(dirname "$0")/.." && pwd)
 # shellcheck source=tools/card-release.sh
 . "$root/tools/card-release.sh"
+# A card the driver keeps until reboot (gc573_dead_check): an update would
+# take it from gc573 or hand it on, so nothing is done. dead_cards here;
+# the card's driver_override below, after the check for an unbind that has
+# not finished
+if why=$(gc573_dead_check listed); then
+	die "$why. Reboot first, then run this again; nothing was changed"
+fi
 for f in dkms.conf Makefile Kbuild; do
 	[ -f "$root/$f" ] || die "$root/$f is missing: run the script from a complete source tree"
 done
@@ -184,6 +217,14 @@ if [ -z "$dev" ]; then
 	exit 0
 fi
 bdf=$(basename "$dev")
+# before anything that takes the device's lock (driverctl, a bind, on some
+# kernels a read of driver_override), which waits for that unbind too
+if why=$(gc573_unbind_pending); then
+	die "$why: a program holds the card's I2C or sound devices, and the unbind finishes once that program closes them. Run this again after that; nothing was changed"
+fi
+if why=$(gc573_dead_check); then
+	die "$why. Reboot first, then run this again; $NAME $ver is installed in DKMS, and the card was not touched"
+fi
 drv=
 [ -e "$dev/driver" ] && drv=$(basename "$(readlink -f "$dev/driver")")
 ovr=$(cat "$dev/driver_override" 2>/dev/null || true)
@@ -203,18 +244,13 @@ persistent=
 if command -v driverctl > /dev/null && [ -f "/etc/driverctl.d/pci-$bdf" ]; then
 	persistent=$(cat "/etc/driverctl.d/pci-$bdf")
 fi
-# A virtual machine using the card through vfio-pci holds its group device
-# open; taking the card from under it would stall it or the unbind
+# A virtual machine using the card through vfio-pci holds its VFIO group
+# or device node open; taking the card from under it would stall it or the
+# unbind (gc573_vfio_user: by device number)
 user=
-if [ "$drv" = vfio-pci ] && [ -e "$dev/iommu_group" ]; then
-	grp=/dev/vfio/$(basename "$(readlink -f "$dev/iommu_group")")
-	for fd in /proc/[0-9]*/fd/*; do
-		[ "$(readlink "$fd" 2>/dev/null)" = "$grp" ] || continue
-		p=${fd#/proc/}; p=${p%%/*}
-		vmname=$(tr '\0' ' ' < "/proc/$p/cmdline" | grep -o 'guest=[^, ]*' | head -1 || true)
-		user="process $p ($(cat "/proc/$p/comm" 2>/dev/null))${vmname:+, virtual machine ${vmname#guest=}}"
-		break
-	done
+if [ "$drv" = vfio-pci ]; then
+	user=$(gc573_vfio_user "$dev") ||
+		die "could not check whether a virtual machine uses the card: $user. The card was not touched"
 fi
 vm_busy() {
 	[ -n "$user" ] || return 1
@@ -259,18 +295,31 @@ load_module() {
 # Wait for gc573 on the card and its nodes (udev and the driver need a
 # moment), then name them
 card_up() {
-	local v a
+	local v a f
 	for _ in $(seq 50); do
-		[ -e "/sys/bus/pci/drivers/$NAME/$bdf" ] && [ -n "$(ls "$dev"/video4linux 2>/dev/null)" ] && break
+		v= a=
+		for f in "$dev"/video4linux/*; do [ -e "$f" ] && { v=${f##*/}; break; }; done
+		for f in "$dev"/sound/card[0-9]*/id; do [ -r "$f" ] && { a=$(cat "$f" 2>/dev/null) || a=; break; }; done
+		[ -e "/sys/bus/pci/drivers/$NAME/$bdf" ] && [ -n "$v" ] && [ -n "$a" ] && break
 		sleep 0.1
 	done
 	[ -e "/sys/bus/pci/drivers/$NAME/$bdf" ] || return 1
-	v=$(ls "$dev/video4linux" 2>/dev/null | head -1)
-	a=$(cat "$dev"/sound/card*/id 2>/dev/null | head -1)
 	say "the card is up: video /dev/${v:-?}, ALSA card ${a:-?}"
 }
 
 record() { mkdir -p "$STATE_DIR"; printf 'bind %s %s %s\n' "$1" "$bdf" "$persistent" > "$STATE"; }
+
+# After a load that did not take the card: gc573 left it as it is until
+# reboot (gc573_dead_check). An update from an older gc573 meets this once:
+# every version before this one turned the card's bus mastering off when
+# it let go of the card, and this one cannot tell that from a cut under
+# running DMA. Says so and what to do; status 1 if the card is not dead
+refused() {
+	local why
+	why=$(gc573_dead_check listed) || return 1
+	say "$why."
+	say "That happens once after an update from an older $NAME, which turned the card's bus mastering off when it let go of the card, and after a kexec or a write to the card's sysfs enable file. A reboot resets the card: reboot, then run this script again, and $NAME takes the card"
+}
 
 if [ -n "$persistent" ] && [ "$persistent" != "$NAME" ]; then
 	say ""
@@ -304,18 +353,29 @@ if [ -n "$persistent" ] && [ "$persistent" != "$NAME" ]; then
 		noload_on "a driverctl override keeps the card for $persistent"
 		record this-boot
 		# an older gc573 with the card already (an earlier --this-boot):
-		# it lets go of the card (PipeWire by itself; another program only
-		# with --yes) and the new one takes over
-		if [ "$drv" = "$NAME" ] && ! gc573_release "$yes"; then
-			say "the older $NAME keeps the card. Run this again once the card is free, or reboot (the card goes back to $persistent) and run this again"
-			exit 1
+		# it lets go of the card (a sound server by itself; another program
+		# only with --yes) and the new one takes over
+		if [ "$drv" = "$NAME" ]; then
+			rc=0
+			gc573_release "$yes" || rc=$?
+			case $rc in
+			0) ;;
+			3)
+				say "run this again once the unbind has finished, or reboot (the card goes back to $persistent) and run this again"
+				exit 1 ;;
+			4) exit 1 ;;
+			*)
+				say "the older $NAME keeps the card. Run this again once the card is free, or reboot (the card goes back to $persistent) and run this again"
+				exit 1 ;;
+			esac
 		fi
 		load_module || exit 1
 		# --nosave: driver_override for this boot; the saved override is
 		# untouched. Judged by the result, not driverctl's exit status
 		driverctl --nosave set-override "$bdf" "$NAME" > /dev/null 2>&1 || true
 		if ! card_up; then
-			say "warning: $NAME did not take the card; see: sudo dmesg | grep $NAME. A reboot gives the card back to $persistent"
+			refused ||
+				say "warning: $NAME did not take the card; see: sudo dmesg | grep $NAME. A reboot gives the card back to $persistent"
 			exit 1
 		fi
 		say "$NAME has the card for this boot. A reboot gives it back to $persistent: the override stays saved."
@@ -365,15 +425,25 @@ elif [ -n "$mode" ]; then
 fi
 
 # bind: no override (any more). An older gc573 with the card lets go of
-# it (PipeWire by itself; another program only with --yes) and is reloaded
+# it (a sound server by itself; another program only with --yes) and is
+# reloaded
 if [ "$drv" = "$NAME" ]; then
-	if gc573_release "$yes"; then
-		say "reloading $NAME"
-	else
+	rc=0
+	gc573_release "$yes" || rc=$?
+	case $rc in
+	0) say "reloading $NAME" ;;
+	3)
+		say "run this again once the unbind has finished: then the new $NAME takes the card. A reboot gives it the card too"
+		exit 1 ;;
+	4)
+		# the older gc573 had the card at boot: the new one takes it at the next
+		noload_off
+		exit 1 ;;
+	*)
 		say "the older $NAME keeps the card: the new one takes over after a reboot, or when this runs again with the card free"
 		noload_off
-		exit 1
-	fi
+		exit 1 ;;
+	esac
 elif [ -n "$drv" ]; then
 	say "warning: the card is bound to $drv, not $NAME. Unbind it (echo $bdf > /sys/bus/pci/drivers/$drv/unbind as root) or remove that driver, then: sudo modprobe $NAME"
 	exit 0
@@ -382,6 +452,7 @@ fi
 # system down, the next boot does not try again
 noload_on "until $NAME has taken the card once"
 if ! load_module || ! card_up; then
+	refused && exit 1
 	[ -d "/sys/module/$NAME" ] && say "warning: $NAME loaded but did not bind $bdf; see: sudo dmesg | grep $NAME"
 	say "$NAME does not load by itself until it has taken the card once: run this script again after fixing that ($NOLOAD)"
 	exit 1

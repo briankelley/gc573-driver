@@ -189,6 +189,8 @@ if ROKU:
 ECP = os.path.join(ROOT, 'tools', 'roku', 'ecp.py')
 TIMEOUT = 20
 WATCHDOG = 10	# s without a good screenshot between changes: reopen
+LIVE_FOR = 1.0	# s OBS shows the counter live before a recording starts
+LIVE_WAIT = 10	# s from the restore for that, at most
 
 BARS = [(255, 255, 255), (255, 255, 0), (0, 255, 255), (0, 255, 0),
         (255, 0, 255), (255, 0, 0), (0, 0, 255), (0, 0, 0)]
@@ -325,6 +327,7 @@ class Source:
     def __init__(self, obs):
         self.obs = obs
         self.last = None	# the last counter read from a pattern frame
+        self.t_ref = None	# the last wait_good()'s reference time
 
     def shot(self, w=None, h=None, fmt='png'):
         kw = {'imageWidth': w, 'imageHeight': h} if w else {}
@@ -397,6 +400,7 @@ def wait_good(src, t_ref, secs, log=None):
     runs = []
     first = None
     size = None
+    src.t_ref = t_ref	# the TTFGF reference, for Runner.record()
     while time.monotonic() - t_ref < secs:
         t, state, err, counter, size = src.sample()
         if log:
@@ -416,6 +420,44 @@ def wait_good(src, t_ref, secs, log=None):
 
 def fmt_runs(runs, t_ref):
     return ', '.join(f'{s} {a - t_ref:+.2f}..{b - t_ref:+.2f}' for s, a, b in runs)
+
+
+def wait_live(src, rate, t_ref, live_for=LIVE_FOR, bound=LIVE_WAIT):
+    """Screenshots until OBS has shown the counter live for LIVE_FOR s, at
+    most BOUND s after T_REF: every screenshot in that span the pattern
+    with a readable counter, each one on from the one before and by no
+    more than the time between them allows, and from the first to the
+    last the counter moved by RATE x the time between them, within 10 %.
+    Returns (seconds after T_REF or None, the states seen as runs: moving,
+    stale (the same counter again), jump, bad, black)"""
+    run, runs = [], []	# run: (time, counter) of the current moving span
+    while time.monotonic() - t_ref < bound:
+        img, a, b = src.shot()
+        t = (a + b) / 2
+        kind, _, counter, _ = classify(img)
+        state = kind if kind != 'pattern' else 'bad' if counter is None else 'moving'
+        if state == 'moving' and run:
+            step = (counter - run[-1][1]) % 65536
+            if step == 0:
+                state = 'stale'
+            elif step > rate * (t - run[-1][0]) * 1.5 + 2:
+                state = 'jump'
+        if runs and runs[-1][0] == state:
+            runs[-1][2] = t
+        else:
+            runs.append([state, t, t])
+        if state != 'moving':
+            run = [(t, counter)] if state in ('stale', 'jump') else []
+            continue
+        run.append((t, counter))
+        while len(run) > 2 and run[-1][0] - run[1][0] >= live_for:
+            run.pop(0)
+        span = run[-1][0] - run[0][0]
+        if span >= live_for:
+            moved = sum((y[1] - x[1]) % 65536 for x, y in zip(run, run[1:]))
+            if 0.9 <= moved / (rate * span) <= 1.1:
+                return t - t_ref, runs
+    return None, runs
 
 
 # ---- the host's source changes ------------------------------------------
@@ -614,10 +656,12 @@ class BridgeProc:
         if LOCAL:
             cmd = [sys.executable, '-u', BRIDGE, '--host', HOST] + args
         else:
-            cmd = ['ssh', '-o', 'BatchMode=yes', VM, f'exec python3 -u {shlex.quote(BRIDGE_VM)} '
-                   '--host 127.0.0.1 ' + ' '.join(shlex.quote(a) for a in args)]
+            # its pid first: the shell's, which exec makes the bridge's
+            cmd = ['ssh', '-o', 'BatchMode=yes', VM, f'echo "BRIDGEPID $$"; exec python3 -u '
+                   f'{shlex.quote(BRIDGE_VM)} --host 127.0.0.1 ' + ' '.join(shlex.quote(a) for a in args)]
         self.p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, text=True, bufsize=1, start_new_session=True)
+        self.rpid = None	# the bridge's pid in the VM
         self.lines = []
         self.lock = threading.Lock()
         self.up = threading.Event()
@@ -626,6 +670,11 @@ class BridgeProc:
     def _read(self):
         for line in self.p.stdout:
             line = line.rstrip('\n')
+            m = re.fullmatch(r'BRIDGEPID (\d+)', line)
+            if m and self.rpid is None:
+                self.rpid = int(m.group(1))
+                ev(f'bridge pid {self.rpid} in {VM}')
+                continue
             text = line.split(' ', 2)[2] if line.startswith('BRIDGE ') and line.count(' ') >= 2 else line
             with self.lock:
                 self.lines.append((time.monotonic(), text))
@@ -653,14 +702,32 @@ class BridgeProc:
         return r[-1] if r else 0.0
 
     def stop(self):
+        """The process the harness started ends: terminate, wait, then
+        kill. In the VM that is the ssh client, whose end leaves the
+        bridge running there with the card's video node open (no
+        terminal, so no hangup): the bridge is ended by its own pid in the
+        same way, once checked to be the bridge still"""
         if self.p.poll() is None:
             self.p.terminate()
             try:
                 self.p.wait(5)
             except subprocess.TimeoutExpired:
                 self.p.kill()
-        if not LOCAL:
-            vm('pkill -f tests/obsbridge.py')
+                self.p.wait(5)
+        if LOCAL:
+            return
+        if self.rpid is None:
+            ev('bridge: no pid from the VM, so it cannot be ended there')
+            print('BRIDGE no pid from the VM: not ended there (tests/card-holders.sh at the run\'s end)',
+                  flush=True)
+            return
+        p = self.rpid
+        r = vm(f'grep -qa obsbridge /proc/{p}/cmdline 2>/dev/null || exit 0; kill {p}; '
+               f'for i in $(seq 50); do kill -0 {p} 2>/dev/null || exit 0; sleep 0.1; done; '
+               f'kill -9 {p}; sleep 0.5; ! kill -0 {p} 2>/dev/null')
+        ev(f'bridge pid {p} ended in {VM}' if r.returncode == 0 else f'bridge pid {p}: still running')
+        if r.returncode != 0:
+            print(f'BRIDGE pid {p} in {VM} still runs after SIGKILL', flush=True)
 
 
 def bridge_summary(bridge, windows, out=print):
@@ -723,6 +790,10 @@ class Runner:
         self.bridge = bridge
         self.windows = []	# (start, end, name) of each change
         self.t_change = None
+        self.t_step = None	# the change's own step (after its baseline)
+        # (name, step, TTFGF reference, TTFGF or None, recovered by itself,
+        # the mode after it) of each change, for a recording's check
+        self.marks = []
         self.obs = obs
         self.audio = audio
         self.out = out
@@ -747,8 +818,12 @@ class Runner:
             ttf, runs, _ = wait_good(self.src, t, 15)
         return ttf is not None, fmt_runs(runs, t)
 
-    def record(self, name, ttf, detail, ok=None):
+    def record(self, name, ttf, detail, ok=None, own=True):
+        """OWN: recovered without the step's own reopen of the source (the
+        bridge's, as a user's OBS would have it, counts as its own)"""
         good = ttf is not None if ok is None else ok
+        if self.t_step is not None:
+            self.marks.append((name, self.t_step, self.src.t_ref, ttf, good and own, self.mode))
         if self.bridge and self.t_change is not None:
             r = self.bridge.reopens(self.t_change)
             detail += (' bridge: reopen at ' + ', '.join(f'{t - self.t_change:+.2f} s' for t in r)
@@ -851,7 +926,8 @@ class Runner:
         self.audio_on()
         ok = ttf is not None and size == want
         self.record(name, ttf, f'(not by itself in {WAIT_SELF} s: {self_runs}; TTFGF from the reopen at '
-                    f'{t1 - t0:+.2f}: {fmt_runs(runs, t1)}; source {size[0]}x{size[1]})', ok=ok)
+                    f'{t1 - t0:+.2f}: {fmt_runs(runs, t1)}; source {size[0]}x{size[1]})', ok=ok,
+                    own=False)
 
     def ev_obs_side(self, name):
         """idle, reopen-video, reopen-audio: the picture through it"""
@@ -870,6 +946,7 @@ class Runner:
         the first good one after the last one that was not (0 if none)"""
         before = driver_state()
         t0 = time.monotonic()
+        self.src.t_ref = t0
         colour(cs, cr)
         runs = []
         samples = []
@@ -959,11 +1036,13 @@ class Runner:
         finally:
             self.windows.append((self.t_change, time.monotonic(), name))
             self.t_change = None
+            self.t_step = None
 
     def _run(self, name):
         ok, base = self.baseline()
         if not ok:
             self.recover(f'before {name}', f'no good frames ({base})')
+        self.t_step = time.monotonic()
         {
             'restart': self.ev_restart,
             'sleep': self.ev_sleep,
@@ -1146,6 +1225,32 @@ def start_bridge(use):
     return b
 
 
+def rec_marks(r, t_rec, mode0):
+    """For the recording's check (recheck --windows, --rates), in seconds of
+    the recording (from StartRecord's return):
+    RECWINDOW NAME START END: from the change's step to its first good
+    frame, only for a change that recovered by itself (the bridge's reopen
+    counts) within its own budget, the bound its EVENT and the soak's
+    results use (res-*: WAIT_SELF, else TIMEOUT). A slower recovery, or
+    one through the step's own reopen, gets no window ('-'), so a sample
+    there that is not live fails.
+    RECRATE START RATE: the source's frame rate from the start and from
+    each change's step on"""
+    print(f'RECRATE +0.00 {mode0[1]}', flush=True)
+    for name, step, t_ref, ttf, own, mode in r.marks:
+        budget = WAIT_SELF if name.startswith('res-') else TIMEOUT
+        a = step - t_rec
+        if own and ttf is not None and t_ref is not None and ttf <= budget:
+            line = (f'RECWINDOW {name} {a:+.2f} {t_ref + ttf - t_rec:+.2f} (TTFGF {ttf:.2f} s, '
+                    f'by itself, budget {budget} s)')
+        else:
+            line = (f'RECWINDOW {name} {a:+.2f} - (not recovered by itself within its budget, '
+                    f'{budget} s: no window)')
+        print(line, flush=True)
+        ev(line)
+        print(f'RECRATE {a:+.2f} {mode[1]}', flush=True)
+
+
 def cmd_events(obs, reps, only, record=False, bridge=True):
     ev(f'events start: reps {reps}, {",".join(only) if only else "all"}'
        + (', recording' if record else ''))
@@ -1154,8 +1259,22 @@ def cmd_events(obs, reps, only, record=False, bridge=True):
     r.restore()
     edid_prepare()
     names = only or ORDER
+    t_rec = mode0 = None
     if record:
-        record_start(obs)
+        if not ROKU:
+            # the restore has just started the test source again, and OBS's
+            # video runs about 1 s behind it (buffering): without this the
+            # recording's first second would show the player's start
+            t_b = time.monotonic()
+            t_live, runs = wait_live(r.src, float(r.mode[1]), t_b)
+            what = (f'OBS showed the counter live for {LIVE_FOR:.1f} s, {t_live:.2f} s after the restore'
+                    if t_live is not None else
+                    f'OBS did not show the counter live for {LIVE_FOR:.1f} s within {LIVE_WAIT} s')
+            ev(f'recording baseline: {what}')
+            print(f"RESULT obsrec-baseline {'PASS' if t_live is not None else 'FAIL'} ({what}: "
+                  f"{fmt_runs(runs, t_b)})", flush=True)
+        mode0 = r.mode
+        t_rec = record_start(obs)
     try:
         for _ in range(reps):
             for name in names:
@@ -1165,6 +1284,7 @@ def cmd_events(obs, reps, only, record=False, bridge=True):
     finally:
         if record:
             record_stop(obs)
+            rec_marks(r, t_rec, mode0)
         r.restore()
         if bridge:
             time.sleep(3)	# its settle after the restore
@@ -1301,14 +1421,35 @@ def band_counters(path, start, n, W, H, src=None):
                          src) for i in range(len(r.stdout) // k)]
 
 
-def cmd_recheck(path, every, across=False):
+def parse_windows(spec):
+    """recheck --windows: NAME:START:END,... (END '-': no window)"""
+    out = []
+    for w in (x for x in (spec or '').split(',') if x):
+        name, a, b = w.split(':')
+        out.append((name, float(a), None if b == '-' else float(b)))
+    return out
+
+
+def parse_rates(spec):
+    """recheck --rates: START:RATE,... in time order"""
+    return [(float(a), float(r)) for a, r in (x.split(':') for x in (spec or '').split(',') if x)]
+
+
+def cmd_recheck(path, every, across=False, windows=None, rates=None):
     """A recording of the counter pattern (where OBS runs, next to it): a
     sample every EVERY seconds, judged by the picture and by the counter's
     progress, and three runs of 120 frames for the counter's steps from
     one recorded frame to the next. ACROSS: the recording spans source
     changes, so samples between them may be black or other pictures; the
     first and last samples must be live, and no two in a row anything
-    else"""
+    else. WINDOWS (events --record's RECWINDOW lines, parse_windows()):
+    instead of that, a sample that is not live passes only if its time
+    (its first frame) is in a change's window, from the change's step to
+    its first good frame; a change without one (not recovered by itself
+    within its budget) allows none. RATES (RECRATE): each sample's progress is judged
+    against the source's frame rate at its time, not the recording's.
+    Every sample that is not live, and with ACROSS or WINDOWS the first
+    and last, gets a SAMPLE line with its progress"""
     import json
     info = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-show_entries',
                                       'format=duration:stream=width,height,duration,avg_frame_rate',
@@ -1326,6 +1467,7 @@ def cmd_recheck(path, every, across=False):
     fps = num / den if den and num else 60.0
     n_prog = max(2, round(fps / 2)) + 1	# frames over 0.5 s
     kinds, errs, seq, sizes = {}, [], [], {}
+    samples = []	# (time, kind, error, progress, the window it is in)
     t = 1.0
     while t < dur - 1.5:
         r = subprocess.run(['ffmpeg', '-v', 'quiet', '-ss', f'{t:.3f}', '-i', path, '-frames:v', '1',
@@ -1334,6 +1476,8 @@ def cmd_recheck(path, every, across=False):
             kind, err, counter, _, src = classify_any(Image.open(io.BytesIO(r.stdout)).convert('RGB'))
             if src:
                 sizes[src] = sizes.get(src, 0) + 1
+            rate = next((x for a, x in reversed(rates or []) if a <= t), fps)
+            prog = ''
             if kind == 'pattern':
                 errs.append(err)
                 # the first and last readable counters (a torn frame can
@@ -1343,19 +1487,30 @@ def cmd_recheck(path, every, across=False):
                 if len(c) >= 2 and c[-1][0] - c[0][0] >= (n_prog - 1) // 2:
                     moved = (c[-1][1] - c[0][1]) % 65536
                     frames = c[-1][0] - c[0][0]
+                    want = frames * rate / fps	# the source's frames in that time
+                    prog = f'moved {moved} in {frames} frames ({want:.1f} at {rate:g} Hz)'
                     if moved == 0:
                         kind = 'frozen'
-                    elif 0.8 * frames <= moved <= 1.2 * frames:
+                    elif 0.8 * want <= moved <= 1.2 * want:
                         kind = 'live'
                     else:
                         kind = 'jumpy'
                 else:
                     kind = 'unreadable'
+                    prog = f'{len(c)} of {n_prog} counters read'
+            # the change window it is in (by its first frame), if any
+            win = next((w for w in windows or [] if w[2] is not None and w[1] <= t <= w[2]), None)
             kinds[kind] = kinds.get(kind, 0) + 1
             seq.append(kind)
-            if kind != 'live' and not across:
-                print(f'SAMPLE {t:.1f} {kind} err={err}')
+            samples.append((t, kind, err, prog, win))
         t += every
+    for i, (ts, kind, err, prog, win) in enumerate(samples):
+        if kind != 'live' or ((across or windows is not None) and i in (0, len(samples) - 1)):
+            where = ''
+            if windows is not None:
+                where = (f'; in {win[0]} ({win[1]:+.2f}..{win[2]:+.2f})' if win else
+                         '; outside every change window')
+            print(f'SAMPLE {ts:.1f} {kind}' + (f': {prog}' if prog else '') + f'; err={err}{where}')
     steps = {}
     for start in (dur * 0.1, dur * 0.5, max(0, dur * 0.9 - 2.5)):
         prev = None
@@ -1367,18 +1522,28 @@ def cmd_recheck(path, every, across=False):
                 d = (c - prev) % 65536
                 steps[d] = steps.get(d, 0) + 1
             prev = c
-    if across:
+    runs = []
+    for k in seq:
+        if runs and runs[-1][0] == k:
+            runs[-1][1] += 1
+        else:
+            runs.append([k, 1])
+    in_order = '; in order: ' + ', '.join(f'{k} x{n}' for k, n in runs)
+    if windows is not None:
+        outside = [s for s in samples[1:-1] if s[1] != 'live' and not s[4]]
+        good = len(seq) >= 2 and seq[0] == 'live' and seq[-1] == 'live' and not outside
+        what = ('first and last samples live, every other one live or in a change window'
+                if good else 'NOT live at the start and end, or a sample not live outside every '
+                'change window' + (f' ({len(outside)}: at ' + ', '.join(f'{s[0]:.1f}' for s in outside)
+                                   + ' s)' if outside else '')) + in_order + \
+            '; change windows (from the step to the first good frame): ' + \
+            (', '.join(f'{n} ' + (f'{a:+.2f}..{b:+.2f}' if b is not None else 'none') for n, a, b in windows)
+             or 'no changes')
+    elif across:
         good = len(seq) >= 2 and seq[0] == 'live' and seq[-1] == 'live' and \
             not any(a != 'live' and b != 'live' for a, b in zip(seq, seq[1:]))
-        runs = []
-        for k in seq:
-            if runs and runs[-1][0] == k:
-                runs[-1][1] += 1
-            else:
-                runs.append([k, 1])
         what = ('first and last samples live, never two in a row not' if good else
-                'NOT live at the start and end, or two samples in a row not live') + \
-            '; in order: ' + ', '.join(f'{k} x{n}' for k, n in runs)
+                'NOT live at the start and end, or two samples in a row not live') + in_order
     else:
         good = kinds.get('live', 0) and not set(kinds) - {'live'}
         what = f'{kinds}'
@@ -1512,12 +1677,17 @@ def main():
     p.add_argument('file')
     p.add_argument('--every', type=float, default=10)
     p.add_argument('--across', action='store_true')
+    p.add_argument('--windows', default=None,
+                   help="NAME:START:END,... (events --record's RECWINDOW lines; END '-': none)")
+    p.add_argument('--rates', default=None, help="START:RATE,... (events --record's RECRATE lines)")
     a = ap.parse_args()
     HOST = a.host
     if a.cmd == 'selftest':
         return 0 if cmd_selftest() else 1
     if a.cmd == 'recheck':
-        return 0 if cmd_recheck(a.file, a.every, a.across) else 1
+        return 0 if cmd_recheck(a.file, a.every, a.across,
+                                None if a.windows is None else parse_windows(a.windows),
+                                parse_rates(a.rates)) else 1
     if a.cmd == 'meters':
         return 0 if cmd_meters(a.secs) else 1
     guard = None

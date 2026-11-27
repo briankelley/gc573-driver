@@ -1,0 +1,53 @@
+vm: gc573-mint223  ref: eceb7aeaef38  date: 2026-11-27T13:32:22Z
+distro: Linux Mint 22.3
+running: 6.14.0-37-generic
+cc: gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
+=== build 6.14.0-37-generic
+make -C /lib/modules/6.14.0-37-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc-13 modules
+make[1]: Entering directory '/usr/src/linux-headers-6.14.0-37-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/linux-headers-6.14.0-37-generic'
+RESULT	6.14.0-37-generic	build	PASS	6.14.0-37-generic dead_block=match_driver
+=== build 6.17.0-14-generic
+make -C /lib/modules/6.17.0-14-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc-13 modules
+make[1]: Entering directory '/usr/src/linux-headers-6.17.0-14-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+In file included from src/gc573_core.c:42:
+src/compat.h:185:2: error: #error "gc573: Kbuild's GC573_HAVE_* probes found no way to keep other drivers off a dead card"
+  185 | #error "gc573: Kbuild's GC573_HAVE_* probes found no way to keep other drivers off a dead card"
+      |  ^~~~~
+src/compat.h: In function ‘gc573_block_drivers’:
+src/compat.h:274:14: error: implicit declaration of function ‘gc573_block_generic’; did you mean ‘gc573_block_drivers’? [-Werror=implicit-function-declaration]
+  274 |         if (!gc573_block_generic(pdev, drv))
+      |              ^~~~~~~~~~~~~~~~~~~
+      |              gc573_block_drivers
+cc1: some warnings being treated as errors
+make[4]: *** [/usr/src/linux-headers-6.17.0-14-generic/scripts/Makefile.build:287: src/gc573_core.o] Error 1
+make[3]: *** [/usr/src/linux-headers-6.17.0-14-generic/Makefile:2016: .] Error 2
+make[2]: *** [/usr/src/linux-headers-6.17.0-14-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-6.17.0-14-generic'
+make: *** [Makefile:26: modules] Error 2
+RESULT	6.17.0-14-generic	build	FAIL	rc=2 warnings=0
+RESULT	6.14.0-37-generic	dead_block	PASS	match_driver
+card-idle: no GC573 in this VM: safe

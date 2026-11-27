@@ -1,0 +1,112 @@
+vm: gc573-ubuntu2604  ref: 204809f86ce2  date: 2026-11-27T10:47:18Z
+distro: Ubuntu 26.04.1 LTS
+running: 7.0.0-44-generic
+cc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+=== build 7.0.0-43-generic
+make -C /lib/modules/7.0.0-43-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-43-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+src/gc573_core.c: In function ‘gc573_card_dead’:
+src/gc573_core.c:584:13: error: ‘struct pci_dev’ has no member named ‘match_driver’
+  584 |         pdev->match_driver = false;
+      |             ^~
+make[4]: *** [/usr/src/linux-headers-7.0.0-43-generic/scripts/Makefile.build:289: src/gc573_core.o] Error 1
+make[3]: *** [/usr/src/linux-headers-7.0.0-43-generic/Makefile:2140: .] Error 2
+make[2]: *** [/usr/src/linux-headers-7.0.0-43-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-43-generic'
+make: *** [Makefile:26: modules] Error 2
+RESULT	7.0.0-43-generic	build	FAIL	rc=2 warnings=0
+=== build 7.0.0-44-generic
+make -C /lib/modules/7.0.0-44-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-44-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+src/gc573_core.c: In function ‘gc573_card_dead’:
+src/gc573_core.c:584:13: error: ‘struct pci_dev’ has no member named ‘match_driver’
+  584 |         pdev->match_driver = false;
+      |             ^~
+make[4]: *** [/usr/src/linux-headers-7.0.0-44-generic/scripts/Makefile.build:289: src/gc573_core.o] Error 1
+make[3]: *** [/usr/src/linux-headers-7.0.0-44-generic/Makefile:2140: .] Error 2
+make[2]: *** [/usr/src/linux-headers-7.0.0-44-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-44-generic'
+make: *** [Makefile:26: modules] Error 2
+RESULT	7.0.0-44-generic	build	FAIL	rc=2 warnings=0
+=== dkms gc573/0.1
+make -j4 KERNELRELEASE=7.0.0-43-generic KDIR=/lib/modules/7.0.0-43-generic/build modules
+ERROR (dkms apport): binary package for gc573: 0.1 not found
+
+Error! Bad return status for module build on kernel: 7.0.0-43-generic (x86_64)
+Consult /var/lib/dkms/gc573/0.1/build/make.log for more information.
+Fri Nov 27 10:47:33 UTC 2026
+
+Building module(s)
+# command: make -j4 KERNELRELEASE=7.0.0-43-generic KDIR=/lib/modules/7.0.0-43-generic/build modules
+make -C /lib/modules/7.0.0-43-generic/build M=/var/lib/dkms/gc573/0.1/build  modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-43-generic'
+make[2]: Entering directory '/var/lib/dkms/gc573/0.1/build'
+warning: the compiler differs from the one used to build the kernel
+  The kernel was built by: x86_64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+  You are using:           gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+src/gc573_core.c: In function ‘gc573_card_dead’:
+src/gc573_core.c:584:13: error: ‘struct pci_dev’ has no member named ‘match_driver’
+  584 |         pdev->match_driver = false;
+      |             ^~
+make[4]: *** [/usr/src/linux-headers-7.0.0-43-generic/scripts/Makefile.build:289: src/gc573_core.o] Error 1
+make[4]: *** Waiting for unfinished jobs....
+make[3]: *** [/usr/src/linux-headers-7.0.0-43-generic/Makefile:2140: .] Error 2
+make[2]: *** [/usr/src/linux-headers-7.0.0-43-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/var/lib/dkms/gc573/0.1/build'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-43-generic'
+make: *** [Makefile:26: modules] Error 2
+
+# exit code: 2
+# elapsed time: 00:00:01
+----------------------------------------------------------------
+RESULT	7.0.0-43-generic	dkms	FAIL	build
+make -j4 KERNELRELEASE=7.0.0-44-generic KDIR=/lib/modules/7.0.0-44-generic/build modules
+ERROR (dkms apport): binary package for gc573: 0.1 not found
+
+Error! Bad return status for module build on kernel: 7.0.0-44-generic (x86_64)
+Consult /var/lib/dkms/gc573/0.1/build/make.log for more information.
+Fri Nov 27 10:47:36 UTC 2026
+
+Building module(s)
+# command: make -j4 KERNELRELEASE=7.0.0-44-generic KDIR=/lib/modules/7.0.0-44-generic/build modules
+make -C /lib/modules/7.0.0-44-generic/build M=/var/lib/dkms/gc573/0.1/build  modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-44-generic'
+make[2]: Entering directory '/var/lib/dkms/gc573/0.1/build'
+warning: the compiler differs from the one used to build the kernel
+  The kernel was built by: x86_64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+  You are using:           gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+src/gc573_core.c: In function ‘gc573_card_dead’:
+src/gc573_core.c:584:13: error: ‘struct pci_dev’ has no member named ‘match_driver’
+  584 |         pdev->match_driver = false;
+      |             ^~
+make[4]: *** [/usr/src/linux-headers-7.0.0-44-generic/scripts/Makefile.build:289: src/gc573_core.o] Error 1
+make[4]: *** Waiting for unfinished jobs....
+make[3]: *** [/usr/src/linux-headers-7.0.0-44-generic/Makefile:2140: .] Error 2
+make[2]: *** [/usr/src/linux-headers-7.0.0-44-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/var/lib/dkms/gc573/0.1/build'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-44-generic'
+make: *** [Makefile:26: modules] Error 2
+
+# exit code: 2
+# elapsed time: 00:00:01
+----------------------------------------------------------------
+RESULT	7.0.0-44-generic	dkms	FAIL	build
+card-idle: no GC573 in this VM: safe

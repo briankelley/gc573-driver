@@ -1,0 +1,37 @@
+# tests/card-release-check.sh in gc573-dev (Ubuntu 24.04, 6.8.0-151-generic) on card-release.sh with the final review F5 fix
+device /dev/full (1:7): open in pid 10 (sleep), O_PATH in pid 12 (python3, fd 3)
+RESULT	crc-d2-export	PASS	install.sh: export LC_ALL=C at line 70, card-release.sh sourced at line 103
+RESULT	crc-d2-export	PASS	uninstall.sh: export LC_ALL=C at line 31, card-release.sh sourced at line 53
+RESULT	crc-d2-catalog	PASS	LANG=en_US.UTF-8 LANGUAGE=xx, stat -c %F says 'zeichenorientierte Spezialdatei': the holder is found (pid 10)
+RESULT	crc-d8-opath	PASS	holders: pid 10 (open); not pid 12 (O_PATH, fd 3)
+RESULT	crc-vfio-user	PASS	'process 10 (sleep)'
+RESULT	crc-d16-timeout	PASS	holders: status 2 after 2 s
+RESULT	crc-d16-timeout	PASS	vfio: status 2 after 2 s, 'the scan of open files did not finish within 2 s, or failed (a file on a network mount that does not answer?)'
+RESULT	crc-f5-status	PASS	timeout exits 1: status 2, holders ''
+RESULT	crc-f5-status	PASS	timeout exits 125: status 2, holders ''
+RESULT	crc-f5-status	PASS	timeout exits 126: status 2, holders ''
+RESULT	crc-f5-status	PASS	timeout exits 127: status 2, holders ''
+RESULT	crc-f5-status	PASS	find lists no open file: status 2, holders ''
+RESULT	crc-f5-status	PASS	every stat exits 1 after its output (xargs 123): status 0, holders '10 1:7'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': 'GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': 'GC573_SCAN_TIMEOUT is '0', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': 'GC573_SCAN_TIMEOUT is '601', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': 'GC573_SCAN_TIMEOUT is '010', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': 'GC573_SCAN_TIMEOUT is '1.5', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': 'GC573_SCAN_TIMEOUT is '99999999999999999999', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': 'GC573_SCAN_TIMEOUT is '', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=1: status 0, holders '10 1:7'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=600: status 0, holders '10 1:7'
+RESULT	crc-d5-dead	PASS	listed: status 0, '0000:07:00.0: left as it is until reboot (dead_cards): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+RESULT	crc-d5-dead	PASS	driver_override: status 0, '0000:07:00.0: left as it is until reboot (its driver_override is gc573-dead-card): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+RESULT	crc-d5-dead	PASS	neither: status 1
+RESULT	crc-d5-dead	PASS	nothing: status 1
+exit 0
+/tmp/tmp.*: 0

@@ -5,7 +5,7 @@
  * gc573-aud.c -lasound -lm (needs libasound2-dev).
  *
  * gc573-aud [-D PCM] [-t SECS] [-p FRAMES] [-b FRAMES] [-o FILE] [-v]
- *           [-M FILE] [-V DEV [-P]] [-x SECS] [-s]
+ *           [-M FILE] [-V DEV [-P]] [-x SECS] [-s SECS] [-H SECS]
  *
  *   -D PCM     ALSA PCM (default hw:CARD=/dev/snd/by-path/pci-BDF,DEV=0 for
  *              the device gc573 has, from sysfs). Never hw:CARD=GC573:
@@ -33,6 +33,9 @@
  *              apart, instead of failing at once
  *   -s SECS    stop/start: drop and restart the stream every SECS; each
  *              start prints "START at=SECS frames=N" (frames read so far)
+ *   -H SECS    at the end, hold the PCM open SECS after the drop ("DROPPED
+ *              holding=SECS"), before the close: the driver's sync of the
+ *              stop (sync_stop) comes only with the close
  *
  * Output: "PARAMS ...", the lines above, "XRUN at=SECS" per overrun, and
  * at the end "RESULT audio frames=N secs=S rate=R xruns=N". Exit status:
@@ -316,7 +319,7 @@ int main(int argc, char **argv)
 	double secs = 5, xrun_gap = -1, last_xrun = -1e9;
 	unsigned long long read_total = 0, nxrun = 0, nrestart = 0;
 	uint64_t t0, t_first = 0, t_last = 0, hw_first = 0, hw_last = 0;
-	double stress = 0;
+	double stress = 0, hold = 0;
 	int verbose = 0, opt, ret = 0;
 	snd_pcm_status_t *st;
 	snd_pcm_t *pcm;
@@ -324,7 +327,7 @@ int main(int argc, char **argv)
 	FILE *of = NULL;
 	double next_restart;
 
-	while ((opt = getopt(argc, argv, "D:t:p:b:o:vM:V:Px:s:")) != -1) {
+	while ((opt = getopt(argc, argv, "D:t:p:b:o:vM:V:Px:s:H:")) != -1) {
 		switch (opt) {
 		case 'D': dev = optarg; break;
 		case 't': secs = atof(optarg); break;
@@ -342,6 +345,7 @@ int main(int argc, char **argv)
 		case 'P': pattern = 1; break;
 		case 'x': xrun_gap = atof(optarg); break;
 		case 's': stress = atof(optarg); break;
+		case 'H': hold = atof(optarg); break;
 		default:
 			fprintf(stderr, "usage: see the comment in gc573-aud.c\n");
 			return 2;
@@ -372,8 +376,11 @@ int main(int argc, char **argv)
 
 	t0 = now_ns();
 	next_restart = stress;
-	if (snd_pcm_start(pcm) < 0)
+	ret = snd_pcm_start(pcm);
+	if (ret < 0) {
+		fprintf(stderr, "start: %s\n", snd_strerror(ret));
 		return 2;
+	}
 	for (;;) {
 		struct pollfd pfd[8];
 		int n = snd_pcm_poll_descriptors(pcm, pfd, 7);
@@ -464,6 +471,11 @@ int main(int argc, char **argv)
 		}
 	}
 	snd_pcm_drop(pcm);
+	if (hold > 0) {
+		printf("DROPPED holding=%.1f\n", hold);
+		fflush(stdout);
+		usleep((useconds_t)(hold * 1e6));
+	}
 	snd_pcm_close(pcm);
 	if (of)
 		fclose(of);

@@ -31,8 +31,10 @@ LOG: gc573-aud -v output (A lines; V lines with -V); RAW: its -o samples
              onset time (ALSA timestamps, a line through the reads within
              1 s) - flash frame timestamp (vb2, end of frame). The source
              (ffplay) shows a flash a few whole frames early or late at
-             times, so each offset is moved by whole frames to the nearest
-             of the most common offset; both are reported. PASS if the
+             times, so each offset is moved by whole frames to the most
+             common class, the classes counted in whole frames from the
+             offsets' common phase within a frame (their circular mean);
+             both are reported. PASS if the
              corrected offsets stay within 1 ms of a line through them and
              that line moves less than one audio period (10 ms) over the run
 --segments (seconds from the first read): per segment a line
@@ -85,6 +87,20 @@ import sys
 import numpy as np
 
 RATE = 48000
+
+
+def frame_classes(offs, tfm):
+    """Whole frames (of tfm ms) each offset is from the offsets' common
+    phase within a frame, their circular mean: the rounding's boundaries
+    sit half a frame from that phase, where a tight set of offsets has
+    none. Rounding offs / tfm splits such a set near half a period into
+    two classes a frame apart (the 2 h host soak's last session: +8.21 to
+    +8.82 ms at 16.683 ms), and so does rounding from their median when
+    they sit in clusters whole frames apart with the median between two
+    (tests/logs/20261127-094342, avchange: +20.2, +36.9 and +53.6 ms, the
+    median +28.55, its half-frame points on the clusters)"""
+    c0 = np.angle(np.mean(np.exp(2j * np.pi * offs / tfm))) / (2 * np.pi) * tfm
+    return np.round((offs - c0) / tfm).astype(int)
 
 
 def result(name, ok, detail):
@@ -403,12 +419,7 @@ def main():
         return 0 if ok else 1
     offs, when = np.array(offs), np.array(when)
     tfm = tf * 1e3
-    # whole frames from the median: rounding offs / tfm itself splits a
-    # tight set of offsets near half a period into two classes a frame
-    # apart (the 2 h host soak's last session: +8.21 to +8.82 ms at
-    # 16.683 ms, "corrected" to a 17 ms spread)
-    med = float(np.median(offs))
-    cl = np.round((offs - med) / tfm).astype(int)
+    cl = frame_classes(offs, tfm)
     vals, cnt = np.unique(cl, return_counts=True)
     ref = vals[np.argmax(cnt)]
     corr = offs - (cl - ref) * tfm
@@ -428,7 +439,7 @@ def main():
                 print(f"SEGMENT {k} {edges[k]:.1f} {edges[k + 1]:.1f} pairs=0")
                 continue
             o = offs[m]
-            sv, sc = np.unique(np.round((o - med) / tfm).astype(int), return_counts=True)
+            sv, sc = np.unique(cl[m], return_counts=True)
             print(f"SEGMENT {k} {edges[k]:.1f} {edges[k + 1]:.1f} pairs={len(o)} raw={o.mean():+.2f} "
                   f"min={o.min():+.2f} max={o.max():+.2f} frames=" +
                   ','.join(f'{v - ref:+d}:{c}' for v, c in zip(sv, sc)) + f" corr={corr[m].mean():+.3f}")

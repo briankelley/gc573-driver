@@ -1,0 +1,46 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-27 10:36:52 UTC
+vm:      gc573-dev, kernel 6.8.12-gc573dbg
+rev:     ccb56ea82d65
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   remnant
+module:  srcversion 55945F0B09B4F42AA4C5171 loaded, 55945F0B09B4F42AA4C5171 in ~/gc573-driver, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## remnant
+  A: RESULT compare fmt=YUYV 1920x1080 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+RESULT remnant-a                  PASS (user A's frames are the 1080p pattern: 60 1 frames/signatures)
+RESULT remnant-noinput            PASS (no input: 60 frames, 1 distinct; last frame: uniform words=1036800 distinct=1 top=10801080:1036800)
+  kept: seq 0 at 708.9 ms after STREAMON, sig=715b5764960b8b25 /tmp/gc573-live/remnant-b0k-0.YUYV
+RESULT remnant-noinput-a-content  PASS (1 frames, 0 with A's picture)
+  FRAME file=/tmp/gc573-live/remnant-b0k-0.YUYV class=uniform word=80108010
+  frames: seq 0-51 sig=102cec56eb3fc325 (52, the first at ts_ms 477361.645)
+  frames: seq 52-59 sig=3403fe61bee6d645 (8, the first at ts_ms 478235.458)
+  driver: stats: irqs 61 frames 60 skipped 1 multi 0 unarmed 0 order 0 bad_status 0 stale 0 terms 0 term_missing 0 underruns 0
+  B: RESULT compare fmt=YUYV 1280x720 enc=709 max_err_Y=0.92 max_err_Cb=1.00 max_err_Cr=1.00 out_of_limit=0
+RESULT remnant-720p               FAIL (720p60 locked 2101 ms after the mode set: 60 frames, 2 distinct, the last the 720p pattern: rc 0)
+  kept: seq 0 at 146.1 ms after STREAMON, 3265.3 ms after the lock, sig=102cec56eb3fc325 /tmp/gc573-live/remnant-b1k-0.YUYV
+  kept: seq 52 at 1019.9 ms after STREAMON, 4139.1 ms after the lock, sig=3403fe61bee6d645 /tmp/gc573-live/remnant-b1k-52.YUYV
+RESULT remnant-720p-a-content     PASS (2 frames, 0 with A's picture)
+  FRAME file=/tmp/gc573-live/remnant-b1k-0.YUYV class=uniform word=80108010
+  FRAME file=/tmp/gc573-live/remnant-b1k-52.YUYV class=expected
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 8 driver lines
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+
+## summary
+RESULT remnant-a                  PASS (user A's frames are the 1080p pattern: 60 1 frames/signatures)
+RESULT remnant-noinput            PASS (no input: 60 frames, 1 distinct; last frame: uniform words=1036800 distinct=1 top=10801080:1036800)
+RESULT remnant-noinput-a-content  PASS (1 frames, 0 with A's picture)
+RESULT remnant-720p               FAIL (720p60 locked 2101 ms after the mode set: 60 frames, 2 distinct, the last the 720p pattern: rc 0)
+RESULT remnant-720p-a-content     PASS (2 frames, 0 with A's picture)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.12-gc573dbg)
+RESULT kmemleak                   PASS (0 unreferenced objects)
+SUMMARY pass=8 fail=1 skip=0

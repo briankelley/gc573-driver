@@ -1,0 +1,163 @@
+host stand-in for tools/vmbuild.sh check (gc573-dev holds the card's hostdev): commit 25ddb92, 6.8.0-151-generic, sparse 0.6.4 (Ubuntu: 0.6.4-4ubuntu3), gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+== checkpatch --strict
+-----------------
+src/gc573_audio.c
+-----------------
+total: 0 errors, 0 warnings, 0 checks, 580 lines checked
+
+src/gc573_audio.c has no obvious style problems and is ready for submission.
+----------------
+src/gc573_chip.c
+----------------
+total: 0 errors, 0 warnings, 0 checks, 376 lines checked
+
+src/gc573_chip.c has no obvious style problems and is ready for submission.
+----------------
+src/gc573_core.c
+----------------
+total: 0 errors, 0 warnings, 0 checks, 531 lines checked
+
+src/gc573_core.c has no obvious style problems and is ready for submission.
+----------------
+src/gc573_hdmi.c
+----------------
+total: 0 errors, 0 warnings, 0 checks, 882 lines checked
+
+src/gc573_hdmi.c has no obvious style problems and is ready for submission.
+---------------
+src/gc573_i2c.c
+---------------
+total: 0 errors, 0 warnings, 0 checks, 366 lines checked
+
+src/gc573_i2c.c has no obvious style problems and is ready for submission.
+------------------
+src/gc573_it6805.c
+------------------
+total: 0 errors, 0 warnings, 0 checks, 962 lines checked
+
+src/gc573_it6805.c has no obvious style problems and is ready for submission.
+---------------
+src/gc573_seq.c
+---------------
+total: 0 errors, 0 warnings, 0 checks, 1841 lines checked
+
+src/gc573_seq.c has no obvious style problems and is ready for submission.
+--------------------
+src/gc573_splitter.c
+--------------------
+total: 0 errors, 0 warnings, 0 checks, 939 lines checked
+
+src/gc573_splitter.c has no obvious style problems and is ready for submission.
+---------------
+src/gc573_vb2.c
+---------------
+total: 0 errors, 0 warnings, 0 checks, 222 lines checked
+
+src/gc573_vb2.c has no obvious style problems and is ready for submission.
+-----------------
+src/gc573_video.c
+-----------------
+total: 0 errors, 0 warnings, 0 checks, 1946 lines checked
+
+src/gc573_video.c has no obvious style problems and is ready for submission.
+----------------
+src/gc573_chip.h
+----------------
+total: 0 errors, 0 warnings, 0 checks, 316 lines checked
+
+src/gc573_chip.h has no obvious style problems and is ready for submission.
+-----------
+src/gc573.h
+-----------
+total: 0 errors, 0 warnings, 0 checks, 466 lines checked
+
+src/gc573.h has no obvious style problems and is ready for submission.
+---------------
+src/gc573_seq.h
+---------------
+total: 0 errors, 0 warnings, 0 checks, 148 lines checked
+
+src/gc573_seq.h has no obvious style problems and is ready for submission.
+--------
+Makefile
+--------
+total: 0 errors, 0 warnings, 0 checks, 31 lines checked
+
+Makefile has no obvious style problems and is ready for submission.
+------
+Kbuild
+------
+total: 0 errors, 0 warnings, 0 checks, 5 lines checked
+
+Kbuild has no obvious style problems and is ready for submission.
+---------------------------------------------
+tests/kmemleak-canary/gc573_kmemleak_canary.c
+---------------------------------------------
+total: 0 errors, 0 warnings, 0 checks, 42 lines checked
+
+tests/kmemleak-canary/gc573_kmemleak_canary.c has no obvious style problems and is ready for submission.
+checkpatch exit 0
+total: 0 errors, 0 warnings, 0 checks, 78 lines checked
+
+src/compat.h has no obvious style problems and is ready for submission.
+
+NOTE: Ignored message types: LINUX_VERSION_CODE
+checkpatch compat.h exit 0
+== sparse (C=2)
+make: Entering directory '<export of 25ddb92>'
+make -C /lib/modules/6.8.0-151-generic/build M=<export of 25ddb92> CC=x86_64-linux-gnu-gcc-13 modules
+make[1]: Entering directory '/usr/src/linux-headers-6.8.0-151-generic'
+  CC [M]  <export of 25ddb92>/src/gc573_core.o
+  CHECK   <export of 25ddb92>/src/gc573_core.c
+  CC [M]  <export of 25ddb92>/src/gc573_i2c.o
+  CHECK   <export of 25ddb92>/src/gc573_i2c.c
+  CC [M]  <export of 25ddb92>/src/gc573_vb2.o
+  CHECK   <export of 25ddb92>/src/gc573_vb2.c
+  CC [M]  <export of 25ddb92>/src/gc573_video.o
+  CHECK   <export of 25ddb92>/src/gc573_video.c
+  CC [M]  <export of 25ddb92>/src/gc573_chip.o
+  CHECK   <export of 25ddb92>/src/gc573_chip.c
+  CC [M]  <export of 25ddb92>/src/gc573_seq.o
+  CHECK   <export of 25ddb92>/src/gc573_seq.c
+  CC [M]  <export of 25ddb92>/src/gc573_it6805.o
+  CHECK   <export of 25ddb92>/src/gc573_it6805.c
+  CC [M]  <export of 25ddb92>/src/gc573_splitter.o
+  CHECK   <export of 25ddb92>/src/gc573_splitter.c
+  CC [M]  <export of 25ddb92>/src/gc573_hdmi.o
+  CHECK   <export of 25ddb92>/src/gc573_hdmi.c
+  CC [M]  <export of 25ddb92>/src/gc573_audio.o
+  CHECK   <export of 25ddb92>/src/gc573_audio.c
+  LD [M]  <export of 25ddb92>/gc573.o
+  MODPOST <export of 25ddb92>/Module.symvers
+  CC [M]  <export of 25ddb92>/gc573.mod.o
+  LD [M]  <export of 25ddb92>/gc573.ko
+  BTF [M] <export of 25ddb92>/gc573.ko
+Skipping BTF generation for <export of 25ddb92>/gc573.ko due to unavailability of vmlinux
+make[1]: Leaving directory '/usr/src/linux-headers-6.8.0-151-generic'
+make: Leaving directory '<export of 25ddb92>'
+make exit 0
+sparse: clean (10 files checked, 0 warnings, 0 errors)
+== W=1 build
+make: Entering directory '<export of 25ddb92>'
+make -C /lib/modules/6.8.0-151-generic/build M=<export of 25ddb92> CC=x86_64-linux-gnu-gcc-13 modules
+make[1]: Entering directory '/usr/src/linux-headers-6.8.0-151-generic'
+  CC [M]  <export of 25ddb92>/src/gc573_core.o
+  CC [M]  <export of 25ddb92>/src/gc573_i2c.o
+  CC [M]  <export of 25ddb92>/src/gc573_vb2.o
+  CC [M]  <export of 25ddb92>/src/gc573_video.o
+  CC [M]  <export of 25ddb92>/src/gc573_chip.o
+  CC [M]  <export of 25ddb92>/src/gc573_seq.o
+  CC [M]  <export of 25ddb92>/src/gc573_it6805.o
+  CC [M]  <export of 25ddb92>/src/gc573_splitter.o
+  CC [M]  <export of 25ddb92>/src/gc573_hdmi.o
+  CC [M]  <export of 25ddb92>/src/gc573_audio.o
+  LD [M]  <export of 25ddb92>/gc573.o
+  MODPOST <export of 25ddb92>/Module.symvers
+  CC [M]  <export of 25ddb92>/gc573.mod.o
+  LD [M]  <export of 25ddb92>/gc573.ko
+  BTF [M] <export of 25ddb92>/gc573.ko
+Skipping BTF generation for <export of 25ddb92>/gc573.ko due to unavailability of vmlinux
+make[1]: Leaving directory '/usr/src/linux-headers-6.8.0-151-generic'
+make: Leaving directory '<export of 25ddb92>'
+make exit 0
+srcversion 471419EDEC56524224376F5

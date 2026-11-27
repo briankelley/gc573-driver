@@ -1,0 +1,23 @@
+# tools/vmbuild.sh (build) in gc573-dev at c603908, with Kbuild's match_driver probe broken in the
+# working tree only (its pattern looking for match_driver_BROKEN; never committed, restored after):
+# Ubuntu's 6.8.0-151 then gets the struct device override it also has, and vmbuild fails the build.
+# exit 1
+== build (gc573-dev, 6.8.0-151-generic)
+make -C /lib/modules/6.8.0-151-generic/build M=/home/dev/gc573-driver CC=x86_64-linux-gnu-gcc-13 modules
+  CC [M]  /home/dev/gc573-driver/src/gc573_core.o
+  CC [M]  /home/dev/gc573-driver/src/gc573_i2c.o
+  CC [M]  /home/dev/gc573-driver/src/gc573_vb2.o
+  CC [M]  /home/dev/gc573-driver/src/gc573_video.o
+  CC [M]  /home/dev/gc573-driver/src/gc573_chip.o
+  CC [M]  /home/dev/gc573-driver/src/gc573_seq.o
+  CC [M]  /home/dev/gc573-driver/src/gc573_it6805.o
+  CC [M]  /home/dev/gc573-driver/src/gc573_splitter.o
+  CC [M]  /home/dev/gc573-driver/src/gc573_hdmi.o
+  CC [M]  /home/dev/gc573-driver/src/gc573_audio.o
+  LD [M]  /home/dev/gc573-driver/gc573.o
+  MODPOST /home/dev/gc573-driver/Module.symvers
+  CC [M]  /home/dev/gc573-driver/gc573.mod.o
+  LD [M]  /home/dev/gc573-driver/gc573.ko
+  BTF [M] /home/dev/gc573-driver/gc573.ko
+Skipping BTF generation for /home/dev/gc573-driver/gc573.ko due to unavailability of vmlinux
+vmbuild: dead_block is 'generic' for 6.8.0-151-generic, not match_driver: a Kbuild header probe (GC573_HAVE_*) no longer matches

@@ -1,0 +1,28 @@
+vm: gc573-alma10  ref: 94d2d6717c3b  date: 2026-11-27T15:49:10Z
+distro: AlmaLinux 10.3 (Mauve Lion)
+running: 6.12.0-264.20.1.el10_3.x86_64
+cc: gcc (GCC) 14.4.1 20260724 (Red Hat 14.4.1-5)
+=== build 6.12.0-264.20.1.el10_3.x86_64
+make -C /lib/modules/6.12.0-264.20.1.el10_3.x86_64/build M=/home/dev/gc573-matrix/gc573 CC=gcc modules
+make[1]: Entering directory '/usr/src/kernels/6.12.0-264.20.1.el10_3.x86_64'
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_core.o
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_i2c.o
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_vb2.o
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_video.o
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_chip.o
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_seq.o
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_it6805.o
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_splitter.o
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_hdmi.o
+  CC [M]  /home/dev/gc573-matrix/gc573/src/gc573_audio.o
+  LD [M]  /home/dev/gc573-matrix/gc573/gc573.o
+  MODPOST /home/dev/gc573-matrix/gc573/Module.symvers
+  CC [M]  /home/dev/gc573-matrix/gc573/gc573.mod.o
+  CC [M]  /home/dev/gc573-matrix/gc573/.module-common.o
+  LD [M]  /home/dev/gc573-matrix/gc573/gc573.ko
+  BTF [M] /home/dev/gc573-matrix/gc573/gc573.ko
+Skipping BTF generation for /home/dev/gc573-matrix/gc573/gc573.ko due to unavailability of vmlinux
+make[1]: Leaving directory '/usr/src/kernels/6.12.0-264.20.1.el10_3.x86_64'
+RESULT	6.12.0-264.20.1.el10_3.x86_64	build	PASS	6.12.0-264.20.1.el10_3.x86_64 dead_block=generic,pci_dev
+RESULT	6.12.0-264.20.1.el10_3.x86_64	dead_block	PASS	generic,pci_dev
+card-idle: no GC573 in this VM: safe

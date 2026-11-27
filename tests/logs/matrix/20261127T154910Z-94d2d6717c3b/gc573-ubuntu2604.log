@@ -1,0 +1,80 @@
+vm: gc573-ubuntu2604  ref: 94d2d6717c3b  date: 2026-11-27T15:50:37Z
+distro: Ubuntu 26.04.1 LTS
+running: 7.0.0-44-generic
+cc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+=== build 6.18.65-061865-generic
+make -C /lib/modules/6.18.65-061865-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc-15 modules
+make[1]: Entering directory '/usr/src/linux-headers-6.18.65-061865-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/linux-headers-6.18.65-061865-generic'
+RESULT	6.18.65-061865-generic	build	PASS	6.18.65-061865-generic dead_block=generic
+=== build 7.0.0-43-generic
+make -C /lib/modules/7.0.0-43-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-43-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-43-generic'
+RESULT	7.0.0-43-generic	build	PASS	7.0.0-43-generic dead_block=generic
+=== build 7.0.0-44-generic
+make -C /lib/modules/7.0.0-44-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-44-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+  CC [M]  src/gc573_i2c.o
+  CC [M]  src/gc573_vb2.o
+  CC [M]  src/gc573_video.o
+  CC [M]  src/gc573_chip.o
+  CC [M]  src/gc573_seq.o
+  CC [M]  src/gc573_it6805.o
+  CC [M]  src/gc573_splitter.o
+  CC [M]  src/gc573_hdmi.o
+  CC [M]  src/gc573_audio.o
+  LD [M]  gc573.o
+  MODPOST Module.symvers
+  CC [M]  gc573.mod.o
+  CC [M]  .module-common.o
+  LD [M]  gc573.ko
+  BTF [M] gc573.ko
+Skipping BTF generation for gc573.ko due to unavailability of vmlinux
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-44-generic'
+RESULT	7.0.0-44-generic	build	PASS	7.0.0-44-generic dead_block=generic
+RESULT	6.18.65-061865-generic	dead_block	PASS	generic
+RESULT	7.0.0-43-generic	dead_block	PASS	generic
+RESULT	7.0.0-44-generic	dead_block	PASS	generic
+card-idle: no GC573 in this VM: safe

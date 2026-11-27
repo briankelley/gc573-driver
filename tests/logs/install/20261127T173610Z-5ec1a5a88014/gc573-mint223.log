@@ -1,0 +1,87 @@
+vm: gc573-mint223  ref: 5ec1a5a88014  date: 2026-11-27T17:42:21Z
+distro: Linux Mint 22.3
+running: 6.14.0-37-generic
+kernels with headers: 6.14.0-37-generic 6.17.0-14-generic
+=== card-release-check
+device /dev/full (1:7): open in pid 10 (sleep), O_PATH in pid 12 (python3, fd 3)
+RESULT	crc-d2-export	PASS	install.sh: export LC_ALL=C at line 70, card-release.sh sourced at line 103
+RESULT	crc-d2-export	PASS	uninstall.sh: export LC_ALL=C at line 31, card-release.sh sourced at line 53
+RESULT	crc-d2-catalog	PASS	LANG=en_US.UTF-8 LANGUAGE=xx, stat -c %F says 'zeichenorientierte Spezialdatei': the holder is found (pid 10)
+RESULT	crc-d8-opath	PASS	holders: pid 10 (open); not pid 12 (O_PATH, fd 3)
+RESULT	crc-vfio-user	PASS	'process 10 (sleep)'
+RESULT	crc-d16-timeout	PASS	holders: status 2 after 2 s
+RESULT	crc-d16-timeout	PASS	vfio: status 2 after 2 s, 'the scan of open files did not finish within 2 s, or failed (a file on a network mount that does not answer?)'
+RESULT	crc-f5-status	PASS	timeout exits 1: status 2, holders ''
+RESULT	crc-f5-status	PASS	timeout exits 125: status 2, holders ''
+RESULT	crc-f5-status	PASS	timeout exits 126: status 2, holders ''
+RESULT	crc-f5-status	PASS	timeout exits 127: status 2, holders ''
+RESULT	crc-f5-status	PASS	find lists no open file: status 2, holders ''
+RESULT	crc-f5-status	PASS	every stat exits 1 after its output (xargs 123): status 0, holders '10 1:7'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='x': 'GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='0': 'GC573_SCAN_TIMEOUT is '0', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='601': 'GC573_SCAN_TIMEOUT is '601', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='010': 'GC573_SCAN_TIMEOUT is '010', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='1.5': 'GC573_SCAN_TIMEOUT is '1.5', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='99999999999999999999': 'GC573_SCAN_TIMEOUT is '99999999999999999999', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': status 2, holders ''
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT='': 'GC573_SCAN_TIMEOUT is '', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=1: status 0, holders '10 1:7'
+RESULT	crc-f5-status	PASS	GC573_SCAN_TIMEOUT=600: status 0, holders '10 1:7'
+RESULT	crc-d5-dead	PASS	listed: status 0, '0000:07:00.0: left as it is until reboot (dead_cards): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+RESULT	crc-d5-dead	PASS	driver_override: status 0, '0000:07:00.0: left as it is until reboot (its driver_override is gc573-dead-card): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+RESULT	crc-d5-dead	PASS	neither: status 1
+RESULT	crc-d5-dead	PASS	nothing: status 1
+RESULT	crc-holders-script	PASS	every card: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+RESULT	crc-holders-script	PASS	the card's BDF: status 1, '0000:07:00.0: sleep (pid 10): /dev/video0'
+RESULT	crc-holders-script	PASS	no holder: status 0, ''
+RESULT	crc-holders-script	PASS	a bad GC573_SCAN_TIMEOUT: status 2, '0000:07:00.0: GC573_SCAN_TIMEOUT is 'x', not a whole number of seconds from 1 to 600, so no scan of open files was made'
+RESULT	crc-holders-script	PASS	no card: status 3, 'no GC573'
+=== headers-missing
+install.sh: no headers for the running kernel 6.14.0-37-generic (/lib/modules/6.14.0-37-generic/build). Install them with: sudo apt install linux-headers-6.14.0-37-generic, then run this again
+RESULT	headers-missing	PASS	exit 1; Install them with: sudo apt install linux-headers-6.14.0-37-generic; nothing installed
+=== dkms-missing
+install.sh: dkms is not installed. Install it with: sudo apt install dkms
+RESULT	dkms-missing	PASS	exit 1; Install it with: sudo apt install dkms
+=== install
+building gc573 0.1 for 6.14.0-37-generic with DKMS (this takes a minute)
+installed: /lib/modules/6.14.0-37-generic/updates/dkms/gc573.ko.zst
+also installed for kernel 6.17.0-14-generic
+no GC573 card found: the driver loads by itself once the card is present
+gc573/0.1, 6.14.0-37-generic, x86_64: installed
+gc573/0.1, 6.17.0-14-generic, x86_64: installed
+RESULT	install	PASS	installed for 2 of 2 kernels with headers: /lib/modules/6.14.0-37-generic/updates/dkms/gc573.ko.zst
+RESULT	install-noload	PASS	not loaded: no card
+RESULT	alias	PASS	pci:v00001461d00000054sv00001461sd00005730bc04sc00i00 -> /lib/modules/6.14.0-37-generic/updates/dkms/gc573.ko.zst
+=== autoinstall
+   - Installing to /lib/modules/6.17.0-14-generic/updates/dkms/
+depmod...
+dkms autoinstall on 6.17.0-14-generic/x86_64 succeeded for gc573
+ * dkms: autoinstall for kernel 6.17.0-14-generic
+   ...done.
+before: gc573/0.1: added
+after: gc573/0.1, 6.17.0-14-generic, x86_64: installed
+RESULT	autoinstall	PASS	removed for 6.17.0-14-generic, then the kernel hook built and installed it: gc573/0.1, 6.17.0-14-generic, x86_64: installed
+card-idle: no GC573 in this VM: safe
+running: 6.14.0-37-generic
+=== reboot
+RESULT	reboot	PASS	not loaded after the boot: no device matches pci:v00001461d00000054sv00001461sd00005730bc04sc00i00
+=== modprobe
+gc573                 212992  0
+v4l2_dv_timings        40960  1 gc573
+videobuf2_v4l2         36864  1 gc573
+videobuf2_common       86016  2 videobuf2_v4l2,gc573
+snd_pcm               192512  1 gc573
+videodev              360448  2 videobuf2_v4l2,gc573
+snd                   143360  8 snd_seq,snd_seq_device,snd_timer,gc573,snd_pcm,snd_rawmidi
+RESULT	modprobe	PASS	loads by hand (no device bound) and unloads; kernel log clean
+=== uninstall
+removing gc573 0.1 from DKMS (all kernels)
+done
+RESULT	uninstall	PASS	no gc573 in DKMS, under /lib/modules or /usr/src; the alias resolves to nothing
+card-idle: no GC573 in this VM: safe

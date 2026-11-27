@@ -20,6 +20,16 @@ cannot play our pattern). No picture leaves memory, and nothing is kept.
                        directory an earlier stop could not put back stays
                        the one to put back
   record-restore       that directory put back (after a failed stop)
+  settings-save        the source settings the reopens change (the V4L2
+                       source's color_range, the ALSA source's device_id
+                       and custom_pcm), in a 0600 file. Settings an earlier
+                       run did not put back stay the ones to put back
+  settings-restore     those settings put back, read back (SETTINGS lines),
+                       and the file removed; exit 1 if they differ. OBS
+                       saves its sources at exit, so without it a reopen
+                       stays in the user's scene collection (an odd number
+                       of reopens left color_range 1 and custom_pcm without
+                       ",DEV=0" after the Roku soaks of 2026-11-26)
   record-stop          OBS stops recording: the file (RECORDING, printed
                        first), OBS's render and output frames and skipped
                        frames over the recording (STATS), its own record
@@ -118,6 +128,9 @@ def cmd_stats(obs):
 
 
 REC_STATE = os.path.join(os.environ.get('XDG_RUNTIME_DIR') or '/tmp', 'gc573-obs-any-rec.json')
+SET_STATE = os.path.join(os.environ.get('XDG_RUNTIME_DIR') or '/tmp', 'gc573-obs-any-settings.json')
+# the settings the reopens change (obs-events.py Source.reopen, reopen_audio)
+TOUCHED = ((oe.VSRC, ('color_range',)), (oe.ASRC, ('device_id', 'custom_pcm')))
 STAT_KEYS = ('renderSkippedFrames', 'renderTotalFrames', 'outputSkippedFrames', 'outputTotalFrames')
 
 
@@ -215,6 +228,65 @@ def restore_dir(obs, st):
     return True
 
 
+def touched(obs):
+    """{source: {key: value or None (not set)}} of the TOUCHED settings"""
+    out = {}
+    for name, keys in TOUCHED:
+        st = obs.call('GetInputSettings', inputName=name)['inputSettings']
+        out[name] = {k: st.get(k) for k in keys}
+    return out
+
+
+def settings_text(st):
+    return '; '.join(f'{n}: ' + ' '.join(f'{k}={v}' for k, v in kv.items())
+                     for n, kv in st.items())
+
+
+def cmd_settings_save(obs):
+    if os.path.exists(SET_STATE):
+        with open(SET_STATE) as f:
+            st = json.load(f)
+        print(f'SETTINGS kept from a run that did not put them back: {settings_text(st)}')
+        return True
+    st = touched(obs)
+    fd = os.open(SET_STATE, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'w') as f:
+        json.dump(st, f)
+    print(f'SETTINGS saved: {settings_text(st)}')
+    return True
+
+
+def cmd_settings_restore(obs):
+    try:
+        with open(SET_STATE) as f:
+            st = json.load(f)
+    except FileNotFoundError:
+        print('SETTINGS none saved: nothing to put back')
+        return True
+    now = touched(obs)
+    changed = []
+    for name, kv in st.items():
+        if now.get(name) == kv:
+            continue
+        put = dict(kv)
+        # a setting not set at the save: its default (the same for OBS)
+        if any(v is None for v in put.values()):
+            dflt = obs.call('GetInputDefaultSettings',
+                            inputKind=obs.call('GetInputSettings', inputName=name)['inputKind'])
+            put = {k: dflt['defaultInputSettings'].get(k) if v is None else v for k, v in put.items()}
+        obs.call('SetInputSettings', inputName=name, inputSettings=put)
+        changed.append(name)
+    after = touched(obs)
+    ok = all({k: v for k, v in after[n].items() if st[n][k] is not None} ==
+             {k: v for k, v in st[n].items() if v is not None} for n in st)
+    if ok:
+        os.remove(SET_STATE)
+    print(f'SETTINGS {"put back" if changed else "unchanged"}'
+          f'{" (" + ", ".join(changed) + ")" if changed else ""}: {settings_text(after)}'
+          f'{"" if ok else "; NOT as saved: " + settings_text(st)}')
+    return ok
+
+
 def cmd_record_restore(obs):
     try:
         with open(REC_STATE) as f:
@@ -239,7 +311,8 @@ def main():
     p.add_argument('n', type=int)
     p.add_argument('--every', type=float, default=1.0)
     sub.add_parser('meters').add_argument('secs', type=int)
-    for name in ('stats', 'reopen-video', 'reopen-audio', 'record-stop', 'record-restore'):
+    for name in ('stats', 'reopen-video', 'reopen-audio', 'record-stop', 'record-restore',
+                 'settings-save', 'settings-restore'):
         sub.add_parser(name)
     sub.add_parser('record-start').add_argument('--dir', default='')
     a = ap.parse_args()
@@ -257,6 +330,10 @@ def main():
             ok = cmd_record_stop(obs)
         elif a.cmd == 'record-restore':
             ok = cmd_record_restore(obs)
+        elif a.cmd == 'settings-save':
+            ok = cmd_settings_save(obs)
+        elif a.cmd == 'settings-restore':
+            ok = cmd_settings_restore(obs)
         elif a.cmd == 'reopen-video':
             oe.Source(obs).reopen()
             ok = True

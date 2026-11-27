@@ -1,0 +1,44 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 21:56:42 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     11fbd6e88ab5
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 1
+steps:   rokusoakany
+module:  srcversion 471419EDEC56524224376F5 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 471419EDEC56524224376F5, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokusoakany
+  the card: power 1 signal 1 locked 1 colour 2 vic 16 full_range 0 enc 0 dvi 0; QUERY_DV_TIMINGS Active width: 1920,Active height: 1080,Pixelclock: 148500000 Hz; AVI 00 40 a8 04 10 00; the lock: HDMI: locked: 1920x1080p, 148500000 Hz; rotation edid-same,edid-new,idle,reopen-video,edid-default,reopen-audio
+RESULT roku-soak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.991 rate=47999.320 xruns=0 restarts=0 )
+RESULT roku-soak-driver-first-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-first-xruns PASS (0 overruns)
+RESULT roku-soak-driver-first-rate PASS (47999.320 Hz against CLOCK_MONOTONIC, -14.2 ppm)
+RESULT roku-soak-driver-first-gaps PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.12 ms of it; 6000 reads)
+RESULT roku-soak-driver-first-video PASS (3593 frames, 0 sequence gaps, interval 16.684 ms, 0 off by more than half a period, 0 by more than 10 %)
+  INFO roku-soak-driver-first-picture 3593 frames; their grid luma took 9 values and changed between 1152 of 3592 frame pairs
+  OBS started minimized to the tray (pid 3052315, profile gc573, recording format hybrid_mp4; 0 windows visible)
+  OBS sources: GC573 video on /dev/v4l/by-path/pci-0000:07:00.0-video-index0, GC573 audio on hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0, scene 'Scene', canvas 1920x1080 at 60/1 fps; no other inputs
+  NOT AS EXPECTED: GC573 audio: custom_pcm 'hw:CARD=/dev/snd/by-path/pci-0000:07:00.0', not 'hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0'
+RESULT roku-soak-start            FAIL (OBS minimized, with the sources expected)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 0 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-soak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880000 secs=59.991 rate=47999.320 xruns=0 restarts=0 )
+RESULT roku-soak-driver-first-duration PASS (60.0 s, 2880000 frames, minimum 54 s)
+RESULT roku-soak-driver-first-xruns PASS (0 overruns)
+RESULT roku-soak-driver-first-rate PASS (47999.320 Hz against CLOCK_MONOTONIC, -14.2 ppm)
+RESULT roku-soak-driver-first-gaps PASS (per-second medians move <= 0.04 ms from one second to the next; within 0.05 ms of one line over the run; single reads within 0.12 ms of it; 6000 reads)
+RESULT roku-soak-driver-first-video PASS (3593 frames, 0 sequence gaps, interval 16.684 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT roku-soak-start            FAIL (OBS minimized, with the sources expected)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=9 fail=1 skip=1

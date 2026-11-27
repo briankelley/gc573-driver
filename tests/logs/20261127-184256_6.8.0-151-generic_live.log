@@ -1,0 +1,129 @@
+# GC573 live-input suite (PC loopback)
+date:    2026-11-27 18:42:56 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+fatal: not a git repository (or any of the parent directories): .git
+rev:     
+source:  host brian-intel DVI-D-0, NVIDIA GeForce GT 710, 470.256.02
+steps:   obssoak
+module:  srcversion 9566EDFE009E7661279F096 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 9566EDFE009E7661279F096, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## obssoak
+  recording to /home/brian/gc573-rec (825 GB free); rotation sleep,rate-59.94,edid-same,rate-60,res-720p,edid-new,sleep,res-1080p,edid-default
+RESULT obssoak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880480 secs=59.998 rate=48001.375 xruns=0 restarts=0 )
+RESULT obssoak-driver-first-duration PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obssoak-driver-first-xruns PASS (0 overruns)
+RESULT obssoak-driver-first-gaps  PASS (per-second medians move <= 0.02 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.14 ms of it; 6001 reads)
+RESULT obssoak-driver-first-video PASS (3596 frames, 0 sequence gaps, interval 16.666 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-first-avsync PASS (60 flashes over 1.0 min: offset +37.049 ms (std 0.020, min +36.964, max +37.071), drift -0.0120 ms/min = -0.012 ms over the run, residual <= 0.079 ms)
+  INFO counter   3596 frames, 0 unreadable; steps from one frame to the next (step: count) 1: 3595; 0 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +37.05 ms, min +36.96, max +37.07, std 0.02; frames from the most common (count): +0: 60
+  OBS started minimized to the tray (pid 1370244, profile gc573, recording format hybrid_mp4; 0 windows visible)
+  OBS sources: GC573 video on /dev/v4l/by-path/pci-0000:07:00.0-video-index0, GC573 audio on hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0, scene 'Scene', canvas 1920x1080 at 60/1 fps; no other inputs
+  SETTINGS saved: GC573 video: color_range=0; GC573 audio: device_id=__custom__ custom_pcm=hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0
+  obssoak: 120 s from 18:44:06 UTC, a change every 40 s
+RESULT obssoak-obsev-bridge       PASS (reopens in the changes: none; res-* changes without one: none; in changes of the same timings: none; not adopted at first: 0; outside the changes: 0)
+RESULT obssoak-obsev-recoveries   PASS (0 times the picture was not good outside a change's own recovery)
+RESULT obssoak-obsev-sleep        PASS (1/1 recovered; TTFGF min 2.80 s, max 2.80 s)
+RESULT obssoak-obsev-rate-59.94   PASS (1/1 recovered; TTFGF min 3.24 s, max 3.24 s)
+  EVENTS /home/brian/dev/gc573-driver/.claude/worktrees/agent-a982608b72e93b85a/.claude/scratch/host-e8121ea/tests/logs/20261127-184256_6.8.0-151-generic_live-events.log
+  BASELINE good (good +0.05..+0.17)
+  RECDIR /home/brian/gc573-rec (OBS had /tmp/claude-1000/-home-brian/1eddbe94-e70f-45af-8d11-3097649c39bc/scratchpad/obsrec)
+  RECFORMAT hybrid_mp4; muxer: in OBS
+  MARK 41.0
+  EVENT sleep recovered ttfgf=2.80 (off: bad +0.27..+0.86, black +1.04..+8.02; on: black +1.02..+1.33, bad +1.45..+2.72, good +2.80..+2.89; source 1920x1080) bridge: no reopen
+  MARK 81.4
+  EVENT rate-59.94 recovered ttfgf=3.24 (bad +1.27..+1.27, black +1.46..+1.85, bad +1.92..+3.16, good +3.24..+3.32; source 1920x1080) bridge: no reopen
+  RECORDING /home/brian/gc573-rec/2026-11-27 11-44-06.mp4
+  SHOTS {'good': 51, 'bad': 1}
+  screenshots that were not good: 1 (SHOT lines in the event log's run)
+  SETTINGS unchanged: GC573 video: color_range=0; GC573 audio: device_id=__custom__ custom_pcm=hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0
+RESULT obssoak-driver-last-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880480 secs=59.998 rate=48001.231 xruns=0 restarts=0 )
+RESULT obssoak-driver-last-duration PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obssoak-driver-last-xruns  PASS (0 overruns)
+RESULT obssoak-driver-last-gaps   PASS (per-second medians move <= 0.01 ms from one second to the next; within 0.01 ms of one line over the run; single reads within 0.13 ms of it; 6001 reads)
+RESULT obssoak-driver-last-video  PASS (3593 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-last-avsync PASS (60 flashes over 1.0 min: offset +51.078 ms (std 0.192, min +50.717, max +51.412), drift -0.6582 ms/min = -0.648 ms over the run, residual <= 0.058 ms)
+  INFO counter   3593 frames, 0 unreadable; steps from one frame to the next (step: count) 0: 1, 1: 3591; 1 repeated, 0 source frames never captured
+  INFO flashes   every 60 frames, 60 between the first and last frame: 60 captured once, 0 twice, 0 more often, 0 never; 0 frames whose flash box disagrees with the counter
+    raw offsets: mean +49.13 ms, min +34.03, max +51.41, std 5.46; frames from the most common (count): -1: 7, +0: 53
+  recording: 90M /home/brian/gc573-rec/2026-11-27 11-44-06.mp4
+RESULT obssoak-obsrec-image       PASS (4 samples every 30.0 s over 122 s at 1920x1080, the counter's progress over 30 frames each: first and last samples live, never two in a row not; in order: live x4; max error in the pattern frames 5 (limit 8))
+  SAMPLE 1.0 live: moved 29 in 30 frames (30.0 at 60 Hz); err=5
+  SAMPLE 91.0 live: moved 30 in 30 frames (30.0 at 60 Hz); err=4
+  INFO obsrec-counter steps from one recorded frame to the next (step: count): 0: 6, 1: 343, 2: 6
+RESULT obssoak-rec-duration       PASS (122.0 s of video, 121.9 s of audio)
+RESULT obssoak-rec-video          PASS (7318 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obssoak-rec-flashes        PASS (103 flash frames, 104 burst onsets, 100 paired within 0.5 s; unpaired at 52.3, 53.3, 121.9 s)
+RESULT obssoak-rec-audio-timeline PASS (3 source sessions: the bursts' period against the media period -0.01 to +0.01 ppm (0: OBS lays the samples back to back); OBS's own resets at its 70 ms threshold: 0)
+RESULT obssoak-rec-segments       PASS (3 segments between changes, each paired again, with at least every other second's flash paired from there and a mean offset from -45 to +125 ms (BT.1359); paired again after a change: median +9.40 s, max +13.30 s from the change)
+RESULT obssoak-rec-offset         SKIP (burst onset - flash frame: mean +64.40 ms, std 17.17, min +29.27, max +93.77 over 100 flashes (positive: audio late); over all segments)
+RESULT obssoak-rec-drift          SKIP (+23.924 ms/min = +48.09 ms over 2.0 min (one frame period: 16.7 ms); means per minute +50.9 +75.6 +88.1; the source restarts at each change)
+  SEGMENT 0 0.0 41.0 flashes=39 bursts=41 back=+0.33 pairs_after=39 offset=+49.7 ok
+  SEGMENT 1 41.0 81.4 flashes=29 bursts=28 back=+13.30 pairs_after=27 offset=+58.9 ok
+  SEGMENT 2 81.4 122.0 flashes=35 bursts=35 back=+5.50 pairs_after=34 offset=+85.6 ok
+  AUDIO 0 P=1.000 bursts=37 ppm=-0.01 resets=- other=-
+  AUDIO 1 P=1.000 bursts=25 ppm=+0.00 resets=- other=-
+  AUDIO 2 P=1.001 bursts=24 ppm=+0.01 resets=- other=-
+    offset in frame periods (count): +2: 1, +3: 31, +4: 34, +5: 30, +6: 4
+RESULT obssoak-obs-own            PASS (OBS - driver in the same source session: first segment +12.7 ms (OBS +49.7, driver +37.05), last +36.5 ms (OBS +85.6, driver +49.13); both within OBS's bound, a frame period early to its 70 ms timestamp smoothing plus a frame period late, -16.7 to +86.7 ms)
+  INFO memory-kmalloc live objects in the kmalloc caches: 152684 kB before OBS started, 152560 kB after OBS exited and the recording was deleted, -124 kB (every program: the random kmalloc caches cannot be told apart); SUnreclaim 417548 -> 418228 kB (+680); slab caches that moved by 128 kB or more (kB): vmap_area +234, radix_tree_node +329, kmalloc-rnd-01-512 +130, buffer_head +2288, maple_node -131, kmalloc-rnd-10-512 -203
+RESULT obssoak-memory             PASS (the driver's own buffer memory, debugfs video "mem": before OBS bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0; after OBS exited bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+  mem: 1795805046 61300752 1150000 421252 177196 28320 296920 100 1704 4506906:114772927 0 0 0
+RESULT obssoak-cpu                SKIP (report only: 4 samples, fewer than 7)
+  INFO memory while recording: 4 samples, fewer than 7
+RESULT obssoak-driver-counters    PASS (over the soak, 4 samples: v_skipped +4 a_silent +1614 v_terms +4 v_input_restarts +4 it_losses +2 it_releases +2 it_entries +2 h_runs +401 h_fpga_rejects +4 a_pauses +2; kernel log: 300 lines, 300 of the driver, 0 bad)
+  obs: 20 select timeouts, 0 dequeue failures, 0 device opens
+  obs log: 11:44:06.457: ==== Recording Start ===============================================
+  obs log: 11:46:09.293: Output 'simple_file_output': Total frames output: 7320
+  obs log: 11:46:09.293: Output 'simple_file_output': Total drawn frames: 7291 (7370 attempted)
+  obs log: 11:46:09.293: Output 'simple_file_output': Number of lagged frames due to rendering lag/stalls: 79 (1.1%)
+  obs log: 11:46:09.295: ==== Recording Stop ================================================
+
+## card holders
+RESULT live-holders               PASS (no process holds the card's nodes but the sound server's own)
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 300 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT obssoak-driver-first-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880480 secs=59.998 rate=48001.375 xruns=0 restarts=0 )
+RESULT obssoak-driver-first-duration PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obssoak-driver-first-xruns PASS (0 overruns)
+RESULT obssoak-driver-first-gaps  PASS (per-second medians move <= 0.02 ms from one second to the next; within 0.02 ms of one line over the run; single reads within 0.14 ms of it; 6001 reads)
+RESULT obssoak-driver-first-video PASS (3596 frames, 0 sequence gaps, interval 16.666 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-first-avsync PASS (60 flashes over 1.0 min: offset +37.049 ms (std 0.020, min +36.964, max +37.071), drift -0.0120 ms/min = -0.012 ms over the run, residual <= 0.079 ms)
+RESULT obssoak-obsev-bridge       PASS (reopens in the changes: none; res-* changes without one: none; in changes of the same timings: none; not adopted at first: 0; outside the changes: 0)
+RESULT obssoak-obsev-recoveries   PASS (0 times the picture was not good outside a change's own recovery)
+RESULT obssoak-obsev-sleep        PASS (1/1 recovered; TTFGF min 2.80 s, max 2.80 s)
+RESULT obssoak-obsev-rate-59.94   PASS (1/1 recovered; TTFGF min 3.24 s, max 3.24 s)
+RESULT obssoak-driver-last-capture PASS (PARAMS video 1920x1080 YUYV 60.0000 Hz PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600 RESULT audio frames=2880480 secs=59.998 rate=48001.231 xruns=0 restarts=0 )
+RESULT obssoak-driver-last-duration PASS (60.0 s, 2880480 frames, minimum 54 s)
+RESULT obssoak-driver-last-xruns  PASS (0 overruns)
+RESULT obssoak-driver-last-gaps   PASS (per-second medians move <= 0.01 ms from one second to the next; within 0.01 ms of one line over the run; single reads within 0.13 ms of it; 6001 reads)
+RESULT obssoak-driver-last-video  PASS (3593 frames, 0 sequence gaps, interval 16.683 ms, 0 off by more than half a period, 0 by more than 10 %)
+RESULT obssoak-driver-last-avsync PASS (60 flashes over 1.0 min: offset +51.078 ms (std 0.192, min +50.717, max +51.412), drift -0.6582 ms/min = -0.648 ms over the run, residual <= 0.058 ms)
+RESULT obssoak-obsrec-image       PASS (4 samples every 30.0 s over 122 s at 1920x1080, the counter's progress over 30 frames each: first and last samples live, never two in a row not; in order: live x4; max error in the pattern frames 5 (limit 8))
+RESULT obssoak-rec-duration       PASS (122.0 s of video, 121.9 s of audio)
+RESULT obssoak-rec-video          PASS (7318 frames, period 16.667 ms, largest interval 16.7 ms, 0 over 1.5 periods)
+RESULT obssoak-rec-flashes        PASS (103 flash frames, 104 burst onsets, 100 paired within 0.5 s; unpaired at 52.3, 53.3, 121.9 s)
+RESULT obssoak-rec-audio-timeline PASS (3 source sessions: the bursts' period against the media period -0.01 to +0.01 ppm (0: OBS lays the samples back to back); OBS's own resets at its 70 ms threshold: 0)
+RESULT obssoak-rec-segments       PASS (3 segments between changes, each paired again, with at least every other second's flash paired from there and a mean offset from -45 to +125 ms (BT.1359); paired again after a change: median +9.40 s, max +13.30 s from the change)
+RESULT obssoak-rec-offset         SKIP (burst onset - flash frame: mean +64.40 ms, std 17.17, min +29.27, max +93.77 over 100 flashes (positive: audio late); over all segments)
+RESULT obssoak-rec-drift          SKIP (+23.924 ms/min = +48.09 ms over 2.0 min (one frame period: 16.7 ms); means per minute +50.9 +75.6 +88.1; the source restarts at each change)
+RESULT obssoak-obs-own            PASS (OBS - driver in the same source session: first segment +12.7 ms (OBS +49.7, driver +37.05), last +36.5 ms (OBS +85.6, driver +49.13); both within OBS's bound, a frame period early to its 70 ms timestamp smoothing plus a frame period late, -16.7 to +86.7 ms)
+RESULT obssoak-memory             PASS (the driver's own buffer memory, debugfs video "mem": before OBS bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0; after OBS exited bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT obssoak-cpu                SKIP (report only: 4 samples, fewer than 7)
+RESULT obssoak-driver-counters    PASS (over the soak, 4 samples: v_skipped +4 a_silent +1614 v_terms +4 v_input_restarts +4 it_losses +2 it_releases +2 it_entries +2 h_runs +401 h_fpga_rejects +4 a_pauses +2; kernel log: 300 lines, 300 of the driver, 0 bad)
+RESULT live-holders               PASS (no process holds the card's nodes but the sound server's own)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=29 fail=0 skip=4

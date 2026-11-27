@@ -1,0 +1,55 @@
+# install.sh / uninstall.sh with the card, gc573-dev
+date: 2026-11-27 13:17:40 UTC  ref: HEAD (89da8836d5ec)
+vm: Ubuntu 24.04.5 LTS, kernel 6.8.0-151-generic
+card: 0000:07:00.0
+=== prepare
+  no gc573 in DKMS
+  done
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+Processing triggers for man-db (2.12.0-4build2) ...
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: no state:  dkms:  video:  alsa: 
+RESULT	prepare	PASS	override 0000:07:00.0 -> vfio-pci saved, card not bound to gc573, nothing installed
+=== dead-refused
+  building gc573 0.1 for 6.8.0-151-generic with DKMS (this takes a minute)
+  installed: /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst
+  also installed for kernel 6.8.12-gc573dbg
+  card: 0000:07:00.0, driver now: none, driver_override: vfio-pci
+  
+  A persistent driverctl override gives the card (0000:07:00.0) to vfio-pci.
+  This is how the card is passed to a virtual machine (VFIO).
+  override removed. To give the card back to vfio-pci (and virtual machines): sudo driverctl set-override 0000:07:00.0 vfio-pci
+  uninstall.sh offers to put it back.
+  the card is up: video /dev/video0, ALSA card GC573
+  gc573 loads by itself from now on whenever the card is present
+  driver: gc573 override: (null) persisted:  loaded: yes noload: no state: bind permanent 0000:07:00.0 vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+  0000:07:00.0: gc573 could not confirm that the card's DMA stopped (dead_cards), so it is left as it is until reboot. Reboot before using the card again; nothing else was changed
+  uninstall.sh: reboot first, then run this again
+  [ 3324.363576] gc573 0000:07:00.0: exp_stop_fault 0x4: the teardown stop was confirmed (DMA_RUN 0x00000000 VIP_CTRL 0x00000000), counted as the audio DMA still on
+  [ 3324.364089] gc573 0000:07:00.0: teardown stop failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  [ 3324.364704] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+  dead_cards: 0000:07:00.0 
+  install.sh: 0000:07:00.0: gc573 could not confirm that the card's DMA stopped (dead_cards), so it is left as it is until reboot. Reboot first, then run this again; nothing was changed
+  uninstall.sh: 0000:07:00.0: gc573 could not confirm that the card's DMA stopped (dead_cards), so it is left as it is until reboot. Reboot first, then run this again; nothing was changed
+  driver:  override: (null) persisted:  loaded: yes noload: no state: bind permanent 0000:07:00.0 vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video:  alsa: 
+card-idle: 0000:07:00.0: gc573 left it dead by a test parameter (kernel log), and BAR0 reads idle (DMA_RUN 0x00000000 VIP_CTRL 0x00000000): safe
+  after the reboot: driver: gc573 override: (null) persisted:  loaded: yes noload: no state: bind permanent 0000:07:00.0 vfio-pci dkms: gc573/0.1, 6.8.0-151-generic, x86_64: installed gc573/0.1, 6.8.12-gc573dbg, x86_64: installed  video: video0  alsa: GC573
+  unloaded gc573
+  
+  install.sh removed a driverctl override that bound 0000:07:00.0 to vfio-pci.
+  override restored: 0000:07:00.0 -> vfio-pci (the card is bound to no driver now; vfio-pci takes it at the next boot or when a virtual machine starts with it)
+  removing gc573 0.1 from DKMS (all kernels)
+  done
+  driver:  override: vfio-pci persisted: vfio-pci loaded: no noload: no state:  dkms:  video:  alsa: ; left: ''
+RESULT	dead-refused	PASS	a teardown stop counted as failed (exp_stop_fault=4) in uninstall.sh's unbind: it stopped (no rebind, no override put back); install.sh and uninstall.sh --yes then refused at once; after a reboot uninstall.sh put the override back and left nothing
+=== cleanup
+Processing triggers for man-db (2.12.0-4build2) ...
+card-idle: 0000:07:00.0: bus mastering off (PCI_COMMAND 0003): safe
+  driver:  override: (null) persisted:  loaded: no noload: no state:  dkms:  video:  alsa: 
+RESULT	cleanup	PASS	no override, driverctl purged, rebooted

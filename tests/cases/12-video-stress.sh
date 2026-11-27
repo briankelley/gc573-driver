@@ -8,8 +8,8 @@
 #   waits at an unarmed slot), then 1 and 2 requeued: each completes fully
 #   overwritten, and 120 more frames stream normally.
 # - 1 buffer only: 60 frames, each overwritten (an underrun after every frame).
-# - afterwards I2C bus 1 still reads both chip IDs (every stop resets the
-#   FPGA reset domains).
+# - afterwards I2C bus 1 still reads both chip IDs through i2c-dev (loaded
+#   with i2c_bus1=1; every stop resets the FPGA reset domains).
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
@@ -17,7 +17,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 
-gc573_load || fail "insmod failed"
+gc573_load i2c_bus1=1 || fail "insmod failed"
 dev=$(gc573_video_dev) || { gc573_unload; fail "no video node"; }
 gc573_input_off "$dev"
 bus1=

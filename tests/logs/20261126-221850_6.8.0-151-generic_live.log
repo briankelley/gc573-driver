@@ -1,0 +1,97 @@
+# GC573 live-input suite (the Roku)
+date:    2026-11-26 22:18:50 UTC
+driver:  this host (local mode), kernel 6.8.0-151-generic
+rev:     b12630bea931
+source:  the Roku (model Ultra 4850X, software 16.0.4 build 853), go 0
+steps:   rokustart
+module:  srcversion 471419EDEC56524224376F5 loaded, /lib/modules/6.8.0-151-generic/updates/dkms/gc573.ko.zst 471419EDEC56524224376F5, /dev/v4l/by-path/pci-0000:07:00.0-video-index0
+
+## rokustart
+RESULT roku-start-serial-1        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6833 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3110 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-1 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    serial-1 mean interval of the first 40: 16.6833 ms (59.940 Hz); of the last 40: 16.6846 ms (59.935 Hz)
+  INFO start_to_first_frame_ms=145.7
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.684 min=16.585 max=16.785 frames_not_overwritten=0
+RESULT roku-start-serial-back-1   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6823 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3110 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-back-1 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    serial-back-1 mean interval of the first 40: 16.6823 ms (59.944 Hz); of the last 40: 16.6833 ms (59.940 Hz)
+  INFO start_to_first_frame_ms=148.0
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.584 max=16.781 frames_not_overwritten=0
+RESULT roku-start-serial-2        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6834 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3158 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-2 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    serial-2 mean interval of the first 40: 16.6834 ms (59.940 Hz); of the last 40: 16.6834 ms (59.940 Hz)
+  INFO start_to_first_frame_ms=148.6
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.586 max=16.772 frames_not_overwritten=0
+RESULT roku-start-serial-back-2   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6824 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3109 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-back-2 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    serial-back-2 mean interval of the first 40: 16.6824 ms (59.944 Hz); of the last 40: 16.6835 ms (59.940 Hz)
+  INFO start_to_first_frame_ms=146.3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.587 max=16.777 frames_not_overwritten=0
+RESULT roku-start-serial-3        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6834 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3110 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-3 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    serial-3 mean interval of the first 40: 16.6834 ms (59.940 Hz); of the last 40: 16.6836 ms (59.939 Hz)
+  INFO start_to_first_frame_ms=144.2
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.510 max=16.855 frames_not_overwritten=0
+RESULT roku-start-serial-back-3   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6856 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3111 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-back-3 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    serial-back-3 mean interval of the first 40: 16.6856 ms (59.932 Hz); of the last 40: 16.6817 ms (59.946 Hz)
+  INFO start_to_first_frame_ms=151.4
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.564 max=16.800 frames_not_overwritten=0
+RESULT roku-start-serial-4        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6856 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3158 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-4 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    serial-4 mean interval of the first 40: 16.6856 ms (59.932 Hz); of the last 40: 16.6814 ms (59.947 Hz)
+  INFO start_to_first_frame_ms=153.9
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.593 max=16.772 frames_not_overwritten=0
+RESULT roku-start-serial-back-4   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6832 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3158 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-back-4 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    serial-back-4 mean interval of the first 40: 16.6832 ms (59.941 Hz); of the last 40: 16.6828 ms (59.942 Hz)
+  INFO start_to_first_frame_ms=146.5
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.587 max=16.770 frames_not_overwritten=0
+RESULT roku-start-serial-5        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6835 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3109 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-5 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    serial-5 mean interval of the first 40: 16.6835 ms (59.939 Hz); of the last 40: 16.6834 ms (59.940 Hz)
+  INFO start_to_first_frame_ms=141.7
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.683 min=16.587 max=16.775 frames_not_overwritten=0
+RESULT roku-start-serial-back-5   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6833 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3160 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-back-5 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    serial-back-5 mean interval of the first 40: 16.6833 ms (59.940 Hz); of the last 40: 16.6856 ms (59.932 Hz)
+  INFO start_to_first_frame_ms=141.3
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.684 min=16.591 max=16.775 frames_not_overwritten=0
+RESULT roku-start-serial-6        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6827 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3110 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-6 IN_FRAME_PERIOD over the stream: 1668188 to 1668190 ticks (16.6819 to 16.6819 ms)
+    serial-6 mean interval of the first 40: 16.6827 ms (59.942 Hz); of the last 40: 16.6855 ms (59.932 Hz)
+  INFO start_to_first_frame_ms=141.2
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.684 min=16.578 max=16.787 frames_not_overwritten=0
+RESULT roku-start-serial-back-6   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6835 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3109 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+    serial-back-6 IN_FRAME_PERIOD over the stream: 1668188 to 1668189 ticks (16.6819 to 16.6819 ms)
+    serial-back-6 mean interval of the first 40: 16.6835 ms (59.939 Hz); of the last 40: 16.6845 ms (59.936 Hz)
+  INFO start_to_first_frame_ms=149.0
+  RESULT capture fmt=YUYV 1920x1080 frames=120 seq_gaps=0 err_flags=0 ivl_ms_mean=16.684 min=16.584 max=16.782 frames_not_overwritten=0
+
+## test source
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+
+## kernel log
+  kernel log: 48 driver lines
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+
+## summary
+RESULT roku-start-serial-1        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6833 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3110 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-back-1   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6823 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3110 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-2        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6834 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3158 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-back-2   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6824 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3109 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-3        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6834 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3110 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-back-3   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6856 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3111 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-4        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6856 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3158 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-back-4   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6832 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3158 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-5        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6835 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3109 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-back-5   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6833 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3160 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-6        PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6827 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3110 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT roku-start-serial-back-6   PASS (120 frames, input period 16.6819 ms, 0 intervals more than 10 % off it, the first 40 at 16.6835 ms (within 0.05 %); 0 frames with 32-byte blocks the DMA did not write; LOCK after_ms=3109 1920x1080p pixelclock=148500000 flags=0x296 vic=16 fps=59.9401 tpf=1001/60000 h=88/44/148 v=4/5/36 pol=0x3)
+RESULT testsrc-closed             PASS (ffplay of show.sh or avsync.sh still running: none)
+RESULT driver-mem                 PASS (live after the steps: bufs 0 pages 0 vmaps 0 dlists 0 dl_bytes 0)
+RESULT kernel-log                 PASS (6.8.0-151-generic)
+RESULT kmemleak                   SKIP (no kmemleak on 6.8.0-151-generic)
+SUMMARY pass=15 fail=0 skip=1

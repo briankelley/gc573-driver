@@ -46,6 +46,14 @@
  * (within 3 ms) would read as a pause and add that silence; debugfs
  * "audio" counts pauses.
  *
+ * Unbind and remove do not wait for the card's files: the card is
+ * disconnected (a running stream stopped and synced, every file failing
+ * from then on) and goes when its last file closes. An open substream
+ * holds a reference to struct gc573 until its close, the only callback
+ * left after the disconnect, so the struct outlives every call that can
+ * still reach it. Nothing of gc573 runs when the card itself goes: ALSA
+ * drops its module reference before that, so no private_free.
+ *
  * Locking: aud.lock protects the stream state shared with the hard IRQ
  * handler and the audio DMA registers. DMA_RUN (0x008) changes only by
  * read-modify-write under gc->dma_run_lock (spec/audio.md "Driver notes").
@@ -181,7 +189,7 @@ void gc573_audio_reset_done(struct gc573 *gc)
 	unsigned long flags;
 
 	spin_lock_irqsave(&a->lock, flags);
-	if (a->running &&
+	if (a->running && !a->dead &&
 	    !(gc573_rd(gc, GC573_DMA_RUN) & GC573_DMA_RUN_AUDIO)) {
 		a->st.restarts++;
 		a->next = GC573_AUDIO_DONE_BUF0;
@@ -251,6 +259,12 @@ void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns)
 	if (pending & GC573_INT_AUD_STOP) {
 		a->st.stops++;
 		complete(&a->stopped);
+		/* confirmed (tests only, bit 5: counted as without INT bit 4) */
+		if (a->stop_counted &&
+		    !(READ_ONCE(gc573_exp_stop_fault) & GC573_STOP_FAULT_AUD_SYNC)) {
+			a->stop_counted = false;
+			gc573_stop_end();
+		}
 	}
 	if (!(pending & GC573_INT_AUD_DONE))
 		goto out;
@@ -354,6 +368,7 @@ static const struct snd_pcm_hardware gc573_pcm_hw = {
 
 static int gc573_pcm_open(struct snd_pcm_substream *ss)
 {
+	struct gc573 *gc = snd_pcm_substream_chip(ss);
 	struct snd_pcm_runtime *rt = ss->runtime;
 	int ret;
 
@@ -363,11 +378,20 @@ static int gc573_pcm_open(struct snd_pcm_substream *ss)
 					 GC573_AUD_HW_FRAMES);
 	if (ret < 0)
 		return ret;
-	return snd_pcm_hw_constraint_integer(rt, SNDRV_PCM_HW_PARAM_PERIODS);
+	ret = snd_pcm_hw_constraint_integer(rt, SNDRV_PCM_HW_PARAM_PERIODS);
+	if (ret < 0)
+		return ret;
+	/* struct gc573 stays until the close, which can come after remove */
+	v4l2_device_get(&gc->v4l2_dev);
+	return 0;
 }
 
+/* After an open that succeeded; also once the card is disconnected */
 static int gc573_pcm_close(struct snd_pcm_substream *ss)
 {
+	struct gc573 *gc = snd_pcm_substream_chip(ss);
+
+	v4l2_device_put(&gc->v4l2_dev);
 	return 0;
 }
 
@@ -398,11 +422,12 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 	spin_lock(&a->lock);
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
-		if (a->dead || a->running) {
+		/* busy too while a system sleep is under way (gc573_pm_notify()) */
+		if (a->dead || a->running || gc->sleeping) {
 			ret = a->dead ? -ENODEV : -EBUSY;
 			break;
 		}
-		memset(a->buf, 0, 2 * GC573_AUD_BUF_STRIDE);
+		memset(a->buf, 0, GC573_AUD_BUF_BYTES);
 		a->ss = ss;
 		a->next = GC573_AUDIO_DONE_BUF0;
 		a->last_ns = 0;
@@ -422,6 +447,11 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 		/* a domain reset in progress may have stopped it, silently */
 		if (gc573_rd(gc, GC573_DMA_RUN) & GC573_DMA_RUN_AUDIO) {
 			a->stopping = true;
+			/* until INT bit 4 or the sync's verdict: no system sleep */
+			if (!a->stop_counted) {
+				a->stop_counted = true;
+				gc573_stop_begin();
+			}
 			gc573_aud_hw_stop(gc);
 		}
 		break;
@@ -433,29 +463,83 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 }
 
 /*
+ * gc573_pm_notify(), aud.lock held: a stop asked for (a drop) and not
+ * synced yet (gc573_pcm_sync_stop(), which ALSA calls only at the next
+ * prepare, hw_free or close), confirmed by neither INT bit 4 nor DMA_RUN
+ */
+bool gc573_audio_stop_unconfirmed(struct gc573 *gc)
+{
+	struct gc573_audio *a = &gc->aud;
+	u32 run;
+
+	if (!a->stopping)
+		return false;
+	/* tests only: counted as without INT bit 4 and the DMA still on */
+	if (READ_ONCE(gc573_exp_stop_fault) & GC573_STOP_FAULT_AUD_SYNC)
+		return true;
+	if (completion_done(&a->stopped))
+		return false;
+	run = gc573_rd(gc, GC573_DMA_RUN);
+	return run == U32_MAX || (run & GC573_DMA_RUN_AUDIO);
+}
+
+/*
  * After a stop, before prepare, hw_free and close: the DMA has stopped
- * (INT bit 4) and no IRQ handler still holds the stream
+ * (INT bit 4) and no IRQ handler still holds the stream. Without INT bit
+ * 4, and DMA_RUN still showing the audio DMA (or all-ones), the stop is
+ * not confirmed: the card is dead (gc573_dma_dead()), its buffer kept.
  */
 static int gc573_pcm_sync_stop(struct snd_pcm_substream *ss)
 {
 	struct gc573 *gc = snd_pcm_substream_chip(ss);
+	unsigned int fault = READ_ONCE(gc573_exp_stop_fault);
 	struct gc573_audio *a = &gc->aud;
-	bool stopping;
+	bool stopping, missing, counted;
+	u32 run;
 
 	spin_lock_irq(&a->lock);
 	stopping = a->stopping;
-	a->stopping = false;
 	spin_unlock_irq(&a->lock);
 
-	if (stopping &&
-	    !wait_for_completion_timeout(&a->stopped,
-					 msecs_to_jiffies(GC573_AUD_STOP_MS))) {
+	if (!stopping)
+		goto out;
+	missing = !wait_for_completion_timeout(&a->stopped,
+					       msecs_to_jiffies(GC573_AUD_STOP_MS));
+	run = gc573_rd(gc, GC573_DMA_RUN);
+	/* tests only: a stop confirmed, counted as failed */
+	if ((fault & GC573_STOP_FAULT_AUD_SYNC) && !missing &&
+	    run != U32_MAX && !(run & GC573_DMA_RUN_AUDIO)) {
+		dev_warn(&gc->pdev->dev, "exp_stop_fault %#x: the audio stop was confirmed (INT bit 4 came, DMA_RUN %#010x), counted as no INT bit 4 and the audio DMA still on\n",
+			 fault, run);
+		missing = true;
+		run |= GC573_DMA_RUN_AUDIO;
+	}
+	if (missing) {
 		spin_lock_irq(&a->lock);
 		a->st.stop_missing++;
 		spin_unlock_irq(&a->lock);
 		dev_warn(&gc->pdev->dev, "audio stop: no INT bit 4 in %u ms, DMA_RUN=%#010x\n",
-			 GC573_AUD_STOP_MS, gc573_rd(gc, GC573_DMA_RUN));
+			 GC573_AUD_STOP_MS, run);
+		/* still on, or no answer: its buffer may still be written */
+		if (run == U32_MAX || (run & GC573_DMA_RUN_AUDIO))
+			gc573_dma_dead(gc,
+				       "audio stop (no INT bit 4, the audio DMA still on) failed",
+				       false);
 	}
+	/*
+	 * Only after the verdict, under aud.lock (final review F3): until
+	 * here gc573_pm_notify() finds the stop not confirmed
+	 * (gc573_audio_stop_unconfirmed()), so no sleep slips in between the
+	 * wait and a death
+	 */
+	spin_lock_irq(&a->lock);
+	a->stopping = false;
+	counted = a->stop_counted;
+	a->stop_counted = false;
+	spin_unlock_irq(&a->lock);
+	if (counted)
+		gc573_stop_end();
+out:
 	synchronize_irq(gc->irq);
 	return 0;
 }
@@ -525,30 +609,58 @@ void gc573_audio_early_init(struct gc573 *gc)
 	gc->aud.st.interval_min_us = UINT_MAX;
 }
 
+/* Devres, after the engines' stop and the quiesce; kept after gc573_dma_dead() */
+static void gc573_audio_free_buf(void *data)
+{
+	struct gc573 *gc = data;
+	struct gc573_audio *a = &gc->aud;
+
+	if (READ_ONCE(gc->dma_dead))
+		atomic_long_add(GC573_AUD_BUF_BYTES, &gc573_mem_live.kept);
+	else
+		dma_free_coherent(&gc->pdev->dev, GC573_AUD_BUF_BYTES, a->buf,
+				  a->buf_dma);
+}
+
 /*
- * Devres: the card goes before the DMA buffers it uses. snd_card_free()
- * disconnects the card, stopping a running stream (sync_stop waits for
- * the DMA), and returns once every file on it is closed.
+ * The two DMA buffers, allocated before bus mastering and the quiesce's
+ * devres actions are added (gc573_probe()), so that they go only after
+ * both ran: whatever the audio DMA still does then, it does into memory
+ * the driver owns. Kept for good if a stop was not confirmed.
+ */
+int gc573_audio_alloc(struct gc573 *gc)
+{
+	struct gc573_audio *a = &gc->aud;
+
+	a->buf = dma_alloc_coherent(&gc->pdev->dev, GC573_AUD_BUF_BYTES,
+				    &a->buf_dma, GFP_KERNEL);
+	if (!a->buf)
+		return -ENOMEM;
+	return devm_add_action_or_reset(&gc->pdev->dev, gc573_audio_free_buf,
+					gc);
+}
+
+/*
+ * Devres, the first teardown step that frees DMA memory: every engine is
+ * stopped first (gc573_dma_stop()). The card is disconnected, stopping a
+ * running stream, and goes once every file on it is closed: an unbind
+ * does not wait for them (snd_card_free() would, uninterruptibly, for as
+ * long as any program keeps a node of the card open).
  */
 static void gc573_audio_free(void *data)
 {
 	struct gc573 *gc = data;
 
-	snd_card_free(gc->aud.card);
+	gc573_dma_stop(gc);
+	snd_card_free_when_closed(gc->aud.card);
 }
 
 int gc573_audio_init(struct gc573 *gc)
 {
 	struct device *dev = &gc->pdev->dev;
-	struct gc573_audio *a = &gc->aud;
 	struct snd_card *card;
 	struct snd_pcm *pcm;
 	int ret;
-
-	a->buf = dmam_alloc_coherent(dev, 2 * GC573_AUD_BUF_STRIDE, &a->buf_dma,
-				     GFP_KERNEL);
-	if (!a->buf)
-		return -ENOMEM;
 
 	ret = snd_card_new(dev, SNDRV_DEFAULT_IDX1, "GC573", THIS_MODULE, 0,
 			   &card);
@@ -570,7 +682,7 @@ int gc573_audio_init(struct gc573 *gc)
 	ret = snd_card_register(card);
 	if (ret)
 		goto err;
-	a->card = card;
+	gc->aud.card = card;
 	dev_info(dev, "audio: ALSA card %d (%s)\n", card->number, card->id);
 	return devm_add_action_or_reset(dev, gc573_audio_free, gc);
 

@@ -1,0 +1,81 @@
+# GC573 regression suite
+date:    2026-11-27 12:16:05 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 8FAFBB6349B504CAE1ABA50
+rev:     7e1cbef7788f
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 22-stop-fault
+  -- audio stop, confirmed, then counted as without INT bit 4 and the DMA still on
+  aud: PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600
+  aud: DROPPED holding=8.0
+  aud: RESULT audio frames=96000 secs=1.990 rate=48001.270 xruns=0 restarts=0
+    | [  204.426235] Setting dangerous option exp_stop_fault - tainting kernel
+    | [  214.453670] gc573 0000:07:00.0: exp_stop_fault 0x20: the audio stop was confirmed (INT bit 4 came, DMA_RUN 0x00000000), counted as no INT bit 4 and the audio DMA still on
+    | [  214.453687] gc573 0000:07:00.0: audio stop: no INT bit 4 in 100 ms, DMA_RUN=0x00000002
+    | [  214.551229] Setting dangerous option exp_stop_fault - tainting kernel
+  stop confirmed, then counted as failed; BAR0 idle: DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+    | [  206.502510] PM: suspend entry (s2idle)
+    | [  206.570418] PM: suspend debug: Waiting for 5 second(s).
+    | [  211.572602] PM: suspend exit
+    | [  214.453670] gc573 0000:07:00.0: exp_stop_fault 0x20: the audio stop was confirmed (INT bit 4 came, DMA_RUN 0x00000000), counted as no INT bit 4 and the audio DMA still on
+    | [  214.453687] gc573 0000:07:00.0: audio stop: no INT bit 4 in 100 ms, DMA_RUN=0x00000002
+  FAIL: system sleep went through the freezer stage between the audio stop and its sync; the close's sync of the stop did not leave the card dead
+  -- kernel log (33 lines)
+  | [  202.277454] mc: Linux media interface: v0.10
+  | [  202.288130] videodev: Linux video capture interface: v2.00
+  | [  202.292816] gc573: loading out-of-tree module taints kernel.
+  | [  202.292824] gc573: module verification failed: signature and/or required key missing - tainting kernel
+  | [  202.396981] gc573 0000:07:00.0: using MSI, irq 60
+  | [  202.396997] gc573 0000:07:00.0: FPGA version 20200811
+  | [  202.529429] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  202.530740] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  202.637302] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  202.637981] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  202.732107] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  202.873584] gc573 0000:07:00.0: video device video0
+  | [  202.873668] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  202.885678] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  203.426335] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [  204.425614] gc573-test: 1795781768938085215-9465 stop-fault audio
+  | [  204.426235] Setting dangerous option exp_stop_fault - tainting kernel
+  | [  206.502510] PM: suspend entry (s2idle)
+  | [  206.565015] Filesystems sync: 0.062 seconds
+  | [  206.566175] Freezing user space processes
+  | [  206.569506] Freezing user space processes completed (elapsed 0.003 seconds)
+  | [  206.569519] OOM killer disabled.
+  | [  206.569545] Freezing remaining freezable tasks
+  | [  206.570413] Freezing remaining freezable tasks completed (elapsed 0.000 seconds)
+  | [  206.570418] PM: suspend debug: Waiting for 5 second(s).
+  | [  211.571832] OOM killer enabled.
+  | [  211.571835] Restarting tasks ... done.
+  | [  211.572598] random: crng reseeded on system resumption
+  | [  211.572602] PM: suspend exit
+  | [  214.453670] gc573 0000:07:00.0: exp_stop_fault 0x20: the audio stop was confirmed (INT bit 4 came, DMA_RUN 0x00000000), counted as no INT bit 4 and the audio DMA still on
+  | [  214.453687] gc573 0000:07:00.0: audio stop: no INT bit 4 in 100 ms, DMA_RUN=0x00000002
+  | [  214.551229] Setting dangerous option exp_stop_fault - tainting kernel
+  | [  214.604045] Setting dangerous option exp_stop_fault - tainting kernel
+RESULT 22-stop-fault        FAIL (13s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 22-stop-fault        FAIL (13s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=0 fail=1 skip=2

@@ -1,0 +1,3 @@
+gc573-dev	prepare	PASS	override 0000:07:00.0 -> vfio-pci saved, card not bound to gc573, nothing installed
+gc573-dev	dead-refused	PASS	a teardown stop counted as failed (exp_stop_fault=4) in uninstall.sh's unbind: it stopped (no rebind, no override put back); install.sh and uninstall.sh --yes then refused at once; after a reboot uninstall.sh put the override back and left nothing
+gc573-dev	cleanup	PASS	no override, driverctl purged, rebooted

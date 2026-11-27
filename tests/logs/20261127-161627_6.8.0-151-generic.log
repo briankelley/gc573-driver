@@ -1,0 +1,68 @@
+# GC573 regression suite
+date:    2026-11-27 16:16:26 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 9566EDFE009E7661279F096
+rev:     a0b1797df977
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 30-probe-entry
+  before the load: RESET 0x00000001 (as after a device reset)
+  bus mastering turned off by setpci, the card idle with no driver (DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+    | [   26.313143] Setting dangerous option exp_probe_armed - tainting kernel
+    | [   26.313485] gc573 0000:07:00.0: exp_probe_armed: DMA_RUN 0x00000000 read as 0x00000002 (the audio DMA on)
+    | [   26.313490] gc573 0000:07:00.0: probe entry: bus mastering off, RESET 0x00000001, GPIO 0x0001f850, VERSION 20200811, DMA_RUN 0x00000002, VIP_CTRL 0x00000000: dead until reboot, nothing written: bus mastering off and not idle
+    | [   26.313492] gc573 0000:07:00.0: bus mastering was off when the probe started, and the card does not read idle (VERSION 20200811 DMA_RUN 0x00000002 VIP_CTRL 0x00000000): a previous owner may have turned it off under running DMA, and on again it can stall the machine (spec/pci.md); nothing is written to the card
+    | [   26.314793] gc573 0000:07:00.0: not idle at the probe's start with bus mastering off: bus mastering stays off, and the card gets no driver until reboot; reboot before using the card again
+    | [   26.315892] Setting dangerous option exp_probe_armed - tainting kernel
+  dead: PCI enable count 2, bus mastering off, in dead_cards
+  rmmod refused: rmmod: ERROR: Module gc573 is in use
+  bind refused: No such device
+  runtime PM, control auto: the card active, its port 0000:00:02.6 active (control on)
+  INTx: PCI_COMMAND 0403 (INTx Disable 1), PCI_STATUS 0010 (interrupt status 0); line 22:  0 0 0 0 IO-APIC 22-fasteoi virtio4
+  system sleep refused: /home/dev/gc573-driver/tests/cases/../lib.sh: line 238: echo: write error: Device or resource busy
+  BAR0 (past the driver): DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  armed: the card is dead until reboot, bus mastering off as the probe found it
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (17 lines)
+  | [   26.297810] gc573-test: 1795796187184374657-32322 probe-entry armed
+  | [   26.301916] mc: Linux media interface: v0.10
+  | [   26.308598] videodev: Linux video capture interface: v2.00
+  | [   26.312464] gc573: loading out-of-tree module taints kernel.
+  | [   26.312473] gc573: module verification failed: signature and/or required key missing - tainting kernel
+  | [   26.313143] Setting dangerous option exp_probe_armed - tainting kernel
+  | [   26.313485] gc573 0000:07:00.0: exp_probe_armed: DMA_RUN 0x00000000 read as 0x00000002 (the audio DMA on)
+  | [   26.313490] gc573 0000:07:00.0: probe entry: bus mastering off, RESET 0x00000001, GPIO 0x0001f850, VERSION 20200811, DMA_RUN 0x00000002, VIP_CTRL 0x00000000: dead until reboot, nothing written: bus mastering off and not idle
+  | [   26.313492] gc573 0000:07:00.0: bus mastering was off when the probe started, and the card does not read idle (VERSION 20200811 DMA_RUN 0x00000002 VIP_CTRL 0x00000000): a previous owner may have turned it off under running DMA, and on again it can stall the machine (spec/pci.md); nothing is written to the card
+  | [   26.314793] gc573 0000:07:00.0: not idle at the probe's start with bus mastering off: bus mastering stays off, and the card gets no driver until reboot; reboot before using the card again
+  | [   26.315892] Setting dangerous option exp_probe_armed - tainting kernel
+  | [   28.496483] PM: suspend entry (s2idle)
+  | [   28.546185] Filesystems sync: 0.049 seconds
+  | [   28.546755] gc573: system sleep refused: 1 card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first
+  | [   28.546768] random: crng reseeded on system resumption
+  | [   28.546773] PM: suspend exit
+  | [   28.568034] Setting dangerous option exp_probe_armed - tainting kernel
+RESULT 30-probe-entry       PASS (2s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 
+input:   none
+RESULT 30-probe-entry       PASS (2s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+NOTE: 30-probe-entry left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=1 fail=0 skip=2

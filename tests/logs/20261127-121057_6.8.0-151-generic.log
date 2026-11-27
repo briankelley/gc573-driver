@@ -1,0 +1,97 @@
+# GC573 regression suite
+date:    2026-11-27 12:10:57 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 2A79DE7FAB3D1D55DBF8A0A
+rev:     844c222261e7
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 22-stop-fault
+  -- STREAMOFF, confirmed, then counted as without INT bit 0 and domain 0 reset
+  stopoff: streamed 120 frames in 4 buffers
+  stopoff: streamoff rc=0
+  stopoff: ioctl LOG_STATUS rc=-1 errno=ENODEV
+  stopoff: ioctl G_EDID rc=-1 errno=ENODEV
+  stopoff: ioctl S_EDID rc=-1 errno=ENODEV
+  stopoff: ioctl REQBUFS0 rc=0
+    | [  183.000415] Setting dangerous option exp_stop_fault - tainting kernel
+    | [  185.251701] gc573 0000:07:00.0: exp_stop_fault 0x13: the video stop was confirmed (INT bit 0 came, domain 0 reset done, VIP_CTRL 0x00000000), counted as no INT bit 0 no domain 0 reset
+    | [  185.251719] gc573 0000:07:00.0: exp_stop_fault 0x13: the video stop counts as failed in 2000 ms, vid.lock held
+    | [  187.290769] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+    | [  187.295628] gc573 0000:07:00.0: 16236 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+    | [  192.302969] Setting dangerous option exp_stop_fault - tainting kernel
+  stop confirmed, then counted as failed; BAR0 idle: DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+    | [  185.251719] gc573 0000:07:00.0: exp_stop_fault 0x13: the video stop counts as failed in 2000 ms, vid.lock held
+    | [  185.293940] PM: suspend entry (s2idle)
+    | [  187.290769] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+    | [  187.300697] PM: suspend debug: Waiting for 5 second(s).
+    | [  192.302877] PM: suspend exit
+  the sleep started 0.042 s into the hold, the failed stop came 2.039 s after the hold began
+  FAIL: system sleep went through the freezer stage while the stop failed: the driver let it through, the stream being off by then
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (38 lines)
+  | [  180.863055] mc: Linux media interface: v0.10
+  | [  180.870692] videodev: Linux video capture interface: v2.00
+  | [  180.874012] gc573: loading out-of-tree module taints kernel.
+  | [  180.874018] gc573: module verification failed: signature and/or required key missing - tainting kernel
+  | [  180.980199] gc573 0000:07:00.0: using MSI, irq 60
+  | [  180.980221] gc573 0000:07:00.0: FPGA version 20200811
+  | [  181.112922] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  181.114592] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  181.228966] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  181.229655] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  181.331973] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  181.475321] gc573 0000:07:00.0: video device video0
+  | [  181.478098] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  181.498840] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  182.035787] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [  182.999872] gc573-test: 1795781460620266226-12891 stop-fault sleep
+  | [  183.000415] Setting dangerous option exp_stop_fault - tainting kernel
+  | [  185.251701] gc573 0000:07:00.0: exp_stop_fault 0x13: the video stop was confirmed (INT bit 0 came, domain 0 reset done, VIP_CTRL 0x00000000), counted as no INT bit 0 no domain 0 reset
+  | [  185.251719] gc573 0000:07:00.0: exp_stop_fault 0x13: the video stop counts as failed in 2000 ms, vid.lock held
+  | [  185.293940] PM: suspend entry (s2idle)
+  | [  185.344677] Filesystems sync: 0.050 seconds
+  | [  187.290769] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  | [  187.292666] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -19
+  | [  187.295628] gc573 0000:07:00.0: 16236 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+  | [  187.295713] gc573 0000:07:00.0: =================  START STATUS  =================
+  | [  187.297651] gc573 0000:07:00.0: ==================  END STATUS  ==================
+  | [  187.297843] Freezing user space processes
+  | [  187.299449] Freezing user space processes completed (elapsed 0.001 seconds)
+  | [  187.299459] OOM killer disabled.
+  | [  187.299463] Freezing remaining freezable tasks
+  | [  187.300691] Freezing remaining freezable tasks completed (elapsed 0.001 seconds)
+  | [  187.300697] PM: suspend debug: Waiting for 5 second(s).
+  | [  192.301982] OOM killer enabled.
+  | [  192.301985] Restarting tasks ... done.
+  | [  192.302872] random: crng reseeded on system resumption
+  | [  192.302877] PM: suspend exit
+  | [  192.302969] Setting dangerous option exp_stop_fault - tainting kernel
+  | [  192.326075] Setting dangerous option exp_stop_fault - tainting kernel
+  expected: [  185.251719] gc573 0000:07:00.0: exp_stop_fault 0x13: the video stop counts as failed in 2000 ms, vid.lock held
+  expected: [  187.290769] gc573 0000:07:00.0: video stop (no INT bit 0, no reset of domain 0) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  expected: [  187.292666] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -19
+RESULT 22-stop-fault        FAIL (12s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 22-stop-fault        FAIL (12s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+NOTE: 22-stop-fault left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=0 fail=1 skip=2

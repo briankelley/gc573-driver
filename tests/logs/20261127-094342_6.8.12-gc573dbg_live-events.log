@@ -1,0 +1,908 @@
+2026-11-27T09:43:42.248Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-27T09:43:42.261Z guard start: run pid 107557, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-27T09:43:42.307Z camwatch start pid 107597 (guard): 18 nodes marked: /dev/media0 (HD Pro Webcam C920); /dev/media1 (1080p Pro Stream Webcam); /dev/snd/controlC0 (card 0 PCH); /dev/snd/controlC2 (card 2 C920); /dev/snd/controlC3 (card 3 Device); /dev/snd/controlC4 (card 4 Webcam); /dev/snd/hwC0D0 (card 0 PCH); /dev/snd/pcmC0D0c (card 0 PCH); /dev/snd/pcmC0D0p (card 0 PCH); /dev/snd/pcmC0D2c (card 0 PCH); /dev/snd/pcmC2D0c (card 2 C920); /dev/snd/pcmC3D0c (card 3 Device); /dev/snd/pcmC3D0p (card 3 Device); /dev/snd/pcmC4D0c (card 4 Webcam); /dev/video0 (HD Pro Webcam C920); /dev/video1 (HD Pro Webcam C920); /dev/video2 (1080p Pro Stream Webcam); /dev/video3 (1080p Pro Stream Webcam). Not watched: snd/controlC1 (card 1 NVidia: NVIDIA HDMI); snd/hwC1D0 (card 1 NVidia: NVIDIA HDMI); snd/pcmC1D3p (card 1 NVidia: NVIDIA HDMI); snd/pcmC1D7p (card 1 NVidia: NVIDIA HDMI); snd/pcmC1D8p (card 1 NVidia: NVIDIA HDMI); snd/pcmC1D9p (card 1 NVidia: NVIDIA HDMI)
+2026-11-27T09:43:42.318Z guard x11 start: DVI-D-0 1920x1080+1920+0; outputs DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:43:42.332Z guard audio links: none
+2026-11-27T09:43:42.867Z live stream stop (exit 0)
+2026-11-27T09:43:51.085Z live driver load
+2026-11-27T09:43:52.363Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:43:52.881Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 108155 "ffplay"
+2026-11-27T09:43:53.035Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 108155 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:43:53.132Z show player start 1920x1080@60 (pid 108155)
+2026-11-27T09:43:54.519Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20  -D /sys/kerne
+2026-11-27T09:43:58.568Z show player stop (pid 108155)
+2026-11-27T09:43:58.608Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:43:58.608Z guard x11 destroy 0x4000007
+2026-11-27T09:43:58.677Z live output DVI-D-0 1280x720@60 (blip)
+2026-11-27T09:43:58.883Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:44:01.436Z live output DVI-D-0 1920x1080@60 (blip back 2566 ms after the mode set; timings: 1280x720p pixelclock 74250000 flags 0x296 vic 4 h 110/40/220 v 5/5/20 pol 0x3)
+2026-11-27T09:44:01.610Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:44:09.633Z live stream stop (exit 0)
+2026-11-27T09:44:09.901Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:44:10.062Z guard x11 create 0x4000002 1920x1080+1920+0 override 1 ffplay/ffplay pid 120734 ""
+2026-11-27T09:44:10.062Z guard x11 destroy 0x4000002
+2026-11-27T09:44:10.176Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 120734 "ffplay"
+2026-11-27T09:44:10.299Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 120734 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:44:10.408Z show player start 1920x1080@60 (pid 120734)
+2026-11-27T09:44:10.478Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -f YUYV -b 4 -n 60 -X 20  -D /sys/kerne
+2026-11-27T09:44:14.501Z show player stop (pid 120734)
+2026-11-27T09:44:14.516Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:44:14.516Z guard x11 destroy 0x4000007
+2026-11-27T09:44:14.733Z show mode DVI-D-0 1280x720@60
+2026-11-27T09:44:14.929Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:44:15.465Z guard x11 create 0x4000007 1280x720+1920+0 override 1 ffplay/ffplay pid 128863 "ffplay"
+2026-11-27T09:44:15.593Z guard x11 map 0x4000007 1280x720+1920+0 ffplay/ffplay pid 128863 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-27T09:44:15.712Z show player start 1280x720@60 (pid 128863)
+2026-11-27T09:44:18.770Z live stream stop (exit 0)
+2026-11-27T09:44:18.871Z show player stop (pid 128863)
+2026-11-27T09:44:18.894Z guard x11 unmap 0x4000007 1280x720+1920+0
+2026-11-27T09:44:18.894Z guard x11 destroy 0x4000007
+2026-11-27T09:44:19.111Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:44:19.290Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:44:19.595Z guard x11 create 0x4000002 1920x1080+1920+0 override 1 ffplay/ffplay pid 136987 ""
+2026-11-27T09:44:19.595Z guard x11 destroy 0x4000002
+2026-11-27T09:44:19.731Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 136987 "ffplay"
+2026-11-27T09:44:19.881Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 136987 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:44:19.981Z show player start 1920x1080@60 (pid 136987)
+2026-11-27T09:44:21.983Z show player stop (pid 136987)
+2026-11-27T09:44:22.000Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:44:22.000Z guard x11 destroy 0x4000007
+2026-11-27T09:44:22.215Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:44:22.499Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 141935 "ffplay"
+2026-11-27T09:44:22.618Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 141935 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:44:22.728Z show player start 1920x1080@60 (pid 141935)
+2026-11-27T09:44:22.928Z show player stop (pid 141935)
+2026-11-27T09:44:22.940Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:44:22.940Z guard x11 destroy 0x4000007
+2026-11-27T09:44:23.033Z live output off DVI-D-0
+2026-11-27T09:44:23.164Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:44:23.397Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:44:23.489Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:44:24.004Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 142877 "ffplay"
+2026-11-27T09:44:24.155Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 142877 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:44:24.167Z show player start 1920x1080@60 (pid 142877)
+2026-11-27T09:44:29.610Z show player stop (pid 142877)
+2026-11-27T09:44:29.622Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-27T09:44:29.622Z guard x11 destroy 0x4200007
+2026-11-27T09:44:29.714Z live output off DVI-D-0
+2026-11-27T09:44:29.865Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:44:30.096Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:44:30.178Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:44:30.655Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 156060 "ffplay"
+2026-11-27T09:44:30.861Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 156060 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:44:30.892Z show player start 1920x1080@60 (pid 156060)
+2026-11-27T09:44:36.398Z show player stop (pid 156060)
+2026-11-27T09:44:36.414Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-27T09:44:36.414Z guard x11 destroy 0x4200007
+2026-11-27T09:44:36.632Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:44:36.917Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 166964 "ffplay"
+2026-11-27T09:44:37.037Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 166964 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:44:37.147Z show player start 1920x1080@60 (pid 166964)
+2026-11-27T09:44:37.157Z show player stop (pid 166964)
+2026-11-27T09:44:37.185Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:44:37.186Z guard x11 destroy 0x4000007
+2026-11-27T09:44:37.301Z live output off DVI-D-0
+2026-11-27T09:44:37.419Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:44:37.501Z live fpgaheal fixed: exp_fpga_invalid 4294967294
+2026-11-27T09:44:37.771Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:44:37.903Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:44:38.201Z guard x11 create 0x4400002 1920x1080+1920+0 override 1 ffplay/ffplay pid 167554 ""
+2026-11-27T09:44:38.201Z guard x11 destroy 0x4400002
+2026-11-27T09:44:38.347Z guard x11 create 0x4400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 167554 ""
+2026-11-27T09:44:38.471Z guard x11 map 0x4400007 1920x1080+1920+0 ffplay/ffplay pid 167554 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:44:38.570Z show player start 1920x1080@60 (pid 167554)
+2026-11-27T09:44:38.590Z show player stop (pid 167554)
+2026-11-27T09:44:40.672Z guard x11 unmap 0x4400007 1920x1080+1920+0
+2026-11-27T09:44:40.673Z guard x11 destroy 0x4400007
+2026-11-27T09:44:42.338Z guard ok: audio 1198 polls, longest interval 50 ms; windows: test windows created 12 (0 created outside DVI-D-0, unmapped), maps 9, maps inside DVI-D-0 9, unmapped geometries outside 0, output changes 10, breaches 0, X events 185
+2026-11-27T09:44:42.366Z camwatch ok 18 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:44:48.022Z live output off DVI-D-0
+2026-11-27T09:44:48.210Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:44:48.281Z live fpgaheal never: exp_fpga_invalid 4294967295
+2026-11-27T09:44:48.547Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:44:48.625Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:44:48.952Z guard x11 create 0x4200002 1920x1080+1920+0 override 1 ffplay/ffplay pid 168867 ""
+2026-11-27T09:44:48.952Z guard x11 destroy 0x4200002
+2026-11-27T09:44:49.140Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 168867 "ffplay"
+2026-11-27T09:44:49.294Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 168867 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:44:49.330Z show player start 1920x1080@60 (pid 168867)
+2026-11-27T09:44:49.344Z show player stop (pid 168867)
+2026-11-27T09:44:49.396Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-27T09:44:49.396Z guard x11 destroy 0x4200007
+2026-11-27T09:45:15.331Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:45:15.593Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:45:42.349Z guard ok: audio 2395 polls, longest interval 50 ms; windows: test windows created 14 (0 created outside DVI-D-0, unmapped), maps 10, maps inside DVI-D-0 10, unmapped geometries outside 0, output changes 14, breaches 0, X events 223
+2026-11-27T09:45:42.429Z camwatch ok 18 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:46:35.412Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:46:35.758Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:46:42.360Z guard ok: audio 3593 polls, longest interval 50 ms; windows: test windows created 14 (0 created outside DVI-D-0, unmapped), maps 10, maps inside DVI-D-0 10, unmapped geometries outside 0, output changes 16, breaches 0, X events 239
+2026-11-27T09:46:42.492Z camwatch ok 18 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:47:15.709Z live output off DVI-D-0
+2026-11-27T09:47:15.884Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:47:15.962Z live fpgaheal off: exp_fpga_invalid 4294967294
+2026-11-27T09:47:16.246Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:47:16.428Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:47:17.110Z guard x11 create 0x4400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 179246 "ffplay"
+2026-11-27T09:47:17.295Z guard x11 map 0x4400007 1920x1080+1920+0 ffplay/ffplay pid 179246 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:47:17.397Z show player start 1920x1080@60 (pid 179246)
+2026-11-27T09:47:17.407Z show player stop (pid 179246)
+2026-11-27T09:47:17.495Z guard x11 unmap 0x4400007 1920x1080+1920+0
+2026-11-27T09:47:17.496Z guard x11 destroy 0x4400007
+2026-11-27T09:47:30.026Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:47:30.284Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 180566 ""
+2026-11-27T09:47:30.401Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 180566 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:47:30.506Z show player start 1920x1080@60 (pid 180566)
+2026-11-27T09:47:30.547Z show player stop (pid 180566)
+2026-11-27T09:47:30.582Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:47:30.582Z guard x11 destroy 0x4000007
+2026-11-27T09:47:30.781Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:47:30.944Z guard x11 create 0x4000002 1920x1080+1920+0 override 1 ffplay/ffplay pid 181002 ""
+2026-11-27T09:47:30.945Z guard x11 destroy 0x4000002
+2026-11-27T09:47:31.059Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 181002 "ffplay"
+2026-11-27T09:47:31.212Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 181002 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:47:31.343Z show player start 1920x1080@60 (pid 181002)
+2026-11-27T09:47:31.407Z show player stop (pid 181002)
+2026-11-27T09:47:31.425Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:47:31.425Z guard x11 destroy 0x4000007
+2026-11-27T09:47:31.710Z camwatch INFO open /dev/snd/controlC0 (card 0 PCH) by pid 2220 pipewire (PipeWire)
+2026-11-27T09:47:31.712Z camwatch INFO open /dev/snd/controlC2 (card 2 C920) by pid 2220 pipewire (PipeWire)
+2026-11-27T09:47:31.712Z camwatch INFO open /dev/snd/controlC2 (card 2 C920) by pid 2220 pipewire (PipeWire)
+2026-11-27T09:47:31.712Z camwatch INFO open /dev/snd/controlC2 (card 2 C920) by pid 2220 pipewire (PipeWire)
+2026-11-27T09:47:31.714Z camwatch INFO open /dev/snd/controlC3 (card 3 Device) by pid 2220 pipewire (PipeWire)
+2026-11-27T09:47:31.714Z camwatch INFO open /dev/snd/controlC3 (card 3 Device) by pid 2220 pipewire (PipeWire)
+2026-11-27T09:47:31.714Z camwatch INFO open /dev/snd/controlC4 (card 4 Webcam) by pid 2220 pipewire (PipeWire)
+2026-11-27T09:47:31.733Z avsync audio profile output:hdmi-stereo on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-27T09:47:31.877Z avsync mode DVI-D-0 1920x1080@60
+2026-11-27T09:47:32.175Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 181569 "ffplay"
+2026-11-27T09:47:32.303Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 181569 "gc573-avsync": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:47:32.321Z guard audio links: gc573-avsync:output_FL -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FL; gc573-avsync:output_FR -> alsa_output.pci-0000_01_00.1.hdmi-stereo:playback_FR
+2026-11-27T09:47:32.398Z avsync player start 1920x1080@60 amplitude 0.5 (pid 181569)
+2026-11-27T09:47:35.480Z live stream start: sudo /tmp/gc573-live/gc573-aud -D hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 -t 80 -v -V /dev/v4l/by-path/pci-0000:
+2026-11-27T09:47:42.370Z guard ok: audio 4790 polls, longest interval 50 ms; windows: test windows created 19 (0 created outside DVI-D-0, unmapped), maps 14, maps inside DVI-D-0 14, unmapped geometries outside 0, output changes 18, breaches 0, X events 289
+2026-11-27T09:47:42.726Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:47:55.162Z live colour ColorSpace=2 ColorRange=1
+2026-11-27T09:48:15.111Z live colour ColorSpace=0 ColorRange=1
+2026-11-27T09:48:35.140Z live colour ColorSpace=0 ColorRange=0
+2026-11-27T09:48:42.381Z guard ok: audio 5987 polls, longest interval 50 ms; windows: test windows created 19 (0 created outside DVI-D-0, unmapped), maps 14, maps inside DVI-D-0 14, unmapped geometries outside 0, output changes 18, breaches 0, X events 295
+2026-11-27T09:48:42.786Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:48:55.822Z live stream stop (exit 0)
+2026-11-27T09:48:55.941Z live colour ColorSpace=0 ColorRange=0 (put back, try 1: reads 0/0)
+2026-11-27T09:48:56.551Z avsync player stop (pid 181569)
+2026-11-27T09:48:56.593Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:48:56.593Z guard x11 destroy 0x4000007
+2026-11-27T09:48:56.611Z guard audio links: none
+2026-11-27T09:48:56.672Z avsync audio profile off on alsa_card.pci-0000_01_00.1 (this session only)
+2026-11-27T09:48:56.679Z live obs start
+2026-11-27T09:49:03.414Z obs-events events start: reps 2, all
+2026-11-27T09:49:04.317Z obs-events bridge start input=1920x1080p60.00 stream=1920x1080p60.00 settle=2 hold=0.9
+2026-11-27T09:49:04.317Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-27T09:49:04.521Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:49:04.691Z guard x11 create 0x4000002 1920x1080+1920+0 override 1 ffplay/ffplay pid 188354 ""
+2026-11-27T09:49:04.691Z guard x11 destroy 0x4000002
+2026-11-27T09:49:04.752Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 188354 "ffplay"
+2026-11-27T09:49:04.827Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 188354 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:49:04.942Z show player start 1920x1080@60 counter (pid 188354)
+2026-11-27T09:49:05.500Z obs-events change restart
+2026-11-27T09:49:05.777Z show player stop (pid 188354)
+2026-11-27T09:49:05.793Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:49:05.793Z guard x11 destroy 0x4000007
+2026-11-27T09:49:06.018Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:49:06.172Z guard x11 create 0x4000002 1920x1080+1920+0 override 1 ffplay/ffplay pid 188630 ""
+2026-11-27T09:49:06.172Z guard x11 destroy 0x4000002
+2026-11-27T09:49:06.238Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 188630 ""
+2026-11-27T09:49:06.346Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 188630 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:49:06.465Z show player start 1920x1080@60 counter (pid 188630)
+2026-11-27T09:49:06.669Z obs-events change sleep
+2026-11-27T09:49:06.905Z show player stop (pid 188630)
+2026-11-27T09:49:06.927Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:49:06.927Z guard x11 destroy 0x4000007
+2026-11-27T09:49:07.008Z obs-events output off DVI-D-0
+2026-11-27T09:49:07.150Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:49:07.220Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:49:09.223Z obs-events bridge settled input=no signal stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:49:15.178Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:49:15.279Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:49:15.761Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 189292 "ffplay"
+2026-11-27T09:49:15.886Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 189292 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:49:16.011Z show player start 1920x1080@60 counter (pid 189292)
+2026-11-27T09:49:17.719Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:49:18.199Z obs-events change rate-59.94
+2026-11-27T09:49:18.437Z show player stop (pid 189292)
+2026-11-27T09:49:18.458Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:49:18.458Z guard x11 destroy 0x4000007
+2026-11-27T09:49:18.684Z show mode DVI-D-0 1920x1080@59.94
+2026-11-27T09:49:18.926Z obs-events bridge event x1 changes=0x1 input=unstable stream=1920x1080p60.00
+2026-11-27T09:49:19.190Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 189734 "ffplay"
+2026-11-27T09:49:19.305Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 189734 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:49:19.428Z show player start 1920x1080@59.94 counter (pid 189734)
+2026-11-27T09:49:20.928Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:49:21.576Z obs-events bridge event x1 changes=0x1 input=1920x1080p59.94 stream=1920x1080p60.00
+2026-11-27T09:49:22.102Z obs-events change rate-60
+2026-11-27T09:49:22.308Z show player stop (pid 189734)
+2026-11-27T09:49:22.331Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:49:22.331Z guard x11 destroy 0x4000007
+2026-11-27T09:49:22.550Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:49:22.795Z obs-events bridge event x1 changes=0x1 input=unstable stream=1920x1080p60.00
+2026-11-27T09:49:22.941Z guard x11 create 0x4000002 1920x1080+1920+0 override 1 ffplay/ffplay pid 190139 ""
+2026-11-27T09:49:22.942Z guard x11 destroy 0x4000002
+2026-11-27T09:49:23.066Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 190139 "ffplay"
+2026-11-27T09:49:23.188Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 190139 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:49:23.277Z show player start 1920x1080@60 counter (pid 190139)
+2026-11-27T09:49:24.800Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:49:25.474Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:49:26.030Z obs-events change res-720p
+2026-11-27T09:49:26.253Z show player stop (pid 190139)
+2026-11-27T09:49:26.275Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:49:26.275Z guard x11 destroy 0x4000007
+2026-11-27T09:49:26.495Z show mode DVI-D-0 1280x720@59.94
+2026-11-27T09:49:26.686Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:49:26.744Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:49:27.107Z guard x11 create 0x4000007 1280x720+1920+0 override 1 ffplay/ffplay pid 190599 "ffplay"
+2026-11-27T09:49:27.234Z guard x11 map 0x4000007 1280x720+1920+0 ffplay/ffplay pid 190599 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-27T09:49:27.245Z show player start 1280x720@59.94 counter (pid 190599)
+2026-11-27T09:49:28.745Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:49:29.343Z obs-events bridge event x1 changes=0x1 input=1280x720p59.94 stream=1920x1080p60.00 (other timings)
+2026-11-27T09:49:31.344Z obs-events bridge settled input=1280x720p59.94 stream=1920x1080p60.00: reopen (new timings)
+2026-11-27T09:49:31.347Z obs-events bridge reopen: SetInputSettings color_range 0 -> 1
+2026-11-27T09:49:31.450Z obs-events bridge adopted: stream=1280x720p59.94 (attempt 1, 0.10 s after it)
+2026-11-27T09:49:31.672Z obs-events change res-1080p
+2026-11-27T09:49:31.754Z show player stop (pid 190599)
+2026-11-27T09:49:31.782Z guard x11 unmap 0x4000007 1280x720+1920+0
+2026-11-27T09:49:31.782Z guard x11 destroy 0x4000007
+2026-11-27T09:49:31.996Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:49:32.170Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:49:32.268Z obs-events bridge event x1 changes=0x1 input=unstable stream=1280x720p59.94
+2026-11-27T09:49:32.682Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 191103 "ffplay"
+2026-11-27T09:49:32.833Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 191103 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:49:32.949Z show player start 1920x1080@60 counter (pid 191103)
+2026-11-27T09:49:34.270Z obs-events bridge settled input=unstable stream=1280x720p59.94: wait: no lock
+2026-11-27T09:49:34.845Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1280x720p59.94 (other timings)
+2026-11-27T09:49:36.846Z obs-events bridge settled input=1920x1080p60.00 stream=1280x720p59.94: reopen (new timings)
+2026-11-27T09:49:36.848Z obs-events bridge reopen: SetInputSettings color_range 1 -> 0
+2026-11-27T09:49:36.949Z obs-events bridge adopted: stream=1920x1080p60.00 (attempt 1, 0.10 s after it)
+2026-11-27T09:49:37.283Z obs-events change colour-rgb-limited
+2026-11-27T09:49:38.070Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=1
+2026-11-27T09:49:38.297Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:49:40.299Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: carry on (the stream's timings)
+2026-11-27T09:49:42.391Z guard ok: audio 7184 polls, longest interval 50 ms; windows: test windows created 29 (0 created outside DVI-D-0, unmapped), maps 21, maps inside DVI-D-0 21, unmapped geometries outside 0, output changes 22, breaches 0, X events 431
+2026-11-27T09:49:42.846Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:49:43.741Z obs-events change colour-ycbcr444
+2026-11-27T09:49:44.544Z obs-events colour DVI-D-0 ColorSpace=2 ColorRange=1
+2026-11-27T09:49:44.832Z obs-events bridge event x1 changes=0x1 input=unstable stream=1920x1080p60.00
+2026-11-27T09:49:46.312Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:49:48.314Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: carry on (the stream's timings)
+2026-11-27T09:49:50.189Z obs-events change colour-ycbcr422
+2026-11-27T09:49:51.011Z obs-events colour DVI-D-0 ColorSpace=1 ColorRange=1
+2026-11-27T09:49:56.688Z obs-events change colour-rgb-full
+2026-11-27T09:49:57.564Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-27T09:49:57.869Z obs-events bridge event x1 changes=0x1 input=unstable stream=1920x1080p60.00
+2026-11-27T09:49:59.356Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:50:01.358Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: carry on (the stream's timings)
+2026-11-27T09:50:03.183Z obs-events change edid-same
+2026-11-27T09:50:03.400Z obs-events edid set: default image
+2026-11-27T09:50:04.147Z obs-events change edid-new
+2026-11-27T09:50:04.342Z show player stop (pid 191103)
+2026-11-27T09:50:04.365Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:50:04.365Z guard x11 destroy 0x4000007
+2026-11-27T09:50:04.445Z obs-events edid set: other image
+2026-11-27T09:50:05.978Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:50:06.054Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:50:06.243Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:50:07.057Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:50:07.410Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 193409 ""
+2026-11-27T09:50:07.577Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 193409 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:50:07.692Z show player start 1920x1080@60 counter (pid 193409)
+2026-11-27T09:50:08.056Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:50:08.688Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:50:09.238Z obs-events change edid-default
+2026-11-27T09:50:09.467Z show player stop (pid 193409)
+2026-11-27T09:50:09.494Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-27T09:50:09.494Z guard x11 destroy 0x3a00007
+2026-11-27T09:50:09.569Z obs-events edid set: default image
+2026-11-27T09:50:10.690Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: carry on (the stream's timings)
+2026-11-27T09:50:10.748Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:50:10.837Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:50:10.997Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:50:11.820Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:50:12.147Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 193860 "ffplay"
+2026-11-27T09:50:12.298Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 193860 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:50:12.396Z show player start 1920x1080@60 counter (pid 193860)
+2026-11-27T09:50:12.839Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:50:13.487Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:50:14.033Z obs-events change idle
+2026-11-27T09:50:14.467Z obs-events change reopen-video
+2026-11-27T09:50:14.684Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-27T09:50:15.038Z obs-events change reopen-audio
+2026-11-27T09:50:15.236Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0)
+2026-11-27T09:50:15.440Z obs-events change restart
+2026-11-27T09:50:15.488Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: carry on (the stream's timings)
+2026-11-27T09:50:15.641Z show player stop (pid 193860)
+2026-11-27T09:50:15.664Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:50:15.664Z guard x11 destroy 0x4000007
+2026-11-27T09:50:15.884Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:50:16.171Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 194285 "ffplay"
+2026-11-27T09:50:16.284Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 194285 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:50:16.385Z show player start 1920x1080@60 counter (pid 194285)
+2026-11-27T09:50:16.911Z obs-events change sleep
+2026-11-27T09:50:17.117Z show player stop (pid 194285)
+2026-11-27T09:50:17.147Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:50:17.147Z guard x11 destroy 0x4000007
+2026-11-27T09:50:17.219Z obs-events output off DVI-D-0
+2026-11-27T09:50:17.337Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:50:17.440Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:50:19.442Z obs-events bridge settled input=no signal stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:50:25.418Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:50:25.522Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:50:25.993Z guard x11 create 0x4200007 1920x1080+1920+0 override 1 ffplay/ffplay pid 194967 "ffplay"
+2026-11-27T09:50:26.101Z guard x11 map 0x4200007 1920x1080+1920+0 ffplay/ffplay pid 194967 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:50:26.245Z show player start 1920x1080@60 counter (pid 194967)
+2026-11-27T09:50:27.918Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:50:28.413Z obs-events change rate-59.94
+2026-11-27T09:50:28.638Z show player stop (pid 194967)
+2026-11-27T09:50:28.667Z guard x11 unmap 0x4200007 1920x1080+1920+0
+2026-11-27T09:50:28.667Z guard x11 destroy 0x4200007
+2026-11-27T09:50:28.884Z show mode DVI-D-0 1920x1080@59.94
+2026-11-27T09:50:29.086Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:50:29.341Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 195461 "ffplay"
+2026-11-27T09:50:29.413Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 195461 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:50:29.497Z show player start 1920x1080@59.94 counter (pid 195461)
+2026-11-27T09:50:31.088Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:50:31.770Z obs-events bridge event x1 changes=0x1 input=1920x1080p59.94 stream=1920x1080p60.00
+2026-11-27T09:50:32.349Z obs-events change rate-60
+2026-11-27T09:50:32.566Z show player stop (pid 195461)
+2026-11-27T09:50:32.617Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:50:32.617Z guard x11 destroy 0x4000007
+2026-11-27T09:50:32.809Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:50:33.054Z obs-events bridge event x1 changes=0x1 input=unstable stream=1920x1080p60.00
+2026-11-27T09:50:33.320Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 195885 "ffplay"
+2026-11-27T09:50:33.434Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 195885 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:50:33.538Z show player start 1920x1080@60 counter (pid 195885)
+2026-11-27T09:50:35.059Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:50:35.722Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:50:36.261Z obs-events change res-720p
+2026-11-27T09:50:36.447Z show player stop (pid 195885)
+2026-11-27T09:50:36.467Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:50:36.467Z guard x11 destroy 0x4000007
+2026-11-27T09:50:36.692Z show mode DVI-D-0 1280x720@59.94
+2026-11-27T09:50:36.895Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:50:36.935Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:50:37.488Z guard x11 create 0x4000007 1280x720+1920+0 override 1 ffplay/ffplay pid 196343 "ffplay"
+2026-11-27T09:50:37.622Z guard x11 map 0x4000007 1280x720+1920+0 ffplay/ffplay pid 196343 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-27T09:50:37.740Z show player start 1280x720@59.94 counter (pid 196343)
+2026-11-27T09:50:38.937Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:50:39.543Z obs-events bridge event x1 changes=0x1 input=1280x720p59.94 stream=1920x1080p60.00 (other timings)
+2026-11-27T09:50:41.544Z obs-events bridge settled input=1280x720p59.94 stream=1920x1080p60.00: reopen (new timings)
+2026-11-27T09:50:41.546Z obs-events bridge reopen: SetInputSettings color_range 1 -> 0
+2026-11-27T09:50:41.648Z obs-events bridge adopted: stream=1280x720p59.94 (attempt 1, 0.10 s after it)
+2026-11-27T09:50:41.885Z obs-events change res-1080p
+2026-11-27T09:50:41.981Z show player stop (pid 196343)
+2026-11-27T09:50:42.005Z guard x11 unmap 0x4000007 1280x720+1920+0
+2026-11-27T09:50:42.005Z guard x11 destroy 0x4000007
+2026-11-27T09:50:42.225Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:50:42.396Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:50:42.400Z guard ok: audio 8381 polls, longest interval 50 ms; windows: test windows created 36 (0 created outside DVI-D-0, unmapped), maps 28, maps inside DVI-D-0 28, unmapped geometries outside 0, output changes 30, breaches 0, X events 597
+2026-11-27T09:50:42.470Z obs-events bridge event x1 changes=0x1 input=no signal stream=1280x720p59.94
+2026-11-27T09:50:42.889Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 196835 ""
+2026-11-27T09:50:42.906Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:50:42.990Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 196835 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:50:43.020Z show player start 1920x1080@60 counter (pid 196835)
+2026-11-27T09:50:44.473Z obs-events bridge settled input=unstable stream=1280x720p59.94: wait: no lock
+2026-11-27T09:50:45.066Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1280x720p59.94 (other timings)
+2026-11-27T09:50:47.068Z obs-events bridge settled input=1920x1080p60.00 stream=1280x720p59.94: reopen (new timings)
+2026-11-27T09:50:47.068Z obs-events bridge reopen: SetInputSettings color_range 0 -> 1
+2026-11-27T09:50:47.170Z obs-events bridge adopted: stream=1920x1080p60.00 (attempt 1, 0.10 s after it)
+2026-11-27T09:50:47.583Z obs-events change colour-rgb-limited
+2026-11-27T09:50:48.406Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=1
+2026-11-27T09:50:48.632Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:50:50.635Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: carry on (the stream's timings)
+2026-11-27T09:50:54.080Z obs-events change colour-ycbcr444
+2026-11-27T09:50:54.880Z obs-events colour DVI-D-0 ColorSpace=2 ColorRange=1
+2026-11-27T09:50:55.178Z obs-events bridge event x1 changes=0x1 input=unstable stream=1920x1080p60.00
+2026-11-27T09:50:56.657Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:50:58.659Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: carry on (the stream's timings)
+2026-11-27T09:51:00.523Z obs-events change colour-ycbcr422
+2026-11-27T09:51:01.326Z obs-events colour DVI-D-0 ColorSpace=1 ColorRange=1
+2026-11-27T09:51:07.421Z obs-events change colour-rgb-full
+2026-11-27T09:51:08.233Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-27T09:51:08.557Z obs-events bridge event x1 changes=0x1 input=unstable stream=1920x1080p60.00
+2026-11-27T09:51:10.039Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:51:12.043Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: carry on (the stream's timings)
+2026-11-27T09:51:13.875Z obs-events change edid-same
+2026-11-27T09:51:14.114Z obs-events edid set: default image
+2026-11-27T09:51:14.903Z obs-events change edid-new
+2026-11-27T09:51:15.122Z show player stop (pid 196835)
+2026-11-27T09:51:15.142Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:51:15.142Z guard x11 destroy 0x4000007
+2026-11-27T09:51:15.224Z obs-events edid set: other image
+2026-11-27T09:51:16.402Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:51:16.472Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:51:16.667Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:51:17.464Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:51:17.833Z guard x11 create 0x3a00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 199170 "ffplay"
+2026-11-27T09:51:17.955Z guard x11 map 0x3a00007 1920x1080+1920+0 ffplay/ffplay pid 199170 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:51:17.998Z show player start 1920x1080@60 counter (pid 199170)
+2026-11-27T09:51:18.474Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:51:19.101Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:51:19.666Z obs-events change edid-default
+2026-11-27T09:51:19.876Z show player stop (pid 199170)
+2026-11-27T09:51:19.901Z guard x11 unmap 0x3a00007 1920x1080+1920+0
+2026-11-27T09:51:19.901Z guard x11 destroy 0x3a00007
+2026-11-27T09:51:19.979Z obs-events edid set: default image
+2026-11-27T09:51:21.138Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:51:21.221Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:51:21.388Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:51:22.209Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:51:22.554Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 199623 ""
+2026-11-27T09:51:22.705Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 199623 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:51:22.773Z show player start 1920x1080@60 counter (pid 199623)
+2026-11-27T09:51:23.224Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:51:23.888Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:51:24.396Z obs-events change idle
+2026-11-27T09:51:24.804Z obs-events change reopen-video
+2026-11-27T09:51:24.992Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-27T09:51:25.350Z obs-events change reopen-audio
+2026-11-27T09:51:25.564Z obs-events obs audio reopen: device_id __custom__, custom_pcm hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 (was hw:CARD=/dev/snd/by-path/pci-0000:07:00.0)
+2026-11-27T09:51:25.759Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-27T09:51:25.825Z show player stop (pid 199623)
+2026-11-27T09:51:25.850Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:51:25.850Z guard x11 destroy 0x4000007
+2026-11-27T09:51:25.890Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: carry on (the stream's timings)
+2026-11-27T09:51:26.068Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:51:26.375Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 200039 "ffplay"
+2026-11-27T09:51:26.493Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 200039 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:51:26.571Z show player start 1920x1080@60 counter (pid 200039)
+2026-11-27T09:51:30.788Z obs-events events start: reps 1, res-720p,res-1080p, recording
+2026-11-27T09:51:31.372Z obs-events bridge start input=1920x1080p60.00 stream=1920x1080p60.00 settle=2 hold=0.9
+2026-11-27T09:51:31.372Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-27T09:51:31.441Z show player stop (pid 200039)
+2026-11-27T09:51:31.469Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:51:31.469Z guard x11 destroy 0x4000007
+2026-11-27T09:51:31.684Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:51:32.045Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 200638 "ffplay"
+2026-11-27T09:51:32.214Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 200638 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:51:32.308Z show player start 1920x1080@60 counter (pid 200638)
+2026-11-27T09:51:32.870Z obs-events recording start (StartRecord, hybrid_mp4)
+2026-11-27T09:51:34.470Z obs-events change res-720p
+2026-11-27T09:51:34.739Z show player stop (pid 200638)
+2026-11-27T09:51:34.770Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:51:34.770Z guard x11 destroy 0x4000007
+2026-11-27T09:51:34.984Z show mode DVI-D-0 1280x720@59.94
+2026-11-27T09:51:35.204Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:51:35.223Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:51:35.768Z guard x11 create 0x4000007 1280x720+1920+0 override 1 ffplay/ffplay pid 201037 "ffplay"
+2026-11-27T09:51:35.898Z guard x11 map 0x4000007 1280x720+1920+0 ffplay/ffplay pid 201037 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-27T09:51:35.947Z show player start 1280x720@59.94 counter (pid 201037)
+2026-11-27T09:51:37.225Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:51:37.851Z obs-events bridge event x1 changes=0x1 input=1280x720p59.94 stream=1920x1080p60.00 (other timings)
+2026-11-27T09:51:39.854Z obs-events bridge settled input=1280x720p59.94 stream=1920x1080p60.00: reopen (new timings)
+2026-11-27T09:51:39.857Z obs-events bridge reopen: SetInputSettings color_range 0 -> 1
+2026-11-27T09:51:39.958Z obs-events bridge adopted: stream=1280x720p59.94 (attempt 1, 0.10 s after it)
+2026-11-27T09:51:40.150Z obs-events change res-1080p
+2026-11-27T09:51:40.255Z show player stop (pid 201037)
+2026-11-27T09:51:40.272Z guard x11 unmap 0x4000007 1280x720+1920+0
+2026-11-27T09:51:40.272Z guard x11 destroy 0x4000007
+2026-11-27T09:51:40.513Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:51:40.705Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:51:40.826Z obs-events bridge event x1 changes=0x1 input=unstable stream=1280x720p59.94
+2026-11-27T09:51:41.220Z guard x11 create 0x4400007 1920x1080+1920+0 override 1 ffplay/ffplay pid 201568 "ffplay"
+2026-11-27T09:51:41.418Z guard x11 map 0x4400007 1920x1080+1920+0 ffplay/ffplay pid 201568 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:51:41.430Z show player start 1920x1080@60 counter (pid 201568)
+2026-11-27T09:51:42.408Z guard ok: audio 9579 polls, longest interval 51 ms; windows: test windows created 43 (0 created outside DVI-D-0, unmapped), maps 35, maps inside DVI-D-0 35, unmapped geometries outside 0, output changes 36, breaches 0, X events 728
+2026-11-27T09:51:42.828Z obs-events bridge settled input=unstable stream=1280x720p59.94: wait: no lock
+2026-11-27T09:51:42.966Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:51:43.444Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1280x720p59.94 (other timings)
+2026-11-27T09:51:45.446Z obs-events bridge settled input=1920x1080p60.00 stream=1280x720p59.94: reopen (new timings)
+2026-11-27T09:51:45.446Z obs-events bridge reopen: SetInputSettings color_range 1 -> 0
+2026-11-27T09:51:45.549Z obs-events bridge adopted: stream=1920x1080p60.00 (attempt 1, 0.10 s after it)
+2026-11-27T09:51:51.836Z obs-events recording stop (StopRecord)
+2026-11-27T09:51:52.039Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-27T09:51:52.105Z show player stop (pid 201568)
+2026-11-27T09:51:52.139Z guard x11 unmap 0x4400007 1920x1080+1920+0
+2026-11-27T09:51:52.139Z guard x11 destroy 0x4400007
+2026-11-27T09:51:52.351Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:51:52.557Z guard x11 create 0x4000002 1920x1080+1920+0 override 1 ffplay/ffplay pid 202444 ""
+2026-11-27T09:51:52.557Z guard x11 destroy 0x4000002
+2026-11-27T09:51:52.712Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 202444 "ffplay"
+2026-11-27T09:51:52.870Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 202444 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:51:53.000Z show player start 1920x1080@60 counter (pid 202444)
+2026-11-27T09:51:56.934Z live obs stop
+2026-11-27T09:52:02.700Z live obs start
+2026-11-27T09:52:09.349Z obs-events events start: reps 1, res-720p,res-1080p, recording
+2026-11-27T09:52:10.304Z obs-events bridge start input=1920x1080p60.00 stream=1920x1080p60.00 settle=2 hold=0.9
+2026-11-27T09:52:10.304Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-27T09:52:10.371Z show player stop (pid 202444)
+2026-11-27T09:52:10.400Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:52:10.400Z guard x11 destroy 0x4000007
+2026-11-27T09:52:10.615Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:52:10.893Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 203916 ""
+2026-11-27T09:52:11.027Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 203916 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:52:11.135Z show player start 1920x1080@60 counter (pid 203916)
+2026-11-27T09:52:11.687Z obs-events recording start (StartRecord, mkv)
+2026-11-27T09:52:13.293Z obs-events change res-720p
+2026-11-27T09:52:13.578Z show player stop (pid 203916)
+2026-11-27T09:52:13.606Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:52:13.606Z guard x11 destroy 0x4000007
+2026-11-27T09:52:13.826Z show mode DVI-D-0 1280x720@59.94
+2026-11-27T09:52:14.035Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:52:14.092Z obs-events bridge event x1 changes=0x1 input=no signal stream=1920x1080p60.00
+2026-11-27T09:52:14.388Z guard x11 create 0x4400002 1280x720+1920+0 override 1 ffplay/ffplay pid 204362 ""
+2026-11-27T09:52:14.392Z guard x11 destroy 0x4400002
+2026-11-27T09:52:14.568Z guard x11 create 0x4400007 1280x720+1920+0 override 1 ffplay/ffplay pid 204362 "ffplay"
+2026-11-27T09:52:14.712Z guard x11 map 0x4400007 1280x720+1920+0 ffplay/ffplay pid 204362 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-27T09:52:14.813Z show player start 1280x720@59.94 counter (pid 204362)
+2026-11-27T09:52:16.095Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock
+2026-11-27T09:52:16.697Z obs-events bridge event x1 changes=0x1 input=1280x720p59.94 stream=1920x1080p60.00 (other timings)
+2026-11-27T09:52:18.700Z obs-events bridge settled input=1280x720p59.94 stream=1920x1080p60.00: reopen (new timings)
+2026-11-27T09:52:18.705Z obs-events bridge reopen: SetInputSettings color_range 0 -> 1
+2026-11-27T09:52:21.707Z obs-events bridge not adopted in 3 s (stream=1920x1080p60.00, input=1280x720p59.94): attempt 2 in 2 s
+2026-11-27T09:52:23.711Z obs-events bridge reopen: SetInputSettings color_range 1 -> 0
+2026-11-27T09:52:25.669Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-27T09:52:26.713Z obs-events bridge not adopted in 3 s (stream=1920x1080p60.00, input=1280x720p59.94): attempt 3 in 4 s
+2026-11-27T09:52:30.719Z obs-events bridge reopen: SetInputSettings color_range 1 -> 0
+2026-11-27T09:52:33.720Z obs-events bridge not adopted in 3 s (stream=1920x1080p60.00, input=1280x720p59.94): attempt 4 in 8 s
+2026-11-27T09:52:41.725Z obs-events bridge reopen: SetInputSettings color_range 0 -> 1
+2026-11-27T09:52:42.417Z guard ok: audio 10776 polls, longest interval 51 ms; windows: test windows created 48 (0 created outside DVI-D-0, unmapped), maps 38, maps inside DVI-D-0 38, unmapped geometries outside 0, output changes 37, breaches 0, X events 773
+2026-11-27T09:52:43.027Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:52:44.725Z obs-events bridge not adopted in 3 s (stream=1920x1080p60.00, input=1280x720p59.94): attempt 5 in 16 s
+2026-11-27T09:52:46.914Z obs-events change res-1080p
+2026-11-27T09:52:52.984Z show player stop (pid 204362)
+2026-11-27T09:52:53.000Z guard x11 unmap 0x4400007 1280x720+1920+0
+2026-11-27T09:52:53.000Z guard x11 destroy 0x4400007
+2026-11-27T09:52:53.225Z show mode DVI-D-0 1280x720@59.94
+2026-11-27T09:52:53.525Z guard x11 create 0x4000007 1280x720+1920+0 override 1 ffplay/ffplay pid 207078 "ffplay"
+2026-11-27T09:52:53.620Z guard x11 map 0x4000007 1280x720+1920+0 ffplay/ffplay pid 207078 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-27T09:52:53.743Z show player start 1280x720@59.94 counter (pid 207078)
+2026-11-27T09:53:00.744Z obs-events bridge reopen: SetInputSettings color_range 1 -> 0
+2026-11-27T09:53:03.745Z obs-events bridge not adopted in 3 s (stream=1920x1080p60.00, input=1280x720p59.94): attempt 6 in 30 s
+2026-11-27T09:53:09.317Z obs-events recover before res-1080p: reopen (attempt 1)
+2026-11-27T09:53:09.321Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-27T09:53:15.856Z obs-events recover before res-1080p: reopen (attempt 2)
+2026-11-27T09:53:15.857Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-27T09:53:27.028Z obs-events recover before res-1080p: reopen (attempt 3)
+2026-11-27T09:53:27.030Z obs-events obs reopen: SetInputSettings color_range 1 (OBS closes and reopens the device)
+2026-11-27T09:53:33.781Z obs-events bridge reopen: SetInputSettings color_range 1 -> 0
+2026-11-27T09:53:36.781Z obs-events bridge not adopted in 3 s (stream=1920x1080p60.00, input=1280x720p59.94): attempt 7 in 30 s
+2026-11-27T09:53:42.425Z guard ok: audio 11973 polls, longest interval 51 ms; windows: test windows created 49 (0 created outside DVI-D-0, unmapped), maps 39, maps inside DVI-D-0 39, unmapped geometries outside 0, output changes 37, breaches 0, X events 783
+2026-11-27T09:53:43.087Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:53:47.648Z show player stop (pid 207078)
+2026-11-27T09:53:47.673Z guard x11 unmap 0x4000007 1280x720+1920+0
+2026-11-27T09:53:47.673Z guard x11 destroy 0x4000007
+2026-11-27T09:53:47.910Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:53:48.048Z obs-events bridge event x1 changes=0x1 input=unstable stream=1920x1080p60.00
+2026-11-27T09:53:48.095Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:53:48.711Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 210610 ""
+2026-11-27T09:53:48.856Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 210610 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:53:48.956Z show player start 1920x1080@60 counter (pid 210610)
+2026-11-27T09:53:50.050Z obs-events bridge settled input=unstable stream=1920x1080p60.00: wait: no lock (other timings for 91.35 s before: reopen once locked)
+2026-11-27T09:53:50.681Z obs-events bridge event x1 changes=0x1 input=1920x1080p60.00 stream=1920x1080p60.00
+2026-11-27T09:53:52.682Z obs-events bridge settled input=1920x1080p60.00 stream=1920x1080p60.00: reopen (other timings for 91.35 s: the stream failed)
+2026-11-27T09:53:52.683Z obs-events bridge reopen: SetInputSettings color_range 0 -> 1
+2026-11-27T09:53:52.683Z obs-events bridge reopened (same timings: the close cannot be checked here)
+2026-11-27T09:53:59.662Z obs-events obs reopen: SetInputSettings color_range 0 (OBS closes and reopens the device)
+2026-11-27T09:54:27.169Z obs-events recording stop (StopRecord)
+2026-11-27T09:54:27.374Z obs-events colour DVI-D-0 ColorSpace=0 ColorRange=0
+2026-11-27T09:54:27.438Z show player stop (pid 210610)
+2026-11-27T09:54:27.488Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:54:27.489Z guard x11 destroy 0x4000007
+2026-11-27T09:54:27.689Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:54:27.964Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 213341 "ffplay"
+2026-11-27T09:54:28.088Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 213341 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:54:28.191Z show player start 1920x1080@60 counter (pid 213341)
+2026-11-27T09:54:32.485Z live obs stop
+2026-11-27T09:54:38.232Z show player stop (pid 213341)
+2026-11-27T09:54:38.254Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:54:38.254Z guard x11 destroy 0x4000007
+2026-11-27T09:54:38.476Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:54:38.762Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 214177 "ffplay"
+2026-11-27T09:54:38.904Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 214177 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:54:39.003Z show player start 1920x1080@60 (pid 214177)
+2026-11-27T09:54:40.076Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-27T09:54:41.896Z live stream stop (exit 0)
+2026-11-27T09:54:41.903Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-27T09:54:42.434Z guard ok: audio 13171 polls, longest interval 51 ms; windows: test windows created 52 (0 created outside DVI-D-0, unmapped), maps 42, maps inside DVI-D-0 42, unmapped geometries outside 0, output changes 38, breaches 0, X events 821
+2026-11-27T09:54:43.148Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:54:43.722Z live stream stop (exit 0)
+2026-11-27T09:54:43.728Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-27T09:54:45.085Z live stream stop (exit 0)
+2026-11-27T09:54:45.635Z show player stop (pid 214177)
+2026-11-27T09:54:45.650Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:54:45.650Z guard x11 destroy 0x4000007
+2026-11-27T09:54:45.740Z live output off DVI-D-0
+2026-11-27T09:54:45.890Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:54:45.921Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-27T09:54:47.849Z live stream stop (exit 0)
+2026-11-27T09:54:48.175Z show mode DVI-D-0 1280x720@60
+2026-11-27T09:54:48.298Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:54:48.813Z guard x11 create 0x4200007 1280x720+1920+0 override 1 ffplay/ffplay pid 228122 "ffplay"
+2026-11-27T09:54:48.913Z guard x11 map 0x4200007 1280x720+1920+0 ffplay/ffplay pid 228122 "gc573-pattern": inside DVI-D-0 1280x720+1920+0
+2026-11-27T09:54:48.954Z show player start 1280x720@60 (pid 228122)
+2026-11-27T09:54:53.608Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-27T09:54:54.999Z live stream stop (exit 0)
+2026-11-27T09:54:55.439Z show player stop (pid 228122)
+2026-11-27T09:54:55.450Z guard x11 unmap 0x4200007 1280x720+1920+0
+2026-11-27T09:54:55.450Z guard x11 destroy 0x4200007
+2026-11-27T09:54:55.676Z show mode DVI-D-0 1920x1080@60
+2026-11-27T09:54:55.865Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:54:56.426Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 242327 ""
+2026-11-27T09:54:56.610Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 242327 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T09:54:56.693Z show player start 1920x1080@60 (pid 242327)
+2026-11-27T09:54:58.477Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-27T09:55:00.307Z live stream stop (exit 0)
+2026-11-27T09:55:00.750Z show player stop (pid 242327)
+2026-11-27T09:55:00.778Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T09:55:00.778Z guard x11 destroy 0x4000007
+2026-11-27T09:55:01.146Z live stress start: 600 s, bind role 1
+2026-11-27T09:55:04.221Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T09:55:04.425Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:10.523Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:55:10.772Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:13.175Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:55:13.441Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:19.508Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T09:55:19.686Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:21.499Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:55:21.747Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:26.336Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:55:26.585Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:27.751Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T09:55:30.389Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:55:30.638Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:34.977Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:55:36.944Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:55:37.210Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:42.442Z guard ok: audio 14368 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 55, breaches 0, X events 1008
+2026-11-27T09:55:43.210Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:55:43.552Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:55:43.798Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:48.012Z live output off DVI-D-0 (stress)
+2026-11-27T09:55:48.165Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:55:50.235Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:55:50.370Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:55:52.910Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:55:53.156Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:01.167Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:01.429Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:05.448Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T09:56:05.641Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:10.291Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:10.553Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:14.574Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:14.823Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:18.795Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:18.802Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T09:56:19.044Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:25.149Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:25.399Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:25.895Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T09:56:26.104Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:27.972Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:28.234Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:29.190Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:56:34.040Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:34.289Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:41.352Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:56:42.452Z guard ok: audio 15566 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 77, breaches 0, X events 1213
+2026-11-27T09:56:43.273Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:56:46.137Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:46.433Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:49.102Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:49.351Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:56:53.439Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:56:59.909Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:04.314Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:57:12.269Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:15.496Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T09:57:15.697Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:18.780Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T09:57:21.531Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:57:21.777Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:21.918Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:57:31.008Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T09:57:31.193Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:33.375Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:57:33.637Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:40.276Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T09:57:40.468Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:40.642Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:57:41.627Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:42.462Z guard ok: audio 16763 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 94, breaches 0, X events 1434
+2026-11-27T09:57:43.331Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:57:44.333Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:57:44.579Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:48.103Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:57:48.349Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:57:53.551Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:58:00.210Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:58:00.458Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:06.234Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:58:06.497Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:06.723Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:58:10.814Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T09:58:10.992Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:16.751Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:58:16.989Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:19.895Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:58:20.141Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:23.948Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:58:24.210Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:26.072Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T09:58:29.016Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:58:29.236Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:35.285Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:58:37.056Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:58:38.179Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:42.473Z guard ok: audio 17960 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 113, breaches 0, X events 1617
+2026-11-27T09:58:43.391Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:58:45.582Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:58:45.845Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:50.377Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T09:58:52.238Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:58:52.454Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:58:56.505Z live output off DVI-D-0 (stress)
+2026-11-27T09:58:56.642Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:59:01.718Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:59:01.837Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:59:06.633Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:59:13.184Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:59:14.853Z live output off DVI-D-0 (stress)
+2026-11-27T09:59:14.974Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:59:22.358Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:59:33.072Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T09:59:38.157Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T09:59:38.362Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:59:42.484Z guard ok: audio 19157 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 124, breaches 0, X events 1781
+2026-11-27T09:59:43.450Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T09:59:44.080Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:59:44.325Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:59:46.445Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T09:59:46.624Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:59:49.834Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:59:50.080Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:59:56.706Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T09:59:56.969Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:00:01.702Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T10:00:06.462Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:00:06.727Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:00:13.897Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T10:00:19.241Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:00:19.504Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:00:22.104Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T10:00:22.286Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:00:23.678Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:00:23.924Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:00:33.361Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:00:34.033Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:00:34.253Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:00:38.307Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:00:38.569Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:00:42.387Z live output off DVI-D-0 (stress)
+2026-11-27T10:00:42.494Z guard ok: audio 20355 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 142, breaches 0, X events 1938
+2026-11-27T10:00:42.549Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:00:43.511Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T10:00:46.584Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:00:47.710Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:00:57.289Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:00:57.551Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:00.674Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:01:03.810Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:01:11.162Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:18.806Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:01:19.069Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:19.719Z live output off DVI-D-0 (stress)
+2026-11-27T10:01:19.873Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:01:21.954Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:01:22.082Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:25.165Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T10:01:25.354Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:29.314Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:01:29.577Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:35.429Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:01:36.993Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:01:37.300Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:42.506Z guard ok: audio 21552 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 157, breaches 0, X events 2133
+2026-11-27T10:01:43.448Z live output off DVI-D-0 (stress)
+2026-11-27T10:01:43.571Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T10:01:43.592Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:01:43.755Z guard x11 outputs: DVI-D-0 1024x768+1920+0; DVI-D-0 1024x768+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:44.072Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:46.995Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:01:47.241Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:47.675Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:01:51.248Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:01:51.511Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:01:54.801Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:01:55.047Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:01.698Z live output off DVI-D-0 (stress)
+2026-11-27T10:02:01.840Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:02:02.003Z guard x11 outputs: DVI-D-0 1024x768+1920+0; DVI-D-0 1024x768+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:04.913Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:02:05.079Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:08.279Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:02:08.525Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:15.368Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:02:15.631Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:18.721Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:02:18.967Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:20.145Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T10:02:20.326Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:24.776Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:02:25.038Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:30.342Z live output off DVI-D-0 (stress)
+2026-11-27T10:02:30.497Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:02:33.311Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:33.589Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:02:42.516Z guard ok: audio 22749 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 180, breaches 0, X events 2342
+2026-11-27T10:02:43.629Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T10:02:46.637Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:02:46.760Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:02:47.023Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:50.880Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:02:51.126Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:02:56.847Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T10:02:59.554Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:03:07.005Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:09.052Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T10:03:09.232Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:18.307Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:03:18.492Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:21.569Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T10:03:21.743Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:24.424Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:03:24.686Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:24.826Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T10:03:31.212Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:03:31.224Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T10:03:32.326Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:36.313Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T10:03:36.487Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:39.970Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:03:40.215Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:42.526Z guard ok: audio 23946 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 196, breaches 0, X events 2533
+2026-11-27T10:03:43.687Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T10:03:45.808Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:03:46.070Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:46.551Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T10:03:46.762Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:50.011Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:03:50.257Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:03:53.843Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T10:04:06.145Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:04:06.420Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:04:13.000Z live output off DVI-D-0 (stress)
+2026-11-27T10:04:13.147Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:04:17.212Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:04:19.226Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T10:04:24.311Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T10:04:24.493Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:04:26.290Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:04:26.536Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:04:34.046Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:04:34.292Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:04:39.575Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T10:04:42.537Z guard ok: audio 25144 polls, longest interval 51 ms; windows: test windows created 54 (0 created outside DVI-D-0, unmapped), maps 44, maps inside DVI-D-0 44, unmapped geometries outside 0, output changes 210, breaches 0, X events 2682
+2026-11-27T10:04:43.747Z camwatch ok 18 nodes marked; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T10:04:48.893Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:04:49.154Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:04:52.767Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T10:04:52.955Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:04:55.298Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T10:04:55.560Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T10:05:04.947Z live stress end (exit 1)
+2026-11-27T10:05:05.514Z show mode DVI-D-0 1920x1080@60
+2026-11-27T10:05:05.810Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 280610 "ffplay"
+2026-11-27T10:05:05.943Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 280610 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T10:05:06.027Z show player start 1920x1080@60 (pid 280610)
+2026-11-27T10:05:06.226Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-27T10:05:07.543Z live stream stop (exit 0)
+2026-11-27T10:05:07.620Z show player stop (pid 280610)
+2026-11-27T10:05:07.634Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T10:05:07.634Z guard x11 destroy 0x4000007
+2026-11-27T10:05:07.859Z show mode DVI-D-0 1920x1080@60
+2026-11-27T10:05:08.160Z guard x11 create 0x4000007 1920x1080+1920+0 override 1 ffplay/ffplay pid 285190 ""
+2026-11-27T10:05:08.282Z guard x11 map 0x4000007 1920x1080+1920+0 ffplay/ffplay pid 285190 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T10:05:08.395Z show player start 1920x1080@60 (pid 285190)
+2026-11-27T10:05:16.468Z show player stop (pid 285190)
+2026-11-27T10:05:16.487Z guard x11 unmap 0x4000007 1920x1080+1920+0
+2026-11-27T10:05:16.487Z guard x11 destroy 0x4000007
+2026-11-27T10:05:31.544Z guard end: run pid 107557 gone; audio 26110 polls, longest interval 51 ms; windows: test windows created 56 (0 created outside DVI-D-0, unmapped), maps 46, maps inside DVI-D-0 46, unmapped geometries outside 0, output changes 215, breaches 0, X events 2746; no breach
+2026-11-27T10:05:31.796Z camwatch end run pid 107557 gone; opens: 7 info, 0 breach, 0 other, 0 unknown, 0 test

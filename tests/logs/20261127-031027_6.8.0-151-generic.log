@@ -1,0 +1,131 @@
+# GC573 regression suite
+date:    2026-11-27 03:10:28 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 670ADFA43ED0936442FBADE
+rev:     259ad5b77bd0
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 19-surprise-remove
+  round 1
+    removed in 315 ms; capture exit 2 (FAIL capture fmt=NV12: no frame after 119: No such device), audio exit 1 (RESULT audio frames=105120 secs=2.180 rate=47999.270 xruns=0 restarts=0)
+    holders after the removal: video ENODEV, control ENODEV; both closed
+    rescan: bound, capture and audio OK, driver memory 0
+  round 2
+    removed in 318 ms; capture exit 2 (FAIL capture fmt=NV12: no frame after 120: No such device), audio exit 1 (RESULT audio frames=105120 secs=2.180 rate=47999.935 xruns=0 restarts=0)
+    holders after the removal: video ENODEV, control ENODEV; both closed
+    rescan: bound, capture and audio OK, driver memory 0
+  round 3
+    removed in 321 ms; capture exit 2 (FAIL capture fmt=NV12: no frame after 120: No such device), audio exit 1 (RESULT audio frames=105120 secs=2.180 rate=47997.367 xruns=0 restarts=0)
+    holders after the removal: video ENODEV, control ENODEV; both closed
+    rescan: bound, capture and audio OK, driver memory 0
+  3 removals while streaming with files held: clean
+  -- kernel log (53 lines)
+  | [ 1162.932269] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 1162.932344] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 1163.066260] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 1163.067652] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 1163.177851] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 1163.178562] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 1163.281088] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 1163.421895] gc573 0000:07:00.0: video device video0
+  | [ 1163.422762] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 1163.445517] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 1163.982343] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 1167.517816] pci 0000:07:00.0: [1461:0054] type 00 class 0x040000 PCIe Endpoint
+  | [ 1167.519522] pci 0000:07:00.0: BAR 0 [mem 0x81600000-0x8167ffff]
+  | [ 1167.536390] pci 0000:07:00.0: BAR 0 [mem 0x81600000-0x8167ffff]: assigned
+  | [ 1167.645186] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 1167.645212] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 1167.778746] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 1167.779575] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 1167.881510] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 1167.882209] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 1167.982197] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 1168.125628] gc573 0000:07:00.0: video device video0
+  | [ 1168.125842] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 1168.136434] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 1168.678903] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 1175.071578] pci 0000:07:00.0: [1461:0054] type 00 class 0x040000 PCIe Endpoint
+  | [ 1175.073335] pci 0000:07:00.0: BAR 0 [mem 0x81600000-0x8167ffff]
+  | [ 1175.087937] pci 0000:07:00.0: BAR 0 [mem 0x81600000-0x8167ffff]: assigned
+  | [ 1175.196045] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 1175.196092] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 1175.329870] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 1175.335317] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 1175.442388] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 1175.443090] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 1175.545659] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 1175.685334] gc573 0000:07:00.0: video device video0
+  | [ 1175.685417] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 1175.697685] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 1176.238624] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 1182.630599] pci 0000:07:00.0: [1461:0054] type 00 class 0x040000 PCIe Endpoint
+  | [ 1182.632420] pci 0000:07:00.0: BAR 0 [mem 0x81600000-0x8167ffff]
+  | [ 1182.651437] pci 0000:07:00.0: BAR 0 [mem 0x81600000-0x8167ffff]: assigned
+  | [ 1182.759437] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 1182.759465] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 1182.894123] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 1182.895429] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 1183.005267] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 1183.005961] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 1183.106928] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 1183.245558] gc573 0000:07:00.0: video device video0
+  | [ 1183.246095] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 1183.260509] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [ 1183.798315] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+RESULT 19-surprise-remove   PASS (24s)
+
+## 25-card-release
+  -- i2c-dev holder, --yes
+    > the card's audio or I2C nodes are open in sleep (pid 14395): an unbind would wait until they close them, so the card is left alone (--yes too). Close them and run this again
+  ok:   i2c-dev holder: refused, holder named
+  -- ALSA control holder, --yes
+    > the card's audio or I2C nodes are open in sleep (pid 14431): an unbind would wait until they close them, so the card is left alone (--yes too). Close them and run this again
+  ok:   ALSA holder: refused, holder named
+  -- ALSA holder that calls itself wireplumber, --yes
+  comm: wireplumber
+    > the card's audio or I2C nodes are open in wireplumber (pid 14469): an unbind would wait until they close them, so the card is left alone (--yes too). Close them and run this again
+  ok:   fake wireplumber: refused, holder named
+  -- video holder with escapes in its comm
+    > the card is in use by [2J]0;xfake (pid 14524): close it and run this again, or run this with --yes, and it loses the card
+  ok:   escape-laden comm: refused, holder named
+  ok:   no control characters in the output
+  -- a file named like a holder record
+  ok:   no holder found
+  every holder was handled
+  -- kernel log (10 lines)
+  | [ 1187.185949] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 1187.185975] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 1187.320130] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+  | [ 1187.321620] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 1187.425801] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 1187.426547] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 1187.526578] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 1187.669368] gc573 0000:07:00.0: video device video0
+  | [ 1187.669601] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 1187.682813] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT 25-card-release      PASS (1s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 19-surprise-remove   PASS (24s)
+RESULT 25-card-release      PASS (1s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=2 fail=0 skip=2

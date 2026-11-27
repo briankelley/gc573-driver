@@ -1,0 +1,634 @@
+# GC573 regression suite
+date:    2026-11-27 15:25:15 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion F2850510285641D03C5D467
+rev:     e54edcca2ab8
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 02-load-unload
+  50 load/unload cycles in 44 s; after each unload bus mastering on, PCI enable count 1
+  -- kernel log (600 lines)
+  | [  890.342364] gc573-test: 1795793116154432265-3637 iteration 1
+  | [  890.360994] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  890.468412] gc573 0000:07:00.0: using MSI, irq 60
+  | [  890.468432] gc573 0000:07:00.0: FPGA version 20200811
+  | [  890.600485] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  890.602618] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  890.709601] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  890.710284] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  890.805332] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  890.945106] gc573 0000:07:00.0: video device video0
+  | [  890.946424] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  890.970227] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  891.211966] gc573-test: 1795793117024482038-2970 iteration 2
+  | [  891.216647] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  891.324049] gc573 0000:07:00.0: using MSI, irq 60
+  | [  891.324061] gc573 0000:07:00.0: FPGA version 20200811
+  | [  891.456385] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  891.457109] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  891.559228] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  891.559958] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  891.658647] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  891.800558] gc573 0000:07:00.0: video device video0
+  | [  891.800658] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  891.818500] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  892.050607] gc573-test: 1795793117863124453-25148 iteration 3
+  | [  892.055716] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  892.161320] gc573 0000:07:00.0: using MSI, irq 60
+  | [  892.161335] gc573 0000:07:00.0: FPGA version 20200811
+  | [  892.293421] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  892.294124] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  892.393974] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  892.394657] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  892.492888] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  892.632542] gc573 0000:07:00.0: video device video0
+  | [  892.632631] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  892.650514] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  892.883193] gc573-test: 1795793118695731465-15466 iteration 4
+  | [  892.887848] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  892.994488] gc573 0000:07:00.0: using MSI, irq 60
+  | [  892.994502] gc573 0000:07:00.0: FPGA version 20200811
+  | [  893.123415] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  893.124375] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  893.224962] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  893.225744] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  893.323896] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  893.464546] gc573 0000:07:00.0: video device video0
+  | [  893.464679] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  893.476484] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  893.712637] gc573-test: 1795793119525132698-23075 iteration 5
+  | [  893.718383] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  893.822215] gc573 0000:07:00.0: using MSI, irq 60
+  | [  893.822229] gc573 0000:07:00.0: FPGA version 20200811
+  | [  893.955430] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  893.956975] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  894.061811] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  894.062500] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  894.161381] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  894.304591] gc573 0000:07:00.0: video device video0
+  | [  894.306448] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  894.317927] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  894.579550] gc573-test: 1795793120391888275-16186 iteration 6
+  | [  894.589600] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  894.694273] gc573 0000:07:00.0: using MSI, irq 60
+  | [  894.694292] gc573 0000:07:00.0: FPGA version 20200811
+  | [  894.818418] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  894.820554] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  894.919897] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  894.920626] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  895.020296] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  895.161069] gc573 0000:07:00.0: video device video0
+  | [  895.161842] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  895.175900] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  895.435876] gc573-test: 1795793121247998678-4138 iteration 7
+  | [  895.456669] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  895.561713] gc573 0000:07:00.0: using MSI, irq 60
+  | [  895.561734] gc573 0000:07:00.0: FPGA version 20200811
+  | [  895.694403] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  895.696217] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  895.801482] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  895.802165] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  895.902984] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  896.040721] gc573 0000:07:00.0: video device video0
+  | [  896.041158] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  896.055930] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  896.322028] gc573-test: 1795793122134221641-27212 iteration 8
+  | [  896.344325] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  896.449864] gc573 0000:07:00.0: using MSI, irq 60
+  | [  896.449885] gc573 0000:07:00.0: FPGA version 20200811
+  | [  896.578387] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  896.580149] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  896.694997] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  896.695683] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  896.797135] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  896.936828] gc573 0000:07:00.0: video device video0
+  | [  896.937077] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  896.953305] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  897.218385] gc573-test: 1795793123030677266-25341 iteration 9
+  | [  897.234853] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  897.339908] gc573 0000:07:00.0: using MSI, irq 60
+  | [  897.339929] gc573 0000:07:00.0: FPGA version 20200811
+  | [  897.472380] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  897.474134] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  897.582970] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  897.583688] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  897.682734] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  897.824831] gc573 0000:07:00.0: video device video0
+  | [  897.825271] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  897.838244] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  898.125222] gc573-test: 1795793123937243836-22350 iteration 10
+  | [  898.140349] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  898.244777] gc573 0000:07:00.0: using MSI, irq 60
+  | [  898.244792] gc573 0000:07:00.0: FPGA version 20200811
+  | [  898.377363] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  898.379137] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  898.490793] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  898.491484] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  898.592338] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  898.736784] gc573 0000:07:00.0: video device video0
+  | [  898.737121] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  898.750363] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  899.019663] gc573-test: 1795793124831810934-27215 iteration 11
+  | [  899.040958] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  899.145515] gc573 0000:07:00.0: using MSI, irq 60
+  | [  899.145536] gc573 0000:07:00.0: FPGA version 20200811
+  | [  899.277333] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  899.278920] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  899.389780] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  899.390468] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  899.491695] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  899.632959] gc573 0000:07:00.0: video device video0
+  | [  899.634096] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  899.648359] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  899.911233] gc573-test: 1795793125723632750-29457 iteration 12
+  | [  899.930673] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  900.035597] gc573 0000:07:00.0: using MSI, irq 60
+  | [  900.035617] gc573 0000:07:00.0: FPGA version 20200811
+  | [  900.167328] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  900.168885] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  900.267360] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  900.268033] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  900.367301] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  900.504769] gc573 0000:07:00.0: video device video0
+  | [  900.508472] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  900.522570] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  900.789992] gc573-test: 1795793126602190978-10675 iteration 13
+  | [  900.811810] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  900.920379] gc573 0000:07:00.0: using MSI, irq 60
+  | [  900.920400] gc573 0000:07:00.0: FPGA version 20200811
+  | [  901.053318] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  901.055223] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  901.165040] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  901.165772] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  901.266073] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  901.408429] gc573 0000:07:00.0: video device video0
+  | [  901.408524] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  901.422037] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  901.660359] gc573-test: 1795793127473017034-13416 iteration 14
+  | [  901.666699] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  901.772077] gc573 0000:07:00.0: using MSI, irq 60
+  | [  901.772089] gc573 0000:07:00.0: FPGA version 20200811
+  | [  901.904311] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  901.905446] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  902.005734] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  902.006497] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  902.090830] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  902.232496] gc573 0000:07:00.0: video device video0
+  | [  902.232678] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  902.246154] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  902.514316] gc573-test: 1795793128326514004-26042 iteration 15
+  | [  902.536745] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  902.642221] gc573 0000:07:00.0: using MSI, irq 60
+  | [  902.642243] gc573 0000:07:00.0: FPGA version 20200811
+  | [  902.775290] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  902.776587] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  902.882407] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  902.883082] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  902.982933] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  903.120697] gc573 0000:07:00.0: video device video0
+  | [  903.122761] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  903.138892] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  903.412036] gc573-test: 1795793129224334466-27857 iteration 16
+  | [  903.427447] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  903.532597] gc573 0000:07:00.0: using MSI, irq 60
+  | [  903.532618] gc573 0000:07:00.0: FPGA version 20200811
+  | [  903.664277] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  903.666136] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  903.777830] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  903.778526] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  903.874291] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  904.016608] gc573 0000:07:00.0: video device video0
+  | [  904.018427] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  904.031638] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  904.303778] gc573-test: 1795793130116030969-4607 iteration 17
+  | [  904.324679] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  904.429830] gc573 0000:07:00.0: using MSI, irq 60
+  | [  904.429851] gc573 0000:07:00.0: FPGA version 20200811
+  | [  904.563262] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  904.565548] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  904.674513] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  904.675200] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  904.775786] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  904.920812] gc573 0000:07:00.0: video device video0
+  | [  904.922547] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  904.935274] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  905.202723] gc573-test: 1795793131014919289-6322 iteration 18
+  | [  905.225511] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  905.331122] gc573 0000:07:00.0: using MSI, irq 60
+  | [  905.331144] gc573 0000:07:00.0: FPGA version 20200811
+  | [  905.464250] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  905.466354] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  905.566766] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  905.567452] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  905.667652] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  905.808844] gc573 0000:07:00.0: video device video0
+  | [  905.809329] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  905.828704] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  906.094681] gc573-test: 1795793131906817525-25105 iteration 19
+  | [  906.119619] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  906.225353] gc573 0000:07:00.0: using MSI, irq 60
+  | [  906.225374] gc573 0000:07:00.0: FPGA version 20200811
+  | [  906.358246] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  906.359687] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  906.465032] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  906.465710] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  906.565035] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  906.704501] gc573 0000:07:00.0: video device video0
+  | [  906.704842] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  906.724090] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  907.010861] gc573-test: 1795793132823253156-12133 iteration 20
+  | [  907.031268] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  907.142073] gc573 0000:07:00.0: using MSI, irq 60
+  | [  907.142095] gc573 0000:07:00.0: FPGA version 20200811
+  | [  907.275100] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  907.277124] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  907.385151] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  907.385837] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  907.487255] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  907.632628] gc573 0000:07:00.0: video device video0
+  | [  907.632955] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  907.649227] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  907.907857] gc573-test: 1795793133720451404-18739 iteration 21
+  | [  907.922994] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  908.027972] gc573 0000:07:00.0: using MSI, irq 60
+  | [  908.027993] gc573 0000:07:00.0: FPGA version 20200811
+  | [  908.157211] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  908.158764] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  908.265799] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  908.266513] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  908.367467] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  908.512602] gc573 0000:07:00.0: video device video0
+  | [  908.514585] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  908.528229] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  908.801314] gc573-test: 1795793134613645580-17707 iteration 22
+  | [  908.820216] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  908.925599] gc573 0000:07:00.0: using MSI, irq 60
+  | [  908.925621] gc573 0000:07:00.0: FPGA version 20200811
+  | [  909.059207] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  909.060509] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  909.164136] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  909.164812] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  909.263681] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  909.400443] gc573 0000:07:00.0: video device video0
+  | [  909.400695] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  909.416914] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  909.698620] gc573-test: 1795793135510749076-19075 iteration 23
+  | [  909.720940] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  909.826124] gc573 0000:07:00.0: using MSI, irq 60
+  | [  909.826145] gc573 0000:07:00.0: FPGA version 20200811
+  | [  909.959174] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  909.960702] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  910.070195] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  910.070881] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  910.160083] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  910.304425] gc573 0000:07:00.0: video device video0
+  | [  910.304674] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  910.319470] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  910.583446] gc573-test: 1795793136395706875-763 iteration 24
+  | [  910.605798] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  910.710840] gc573 0000:07:00.0: using MSI, irq 60
+  | [  910.710861] gc573 0000:07:00.0: FPGA version 20200811
+  | [  910.843158] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  910.844803] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  910.956115] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  910.956801] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  911.057390] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  911.200281] gc573 0000:07:00.0: video device video0
+  | [  911.200572] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  911.212433] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  911.445242] gc573-test: 1795793137258031428-8690 iteration 25
+  | [  911.453991] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  911.558000] gc573 0000:07:00.0: using MSI, irq 60
+  | [  911.558013] gc573 0000:07:00.0: FPGA version 20200811
+  | [  911.682129] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  911.683079] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  911.785521] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  911.786257] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  911.886663] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  912.024377] gc573 0000:07:00.0: video device video0
+  | [  912.024552] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  912.035505] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  912.263699] gc573-test: 1795793138076551846-19211 iteration 26
+  | [  912.268584] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  912.373908] gc573 0000:07:00.0: using MSI, irq 60
+  | [  912.373924] gc573 0000:07:00.0: FPGA version 20200811
+  | [  912.506119] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  912.507432] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  912.613560] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  912.614272] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  912.712919] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  912.856704] gc573 0000:07:00.0: video device video0
+  | [  912.858877] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  912.873073] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  913.142931] gc573-test: 1795793138955341404-19263 iteration 27
+  | [  913.164167] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  913.270018] gc573 0000:07:00.0: using MSI, irq 60
+  | [  913.270040] gc573 0000:07:00.0: FPGA version 20200811
+  | [  913.403122] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  913.404608] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  913.514726] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  913.515415] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  913.616233] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  913.760507] gc573 0000:07:00.0: video device video0
+  | [  913.761265] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  913.777297] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  914.039457] gc573-test: 1795793139851982748-29058 iteration 28
+  | [  914.057861] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  914.160643] gc573 0000:07:00.0: using MSI, irq 60
+  | [  914.160653] gc573 0000:07:00.0: FPGA version 20200811
+  | [  914.293160] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  914.294820] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  914.403813] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  914.404505] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  914.504829] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  914.648486] gc573 0000:07:00.0: video device video0
+  | [  914.652154] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  914.666864] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  914.937191] gc573-test: 1795793140749700717-10220 iteration 29
+  | [  914.955008] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  915.060277] gc573 0000:07:00.0: using MSI, irq 60
+  | [  915.060297] gc573 0000:07:00.0: FPGA version 20200811
+  | [  915.193091] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  915.194544] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  915.303163] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  915.303838] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  915.403000] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  915.544478] gc573 0000:07:00.0: video device video0
+  | [  915.546109] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  915.566005] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  915.830207] gc573-test: 1795793141642758163-6115 iteration 30
+  | [  915.842031] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  915.947425] gc573 0000:07:00.0: using MSI, irq 60
+  | [  915.947445] gc573 0000:07:00.0: FPGA version 20200811
+  | [  916.080101] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  916.081348] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  916.186744] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  916.187422] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  916.286439] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  916.424444] gc573 0000:07:00.0: video device video0
+  | [  916.424774] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  916.442674] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  916.719797] gc573-test: 1795793142532477092-29602 iteration 31
+  | [  916.734091] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  916.839388] gc573 0000:07:00.0: using MSI, irq 60
+  | [  916.839398] gc573 0000:07:00.0: FPGA version 20200811
+  | [  916.968065] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  916.969797] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  917.080885] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  917.081593] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  917.182631] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  917.320321] gc573 0000:07:00.0: video device video0
+  | [  917.321854] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  917.335692] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  917.597231] gc573-test: 1795793143409782534-25150 iteration 32
+  | [  917.616928] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  917.722485] gc573 0000:07:00.0: using MSI, irq 60
+  | [  917.722505] gc573 0000:07:00.0: FPGA version 20200811
+  | [  917.856057] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  917.857590] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  917.960076] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  917.960762] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  918.061991] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  918.200299] gc573 0000:07:00.0: video device video0
+  | [  918.200634] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  918.215328] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  918.474262] gc573-test: 1795793144287006509-13437 iteration 33
+  | [  918.492763] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  918.597459] gc573 0000:07:00.0: using MSI, irq 60
+  | [  918.597480] gc573 0000:07:00.0: FPGA version 20200811
+  | [  918.731033] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  918.732494] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  918.837884] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  918.838557] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  918.933274] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  919.072414] gc573 0000:07:00.0: video device video0
+  | [  919.074346] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  919.092880] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  919.376311] gc573-test: 1795793145188768725-3196 iteration 34
+  | [  919.397941] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  919.503649] gc573 0000:07:00.0: using MSI, irq 60
+  | [  919.503671] gc573 0000:07:00.0: FPGA version 20200811
+  | [  919.637026] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  919.639541] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  919.747467] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  919.748218] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  919.848302] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  919.992278] gc573 0000:07:00.0: video device video0
+  | [  919.992523] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  920.007320] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  920.271168] gc573-test: 1795793146084004463-28974 iteration 35
+  | [  920.283181] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  920.393186] gc573 0000:07:00.0: using MSI, irq 60
+  | [  920.393307] gc573 0000:07:00.0: FPGA version 20200811
+  | [  920.526033] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  920.528532] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  920.640905] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  920.641588] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  920.742022] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  920.880355] gc573 0000:07:00.0: video device video0
+  | [  920.880599] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  920.897061] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  921.162488] gc573-test: 1795793146975186801-11436 iteration 36
+  | [  921.182866] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  921.286272] gc573 0000:07:00.0: using MSI, irq 60
+  | [  921.286287] gc573 0000:07:00.0: FPGA version 20200811
+  | [  921.418929] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  921.419945] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  921.517337] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  921.518024] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  921.616409] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  921.760128] gc573 0000:07:00.0: video device video0
+  | [  921.760263] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  921.772843] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  922.008783] gc573-test: 1795793147821724755-16650 iteration 37
+  | [  922.014086] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  922.120566] gc573 0000:07:00.0: using MSI, irq 60
+  | [  922.120578] gc573 0000:07:00.0: FPGA version 20200811
+  | [  922.252953] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  922.254146] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  922.353239] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  922.353943] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  922.452407] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  922.592481] gc573 0000:07:00.0: video device video0
+  | [  922.593018] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  922.612748] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  922.892516] gc573-test: 1795793148705132772-29756 iteration 38
+  | [  922.907829] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  923.013191] gc573 0000:07:00.0: using MSI, irq 60
+  | [  923.013211] gc573 0000:07:00.0: FPGA version 20200811
+  | [  923.143966] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  923.145387] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  923.255301] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  923.255987] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  923.350756] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  923.488371] gc573 0000:07:00.0: video device video0
+  | [  923.488742] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  923.504274] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  923.775186] gc573-test: 1795793149587653965-30892 iteration 39
+  | [  923.797404] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  923.905891] gc573 0000:07:00.0: using MSI, irq 60
+  | [  923.905913] gc573 0000:07:00.0: FPGA version 20200811
+  | [  924.038952] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  924.040409] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  924.144689] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  924.145412] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  924.244958] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  924.384364] gc573 0000:07:00.0: video device video0
+  | [  924.385229] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  924.402290] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  924.663111] gc573-test: 1795793150475962601-31919 iteration 40
+  | [  924.676081] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  924.781895] gc573 0000:07:00.0: using MSI, irq 60
+  | [  924.781916] gc573 0000:07:00.0: FPGA version 20200811
+  | [  924.914938] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  924.916614] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  925.028134] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  925.028823] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  925.129705] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  925.272372] gc573 0000:07:00.0: video device video0
+  | [  925.273935] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  925.288448] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  925.554828] gc573-test: 1795793151367748461-168 iteration 41
+  | [  925.563276] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  925.668587] gc573 0000:07:00.0: using MSI, irq 60
+  | [  925.668608] gc573 0000:07:00.0: FPGA version 20200811
+  | [  925.797926] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  925.799456] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  925.903662] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  925.904367] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  926.004212] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  926.144338] gc573 0000:07:00.0: video device video0
+  | [  926.144815] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  926.160261] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  926.435432] gc573-test: 1795793152248459578-7743 iteration 42
+  | [  926.442527] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  926.549656] gc573 0000:07:00.0: using MSI, irq 60
+  | [  926.549678] gc573 0000:07:00.0: FPGA version 20200811
+  | [  926.682923] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  926.684510] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  926.793842] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  926.794524] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  926.894317] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  927.032312] gc573 0000:07:00.0: video device video0
+  | [  927.035329] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  927.047710] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  927.311877] gc573-test: 1795793153124377692-12100 iteration 43
+  | [  927.336620] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  927.441050] gc573 0000:07:00.0: using MSI, irq 60
+  | [  927.441069] gc573 0000:07:00.0: FPGA version 20200811
+  | [  927.573899] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  927.575503] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  927.689950] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  927.690635] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  927.792125] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  927.936307] gc573 0000:07:00.0: video device video0
+  | [  927.936676] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  927.948227] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  928.221484] gc573-test: 1795793154034033421-13711 iteration 44
+  | [  928.243375] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  928.347763] gc573 0000:07:00.0: using MSI, irq 60
+  | [  928.347785] gc573 0000:07:00.0: FPGA version 20200811
+  | [  928.480811] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  928.482142] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  928.587839] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  928.588516] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  928.687904] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  928.832336] gc573 0000:07:00.0: video device video0
+  | [  928.832787] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  928.846446] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  929.110333] gc573-test: 1795793154922988280-30960 iteration 45
+  | [  929.132777] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  929.238239] gc573 0000:07:00.0: using MSI, irq 60
+  | [  929.238260] gc573 0000:07:00.0: FPGA version 20200811
+  | [  929.371876] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  929.373552] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  929.484216] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  929.484905] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  929.586837] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  929.728130] gc573 0000:07:00.0: video device video0
+  | [  929.728369] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  929.742306] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  930.011391] gc573-test: 1795793155824053264-29695 iteration 46
+  | [  930.034059] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  930.139400] gc573 0000:07:00.0: using MSI, irq 60
+  | [  930.139422] gc573 0000:07:00.0: FPGA version 20200811
+  | [  930.272864] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  930.274271] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  930.382845] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  930.383523] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  930.482687] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  930.624261] gc573 0000:07:00.0: video device video0
+  | [  930.625884] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  930.639598] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  930.894225] gc573-test: 1795793156707193543-24166 iteration 47
+  | [  930.906557] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  931.010325] gc573 0000:07:00.0: using MSI, irq 60
+  | [  931.010343] gc573 0000:07:00.0: FPGA version 20200811
+  | [  931.142843] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  931.144487] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  931.249550] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  931.250257] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  931.350166] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  931.488584] gc573 0000:07:00.0: video device video0
+  | [  931.489029] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  931.501136] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  931.740752] gc573-test: 1795793157553907424-27265 iteration 48
+  | [  931.745977] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  931.852638] gc573 0000:07:00.0: using MSI, irq 60
+  | [  931.852650] gc573 0000:07:00.0: FPGA version 20200811
+  | [  931.984774] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  931.985748] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  932.086894] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  932.087604] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  932.183040] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  932.327992] gc573 0000:07:00.0: video device video0
+  | [  932.328096] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  932.338953] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  932.607568] gc573-test: 1795793158420294862-3432 iteration 49
+  | [  932.630864] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  932.736216] gc573 0000:07:00.0: using MSI, irq 60
+  | [  932.736236] gc573 0000:07:00.0: FPGA version 20200811
+  | [  932.868815] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  932.870953] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  932.981312] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  932.982007] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  933.082748] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  933.224242] gc573 0000:07:00.0: video device video0
+  | [  933.224688] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  933.242583] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  933.513203] gc573-test: 1795793159326205237-6400 iteration 50
+  | [  933.527060] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000309, GPIO 0x0001fd70, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [  933.632212] gc573 0000:07:00.0: using MSI, irq 60
+  | [  933.632232] gc573 0000:07:00.0: FPGA version 20200811
+  | [  933.762812] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  933.765029] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  933.875710] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  933.876397] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  933.977172] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  934.120229] gc573 0000:07:00.0: video device video0
+  | [  934.120989] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  934.134953] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT 02-load-unload       PASS (44s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 02-load-unload       PASS (44s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=1 fail=0 skip=2
