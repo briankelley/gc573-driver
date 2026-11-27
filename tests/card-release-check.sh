@@ -5,7 +5,12 @@
 # on before they touch the card (delta review D2, D5, D8, D16). Root, in a
 # VM (install-test.sh runs it in every matrix VM). It runs in a PID and
 # mount namespace of its own: the scan of open files sees only this test's
-# processes, and nothing is written outside a tmpfs. No device node is
+# processes, and nothing is written outside a tmpfs. That is checked, not
+# trusted (final review F6): the run inside must find another mount
+# namespace than its caller's, recorded before the unshare, and be PID 1
+# of its PID namespace, or it does nothing; no variable skips the unshare.
+# The one thing left in the caller's file system, mktemp's directory under
+# which the tmpfs is mounted, goes at the exit (a trap). No device node is
 # opened but /dev/full, by this test's own processes.
 #   d2-export   install.sh and uninstall.sh export LC_ALL=C before they
 #               source card-release.sh
@@ -16,7 +21,8 @@
 #               /usr/share/locale, and LANGUAGE=xx. SKIP when no installed
 #               locale lets a catalog take effect.
 #   d8-opath    an O_PATH descriptor of the device is no holder, an open
-#               one is
+#               one is; the scan starts once the O_PATH helper has said
+#               which descriptor it opened, and that it is the device
 #   vfio-user   gc573_vfio_user names the process holding a made-up
 #               device's VFIO node (the device above)
 #   d16-timeout a stat that hangs (a stand-in first in PATH, as for a file
@@ -30,8 +36,15 @@
 set -u
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 [ "$(id -u)" = 0 ] || { echo "card-release-check.sh: needs root (namespaces)" >&2; exit 2; }
-if [ -z "${GC573_CRC_NS:-}" ]; then
-	exec unshare --mount --pid --fork --mount-proc env GC573_CRC_NS=1 bash "$0" "$@"
+# $1 --in-ns and $2 the caller's mount namespace (device:inode) inside
+if [ "${1:-}" != --in-ns ]; then
+	ns=$(stat -L -c %d:%i /proc/self/ns/mnt) || exit 2
+	exec unshare --mount --pid --fork --mount-proc bash "$0" --in-ns "$ns"
+fi
+here=$(stat -L -c %d:%i /proc/self/ns/mnt 2>/dev/null) || here=
+if [ -z "${2:-}" ] || [ -z "$here" ] || [ "$here" = "$2" ] || [ "$$" != 1 ]; then
+	echo "card-release-check.sh: not in namespaces of its own (mount namespace ${here:-unknown}, the caller's ${2:-unknown}; pid $$, not 1): nothing done" >&2
+	exit 2
 fi
 
 NAME=gc573
@@ -43,16 +56,47 @@ res() {
 	printf 'RESULT\tcrc-%s\t%s\t%s\n' "$1" "$2" "$3"
 	[ "$2" != FAIL ] || fail=1
 }
-tmp=$(mktemp -d)
+open_pid= opath_pid= locale_bound=0
+tmp=$(mktemp -d) || exit 2
+# at any exit: the helpers, the mounts (this namespace's), and mktemp's
+# directory, which is in the caller's /tmp. As PID 1, bash gets INT and
+# TERM only with a handler of its own
+cleanup() {
+	[ -z "$open_pid$opath_pid" ] || kill $open_pid $opath_pid 2>/dev/null
+	[ "$locale_bound" = 0 ] || umount -l /usr/share/locale
+	! mountpoint -q "$tmp" || umount -l "$tmp"
+	rmdir "$tmp"
+}
+trap cleanup EXIT
+trap 'exit 130' INT TERM HUP
 mount -t tmpfs gc573-crc "$tmp" || { echo "card-release-check.sh: no tmpfs" >&2; exit 2; }
 dev=/dev/full
 rdev=$(LC_ALL=C stat -L -c '%t:%T' "$dev")
 sleep 300 < "$dev" &
 open_pid=$!
-python3 -I -c 'import os, sys, time; fd = os.open(sys.argv[1], os.O_PATH); time.sleep(300)' "$dev" &
+# The O_PATH holder says when its descriptor is open (final review F6): a
+# scan before that would find it no holder without testing anything. The
+# FIFO is open here for reading and writing, so neither side's open waits
+mkfifo "$tmp/opath-ready"
+exec 8<> "$tmp/opath-ready"
+python3 -I -c 'import os, sys, time; fd = os.open(sys.argv[1], os.O_PATH); f = open(sys.argv[2], "w"); f.write("%d\n" % fd); f.close(); time.sleep(300)' \
+	"$dev" "$tmp/opath-ready" &
 opath_pid=$!
-sleep 0.5
-echo "device $dev ($rdev): open in pid $open_pid (sleep), O_PATH in pid $opath_pid (python3)"
+opath_fd=
+read -r -t 20 opath_fd <&8 || opath_fd=
+exec 8<&-
+case $opath_fd in
+'' | *[!0-9]*)
+	echo "card-release-check.sh: the O_PATH holder (pid $opath_pid) did not open its descriptor within 20 s" >&2
+	exit 2 ;;
+esac
+# and the open holder once it runs sleep, with the device as its stdin
+for _ in $(seq 100); do
+	[ "$(cat "/proc/$open_pid/comm" 2>/dev/null)" = sleep ] &&
+		[ "$(LC_ALL=C stat -L -c '%t:%T' "/proc/$open_pid/fd/0" 2>/dev/null)" = "$rdev" ] && break
+	sleep 0.1
+done
+echo "device $dev ($rdev): open in pid $open_pid (sleep), O_PATH in pid $opath_pid (python3, fd $opath_fd)"
 has_pid() { grep -q "^$1 " <<< "$2"; }
 
 # ---- d2-export
@@ -92,7 +136,7 @@ with open(sys.argv[1], "wb") as f:
     f.write(struct.pack("<%dI" % len(vt), *vt))
     f.write(ids + strs)
 PY
-mount --bind "$tmp/locale" /usr/share/locale
+mount --bind "$tmp/locale" /usr/share/locale && locale_bound=1
 loc=
 for l in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
 	if [ "$(env -u LC_ALL -u LC_MESSAGES LANG="$l" LANGUAGE=xx stat -L -c %F "$dev" 2>/dev/null)" = "$de" ]; then
@@ -110,14 +154,17 @@ else
 		res d2-catalog FAIL "LANG=$loc LANGUAGE=xx, stat -c %F says '$de': holders '$(tr '\n' ' ' <<< "$h")', not pid $open_pid"
 	fi
 fi
-umount /usr/share/locale
+umount /usr/share/locale && locale_bound=0
 
-# ---- d8-opath
+# ---- d8-opath: the O_PATH descriptor is there, and it is the device
 h=$(gc573_fd_holders "$rdev")
-if has_pid "$open_pid" "$h" && ! has_pid "$opath_pid" "$h"; then
-	res d8-opath PASS "holders: pid $open_pid (open); not pid $opath_pid (O_PATH)"
+o=$(LC_ALL=C stat -L -c '%t:%T' "/proc/$opath_pid/fd/$opath_fd" 2>/dev/null) || o=
+if [ "$o" != "$rdev" ]; then
+	res d8-opath FAIL "pid $opath_pid's fd $opath_fd is '${o:-gone}', not the device ($rdev): nothing tested"
+elif has_pid "$open_pid" "$h" && ! has_pid "$opath_pid" "$h"; then
+	res d8-opath PASS "holders: pid $open_pid (open); not pid $opath_pid (O_PATH, fd $opath_fd)"
 else
-	res d8-opath FAIL "holders '$(tr '\n' ' ' <<< "$h")': want pid $open_pid and not pid $opath_pid (O_PATH)"
+	res d8-opath FAIL "holders '$(tr '\n' ' ' <<< "$h")': want pid $open_pid and not pid $opath_pid (O_PATH, fd $opath_fd)"
 fi
 
 # ---- vfio-user: a made-up device whose VFIO node is the device above
@@ -187,14 +234,19 @@ echo '(null)' > "$card/driver_override"
 d3=$(dead)
 rm -r "$sys/module/$NAME" "$card"
 d4=$(dead)
-for c in "listed|$d1|0|0000:07:00.0" "driver_override|$d2|0|gc573-dead-card" "neither|$d3|1|" "nothing|$d4|1|"; do
-	IFS='|' read -r what r o want_r want_o <<< "$c"
-	if [ "$r" = "$want_r" ] && [[ $o == *"$want_o"* ]]; then
-		res d5-dead PASS "$what: status $r${o:+, '$o'}"
+# $1 the case, $2 dead()'s "STATUS|MESSAGE" (the message may hold a "|"),
+# $3 the status wanted, $4 a part of the message wanted
+dead_res() {
+	local r=${2%%|*} o=${2#*|}
+	if [ "$r" = "$3" ] && [[ $o == *"$4"* ]]; then
+		res d5-dead PASS "$1: status $r${o:+, '$o'}"
 	else
-		res d5-dead FAIL "$what: status $r, '$o' (want status $want_r${want_o:+ and $want_o})"
+		res d5-dead FAIL "$1: status $r, '$o' (want status $3${4:+ and $4})"
 	fi
-done
+}
+dead_res listed "$d1" 0 0000:07:00.0
+dead_res driver_override "$d2" 0 gc573-dead-card
+dead_res neither "$d3" 1 ""
+dead_res nothing "$d4" 1 ""
 
-kill "$open_pid" "$opath_pid" 2>/dev/null
 exit $fail

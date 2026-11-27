@@ -1,0 +1,25 @@
+# tests/card-release-check.sh in gc573-dev (Ubuntu 24.04, 6.8.0-151-generic) with the final review F6 fixes: the namespace checked, a cleanup trap, the O_PATH helper ready before the scan; card-release.sh as at 5873a37 (no F5 yet)
+## run 1: sudo GC573_CRC_NS=1 (the old guard variable, now ignored); then the count of /tmp/tmp.* left
+/tmp/tmp.* before: 0
+device /dev/full (1:7): open in pid 10 (sleep), O_PATH in pid 12 (python3, fd 3)
+RESULT	crc-d2-export	PASS	install.sh: export LC_ALL=C at line 70, card-release.sh sourced at line 103
+RESULT	crc-d2-export	PASS	uninstall.sh: export LC_ALL=C at line 31, card-release.sh sourced at line 53
+RESULT	crc-d2-catalog	PASS	LANG=en_US.UTF-8 LANGUAGE=xx, stat -c %F says 'zeichenorientierte Spezialdatei': the holder is found (pid 10)
+RESULT	crc-d8-opath	PASS	holders: pid 10 (open); not pid 12 (O_PATH, fd 3)
+RESULT	crc-vfio-user	PASS	'process 10 (sleep)'
+RESULT	crc-d16-timeout	PASS	holders: status 2 after 2 s
+RESULT	crc-d16-timeout	PASS	vfio: status 2 after 2 s, 'the scan of open files did not finish within 2 s (a file on a network mount that does not answer?)'
+RESULT	crc-d5-dead	PASS	listed: status 0, '0000:07:00.0: left as it is until reboot (dead_cards): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+RESULT	crc-d5-dead	PASS	driver_override: status 0, '0000:07:00.0: left as it is until reboot (its driver_override is gc573-dead-card): gc573 could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older gc573 letting go of the card; sudo dmesg | grep gc573 says which)'
+RESULT	crc-d5-dead	PASS	neither: status 1
+RESULT	crc-d5-dead	PASS	nothing: status 1
+exit 0
+/tmp/tmp.* after: 0
+## run 2: the inner mode by hand, in the VM's own namespaces (a made-up caller namespace, then the real one): both refuse
+## then whether /usr/share/locale is a mount point in the VM (findmnt status 1: not)
+card-release-check.sh: not in namespaces of its own (mount namespace 4:4026531841, the caller's 1:2; pid 11616, not 1): nothing done
+exit 2
+card-release-check.sh: not in namespaces of its own (mount namespace 4:4026531841, the caller's 4:4026531841; pid 11625, not 1): nothing done
+exit 2
+findmnt /usr/share/locale: status 1
+/tmp/tmp.*: 0
