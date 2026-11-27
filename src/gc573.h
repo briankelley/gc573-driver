@@ -439,6 +439,10 @@ struct gc573 {
 #define GC573_STOP_FAULT_SLOW_MS	2000
 /* an audio stop: no INT bit 4, and the audio DMA still on */
 #define GC573_STOP_FAULT_AUD_SYNC	BIT(5)
+/* the teardown's stop (gc573_dma_stop()) starts GC573_STOP_FAULT_SLOW_MS late */
+#define GC573_STOP_FAULT_LATE		BIT(6)
+/* the teardown's stop, once done, holds its verdict that long */
+#define GC573_STOP_FAULT_HOLD		BIT(7)
 extern unsigned int gc573_exp_stop_fault;
 
 /*

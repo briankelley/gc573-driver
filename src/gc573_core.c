@@ -70,7 +70,7 @@
 unsigned int gc573_exp_stop_fault;
 module_param_named_unsafe(exp_stop_fault, gc573_exp_stop_fault, uint, 0644);
 MODULE_PARM_DESC(exp_stop_fault,
-		 "Test only; setting it taints the kernel. A DMA stop the card confirmed then counts as failed, and the driver handles it as a real failure: the card is unusable until reboot. Read at each stop. Bit 0: a video stop's INT bit 0 counts as missing, bit 1: its reset of domain 0 counts as failed (with both, the video stop fails), bit 2: the teardown counts the audio DMA as still on, bit 3: the probe's stop counts the audio DMA as still on, bit 4: a video stop counted as failed by bits 0 and 1 is so only 2 s later, its lock held, bit 5: an audio stop counts as without INT bit 4 and the audio DMA still on (0: off)");
+		 "Test only; setting it taints the kernel. A DMA stop the card confirmed then counts as failed, and the driver handles it as a real failure: the card is unusable until reboot. Read at each stop. Bit 0: a video stop's INT bit 0 counts as missing, bit 1: its reset of domain 0 counts as failed (with both, the video stop fails), bit 2: the teardown counts the audio DMA as still on, bit 3: the probe's stop counts the audio DMA as still on, bit 4: a video stop counted as failed by bits 0 and 1 is so only 2 s later, its lock held, bit 5: an audio stop counts as without INT bit 4 and the audio DMA still on, bit 6: the teardown's stop starts 2 s late, bit 7: the teardown's stop, once done, holds its verdict 2 s (0: off)");
 
 /* Tests only (tests/cases/26-no-answer.sh): see GC573_MMIO_ONES_* */
 static unsigned int exp_mmio_ones;
@@ -740,6 +740,13 @@ void gc573_dma_stop(struct gc573 *gc)
 		return;
 	gc->dma_stopped = true;
 
+	/* tests only: a stop that starts late; the DMA memory stays till then */
+	if (fault & GC573_STOP_FAULT_LATE) {
+		dev_warn(dev, "exp_stop_fault %#x: the teardown stop starts in %u ms\n",
+			 fault, GC573_STOP_FAULT_SLOW_MS);
+		msleep(GC573_STOP_FAULT_SLOW_MS);
+	}
+
 	mutex_lock(&gc->vid.lock);
 	gc->vid.dead = true;
 	if (gc573_rd(gc, GC573_VIP_CTRL) & GC573_VIP_CTRL_OUT_EN)
@@ -752,6 +759,12 @@ void gc573_dma_stop(struct gc573 *gc)
 	gc573_reset_domains(gc);
 	run = gc573_rd(gc, GC573_DMA_RUN);
 	vip = gc573_rd(gc, GC573_VIP_CTRL);
+	/* tests only: the verdict held */
+	if (fault & GC573_STOP_FAULT_HOLD) {
+		dev_warn(dev, "exp_stop_fault %#x: the teardown stop holds its verdict for %u ms\n",
+			 fault, GC573_STOP_FAULT_SLOW_MS);
+		msleep(GC573_STOP_FAULT_SLOW_MS);
+	}
 	/* tests only: a confirmed stop, counted as failed */
 	if ((fault & GC573_STOP_FAULT_AUDIO) && run != U32_MAX &&
 	    vip != U32_MAX && !(run & GC573_DMA_RUN_AUDIO) &&
