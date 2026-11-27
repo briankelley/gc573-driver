@@ -17,6 +17,9 @@
 # routes the card's INTx; then it lists the PCI devices whose irq is the
 # card's (sysfs) and the handlers on it (/proc/interrupts), and SKIPs
 # while there are handlers, unless GC573_INTX_SHARED=1.
+# After this case, reboot the host before anything else runs on the card
+# (tests/README.md): in gc573-dev, once the card had used INTx, it went
+# on signalling INTx after later loads with MSI, until a reset.
 # Loaded with exp_intx=2, then again after an unbind and a bind:
 # - the probe took INTx: "using INTx, irq N", N the device's irq in sysfs,
 #   no MSI vector, MSI Enable off in config space, the line an IO-APIC one
@@ -41,7 +44,8 @@
 drv=/sys/bus/pci/drivers/$GC573_MOD
 pdev=/sys/bus/pci/devices/$GC573_BDF
 tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+intx_used=""
+trap 'rm -rf "$tmp"; [ -z "$intx_used" ] || echo "NOTE: the card used INTx: reboot the host before anything else runs on the card (tests/README.md)"' EXIT
 virt=$(systemd-detect-virt --vm 2>/dev/null) || virt=""
 if [ -n "$virt" ] || grep -qw hypervisor /proc/cpuinfo; then
 	skip "in a virtual machine (${virt:-the hypervisor flag in /proc/cpuinfo}): under VFIO the card's INTx storms the host's line (spec/open-questions.md #43); bare metal only, with the user present"
@@ -179,6 +183,7 @@ stream_check() {
 }
 
 tag=$(kmsg_mark intx)
+intx_used=1
 gc573_load exp_intx=2 || fail "insmod exp_intx=2 failed"
 gc573_bound || { gc573_unload; fail "not bound with exp_intx=2"; }
 mode_check "load" "$tag"
