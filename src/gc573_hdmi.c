@@ -323,9 +323,11 @@ int gc573_hdmi_set_edid(struct gc573 *gc, struct v4l2_edid *e)
 
 	ret = gc573_hdmi_edid_load(h);
 	if (ret)
-		dev_err(&gc->pdev->dev, "HDMI: EDID update failed: %d\n", ret);
+		dev_err_ratelimited(&gc->pdev->dev, "HDMI: EDID update failed: %d\n",
+				    ret);
 	else
-		dev_info(&gc->pdev->dev, "HDMI: EDID set, %u blocks\n", n);
+		dev_info_ratelimited(&gc->pdev->dev, "HDMI: EDID set, %u blocks\n",
+				     n);
 out:
 	mutex_unlock(&h->lock);
 	return ret;
@@ -481,15 +483,15 @@ static void gc573_hdmi_log_lock(struct gc573_hdmi *h,
 	const struct v4l2_bt_timings *bt = &in->timings.bt;
 	u32 mhz = in->period ? div_u64(1000ULL * GC573_IN_FRAME_PERIOD_HZ, in->period) : 0;
 
-	dev_info(&h->gc->pdev->dev,
-		 "HDMI: locked: %ux%u%s, %llu Hz pixel clock%s, frame period %#x (%u.%03u Hz), %s%s, %s range; FPGA 1004 %#x 1008 %#x 100c %#x\n",
-		 bt->width, bt->height, bt->interlaced ? "i" : "p",
-		 bt->pixelclock,
-		 bt->flags & V4L2_DV_FL_REDUCED_FPS ? " x 1000/1001" : "",
-		 in->period, mhz / 1000, mhz % 1000,
-		 in->dvi ? "DVI, " : "", colours[in->colour],
-		 in->full_range ? "full" : "limited", in->fpga[0], in->fpga[1],
-		 in->fpga[2]);
+	dev_info_ratelimited(&h->gc->pdev->dev,
+			     "HDMI: locked: %ux%u%s, %llu Hz pixel clock%s, frame period %#x (%u.%03u Hz), %s%s, %s range; FPGA 1004 %#x 1008 %#x 100c %#x\n",
+			     bt->width, bt->height, bt->interlaced ? "i" : "p",
+			     bt->pixelclock,
+			     bt->flags & V4L2_DV_FL_REDUCED_FPS ? " x 1000/1001" : "",
+			     in->period, mhz / 1000, mhz % 1000,
+			     in->dvi ? "DVI, " : "", colours[in->colour],
+			     in->full_range ? "full" : "limited", in->fpga[0], in->fpga[1],
+			     in->fpga[2]);
 }
 
 /* ---- the measurement self-heal (GC573_HDMI_HEAL_POLLS) ---- */
@@ -521,9 +523,9 @@ static void gc573_hdmi_heal_check(struct gc573_hdmi *h,
 	if (n == GC573_HDMI_HEAL_TRIES) {
 		h->heal_gave_up = true;
 		h->fpga_heal_giveups++;
-		dev_warn(dev,
-			 "HDMI: self-heal gave up after %u attempts: input stable, still no valid FPGA measurement (1004 %#x 1008 %#x 100c %#x 1010 %#x); none until a lock or a 5 V loss\n",
-			 n, in->fpga[0], in->fpga[1], in->fpga[2], period);
+		dev_warn_ratelimited(dev,
+				     "HDMI: self-heal gave up after %u attempts: input stable, still no valid FPGA measurement (1004 %#x 1008 %#x 100c %#x 1010 %#x); none until a lock or a 5 V loss\n",
+				     n, in->fpga[0], in->fpga[1], in->fpga[2], period);
 		return;
 	}
 	/* the source sees nothing of a restart; a hot-plug needs an EDID */
@@ -532,12 +534,12 @@ static void gc573_hdmi_heal_check(struct gc573_hdmi *h,
 	h->heal_tries++;
 	h->fpga_heals++;
 	h->heal_at = jiffies;
-	dev_info(dev,
-		 "HDMI: self-heal %u of %u, %s: input stable for %u polls, no valid FPGA measurement (1004 %#x 1008 %#x 100c %#x 1010 %#x)\n",
-		 h->heal_tries, GC573_HDMI_HEAL_TRIES,
-		 h->heal_due == GC573_HEAL_HOTPLUG ? "hot-plug" :
-						     "receiver restart",
-		 h->lock_polls, in->fpga[0], in->fpga[1], in->fpga[2], period);
+	dev_info_ratelimited(dev,
+			     "HDMI: self-heal %u of %u, %s: input stable for %u polls, no valid FPGA measurement (1004 %#x 1008 %#x 100c %#x 1010 %#x)\n",
+			     h->heal_tries, GC573_HDMI_HEAL_TRIES,
+			     h->heal_due == GC573_HEAL_HOTPLUG ?
+			     "hot-plug" : "receiver restart",
+			     h->lock_polls, in->fpga[0], in->fpga[1], in->fpga[2], period);
 }
 
 /* The attempt gc573_hdmi_heal_check() picked; h->lock held, bus not */
@@ -555,8 +557,9 @@ static void gc573_hdmi_heal(struct gc573_hdmi *h)
 		gc573_chip_end(h);
 	}
 	if (ret)
-		dev_err(&h->gc->pdev->dev, "HDMI: self-heal %u failed: %d\n",
-			h->heal_tries, ret);
+		dev_err_ratelimited(&h->gc->pdev->dev,
+				    "HDMI: self-heal %u failed: %d\n",
+				    h->heal_tries, ret);
 }
 
 /*
@@ -620,10 +623,10 @@ static bool gc573_hdmi_publish(struct gc573_hdmi *h)
 		in.locked = in.period || hold;
 		if (!in.locked && h->lock_polls == GC573_HDMI_FPGA_WARN) {
 			h->fpga_waits++;
-			dev_warn(&gc->pdev->dev,
-				 "HDMI: input stable for %u polls, but the FPGA has no valid measurement of it (1004 %#x 1008 %#x 100c %#x 1010 %#x): not locked until it has\n",
-				 h->lock_polls, in.fpga[0], in.fpga[1],
-				 in.fpga[2], period);
+			dev_warn_ratelimited(&gc->pdev->dev,
+					     "HDMI: input stable for %u polls, but the FPGA has no valid measurement of it (1004 %#x 1008 %#x 100c %#x 1010 %#x): not locked until it has\n",
+					     h->lock_polls, in.fpga[0], in.fpga[1],
+					     in.fpga[2], period);
 		}
 		if (!in.locked && (in.fpga[0] & 3) != 3 &&
 		    gc573_hdmi_fpga_size_ok(h, in.fpga))
@@ -638,9 +641,9 @@ static bool gc573_hdmi_publish(struct gc573_hdmi *h)
 				      msecs_to_jiffies(GC573_HDMI_HEAL_QUIET_MS))))) {
 		if (in.locked && !h->heal_gave_up) {
 			h->fpga_heal_fixes++;
-			dev_info(&gc->pdev->dev,
-				 "HDMI: FPGA measurement valid after self-heal %u\n",
-				 h->heal_tries);
+			dev_info_ratelimited(&gc->pdev->dev,
+					     "HDMI: FPGA measurement valid after self-heal %u\n",
+					     h->heal_tries);
 		}
 		gc573_hdmi_heal_reset(h);
 	}
@@ -673,9 +676,10 @@ static bool gc573_hdmi_publish(struct gc573_hdmi *h)
 	if (changed && in.locked)
 		gc573_hdmi_log_lock(h, &in);
 	else if (changed)
-		dev_info(&gc->pdev->dev, "HDMI: %s\n",
-			 !in.power ? "no 5 V" :
-			 !in.signal ? "5 V, no signal" : "signal, not locked");
+		dev_info_ratelimited(&gc->pdev->dev, "HDMI: %s\n",
+				     !in.power ? "no 5 V" :
+				     !in.signal ? "5 V, no signal" :
+				     "signal, not locked");
 	return changed;
 }
 

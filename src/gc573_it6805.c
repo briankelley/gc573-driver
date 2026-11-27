@@ -525,14 +525,15 @@ static int gc573_it_entry(struct gc573_hdmi *h)
 	it->audio_count = GC573_IT_AUDIO_COUNT;
 	h->lock_polls = 0;
 
-	dev_info(dev,
-		 "IT6805: stable: %ux%u%s total %ux%u, %u kHz, %s, AVI %*ph, %s%s\n",
-		 m->hactive, m->vactive, m->interlaced ? "i" : "p", m->htotal,
-		 m->vtotal, m->pclk_khz, m->hdmi ? "HDMI" : "DVI", 5,
-		 &m->avi[1], m->dual ? "dual pixel" : "single pixel",
-		 m->ddr ? " DDR" : "");
+	dev_info_ratelimited(dev,
+			     "IT6805: stable: %ux%u%s total %ux%u, %u kHz, %s, AVI %*ph, %s%s\n",
+			     m->hactive, m->vactive, m->interlaced ? "i" : "p", m->htotal,
+			     m->vtotal, m->pclk_khz, m->hdmi ? "HDMI" : "DVI", 5,
+			     &m->avi[1], m->dual ? "dual pixel" : "single pixel",
+			     m->ddr ? " DDR" : "");
 	if (!m->hdmi)
-		dev_warn(dev, "IT6805: DVI input is untraced (open question 31)\n");
+		dev_warn_ratelimited(dev,
+				     "IT6805: DVI input is untraced (open question 31)\n");
 	return 0;
 }
 
@@ -591,9 +592,9 @@ static int gc573_it_recheck(struct gc573_hdmi *h, bool *changed)
 	 * (a source change for the video device).
 	 */
 	if (!*changed && m->hdmi && memcmp(&m->avi[1], pb, sizeof(pb))) {
-		dev_info(&h->gc->pdev->dev,
-			 "IT6805: AVI changed while stable: %*ph -> %*ph\n",
-			 (int)sizeof(pb), &m->avi[1], (int)sizeof(pb), pb);
+		dev_info_ratelimited(&h->gc->pdev->dev,
+				     "IT6805: AVI changed while stable: %*ph -> %*ph\n",
+				     (int)sizeof(pb), &m->avi[1], (int)sizeof(pb), pb);
 		memcpy(&m->avi[1], pb, sizeof(pb));
 	}
 	return 0;
@@ -845,8 +846,8 @@ int gc573_it6805_poll(struct gc573_hdmi *h)
 			it->recheck = false;
 			ret = gc573_it_recheck(h, &changed);
 			if (!ret && changed) {
-				dev_info(&h->gc->pdev->dev,
-					 "IT6805: input changed while stable\n");
+				dev_info_ratelimited(&h->gc->pdev->dev,
+						     "IT6805: input changed while stable\n");
 				ret = gc573_it_entry(h);
 				break;
 			}
