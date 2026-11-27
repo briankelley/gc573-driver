@@ -121,7 +121,9 @@
 #             itself within its budget), progress against the source's
 #             rate at the time
 #             A recording whose checks fail (obsws, obsevents) is kept with
-#             OBS's log in ~/gc573-kept where OBS runs, never in the repo
+#             OBS's log in ~/gc573-kept where OBS runs, never in the repo:
+#             the newest 5; one of the Roku's picture is never committed
+#             or copied, and goes once its failure is explained
 #   avchange  the driver's A/V offset across 3 colour-format changes (each a
 #             stream restart) under one avsync.sh session: within 1 ms
 #   obssoak   the event soak with OBS: GC573_OBSSOAK_SECS (7200) recorded, a
@@ -474,7 +476,11 @@ av_results() {
 # A recording ($2) where OBS runs, after its checks: kept with the run's OBS
 # log in ~/gc573-kept/<UTC>-$1/ (outside the repo, never committed) when a
 # RESULT in the checkers' outputs ($3...) failed, to be looked at; else
-# deleted
+# deleted. The newest REC_KEEP_MAX (5) are kept, so that failures again
+# and again cannot fill the disk. One of the Roku's picture holds what the
+# user watches: never commit or copy it, and delete it once its failure is
+# explained
+REC_KEEP_MAX=5
 rec_keep() {
 	local step=$1 f=$2 d
 	shift 2
@@ -485,9 +491,12 @@ rec_keep() {
 	d=gc573-kept/$(date -u +%Y%m%dT%H%M%SZ)-$step
 	if vm "mkdir -p ~/$d && mv '$f' ~/$d/ && cp \"\$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)\" ~/$d/"; then
 		echo "  kept (a check failed): the recording and OBS's log in ~/$d $([ "$LOCAL" = 1 ] && echo here || echo "in $VM"), not in the repo"
+		[ "$SOURCE" != roku ] ||
+			echo "  it holds the Roku's picture (what the user watches): never commit or copy it; delete it once the failure is explained"
 	else
 		echo "  could not keep the recording in ~/$d: $f left as it is"
 	fi
+	vm "cd ~/gc573-kept && ls -1t | tail -n +$((REC_KEEP_MAX + 1)) | while read -r x; do rm -rf -- \"\$x\"; done"
 }
 
 # Seconds from now until QUERY_DV_TIMINGS succeeds (limit $1), or "none"
