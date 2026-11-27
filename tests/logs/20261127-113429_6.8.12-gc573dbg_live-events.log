@@ -1,0 +1,288 @@
+2026-11-27T11:34:29.935Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-27T11:34:29.941Z guard start: run pid 445052, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-27T11:34:29.992Z camwatch start pid 445085 (guard): 13 nodes marked: /dev/media0 (HD Pro Webcam C920); /dev/snd/controlC0 (card 0 PCH); /dev/snd/controlC2 (card 2 C920); /dev/snd/controlC3 (card 3 Device); /dev/snd/hwC0D0 (card 0 PCH); /dev/snd/pcmC0D0c (card 0 PCH); /dev/snd/pcmC0D0p (card 0 PCH); /dev/snd/pcmC0D2c (card 0 PCH); /dev/snd/pcmC2D0c (card 2 C920); /dev/snd/pcmC3D0c (card 3 Device); /dev/snd/pcmC3D0p (card 3 Device); /dev/video0 (HD Pro Webcam C920); /dev/video1 (HD Pro Webcam C920). Not watched: snd/controlC1 (card 1 NVidia: NVIDIA HDMI); snd/hwC1D0 (card 1 NVidia: NVIDIA HDMI); snd/pcmC1D3p (card 1 NVidia: NVIDIA HDMI); snd/pcmC1D7p (card 1 NVidia: NVIDIA HDMI); snd/pcmC1D8p (card 1 NVidia: NVIDIA HDMI); snd/pcmC1D9p (card 1 NVidia: NVIDIA HDMI)
+2026-11-27T11:34:30.003Z guard x11 start: DVI-D-0 1920x1080+1920+0; outputs DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:34:30.013Z guard audio links: none
+2026-11-27T11:34:30.580Z live stream stop (exit 0)
+2026-11-27T11:34:46.659Z live driver load
+2026-11-27T11:34:48.331Z live stress start: 600 s, bind role 1
+2026-11-27T11:34:55.204Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:34:55.514Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:00.412Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:35:03.516Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:35:03.724Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:05.376Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:05.689Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:12.064Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:12.377Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:15.967Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:16.264Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:17.765Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:35:17.947Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:22.979Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:23.242Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:27.917Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:28.179Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:30.019Z guard ok: audio 1197 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 14, breaches 0, X events 120
+2026-11-27T11:35:30.057Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:35:34.505Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:34.751Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:42.412Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:42.674Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:43.050Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:35:49.974Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:50.264Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:54.153Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:35:54.347Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:56.773Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:57.036Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:35:59.409Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:35:59.559Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:35:59.805Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:03.762Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:36:04.025Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:06.597Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:36:06.861Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:09.517Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:36:09.779Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:11.496Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:36:19.992Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:36:20.255Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:24.493Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:36:24.758Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:26.600Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:36:26.807Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:30.030Z guard ok: audio 2395 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 36, breaches 0, X events 303
+2026-11-27T11:36:30.122Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:36:33.152Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:36:33.415Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:36.672Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:36:36.935Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:38.864Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:36:39.049Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:43.899Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:36:44.174Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:47.107Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:36:47.290Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:36:54.368Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:37:01.909Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:37:02.172Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:37:02.541Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:37:02.746Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:37:05.825Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:37:06.813Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:37:07.076Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:37:13.919Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:37:14.181Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:37:16.913Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:37:23.860Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:37:24.123Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:37:25.936Z live output off DVI-D-0 (stress)
+2026-11-27T11:37:26.067Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:37:30.039Z guard ok: audio 3592 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 54, breaches 0, X events 469
+2026-11-27T11:37:30.186Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:37:30.589Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:37:31.134Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:37:38.236Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:37:40.140Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:37:40.402Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:37:52.451Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:37:52.601Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:38:01.169Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:38:06.680Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:38:10.064Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:38:10.326Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:38:14.796Z live output off DVI-D-0 (stress)
+2026-11-27T11:38:14.936Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:38:15.964Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:38:19.789Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:38:20.051Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:38:20.174Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:38:30.049Z guard ok: audio 4789 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 65, breaches 0, X events 625
+2026-11-27T11:38:30.247Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:38:31.196Z live output off DVI-D-0 (stress)
+2026-11-27T11:38:31.375Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:38:35.442Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:38:35.554Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:38:39.167Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:38:39.433Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:38:41.636Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:38:41.811Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:38:44.871Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:38:45.008Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:38:45.905Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:38:51.041Z live output off DVI-D-0 (stress)
+2026-11-27T11:38:51.181Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:38:54.061Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:38:56.258Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:38:57.201Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:38:57.464Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:00.347Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:39:02.255Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:39:02.518Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:04.974Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:39:05.237Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:12.397Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:39:12.660Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:12.782Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:39:16.850Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:39:17.113Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:20.219Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:39:20.483Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:21.082Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:39:26.741Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:39:26.988Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:28.231Z live output off DVI-D-0 (stress)
+2026-11-27T11:39:28.376Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:39:30.060Z guard ok: audio 5987 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 89, breaches 0, X events 906
+2026-11-27T11:39:30.307Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:39:33.810Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:43.399Z live output off DVI-D-0 (stress)
+2026-11-27T11:39:43.540Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:39:45.613Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:39:45.733Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:48.748Z live output off DVI-D-0 (stress)
+2026-11-27T11:39:48.911Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:39:50.390Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:39:50.988Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:39:58.016Z live output off DVI-D-0 (stress)
+2026-11-27T11:39:58.283Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:40:02.783Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:40:04.358Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:40:06.507Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:40:15.460Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:40:16.443Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:40:16.650Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:40:21.670Z live output off DVI-D-0 (stress)
+2026-11-27T11:40:21.821Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:40:26.881Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:40:26.999Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:40:30.071Z guard ok: audio 7184 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 101, breaches 0, X events 1138
+2026-11-27T11:40:30.369Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:40:35.213Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:40:35.476Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:40:38.850Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:40:39.113Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:40:41.060Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:40:43.821Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:40:44.083Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:40:55.258Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:40:55.489Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:00.634Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:41:09.420Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:18.515Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:41:18.778Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:21.615Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:41:21.810Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:25.954Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:41:26.217Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:30.083Z guard ok: audio 8381 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 115, breaches 0, X events 1284
+2026-11-27T11:41:30.429Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:41:32.830Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:41:32.976Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:41:33.033Z guard x11 outputs: DVI-D-0 1024x768+1920+0; DVI-D-0 1024x768+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:33.306Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:36.346Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:41:36.609Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:42.465Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:41:42.730Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:48.060Z live output off DVI-D-0 (stress)
+2026-11-27T11:41:48.211Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:41:51.787Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:41:55.294Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:41:55.557Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:00.916Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:42:01.178Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:01.317Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:42:04.587Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:42:06.486Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:42:06.749Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:16.083Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:42:19.793Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:26.302Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:42:26.565Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:30.094Z guard ok: audio 9578 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 134, breaches 0, X events 1485
+2026-11-27T11:42:30.491Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:42:31.775Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:42:31.946Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:34.635Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:42:34.889Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:39.330Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:42:39.593Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:42.022Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:42:42.221Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:43.916Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:42:44.163Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:47.386Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:42:51.785Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:52.341Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:42:56.293Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:42:56.556Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:42:56.769Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:42:56.960Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:02.698Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:43:02.944Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:04.028Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:43:07.452Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:43:07.715Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:17.230Z live output DVI-D-0 1280x720@59.94 (stress)
+2026-11-27T11:43:17.433Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:20.512Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:43:20.682Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:23.098Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:43:23.361Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:28.619Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:43:28.882Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:30.104Z guard ok: audio 10776 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 157, breaches 0, X events 1713
+2026-11-27T11:43:30.552Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:43:30.698Z live output off DVI-D-0 (stress)
+2026-11-27T11:43:30.823Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:43:35.930Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:43:36.034Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:45.383Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:43:45.646Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:48.111Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:43:48.291Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:49.920Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:43:50.183Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:53.690Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:43:53.953Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:54.355Z live output DVI-D-0 1280x720@60 (stress)
+2026-11-27T11:43:54.559Z guard x11 outputs: DVI-D-0 1280x720+1920+0; DVI-D-0 1280x720+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:43:59.646Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:43:59.831Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:44:03.148Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:44:03.411Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:44:06.618Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:44:06.881Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:44:11.910Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:44:17.310Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:44:17.573Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:44:23.931Z live output off DVI-D-0 (stress)
+2026-11-27T11:44:24.084Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:44:26.130Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:44:27.145Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:44:28.336Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:44:28.598Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:44:30.115Z guard ok: audio 11973 polls, longest interval 50 ms; windows: test windows created 0 (0 created outside DVI-D-0, unmapped), maps 0, maps inside DVI-D-0 0, unmapped geometries outside 0, output changes 178, breaches 0, X events 1932
+2026-11-27T11:44:30.615Z camwatch ok 13 nodes marked; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:44:34.234Z live output DVI-D-0 1920x1080@60 (stress)
+2026-11-27T11:44:41.246Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:44:41.510Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:44:43.321Z live output DVI-D-0 1920x1080@59.94 (stress)
+2026-11-27T11:44:49.158Z guard x11 outputs: DVI-D-0 none; HDMI-0 1920x1200+0+0
+2026-11-27T11:44:49.433Z guard x11 outputs: DVI-D-0 1920x1080+1920+0; DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T11:44:52.417Z live stress end (exit 0)
+2026-11-27T11:44:53.025Z show mode DVI-D-0 1920x1080@60
+2026-11-27T11:44:53.182Z guard x11 create 0x2e00002 1920x1080+1920+0 override 1 ffplay/ffplay pid 474586 ""
+2026-11-27T11:44:53.182Z guard x11 destroy 0x2e00002
+2026-11-27T11:44:53.307Z guard x11 create 0x2e00007 1920x1080+1920+0 override 1 ffplay/ffplay pid 474586 "ffplay"
+2026-11-27T11:44:53.406Z guard x11 map 0x2e00007 1920x1080+1920+0 ffplay/ffplay pid 474586 "gc573-pattern": inside DVI-D-0 1920x1080+1920+0
+2026-11-27T11:44:53.531Z show player start 1920x1080@60 (pid 474586)
+2026-11-27T11:44:53.749Z live stream start: sudo /tmp/gc573-live/gc573-cap -d /dev/v4l/by-path/pci-0000:07:00.0-video-index0 -D /sys/kernel/debug/gc573-0000:07:00.0
+2026-11-27T11:44:55.094Z live stream stop (exit 0)
+2026-11-27T11:44:55.196Z show player stop (pid 474586)
+2026-11-27T11:44:55.248Z guard x11 unmap 0x2e00007 1920x1080+1920+0
+2026-11-27T11:44:55.248Z guard x11 destroy 0x2e00007
+2026-11-27T11:45:17.664Z camwatch end run pid 445052 gone; opens: 0 info, 0 breach, 0 other, 0 unknown, 0 test
+2026-11-27T11:45:18.123Z guard end: run pid 445052 gone; audio 12915 polls, longest interval 51 ms; windows: test windows created 2 (0 created outside DVI-D-0, unmapped), maps 1, maps inside DVI-D-0 1, unmapped geometries outside 0, output changes 182, breaches 0, X events 1976; no breach
