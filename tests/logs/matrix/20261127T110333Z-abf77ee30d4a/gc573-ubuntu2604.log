@@ -1,0 +1,128 @@
+vm: gc573-ubuntu2604  ref: abf77ee30d4a  date: 2026-11-27T11:06:29Z
+distro: Ubuntu 26.04.1 LTS
+running: 7.0.0-44-generic
+cc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+=== build 7.0.0-43-generic
+make -C /lib/modules/7.0.0-43-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-43-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+In file included from src/gc573_core.c:41:
+src/compat.h: In function ‘gc573_block_drivers_work’:
+src/compat.h:131:64: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  131 |         int ret = driver_set_override(&bw->pdev->dev, &bw->pdev->driver_override,
+      |                                                                ^~
+src/compat.h: In function ‘gc573_block_drivers’:
+src/compat.h:150:27: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  150 |                 old = pdev->driver_override;
+      |                           ^~
+src/compat.h:151:21: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  151 |                 pdev->driver_override = name;
+      |                     ^~
+make[4]: *** [/usr/src/linux-headers-7.0.0-43-generic/scripts/Makefile.build:289: src/gc573_core.o] Error 1
+make[3]: *** [/usr/src/linux-headers-7.0.0-43-generic/Makefile:2140: .] Error 2
+make[2]: *** [/usr/src/linux-headers-7.0.0-43-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-43-generic'
+make: *** [Makefile:26: modules] Error 2
+RESULT	7.0.0-43-generic	build	FAIL	rc=2 warnings=0
+=== build 7.0.0-44-generic
+make -C /lib/modules/7.0.0-44-generic/build M=/home/dev/gc573-matrix/gc573 CC=x86_64-linux-gnu-gcc modules
+make[1]: Entering directory '/usr/src/linux-headers-7.0.0-44-generic'
+make[2]: Entering directory '/home/dev/gc573-matrix/gc573'
+  CC [M]  src/gc573_core.o
+In file included from src/gc573_core.c:41:
+src/compat.h: In function ‘gc573_block_drivers_work’:
+src/compat.h:131:64: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  131 |         int ret = driver_set_override(&bw->pdev->dev, &bw->pdev->driver_override,
+      |                                                                ^~
+src/compat.h: In function ‘gc573_block_drivers’:
+src/compat.h:150:27: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  150 |                 old = pdev->driver_override;
+      |                           ^~
+src/compat.h:151:21: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  151 |                 pdev->driver_override = name;
+      |                     ^~
+make[4]: *** [/usr/src/linux-headers-7.0.0-44-generic/scripts/Makefile.build:289: src/gc573_core.o] Error 1
+make[3]: *** [/usr/src/linux-headers-7.0.0-44-generic/Makefile:2140: .] Error 2
+make[2]: *** [/usr/src/linux-headers-7.0.0-44-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/home/dev/gc573-matrix/gc573'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-44-generic'
+make: *** [Makefile:26: modules] Error 2
+RESULT	7.0.0-44-generic	build	FAIL	rc=2 warnings=0
+=== dkms gc573/0.1
+make -j4 KERNELRELEASE=7.0.0-43-generic KDIR=/lib/modules/7.0.0-43-generic/build modules
+ERROR (dkms apport): binary package for gc573: 0.1 not found
+
+Error! Bad return status for module build on kernel: 7.0.0-43-generic (x86_64)
+Consult /var/lib/dkms/gc573/0.1/build/make.log for more information.
+  150 |                 old = pdev->driver_override;
+      |                           ^~
+src/compat.h:151:21: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  151 |                 pdev->driver_override = name;
+      |                     ^~
+In file included from src/gc573_core.c:41:
+src/compat.h: In function ‘gc573_block_drivers_work’:
+src/compat.h:131:64: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  131 |         int ret = driver_set_override(&bw->pdev->dev, &bw->pdev->driver_override,
+      |                                                                ^~
+src/compat.h: In function ‘gc573_block_drivers’:
+src/compat.h:150:27: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  150 |                 old = pdev->driver_override;
+      |                           ^~
+src/compat.h:151:21: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  151 |                 pdev->driver_override = name;
+      |                     ^~
+make[4]: *** [/usr/src/linux-headers-7.0.0-43-generic/scripts/Makefile.build:289: src/gc573_core.o] Error 1
+make[4]: *** Waiting for unfinished jobs....
+make[4]: *** [/usr/src/linux-headers-7.0.0-43-generic/scripts/Makefile.build:289: src/gc573_video.o] Error 1
+make[3]: *** [/usr/src/linux-headers-7.0.0-43-generic/Makefile:2140: .] Error 2
+make[2]: *** [/usr/src/linux-headers-7.0.0-43-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/var/lib/dkms/gc573/0.1/build'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-43-generic'
+make: *** [Makefile:26: modules] Error 2
+
+# exit code: 2
+# elapsed time: 00:00:01
+----------------------------------------------------------------
+RESULT	7.0.0-43-generic	dkms	FAIL	build
+make -j4 KERNELRELEASE=7.0.0-44-generic KDIR=/lib/modules/7.0.0-44-generic/build modules
+ERROR (dkms apport): binary package for gc573: 0.1 not found
+
+Error! Bad return status for module build on kernel: 7.0.0-44-generic (x86_64)
+Consult /var/lib/dkms/gc573/0.1/build/make.log for more information.
+  150 |                 old = pdev->driver_override;
+      |                           ^~
+src/compat.h:151:21: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  151 |                 pdev->driver_override = name;
+      |                     ^~
+In file included from src/gc573_core.c:41:
+src/compat.h: In function ‘gc573_block_drivers_work’:
+src/compat.h:131:64: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  131 |         int ret = driver_set_override(&bw->pdev->dev, &bw->pdev->driver_override,
+      |                                                                ^~
+src/compat.h: In function ‘gc573_block_drivers’:
+src/compat.h:150:27: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  150 |                 old = pdev->driver_override;
+      |                           ^~
+src/compat.h:151:21: error: ‘struct pci_dev’ has no member named ‘driver_override’
+  151 |                 pdev->driver_override = name;
+      |                     ^~
+make[4]: *** [/usr/src/linux-headers-7.0.0-44-generic/scripts/Makefile.build:289: src/gc573_core.o] Error 1
+make[4]: *** Waiting for unfinished jobs....
+make[4]: *** [/usr/src/linux-headers-7.0.0-44-generic/scripts/Makefile.build:289: src/gc573_video.o] Error 1
+make[3]: *** [/usr/src/linux-headers-7.0.0-44-generic/Makefile:2140: .] Error 2
+make[2]: *** [/usr/src/linux-headers-7.0.0-44-generic/Makefile:248: __sub-make] Error 2
+make[2]: Leaving directory '/var/lib/dkms/gc573/0.1/build'
+make[1]: *** [Makefile:248: __sub-make] Error 2
+make[1]: Leaving directory '/usr/src/linux-headers-7.0.0-44-generic'
+make: *** [Makefile:26: modules] Error 2
+
+# exit code: 2
+# elapsed time: 00:00:01
+----------------------------------------------------------------
+RESULT	7.0.0-44-generic	dkms	FAIL	build
+card-idle: no GC573 in this VM: safe
