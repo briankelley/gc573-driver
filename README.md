@@ -19,42 +19,6 @@ Gate logs are in `tests/logs/`. After the host validation comes a Roku through a
 
 Targets: 1080p60 capture first, then 4K60/HDR.
 
-## Install
-
-You need the headers for your kernel, `dkms`, `make` and `gcc`. The driver builds, installs and loads on kernels 5.14 (AlmaLinux 9) to 7.3 (Fedora 45), on Ubuntu, Linux Mint, AlmaLinux and Fedora. Capture is tested on Ubuntu 24.04 (kernel 6.8).
-
-```
-git clone https://github.com/briankelley/gc573-driver.git
-cd gc573-driver
-sudo tools/install.sh
-```
-
-`install.sh` does the following:
-- Builds the module with DKMS and installs it for the running kernel and every other installed kernel that has headers. DKMS rebuilds it for kernels you install later.
-- Loads it right away and reports the devices: a video device named "AVerMedia Live Gamer 4K (GC573)" and an ALSA card `GC573`. From then on the module loads by itself whenever the card is present.
-- If headers or `dkms` are missing, it stops and names the package to install.
-- With Secure Boot on, the kernel loads only signed modules. If loading fails, the script tells you how to enroll the key DKMS signs with.
-- A reboot always gets you out of trouble. The module loads by itself at boot only after it has taken the card once without trouble. Until then, `/etc/modprobe.d/gc573-no-autoload.conf` keeps it from loading by itself. If the driver ever hangs the system at boot anyway, add `module_blacklist=gc573` to the kernel command line once (in GRUB, press *e* and add it to the line that starts with `linux`), then run `uninstall.sh`.
-
-**Card passthrough to a virtual machine (VFIO).** If a `driverctl` override gives the card to `vfio-pci`, `install.sh` offers three choices:
-1. *This boot only* (the default): `gc573` takes the card now, and the override stays saved. A reboot gives the card back to `vfio-pci`, and `gc573` then does not even load.
-2. *Permanently*: the override is removed after you confirm, and `gc573` takes the card at every boot.
-3. *Leave the card alone*: install only.
-
-Options choose without asking: `--this-boot`, `--permanent` (add `--yes` to skip the confirmation, needed without a terminal) and `--no-bind`. Without a terminal and without an option, the card is left alone. If a running virtual machine holds the card, the script stops before it changes anything.
-
-To remove the driver, run `sudo tools/uninstall.sh`. It undoes what `install.sh` did to the card:
-- After a this-boot install it loads the saved override again (`driverctl load-override`).
-- After a permanent install it puts the override back as it was. It asks first; `--yes` skips that.
-- It unloads the module, removes it from DKMS for every kernel, and removes the `modprobe.d` entry.
-
-An update (`install.sh` again) or `uninstall.sh` first takes the card away from the loaded module, so that it can be unloaded:
-- PipeWire keeps the control device of every sound card it manages open. It lets go by itself once the card is taken away, so neither script needs you to stop it.
-- While something records the card's audio through PipeWire (OBS's PulseAudio or PipeWire source, `pw-record`), PipeWire holds the card's sound device itself. The scripts then name it as *PipeWire, streaming the card's audio* and change nothing, as for any other program (below). PulseAudio and pipewire-media-session are handled the same way. The scripts tell these sound servers by the program file they run from `/usr/bin` or `/bin`.
-- If another program has the card open (OBS, a capture), the scripts name it and change nothing on the card. Close it and run the script again, or add `--yes`: the program then loses the card. If it keeps the device open anyway, the old module stays loaded: once the program has let go, run the script again (or reboot).
-- A program other than the sound server that has the card's sound devices open is never overridden, not even with `--yes`. Neither is a program that has its I2C devices open (`/dev/i2c-*`: ddcutil, i2c-tools); these exist only with the module parameters `i2c_bus1` or `i2c_bus02`. Taking the card would wait until the program closes them: always for the I2C devices, and for the sound devices with a `gc573` older than this version. Close it and run the script again.
-- If taking the card has not finished after 10 s anyway, the script says so and stops. That happens when a program opened the card in the meantime, or holds it where the scripts cannot see it. The card goes once that program closes it. Until then, both scripts refuse to run, so that they do not wait for it too.
-
 ## Clean room
 
 AVerMedia's code and binaries are used only as documentation, studied in an isolated VM to produce a hardware spec. The driver is written from that spec. No AVerMedia code or binaries are in this repository.

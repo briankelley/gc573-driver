@@ -12,11 +12,15 @@
 # (PipeWire, PulseAudio), which keeps the card's ALSA control node open on
 # a desktop, lets go by itself; any other program with the card open (OBS,
 # a capture) is named and nothing is changed, unless --yes: then it loses
-# the card. An unbind that has not finished (a program holds the card's
-# I2C or, with an older gc573, sound devices) stops the script before it
-# touches the card. Then every gc573 version is removed from DKMS, with
-# its sources in /usr/src, and the modprobe.d entry install.sh may have
-# left is removed.
+# the card. PipeWire streaming the card's audio (OBS's PulseAudio or
+# PipeWire source, pw-record) is named like any other program. A program
+# other than the sound server with the card's sound devices open, or one
+# with its I2C devices open (/dev/i2c-*), is never overridden, not even
+# with --yes. An unbind that has not finished (a program holds the card's
+# I2C or, with an older gc573, sound devices), or one still going after
+# 10 s, stops the script before it touches the card. Then every gc573
+# version is removed from DKMS, with its sources in /usr/src, and the
+# modprobe.d entry install.sh may have left is removed.
 # Usage: sudo tools/uninstall.sh [--yes]
 #   --yes: the override is put back without a question, and programs that
 #   have the card open lose it

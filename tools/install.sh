@@ -1,19 +1,28 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0
-# Install the GC573 (AVerMedia Live Gamer 4K) driver with DKMS.
+# Install the GC573 (AVerMedia Live Gamer 4K) driver with DKMS. Needs the
+# running kernel's headers, dkms, make and gcc; without the headers or
+# dkms it stops and names the package to install. Kernels 5.14 (AlmaLinux
+# 9) to 7.3 (Fedora 45) build it; capture is tested on 6.8.
 #
-# Builds and installs gc573.ko for the running kernel; DKMS builds it again
-# for every kernel installed later (dkms.conf AUTOINSTALL), as long as that
-# kernel's headers are installed too. The module then loads by itself
-# whenever the card is present (its PCI ID, 1461:0054, is in the module's
-# alias list).
+# Builds and installs gc573.ko for the running kernel and every other
+# installed kernel with headers; DKMS builds it again for every kernel
+# installed later (dkms.conf AUTOINSTALL), as long as that kernel's
+# headers are installed too. It loads the module at once and names the
+# card's video device and ALSA card; with Secure Boot on, a load that
+# fails gets the command to enroll the key DKMS signs with. The module
+# then loads by itself whenever the card is present (its PCI ID,
+# 1461:0054, is in the module's alias list).
 #
 # A reboot is the way back from any trouble, so a crash while gc573 takes
 # the card must never repeat at boot. gc573 loads by itself only once it
 # has taken the card on this system: until then, and while a driverctl
 # override keeps the card for another driver, a modprobe.d entry
 # (/etc/modprobe.d/gc573-no-autoload.conf) keeps it from loading by its
-# alias. "modprobe gc573" and driverctl still load it.
+# alias. "modprobe gc573" and driverctl still load it. If gc573 ever hangs
+# the system at boot anyway, boot once with module_blacklist=gc573 on the
+# kernel command line (in GRUB: press e, add it to the line that starts
+# with "linux"), then run uninstall.sh.
 #
 # A persistent driverctl override that gives the card to another driver
 # (vfio-pci, to pass it to a virtual machine) leaves three choices:
@@ -33,9 +42,15 @@
 # PulseAudio), which keeps the card's ALSA control node open on a desktop,
 # lets go of it by itself. Any other program with the card open (OBS, a
 # capture) would lose the card: the script names it and leaves the card
-# alone, unless --yes. An unbind that has not finished (status 3: a
-# program holds the card's I2C or, with an older gc573, sound devices)
-# stops the script, here or at its next run, before it touches the card.
+# alone, unless --yes. PipeWire streaming the card's audio (OBS's
+# PulseAudio or PipeWire source, pw-record) is named like any other
+# program. A program other than the sound server with the card's sound
+# devices open, or one with its I2C devices open (/dev/i2c-*, with the
+# module parameters i2c_bus1 or i2c_bus02), is never overridden, not even
+# with --yes. An unbind that has not finished (status 3: a program holds
+# the card's I2C or, with an older gc573, sound devices), or one still
+# going after 10 s, stops the script, here or at its next run, before it
+# touches the card.
 #
 # Other ways of reserving the card (vfio-pci.ids on the kernel command
 # line or in modprobe.d) are reported, not changed.
