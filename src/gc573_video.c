@@ -1533,6 +1533,14 @@ static int gc573_subscribe_event(struct v4l2_fh *fh,
 {
 	switch (sub->type) {
 	case V4L2_EVENT_SOURCE_CHANGE:
+		/*
+		 * The id is the input index, and there is one input. Every
+		 * other id would be one more subscription of its own (memory
+		 * no one accounts for, walked at each event with interrupts
+		 * off), never raised.
+		 */
+		if (sub->id)
+			return -EINVAL;
 		return v4l2_src_change_event_subscribe(fh, sub);
 	case V4L2_EVENT_CTRL:
 		return v4l2_ctrl_subscribe_event(fh, sub);
