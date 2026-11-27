@@ -17,6 +17,7 @@
 #include <linux/io.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
+#include <linux/notifier.h>
 #include <linux/sizes.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
@@ -386,6 +387,9 @@ struct gc573 {
 	bool dma_dead;
 	/* probe: bus mastering was on, the engines not yet seen stopped */
 	bool master_unchecked;
+	/* a system sleep is under way: no stream starts (vid.lock, aud.lock) */
+	bool sleeping;
+	struct notifier_block pm_nb;	/* gc573_pm_notify() */
 	/* tests only, exp_mmio_ones: register reads return all-ones */
 	bool mmio_ones;
 	bool mmio_ones_timed;		/* until mmio_ones_until (jiffies) */

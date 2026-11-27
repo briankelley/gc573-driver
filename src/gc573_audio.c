@@ -416,7 +416,8 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 	spin_lock(&a->lock);
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
-		if (a->dead || a->running) {
+		/* busy too while a system sleep is under way (gc573_pm_notify()) */
+		if (a->dead || a->running || gc->sleeping) {
 			ret = a->dead ? -ENODEV : -EBUSY;
 			break;
 		}

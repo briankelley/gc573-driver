@@ -196,11 +196,13 @@ Name the devices explicitly. Then nothing else is opened, and the names stay put
   - Setting any of these three taints the kernel.
 - If the card does not confirm that its DMA stopped, the driver leaves the card as it is until the next reboot. Turning a card's bus mastering off while its DMA may still run can hang the whole computer (it did, twice, in tests), so the driver leaves bus mastering on and keeps all the memory it gave the card. The kernel log says `... the card keeps bus mastering and gets no driver until reboot; reboot before using the card again` and `... KiB of DMA memory kept until reboot`. Until the reboot:
   - the card has no driver: gc573 refuses it, and no other driver (vfio-pci either) can take it;
-  - the gc573 module cannot be unloaded, and `/sys/module/gc573/parameters/dead_cards` lists the card.
+  - the gc573 module cannot be unloaded, and `/sys/module/gc573/parameters/dead_cards` lists the card;
+  - system sleep (suspend, hibernate) is refused.
 
   A normal reboot of the computer is safe: the kernel does not turn bus mastering off for a plain reboot, and the platform's reset then resets the card.
 - Not handled: kexec (as kdump or a fast reboot uses) and a write to the card's sysfs `enable` file can still turn bus mastering off on such a card. Do neither before the reboot.
 - In a virtual machine, such a card cannot be let go safely: a reboot of the guest (QEMU resets the card) and its shutdown (vfio-pci releases the card) both turn bus mastering off. Expect the host to need a power cycle.
+- System sleep (suspend, hibernate) is refused while the card captures: the kernel would turn its bus mastering off under the running DMA. Suspend and resume are not supported yet (M9): after a sleep taken while the card was idle, rebind the driver or reboot before you use the card again.
 - HDCP-protected sources (consoles, streaming boxes) are untested.
 - Tested in a virtual machine with the card passed through, and on a real host (Linux Mint 22, kernel 6.8): a 2-hour OBS recording with a source change every 3 minutes, and frame-exact captures at 1080p60, 1080p59.94 and 720p59.94.
 

@@ -184,6 +184,20 @@ gc573_regs_idle() {
 		[ "$vip" != 0xffffffff ] && [ $((run & 2)) = 0 ] && [ $((vip & 1)) = 0 ]
 }
 
+# System sleep, as far as the freezer test goes (/sys/power/pm_test
+# "freezer": the notifiers run, then the tasks freeze for its delay and
+# thaw; no device sees a suspend). Status 0 it went through, 1 refused,
+# 77 not available here. Prints the write's error. pm_test is put back.
+gc573_sleep_test() {
+	local p=/sys/power rc old
+	[ -w $p/pm_test ] && grep -qw freeze $p/state 2>/dev/null || return 77
+	old=$(sed -n 's/.*\[\([a-z]*\)\].*/\1/p' $p/pm_test)
+	echo freezer > $p/pm_test || return 77
+	if echo freeze 2>&1 > $p/state; then rc=0; else rc=1; fi
+	echo "${old:-none}" > $p/pm_test
+	return $rc
+}
+
 # Build the audio test tool into directory $1 (alsa-lib headers:
 # libasound2-dev); print the binary's path.
 gc573_aud_build() {

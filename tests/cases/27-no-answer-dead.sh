@@ -22,7 +22,8 @@
 # given kept (modes 3, 4: the dummy list and the audio buffers, 12 KiB;
 # mode 1: none given), bus mastering still on and the device still
 # enabled, the card in dead_cards, the module held, no bind (ENODEV: no
-# driver matches it); and BAR0, read past the driver, idle. run.sh runs
+# driver matches it), no system sleep (with /sys/power/pm_test, as far as
+# its freezer stage); and BAR0, read past the driver, idle. run.sh runs
 # this case last and skips the cases after it; the machine needs a reboot
 # after it (in a VM: tools/vms/card-idle.sh first). Allowed: the failures
 # this case provokes, and under DMA-API debug the report of the kept
@@ -41,6 +42,7 @@ regs=$(gc573_regs_build "$work") || fail "cannot build gc573-regs"
 
 cleanup() {
 	[ -w "$param" ] && echo 0 > "$param"
+	[ -w /sys/power/pm_test ] && echo none > /sys/power/pm_test
 	[ -n "$(gc573_dead_cards)" ] || { gc573_loaded && gc573_unload; }
 	rm -rf "$work"
 }
@@ -52,6 +54,7 @@ trap cleanup EXIT
 	echo 'video stop \(no INT bit 0, no reset of domain 0\) failed: the card keeps bus mastering and gets no driver until reboot'
 	echo 'teardown stop failed: the card does not answer'
 	echo 'the probe failed before the engines were stopped: the card keeps bus mastering and gets no driver until reboot'
+	echo 'system sleep refused: 1 card\(s\) did not confirm their DMA stopped'
 	echo 'WARNING: CPU: [0-9]+ PID: [0-9]+ at kernel/dma/debug\.c:[0-9]+ dma_debug_device_change'
 	echo 'DMA-API: Mapped at:'
 } >> "$GC573_KMSG_ALLOW"
@@ -134,4 +137,10 @@ if echo "$GC573_BDF" > "$drv/bind" 2> "$work/bind.err"; then
 	fail "the card could be bound again"
 fi
 echo "bind refused: $(sed 's/^.*: //' "$work/bind.err")"
+gc573_sleep_test > "$work/sleep.out"
+case $? in
+0) fail "system sleep went through the freezer stage with a card dead" ;;
+1) echo "system sleep refused: $(cat "$work/sleep.out")" ;;
+*) echo "(no /sys/power/pm_test or no freeze state: sleep not tried)" ;;
+esac
 echo "mode $mode left the card as it is until reboot: bus mastering on, the memory it was given kept"

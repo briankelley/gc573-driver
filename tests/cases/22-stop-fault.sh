@@ -23,8 +23,9 @@
 #   ENODEV, REQBUFS 0 works, no video or audio stream starts again; the
 #   unbind finishes and leaves the device enabled with bus mastering on;
 # - teardown: the unbind finishes and both programs end;
-# - the module cannot be unloaded, and the card cannot be bound again
-#   (ENODEV: no driver matches it);
+# - the module cannot be unloaded, the card cannot be bound again
+#   (ENODEV: no driver matches it), and system sleep is refused (with
+#   /sys/power/pm_test, as far as its freezer stage);
 # - streamoff: a remove and rescan of the device (its DMA confirmed
 #   stopped) gives a new device that the driver refuses by its record.
 # The card stays dead until reboot: run.sh runs this case last, skips the
@@ -58,6 +59,7 @@ cleanup() {
 	[ -w "$param" ] && echo 0 > "$param"
 	for p in "${pids[@]}"; do kill "$p" 2>/dev/null; done
 	wait 2>/dev/null
+	[ -w /sys/power/pm_test ] && echo none > /sys/power/pm_test
 	[ -n "$(gc573_dead_cards)" ] || { gc573_loaded && gc573_unload; }
 	rm -rf "$work"
 }
@@ -68,6 +70,7 @@ cleanup() {
 	echo 'teardown stop failed: DMA still on'
 	echo 'teardown stop failed: the card keeps bus mastering and gets no driver until reboot'
 	echo 'HDMI: .*failed: -19'
+	echo 'system sleep refused: 1 card\(s\) did not confirm their DMA stopped'
 	echo 'WARNING: CPU: [0-9]+ PID: [0-9]+ at kernel/dma/debug\.c:[0-9]+ dma_debug_device_change'
 	echo 'DMA-API: Mapped at:'
 } >> "$GC573_KMSG_ALLOW"
@@ -107,7 +110,7 @@ confirmed_idle() {
 }
 
 # What must hold once the card is dead: bus mastering on, recorded, the
-# module held, no bind
+# module held, no bind, no sleep
 dead_checks() {
 	local out
 	gc573_master_on || fail "bus mastering off: the driver turned it off after the failed stop"
@@ -129,6 +132,12 @@ dead_checks() {
 	gc573_master_on || fail "bus mastering off after the unbind"
 	echo "unbound: PCI enable count $(cat "$pdev/enable"), bus mastering on"
 	[ "$(cat "$pdev/enable")" -ge 1 ] || fail "the device was disabled at the unbind (bus mastering went off with it)"
+	gc573_sleep_test > "$work/sleep.out"
+	case $? in
+	0) fail "system sleep went through the freezer stage with a card dead" ;;
+	1) echo "system sleep refused: $(cat "$work/sleep.out")" ;;
+	*) echo "(no /sys/power/pm_test or no freeze state: sleep not tried)" ;;
+	esac
 }
 
 gc573_load || fail "insmod failed"

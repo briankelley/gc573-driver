@@ -1233,6 +1233,11 @@ static int gc573_start_streaming(struct vb2_queue *q, unsigned int count)
 		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
 		return -ENODEV;
 	}
+	/* a system sleep is under way (gc573_pm_notify()) */
+	if (gc->sleeping) {
+		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);
+		return -EBUSY;
+	}
 	/* a locked input in other timings: query and set them first */
 	if (v->in.locked && !gc573_vid_input_matches(v)) {
 		gc573_vid_return_all(gc, VB2_BUF_STATE_QUEUED);

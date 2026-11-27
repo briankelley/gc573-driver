@@ -33,8 +33,10 @@
 #include <linux/ktime.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/notifier.h>
 #include <linux/pci.h>
 #include <linux/slab.h>
+#include <linux/suspend.h>
 
 #include "compat.h"
 #include "gc573.h"
@@ -775,6 +777,82 @@ static void gc573_clear_master(void *data)
 		pci_clear_master(gc->pdev);
 }
 
+/*
+ * System sleep. With no PM callbacks of the driver's, the PCI core turns
+ * bus mastering off for suspend, hibernation and the restore of an image
+ * (pci_pm_default_suspend()), whatever the card does; spec/pci.md forbids
+ * that while its DMA may run. So no sleep while a stream is on, and from
+ * the notice of one to its end no stream starts. An idle card sleeps as
+ * the core has it (and needs a rebind or a reboot after a sleep that cut
+ * its power). Cards whose stop failed: gc573_pm_dead_notify().
+ */
+static int gc573_pm_notify(struct notifier_block *nb, unsigned long action,
+			   void *data)
+{
+	struct gc573 *gc = container_of(nb, struct gc573, pm_nb);
+	const char *busy = NULL;
+	bool sleeping;
+
+	switch (action) {
+	case PM_SUSPEND_PREPARE:
+	case PM_HIBERNATION_PREPARE:
+	case PM_RESTORE_PREPARE:
+		sleeping = true;
+		break;
+	case PM_POST_SUSPEND:
+	case PM_POST_HIBERNATION:
+	case PM_POST_RESTORE:
+		sleeping = false;
+		break;
+	default:
+		return NOTIFY_DONE;
+	}
+	mutex_lock(&gc->vid.lock);
+	spin_lock_irq(&gc->aud.lock);
+	if (sleeping && vb2_is_streaming(&gc->vid.queue))
+		busy = "a video stream is on";
+	else if (sleeping && gc->aud.running)
+		busy = "an audio stream is on";
+	else
+		gc->sleeping = sleeping;
+	spin_unlock_irq(&gc->aud.lock);
+	mutex_unlock(&gc->vid.lock);
+	if (!busy)
+		return NOTIFY_DONE;
+	dev_warn(&gc->pdev->dev, "system sleep refused: %s, and the PCI core would turn bus mastering off under its DMA\n",
+		 busy);
+	return notifier_from_errno(-EBUSY);
+}
+
+static int gc573_pm_dead_notify(struct notifier_block *nb,
+				unsigned long action, void *data)
+{
+	unsigned int n;
+
+	if (action != PM_SUSPEND_PREPARE && action != PM_HIBERNATION_PREPARE &&
+	    action != PM_RESTORE_PREPARE)
+		return NOTIFY_DONE;
+	mutex_lock(&gc573_dead_lock);
+	n = gc573_ndead;
+	mutex_unlock(&gc573_dead_lock);
+	if (!n)
+		return NOTIFY_DONE;
+	pr_warn("%s: system sleep refused: %u card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first\n",
+		KBUILD_MODNAME, n);
+	return notifier_from_errno(-EBUSY);
+}
+
+static struct notifier_block gc573_pm_dead_nb = {
+	.notifier_call = gc573_pm_dead_notify,
+};
+
+static void gc573_pm_unregister(void *data)
+{
+	struct gc573 *gc = data;
+
+	unregister_pm_notifier(&gc->pm_nb);
+}
+
 static void gc573_debugfs_remove(void *data)
 {
 	struct gc573 *gc = data;
@@ -932,6 +1010,15 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	if (ret)
 		return dev_err_probe(dev, ret, "cannot register sound card\n");
 
+	/* no system sleep while a stream runs: gc573_pm_notify() */
+	gc->pm_nb.notifier_call = gc573_pm_notify;
+	ret = register_pm_notifier(&gc->pm_nb);
+	if (ret)
+		return dev_err_probe(dev, ret, "cannot register the PM notifier\n");
+	ret = devm_add_action_or_reset(dev, gc573_pm_unregister, gc);
+	if (ret)
+		return ret;
+
 	/* polling stops before the video device goes (devres order) */
 	ret = gc573_hdmi_start(gc);
 	if (ret)
@@ -969,7 +1056,27 @@ static struct pci_driver gc573_pci_driver = {
 	.probe		= gc573_probe,
 	.shutdown	= gc573_shutdown,
 };
-module_pci_driver(gc573_pci_driver);
+
+static int __init gc573_init(void)
+{
+	int ret;
+
+	ret = register_pm_notifier(&gc573_pm_dead_nb);
+	if (ret)
+		return ret;
+	ret = pci_register_driver(&gc573_pci_driver);
+	if (ret)
+		unregister_pm_notifier(&gc573_pm_dead_nb);
+	return ret;
+}
+module_init(gc573_init);
+
+static void __exit gc573_exit(void)
+{
+	pci_unregister_driver(&gc573_pci_driver);
+	unregister_pm_notifier(&gc573_pm_dead_nb);
+}
+module_exit(gc573_exit);
 
 MODULE_DESCRIPTION("AVerMedia Live Gamer 4K (GC573) HDMI capture driver");
 MODULE_LICENSE("GPL");
