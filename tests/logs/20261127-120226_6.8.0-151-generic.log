@@ -1,0 +1,73 @@
+# GC573 regression suite
+date:    2026-11-27 12:02:26 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 7680958308C8465247A828C
+rev:     4d51a2ca1206-dirty
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 26-no-answer
+  -- mode 2: no answer for 1.5 s once bus mastering is on
+    | [  777.187279] Setting dangerous option exp_mmio_ones - tainting kernel
+    | [  777.291085] gc573 0000:07:00.0: exp_mmio_ones 2: register reads return all-ones for 1500 ms
+    | [  777.293363] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+    | [  778.852204] gc573 0000:07:00.0: the card answers again, 1561 ms after bus mastering went on
+    | [  778.854405] gc573 0000:07:00.0: FPGA version 20200811
+    | [  779.350885] Setting dangerous option exp_mmio_ones - tainting kernel
+  mode 2: bound, bus mastering on, 30 frames pattern-checked
+  the probe waited as it should, and the card works
+  -- kernel log (30 lines)
+  | [  776.471953] gc573 0000:07:00.0: using MSI, irq 60
+  | [  776.471965] gc573 0000:07:00.0: FPGA version 20200811
+  | [  776.604137] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  776.605064] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  776.708189] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  776.708896] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  776.810518] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  776.948409] gc573 0000:07:00.0: video device video0
+  | [  776.949261] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  776.967926] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  777.182657] gc573-test: 1795780947956535028-5819 no-answer taint
+  | [  777.182797] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [  777.187169] gc573-test: 1795780947961069128-19566 no-answer 2
+  | [  777.187279] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [  777.291085] gc573 0000:07:00.0: exp_mmio_ones 2: register reads return all-ones for 1500 ms
+  | [  777.293363] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+  | [  778.852204] gc573 0000:07:00.0: the card answers again, 1561 ms after bus mastering went on
+  | [  778.854383] gc573 0000:07:00.0: using MSI, irq 60
+  | [  778.854405] gc573 0000:07:00.0: FPGA version 20200811
+  | [  778.988183] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  778.989969] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  779.103999] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  779.104692] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  779.207160] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  779.348625] gc573 0000:07:00.0: video device video0
+  | [  779.350637] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  779.350885] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [  779.370230] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  779.909146] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [  781.594015] Setting dangerous option exp_mmio_ones - tainting kernel
+  expected: [  777.293363] gc573 0000:07:00.0: VERSION reads ffffffff since bus mastering went on (20200811 before): the card is not ready; waiting up to 20 s
+RESULT 26-no-answer         PASS (6s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 26-no-answer         PASS (6s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=1 fail=0 skip=2

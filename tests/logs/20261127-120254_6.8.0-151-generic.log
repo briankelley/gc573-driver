@@ -1,0 +1,70 @@
+# GC573 regression suite
+date:    2026-11-27 12:02:54 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 7680958308C8465247A828C
+rev:     4d51a2ca1206-dirty
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 30-probe-entry
+  unbound: bus mastering off, BAR0 DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  armed: bind refused (No such device)
+    | [  805.200024] Setting dangerous option exp_probe_armed - tainting kernel
+    | [  805.206351] gc573 0000:07:00.0: exp_probe_armed: DMA_RUN 0x00000000 read as 0x00000002 (the audio DMA on)
+    | [  805.206357] gc573 0000:07:00.0: bus mastering was off when the probe started, and the card does not read idle (VERSION 20200811 DMA_RUN 0x00000002 VIP_CTRL 0x00000000): a previous owner may have turned it off under running DMA, and on again it can stall the machine (spec/pci.md); nothing is written to the card
+    | [  805.210593] gc573 0000:07:00.0: not idle at the probe's start with bus mastering off: bus mastering stays off, and the card gets no driver until reboot; reboot before using the card again
+    | [  805.212869] Setting dangerous option exp_probe_armed - tainting kernel
+  dead: PCI enable count 1, bus mastering off, in dead_cards
+  rmmod refused: rmmod: ERROR: Module gc573 is in use
+  bind refused: No such device
+  system sleep refused: /home/dev/gc573-driver/tests/cases/../lib.sh: line 197: echo: write error: Device or resource busy
+  BAR0 (past the driver): DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  armed: the card is dead until reboot, bus mastering never turned on
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (22 lines)
+  | [  804.461689] gc573 0000:07:00.0: using MSI, irq 60
+  | [  804.461711] gc573 0000:07:00.0: FPGA version 20200811
+  | [  804.594751] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  804.596005] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  804.705942] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  804.706621] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  804.806417] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  804.948175] gc573 0000:07:00.0: video device video0
+  | [  804.948950] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  804.962989] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  805.199694] gc573-test: 1795780975973951105-20941 probe-entry armed
+  | [  805.200024] Setting dangerous option exp_probe_armed - tainting kernel
+  | [  805.206351] gc573 0000:07:00.0: exp_probe_armed: DMA_RUN 0x00000000 read as 0x00000002 (the audio DMA on)
+  | [  805.206357] gc573 0000:07:00.0: bus mastering was off when the probe started, and the card does not read idle (VERSION 20200811 DMA_RUN 0x00000002 VIP_CTRL 0x00000000): a previous owner may have turned it off under running DMA, and on again it can stall the machine (spec/pci.md); nothing is written to the card
+  | [  805.210593] gc573 0000:07:00.0: not idle at the probe's start with bus mastering off: bus mastering stays off, and the card gets no driver until reboot; reboot before using the card again
+  | [  805.212869] Setting dangerous option exp_probe_armed - tainting kernel
+  | [  805.237977] PM: suspend entry (s2idle)
+  | [  805.252550] Filesystems sync: 0.014 seconds
+  | [  805.252830] gc573: system sleep refused: 1 card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first
+  | [  805.252844] random: crng reseeded on system resumption
+  | [  805.252846] PM: suspend exit
+  | [  805.260301] Setting dangerous option exp_probe_armed - tainting kernel
+RESULT 30-probe-entry       PASS (1s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 30-probe-entry       PASS (1s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+NOTE: 30-probe-entry left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=1 fail=0 skip=2
