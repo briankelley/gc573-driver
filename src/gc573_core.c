@@ -989,11 +989,16 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	types = gc573_irq_types();
 	ret = pci_alloc_irq_vectors(pdev, 1, 1, types);
-	if (ret < 0 && types == PCI_IRQ_MSI)
+	/*
+	 * -EINVAL: MSI is off (pci=nomsi, the device's msi_bus) or the device
+	 * cannot use it. -ENOMEM, -ENOSPC, -ENODEV: an allocation failed
+	 * (drivers/pci/msi in 6.8), which INTx would not cure
+	 */
+	if (ret == -EINVAL && types == PCI_IRQ_MSI)
 		return dev_err_probe(dev, ret,
 				     "MSI unavailable: INTx is untested on this card (exp_intx=1 allows it)\n");
 	if (ret < 0)
-		return dev_err_probe(dev, ret, "no IRQ vector\n");
+		return dev_err_probe(dev, ret, "cannot allocate the interrupt vector\n");
 	gc->irq = pci_irq_vector(pdev, 0);
 	if (gc->irq < 0)
 		return dev_err_probe(dev, gc->irq, "no IRQ number\n");
