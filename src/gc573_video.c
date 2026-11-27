@@ -49,7 +49,10 @@
  * Buffers: single-planar API, one contiguous buffer per frame. Each plane
  * goes to its own DMA channel through its own descriptor list, and a
  * buffer occupies the same slot on every channel it uses. Slots are armed
- * round-robin, and the hardware completes them in the order armed.
+ * round-robin, and the hardware completes them in the order armed. Every
+ * stop and start first disarms all three channels (CH_CTRL 0) and points
+ * every slot at the driver's dummy list, so no channel register is left
+ * with a list that has gone (gc573_video_disarm()).
  *
  * Locking: vid.lock serialises the ioctls, the vb2 queue and stream
  * start/stop. vid.slock protects the slot state shared with the IRQ
@@ -90,6 +93,13 @@
 #define GC573_VID_TERM_MS		2000
 /* spec/video-dma.md: RD's lists hold up to 2048 descriptors */
 #define GC573_DL_MAX			2048
+/*
+ * The dummy list (gc573_video_alloc()): one descriptor at the start of a
+ * coherent page, for the page's second half (256-byte aligned, a multiple
+ * of 32 bytes: the descriptor rules of spec/video-dma.md)
+ */
+#define GC573_DUMMY_OFF			2048
+#define GC573_DUMMY_LEN			2048
 /* descriptor chunk cap: the DMA max segment size (gc573.h) */
 #define GC573_DESC_MAX			GC573_DMA_SEG_MAX
 /*
@@ -117,7 +127,7 @@
 static int exp_slot_mode;
 module_param(exp_slot_mode, int, 0644);
 MODULE_PARM_DESC(exp_slot_mode,
-		 "Experiment, spec/open-questions.md #8; read at stream start. 0: normal, 1: slot-valid bits on ch0 only, 2: ch1/ch2 CH_CTRL written at start only, 3: slot-valid bits on ch1/ch2 only, 4: ch1/ch2 CH_CTRL never written, 5: ch1/ch2 CH_CTRL = 0 at start, never set");
+		 "Experiment, spec/open-questions.md #8; read at stream start. 0: normal, 1: slot-valid bits on ch0 only, 2: ch1/ch2 CH_CTRL written at start only, 3: slot-valid bits on ch1/ch2 only, 4: ch1/ch2 CH_CTRL never written, 5: ch1/ch2 CH_CTRL = 0 at start, never set (every stop and start writes 0 to all three first, in every mode)");
 
 /*
  * Experiment, spec/open-questions.md #33 (delivery below 59.94 Hz): RATE_CTRL
@@ -727,16 +737,29 @@ static void gc573_vid_ctrl(struct gc573 *gc, unsigned int c, u32 set, u32 clr)
 
 /*
  * Every channel disarmed: CH_CTRL 0, no run bit and no slot valid (ch0's
- * gates every channel, spec/video-dma.md "Slots"). At probe before bus
- * mastering, with nothing else running.
+ * gates every channel, spec/video-dma.md "Slots"), and every slot of
+ * every channel pointing at the dummy list, memory the driver keeps until
+ * after the quiesce. Probe (before bus mastering), and every stream stop
+ * and start, slock held there. A slot a format does not use thus never
+ * keeps a list an earlier stream freed.
  */
 void gc573_video_disarm(struct gc573 *gc)
 {
-	unsigned int c;
+	struct gc573_video *v = &gc->vid;
+	unsigned int c, n;
 
 	for (c = 0; c < GC573_VCH_NUM; c++) {
-		gc573_wr(gc, gc573_vch_base[c] + GC573_VCH_CTRL, 0);
-		gc->vid.ch_ctrl[c] = 0;
+		u32 base = gc573_vch_base[c];
+
+		gc573_wr(gc, base + GC573_VCH_CTRL, 0);
+		v->ch_ctrl[c] = 0;
+		for (n = 0; n < GC573_VCH_SLOTS; n++) {
+			gc573_wr(gc, base + GC573_VCH_LIST_LO(n),
+				 lower_32_bits(v->dummy_dma));
+			gc573_wr(gc, base + GC573_VCH_LIST_HI(n),
+				 upper_32_bits(v->dummy_dma));
+			gc573_wr(gc, base + GC573_VCH_COUNT(n), 1);
+		}
 	}
 }
 
@@ -856,6 +879,9 @@ int gc573_video_hw_stop(struct gc573 *gc)
 	if (!(fault & GC573_STOP_FAULT_RESET))
 		reset = !gc573_reset_domain_mask(gc, domains) &&
 			(domains & GC573_RESET_DOMAIN_0);
+	spin_lock(&v->slock);
+	gc573_video_disarm(gc);
+	spin_unlock(&v->slock);
 	if (!term && !reset) {
 		gc573_dma_dead(gc, "video stop (no INT bit 0, no reset of domain 0)");
 		return -EIO;
@@ -1105,13 +1131,13 @@ static void gc573_vid_hw_start(struct gc573 *gc, bool restart)
 	v->next_arm = 0;
 	v->arm_seq = 0;
 	v->skip = GC573_VID_SKIP;
-	memset(v->ch_ctrl, 0, sizeof(v->ch_ctrl));
+	gc573_video_disarm(gc);
 	if (!restart) {
 		v->sequence = 0;
 		memset(&v->st, 0, sizeof(v->st));
 	}
 
-	/* every slot of every channel in use points at memory we own */
+	/* every slot of every channel in use points at a queued buffer */
 	first = list_first_entry(&v->queued, struct gc573_vbuf, list);
 	for (n = 0; n < GC573_VCH_SLOTS; n++)
 		gc573_vid_program_slot(gc, n, first);
@@ -1909,6 +1935,26 @@ unlock:
 }
 
 /* ---- setup ---- */
+
+/*
+ * The dummy list, before the quiesce's devres action is added
+ * (gc573_probe()): devres frees it after the quiesce ran. Its one
+ * descriptor describes the page's second half.
+ */
+int gc573_video_alloc(struct gc573 *gc)
+{
+	struct gc573_video *v = &gc->vid;
+
+	v->dummy = dmam_alloc_coherent(&gc->pdev->dev, PAGE_SIZE, &v->dummy_dma,
+				       GFP_KERNEL);
+	if (!v->dummy)
+		return -ENOMEM;
+	v->dummy[0] = cpu_to_le32(lower_32_bits(v->dummy_dma + GC573_DUMMY_OFF));
+	v->dummy[1] = cpu_to_le32(upper_32_bits(v->dummy_dma + GC573_DUMMY_OFF));
+	v->dummy[2] = cpu_to_le32(GC573_DUMMY_LEN / 4);	/* in dwords */
+	v->dummy[3] = cpu_to_le32(GC573_DESC_CTRL);
+	return 0;
+}
 
 /* Software state the quiesce and the IRQ thread may use: before probe */
 void gc573_video_early_init(struct gc573 *gc)

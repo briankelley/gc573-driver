@@ -313,6 +313,8 @@ struct gc573_video {
 	unsigned int next_arm;		/* slots are armed round-robin */
 	u64 arm_seq;
 	u32 ch_ctrl[GC573_VCH_NUM];	/* CH_CTRL values written (ch1, ch2) */
+	__le32 *dummy;			/* the dummy list (coherent page) */
+	dma_addr_t dummy_dma;
 	u32 vip_ctrl;			/* VIP_CTRL while streaming, w/o OUT_EN */
 	bool live;			/* streaming from a locked input */
 	u32 input_stops;		/* streams failed by an input change */
@@ -452,6 +454,7 @@ struct gc573_mem_live {
 extern struct gc573_mem_live gc573_mem_live;
 
 void gc573_video_early_init(struct gc573 *gc);
+int gc573_video_alloc(struct gc573 *gc);
 int gc573_video_init(struct gc573 *gc);
 int gc573_video_hw_stop(struct gc573 *gc);
 void gc573_video_disarm(struct gc573 *gc);

@@ -233,7 +233,7 @@ static int gc573_hw_stop_engines(struct gc573 *gc)
 		gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
 	if (vip & GC573_VIP_CTRL_OUT_EN)
 		gc573_wr(gc, GC573_VIP_CTRL, vip & ~GC573_VIP_CTRL_OUT_EN);
-	gc573_video_disarm(gc);
+	gc573_video_disarm(gc);		/* every slot on the dummy list too */
 	if ((run & GC573_DMA_RUN_AUDIO) || (vip & GC573_VIP_CTRL_OUT_EN))
 		dev_info(dev, "DMA running at probe (DMA_RUN %#010x, VIP_CTRL %#010x): stopped before bus mastering\n",
 			 run, vip);
@@ -538,8 +538,10 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	/* one descriptor per segment: tell the DMA layer how long they get */
 	dma_set_max_seg_size(dev, GC573_DMA_SEG_MAX);
 
-	/* before the quiesce's action: devres frees this after it ran */
+	/* before the quiesce's action: devres frees these after it ran */
 	ret = gc573_audio_alloc(gc);
+	if (!ret)
+		ret = gc573_video_alloc(gc);
 	if (ret)
 		return ret;
 
