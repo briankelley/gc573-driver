@@ -433,6 +433,7 @@ struct gc573 {
 #define GC573_STOP_FAULT_TERM		BIT(0)	/* video: no INT bit 0 */
 #define GC573_STOP_FAULT_RESET		BIT(1)	/* video: domain 0 reset failed */
 #define GC573_STOP_FAULT_AUDIO		BIT(2)	/* teardown: audio DMA still on */
+#define GC573_STOP_FAULT_PROBE		BIT(3)	/* probe: audio DMA still on */
 extern unsigned int gc573_exp_stop_fault;
 
 /*

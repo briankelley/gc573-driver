@@ -69,7 +69,7 @@
 unsigned int gc573_exp_stop_fault;
 module_param_named_unsafe(exp_stop_fault, gc573_exp_stop_fault, uint, 0644);
 MODULE_PARM_DESC(exp_stop_fault,
-		 "Test only; setting it taints the kernel. A DMA stop the card confirmed then counts as failed, and the driver handles it as a real failure: the card is unusable until reboot. Read at each stop. Bit 0: a video stop's INT bit 0 counts as missing, bit 1: its reset of domain 0 counts as failed (with both, the video stop fails), bit 2: the teardown counts the audio DMA as still on (0: off)");
+		 "Test only; setting it taints the kernel. A DMA stop the card confirmed then counts as failed, and the driver handles it as a real failure: the card is unusable until reboot. Read at each stop. Bit 0: a video stop's INT bit 0 counts as missing, bit 1: its reset of domain 0 counts as failed (with both, the video stop fails), bit 2: the teardown counts the audio DMA as still on, bit 3: the probe's stop counts the audio DMA as still on (0: off)");
 
 /* Tests only (tests/cases/26-no-answer.sh): see GC573_MMIO_ONES_* */
 static unsigned int exp_mmio_ones;
@@ -325,9 +325,11 @@ static void gc573_card_dead(struct gc573 *gc, const char *why);
  * A card that does not answer reads all-ones (VERSION too): it may as
  * well be running DMA, and the probe ends there, bus mastering left as it
  * is (gc573_master_guard() keeps it on if it was). VERSION is read again
- * after the resets, for gc573_answer_check(). If the stop cannot be
- * completed once the slots point at the dummy list, that list and the
- * audio buffers are kept (gc573_dma_dead()).
+ * after the resets, for gc573_answer_check(), and DMA_RUN and VIP_CTRL
+ * must read the engines stopped, as at the teardown (gc573_dma_stop()).
+ * If the stop cannot be completed or confirmed once the slots point at
+ * the dummy list, that list and the audio buffers are kept
+ * (gc573_dma_dead()).
  *
  * Bus mastering off when the probe started, and the card not idle (an
  * engine on, or all-ones): a previous owner may have turned it off under
@@ -340,6 +342,7 @@ static void gc573_card_dead(struct gc573 *gc, const char *why);
  */
 static int gc573_hw_stop_engines(struct gc573 *gc)
 {
+	unsigned int fault = READ_ONCE(gc573_exp_stop_fault);
 	struct device *dev = &gc->pdev->dev;
 	u32 ver, run, vip;
 	int ret;
@@ -390,6 +393,26 @@ static int gc573_hw_stop_engines(struct gc573 *gc)
 		dev_err(dev, "the card stopped answering during the resets (VERSION %08x, %08x before)\n",
 			gc->fw_version, ver);
 		ret = -ENODEV;
+	}
+	if (!ret) {
+		/* the stop read back, as gc573_dma_stop() reads it */
+		run = gc573_rd(gc, GC573_DMA_RUN);
+		vip = gc573_rd(gc, GC573_VIP_CTRL);
+		/* tests only: a stop confirmed, counted as failed */
+		if ((fault & GC573_STOP_FAULT_PROBE) && run != U32_MAX &&
+		    vip != U32_MAX && !(run & GC573_DMA_RUN_AUDIO) &&
+		    !(vip & GC573_VIP_CTRL_OUT_EN)) {
+			dev_warn(dev, "exp_stop_fault %#x: the probe stop was confirmed (DMA_RUN %#010x VIP_CTRL %#010x), counted as the audio DMA still on\n",
+				 fault, run, vip);
+			run |= GC573_DMA_RUN_AUDIO;
+		}
+		if (run == U32_MAX || vip == U32_MAX ||
+		    (run & GC573_DMA_RUN_AUDIO) || (vip & GC573_VIP_CTRL_OUT_EN)) {
+			dev_err(dev, "the stop of the engines at probe is not confirmed: %s, DMA_RUN %#010x VIP_CTRL %#010x\n",
+				run == U32_MAX || vip == U32_MAX ?
+				"the card does not answer" : "DMA still on", run, vip);
+			ret = -ENODEV;
+		}
 	}
 	if (ret)
 		gc573_dma_dead(gc, "the stop of the engines at probe failed");

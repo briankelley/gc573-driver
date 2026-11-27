@@ -55,7 +55,7 @@ dead=$(grep -x "$bdf" /sys/module/gc573/parameters/dead_cards 2>/dev/null || tru
 	ok "gc573 has it: its shutdown, teardown and remove stop the DMA, confirmed, before bus mastering goes off"
 if [ -n "$dead" ]; then
 	klog=$({ journalctl -k -b -o cat --no-pager 2>/dev/null; dmesg; } | grep -F "gc573 $bdf: ")
-	grep -qE 'exp_stop_fault 0x[0-9a-f]+: the (video|teardown) stop was confirmed|exp_mmio_ones [0-9]+: register reads return all-ones' <<< "$klog" ||
+	grep -qE 'exp_stop_fault 0x[0-9a-f]+: the (video|teardown|probe) stop was confirmed|exp_mmio_ones [0-9]+: register reads return all-ones' <<< "$klog" ||
 		no "gc573 left it dead (a stop it could not confirm), and no test parameter did that: its DMA may still run"
 	why="gc573 left it dead by a test parameter (kernel log), and BAR0 reads idle"
 else
