@@ -25,7 +25,8 @@ KMSG_BAD+='|sleeping function called from invalid context|soft lockup|hard LOCKU
 KMSG_BAD+='|blocked for more than|rcu.*stall|sysfs: cannot create|memory corruption'
 
 # Driver messages that fail any case: the driver's error and warning wording.
-# "refused": something tried a bus 0/2 I2C transfer, which nothing should do.
+# "refused": an I2C transfer on bus 1 to an address that is none of the
+# card's HDMI chips (i2c-dev, with the i2c_bus1 adapter on).
 KMSG_DRV_BAD="$GC573_MOD [^ ]+: .*(error|timeout|not ready|unexpected|failed|cannot|MISMATCH|refused)"
 
 # kmemleak reports an object only after two consecutive scans found it

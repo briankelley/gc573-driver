@@ -14,7 +14,9 @@
 # 1. load: finit_module of gc573.ko with the N-th point failed (module init
 #    and, where the device has no NUMA node, the probe in the same task):
 #    every point up to GC573_FI_LOAD_FULL (60), then every
-#    GC573_FI_LOAD_STRIDE-th (10).
+#    GC573_FI_LOAD_STRIDE-th (10). Loaded with i2c_bus1=1 i2c_bus02=1, so
+#    that the I2C adapters' paths count too (the bind and random sweeps
+#    use that load).
 # 2. bind: the module loaded, the device unbound; a bind with the N-th point
 #    failed, every point (GC573_FI_BIND_FULL, GC573_FI_BIND_STRIDE thin it).
 #    After each load or bind: bound (the failure absorbed) and a smoke
@@ -282,7 +284,7 @@ fi
 t0=$(date +%s)
 n=1 inj=0 nload=0 nbound=0 errnos=""
 while :; do
-	bounded "$fi" load -n "$n" "$GC573_KO"
+	bounded "$fi" load -n "$n" "$GC573_KO" "i2c_bus1=1 i2c_bus02=1"
 	rc=$?
 	[ "$rc" = 124 ] && fail "load n=$n hangs"
 	[ "$rc" = 3 ] && break		# past the last point: loaded without a fault

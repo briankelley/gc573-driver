@@ -6,12 +6,13 @@
  * banked device (0x90, 0x58, 0x70) is cached and a select is skipped when
  * unchanged; after a failed or retried transfer to a banked device its
  * bank register is rewritten and read back before the next banked access;
- * the bus-1 adapter lock is held across a sequence, so an i2c-dev user
- * never lands between a bank select and the accesses that depend on it,
- * and every device is back in bank 0 when the lock is released. The lock
- * is free between sequences and during their delays (gc573_chip_sleep()):
- * after an i2c-dev write in such a window, which may have selected another
- * bank, every bank is selected and read back again before its next use.
+ * with the bus-1 adapter on (i2c_bus1), its lock is held across a
+ * sequence, so an i2c-dev user never lands between a bank select and the
+ * accesses that depend on it, and every device is back in bank 0 when the
+ * lock is released. The lock is free between sequences and during their
+ * delays (gc573_chip_sleep()): after an i2c-dev write in such a window,
+ * which may have selected another bank, every bank is selected and read
+ * back again before its next use.
  *
  * The engine runs one segment of a spec/seq table (src/gc573_seq.c, from
  * tools/gen-seq.py): W, M, R, D, P rows as the table header defines them,
@@ -161,7 +162,8 @@ void gc573_chip_begin(struct gc573_hdmi *h)
 {
 	unsigned int i;
 
-	i2c_lock_bus(&h->gc->i2c1, I2C_LOCK_ROOT_ADAPTER);
+	if (h->gc->i2c1_on)
+		i2c_lock_bus(&h->gc->i2c1, I2C_LOCK_ROOT_ADAPTER);
 	h->bus_held = true;
 	/* an i2c-dev write while the bus was free: the bank cache is stale */
 	if (h->gc->i2c1_ext_write) {
@@ -185,7 +187,8 @@ void gc573_chip_end(struct gc573_hdmi *h)
 			gc573_chip_bank(h, b->dev, 0);
 	}
 	h->bus_held = false;
-	i2c_unlock_bus(&h->gc->i2c1, I2C_LOCK_ROOT_ADAPTER);
+	if (h->gc->i2c1_on)
+		i2c_unlock_bus(&h->gc->i2c1, I2C_LOCK_ROOT_ADAPTER);
 }
 
 /*

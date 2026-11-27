@@ -409,6 +409,7 @@ struct gc573 {
 	/* serialises the I2C masters: one transfer on the card at a time */
 	struct mutex i2c_lock;
 	struct i2c_adapter i2c1;	/* bus 1 engine: HDMI chips */
+	bool i2c1_on;			/* i2c1 registered (i2c_bus1) */
 	struct completion i2c1_done;	/* bus 1 transfer ended (INT bit 11) */
 	u8 i2c1_status;			/* GC573_I2C1_STATUS latched at INT bit 11 */
 	/* bus 1 written through the adapter (i2c-dev) since the chip code held it */

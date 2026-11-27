@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0
-# M1: I2C bus 1 under load, read-only. Two processes read the HDMI chip ID
-# registers through i2c-dev at the same time (I2C_RDWR and SMBus emulation,
-# GC573_I2C_ROUNDS rounds of 10 transfers each), checking every byte, while
-# the driver polls the HDMI chips on the same bus (M3). Each transfer must
+# M1: I2C bus 1 under load, read-only, with its adapter on (i2c_bus1=1).
+# Two processes read the HDMI chip ID registers through i2c-dev at the
+# same time (I2C_RDWR and SMBus emulation, GC573_I2C_ROUNDS rounds of 10
+# transfers each), checking every byte, while the driver polls the HDMI
+# chips on the same bus (M3). Each transfer must
 # raise exactly one interrupt (INT bit 11): interrupts = reader transfers +
 # the driver's transfers. The driver's count (debugfs) is read just before
 # and just after the interrupt count, in one process (snap); a poll cycle
@@ -37,7 +38,7 @@ snap() {
 		"$(gc573_hdmi_debugfs)" /proc/interrupts "$(gc573_hdmi_debugfs)"
 }
 
-gc573_load || fail "insmod failed"
+gc573_load i2c_bus1=1 || fail "insmod failed"
 trap 'gc573_loaded && gc573_unload' EXIT
 
 dev=""

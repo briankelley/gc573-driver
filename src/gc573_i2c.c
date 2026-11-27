@@ -4,14 +4,19 @@
  *
  * Bus 1 is a register-addressed transaction engine that carries all HDMI
  * chip traffic: one command reads or writes up to a FIFO's worth of bytes
- * at one device register and raises INT bit 11 when it ends. It is an
- * i2c_adapter whose transfers sleep on a completion that the IRQ thread
- * signals; a mutex serialises transfers and no spinlock is held across one.
+ * at one device register and raises INT bit 11 when it ends. Transfers
+ * sleep on a completion that the IRQ thread signals; a mutex serialises
+ * transfers and no spinlock is held across one. The chip code drives it
+ * directly (gc573_i2c1_transfer()); an i2c_adapter for it, which i2c-dev
+ * makes a node of, exists only with the i2c_bus1 parameter set at load
+ * time. Without one, no program can reach the chips, and none can hold a
+ * node that an unbind must wait for (the I2C core waits for i2c-dev users,
+ * uninterruptibly).
  *
  * Buses 0 and 2 are OpenCores-compatible byte masters, driven by polling.
  * Nothing is known about the devices on them (an EEPROM or authentication
- * chip may be there; spec/open-questions.md #12), so their adapters refuse
- * every transfer unless the i2c_bus02 parameter is set at load time.
+ * chip may be there; spec/open-questions.md #12), so their adapters exist
+ * only with the i2c_bus02 parameter set at load time.
  */
 
 #include <linux/completion.h>
@@ -27,10 +32,15 @@
 
 #include "gc573.h"
 
+static bool i2c_bus1;
+module_param(i2c_bus1, bool, 0444);
+MODULE_PARM_DESC(i2c_bus1,
+		 "Register I2C bus 1 (the HDMI chips) as an I2C adapter, for i2c-dev: the chips' registers, a few addresses only (default: off)");
+
 static bool i2c_bus02;
 module_param(i2c_bus02, bool, 0444);
 MODULE_PARM_DESC(i2c_bus02,
-		 "Allow transfers on I2C buses 0 and 2, whose devices are not identified yet (default: off)");
+		 "Register I2C buses 0 and 2, whose devices are not identified yet, as I2C adapters (default: off)");
 
 /* spec/i2c.md: RD's transfer timeout is 20 ms, with one retry */
 #define GC573_I2C1_TIMEOUT_MS		20
@@ -110,10 +120,11 @@ static int gc573_i2c1_write(struct gc573 *gc, u8 addr8, u8 reg,
 
 /*
  * One register-addressed transfer, with spec/i2c.md's retry: a timeout is
- * retried once, reprogramming the whole transfer. The caller holds the
- * bus-1 adapter lock (the i2c core takes it for master_xfer; the HDMI
- * chip code takes it around its sequences). *retried tells the caller
- * that a timeout happened, so it can resync the device's bank register.
+ * retried once, reprogramming the whole transfer. With the bus-1 adapter
+ * on (i2c_bus1), the caller holds its lock (the i2c core takes it for
+ * master_xfer; the HDMI chip code takes it around its sequences); i2c_lock
+ * serialises the transfers either way. *retried tells the caller that a
+ * timeout happened, so it can resync the device's bank register.
  */
 int gc573_i2c1_transfer(struct gc573 *gc, u8 addr8, u8 reg, u8 *buf, u16 len,
 			bool rd, bool *retried)
@@ -319,13 +330,6 @@ static int gc573_oc_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
 	struct gc573_ocbus *bus = i2c_get_adapdata(adap);
 	int i, ret = 0;
 
-	if (!i2c_bus02) {
-		dev_notice_ratelimited(&bus->gc->pdev->dev,
-				       "%s: transfer refused (i2c_bus02=0)\n",
-				       adap->name);
-		return -EPERM;
-	}
-
 	for (i = 0; i < num; i++) {
 		if (msgs[i].flags & ~(I2C_M_RD | I2C_M_DMA_SAFE))
 			return -EOPNOTSUPP;
@@ -389,20 +393,28 @@ int gc573_i2c_init(struct gc573 *gc)
 	gc->i2c2.gc = gc;
 	gc->i2c2.base = GC573_I2C2_BASE;
 
-	ret = gc573_i2c_add(gc, &gc->i2c0.adap, 0, &gc573_oc_algo,
-			    &gc573_oc_quirks, &gc->i2c0);
-	if (!ret)
+	if (i2c_bus02) {
+		ret = gc573_i2c_add(gc, &gc->i2c0.adap, 0, &gc573_oc_algo,
+				    &gc573_oc_quirks, &gc->i2c0);
+		if (!ret)
+			ret = gc573_i2c_add(gc, &gc->i2c2.adap, 2,
+					    &gc573_oc_algo, &gc573_oc_quirks,
+					    &gc->i2c2);
+		if (ret)
+			return ret;
+	}
+	if (i2c_bus1) {
 		ret = gc573_i2c_add(gc, &gc->i2c1, 1, &gc573_i2c1_algo,
 				    &gc573_i2c1_quirks, gc);
-	if (!ret)
-		ret = gc573_i2c_add(gc, &gc->i2c2.adap, 2, &gc573_oc_algo,
-				    &gc573_oc_quirks, &gc->i2c2);
-	if (ret)
-		return ret;
+		if (ret)
+			return ret;
+		gc->i2c1_on = true;
+	}
 
 	dev_info(&gc->pdev->dev,
-		 "I2C bus 0: %s, bus 1: %s, bus 2: %s (bus 0/2 transfers %s)\n",
-		 dev_name(&gc->i2c0.adap.dev), dev_name(&gc->i2c1.dev),
-		 dev_name(&gc->i2c2.adap.dev), i2c_bus02 ? "on" : "off");
+		 "I2C adapters: bus 0 %s, bus 1 %s, bus 2 %s (parameters i2c_bus1, i2c_bus02)\n",
+		 i2c_bus02 ? dev_name(&gc->i2c0.adap.dev) : "off",
+		 i2c_bus1 ? dev_name(&gc->i2c1.dev) : "off",
+		 i2c_bus02 ? dev_name(&gc->i2c2.adap.dev) : "off");
 	return 0;
 }

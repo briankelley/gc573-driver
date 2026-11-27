@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0
 # What i2c-dev may do on I2C bus 1, the HDMI chips' bus (security review
-# of a0adb1d, F8):
+# of a0adb1d, F8), with its adapter on (i2c_bus1=1; off by default, fix
+# review N4):
 # - only the chips' addresses (src/gc573_i2c.c): reads and writes to 0x37
 #   (DDC/CI, which monitor tools probe on every bus) and 0x50 (EDID) fail
 #   with EPERM before they reach the bus, while the IT6805's ID still
@@ -17,7 +18,7 @@
 
 xfer="python3 $GC573_TESTS/i2c-xfer.py"
 
-gc573_load || fail "insmod failed"
+gc573_load i2c_bus1=1 || fail "insmod failed"
 trap 'gc573_loaded && gc573_unload' EXIT
 echo 'I2C bus 1: transfer to 0x[0-9a-f]+ refused: not one of the card.s HDMI chips' >> "$GC573_KMSG_ALLOW"
 
