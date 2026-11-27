@@ -337,6 +337,7 @@ result() {
 }
 
 dead_by=""
+lockdep_off_in=""
 for c in "$@"; do
 	name=$(basename "$c" .sh)
 	echo
@@ -355,6 +356,7 @@ for c in "$@"; do
 		echo "  (no kernel log follower, tests/kmsg-tail.py: the log comes from dmesg)"
 	tag=$(kmsg_mark "case $name")
 	de0=$(dma_errors)
+	ld0=$(lockdep_state)
 	start=$(date +%s)
 	# a case lists the kernel messages it provokes on purpose (regexes)
 	GC573_KMSG_ALLOW=$(mktemp)
@@ -373,6 +375,7 @@ for c in "$@"; do
 
 	klog_get "$tag" "$GC573_KLOG_FILE"
 	de1=$(dma_errors)
+	ld1=$(lockdep_state)
 	rm -f "$GC573_KLOG_FILE"
 	klog_print
 	v=$(echo "$klog" | sed -n 's/.*: FPGA version \([0-9a-f]*\)$/\1/p' | sort -u | tr '\n' ' ')
@@ -408,6 +411,12 @@ for c in "$@"; do
 			echo "  DMA-API debug: $n error(s), each reported above and allowed"
 		fi
 		dma_allowed=$((dma_allowed + n))
+	fi
+	# lockdep turns itself off at its first report, and at a taint that
+	# makes it unreliable (a KASAN report, an oops): say in which case
+	if [ "$ld0" = 1 ] && [ "$ld1" = 0 ]; then
+		echo "  -- lockdep turned itself off during this case (debug_locks 1 to 0)"
+		[ -n "$lockdep_off_in" ] || lockdep_off_in=$name
 	fi
 	if [ -n "$klog_incomplete" ]; then
 		echo "  -- kernel log INCOMPLETE: $klog_incomplete; the check covered only what is above"
@@ -456,12 +465,23 @@ de_a=$(sed -n 's/.*error_count=\([^ ]*\) .*/\1/p' <<< "$dbg_after")
 [ "$de_b" = - ] || echo "  DMA-API errors reported and allowed in the cases: $dma_allowed"
 if [ "$dbg_before" = "lockdep debug_locks=-, DMA-API error_count=- disabled=-" ]; then
 	result debug-checkers SKIP "(no lockdep or DMA-API debug)"
-elif [ "${dbg_after%%,*}" = "${dbg_before%%,*}" ] && [[ "$dbg_after" != *"debug_locks=0"* ]] &&
-     [[ "$dbg_after" != *"disabled=Y"* ]] &&
-     { [ "$de_b" = - ] || [ $((de_a - de_b)) = "$dma_allowed" ]; }; then
-	result debug-checkers PASS
 else
-	result debug-checkers FAIL "(a checker reported or is off)"
+	# each checker that reported or is off, by name
+	why=""
+	ld_b=$(sed -n 's/^lockdep debug_locks=\([^,]*\),.*/\1/p' <<< "$dbg_before")
+	ld_a=$(sed -n 's/^lockdep debug_locks=\([^,]*\),.*/\1/p' <<< "$dbg_after")
+	if [ "$ld_a" != "$ld_b" ] || [ "$ld_a" = 0 ]; then
+		why+="lockdep off: debug_locks $ld_b to $ld_a${lockdep_off_in:+, during $lockdep_off_in}; "
+	fi
+	[[ "$dbg_after" != *"disabled=Y"* ]] || why+="DMA-API debug turned itself off; "
+	if [ "$de_b" != - ] && [ $((de_a - de_b)) != "$dma_allowed" ]; then
+		why+="DMA-API: error_count rose by $((de_a - de_b)), $dma_allowed of them reported and allowed in the cases; "
+	fi
+	if [ -z "$why" ]; then
+		result debug-checkers PASS
+	else
+		result debug-checkers FAIL "(${why%; })"
+	fi
 fi
 
 echo

@@ -72,7 +72,10 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
   back after it). A case's error count must rise by exactly the errors its
   log reports and allows; `debug-checkers`: lockdep must still be on
   (`debug_locks=1`) and the error count risen by no more than the cases
-  allowed.
+  allowed. Its FAIL names each checker that reported or is off, and
+  for lockdep the case during which it turned itself off (at its first
+  report, or at a taint that makes it unreliable, such as a KASAN
+  report's); that case's log says so too.
 
 ## Log
 Header: date, kernel, debug options, card IDs, module srcversion, source rev,
