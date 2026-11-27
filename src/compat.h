@@ -9,7 +9,8 @@
  * reads those.
  *
  * Checked against the installed headers of every matrix kernel: EL9.9
- * 5.14, Ubuntu 6.8, EL10.3 6.12, Mint 6.14, Ubuntu 7.0, Fedora 7.3.
+ * 5.14, Ubuntu 6.8, EL10.3 6.12, Mint 6.14, Ubuntu 7.0, Fedora 7.3, and
+ * the headers-only Ubuntu 6.17 HWE and mainline 6.18.65 (6.18.y LTS).
  * The RHEL kernels carry upstream backports, so a RHEL_RELEASE_CODE test
  * comes with each LINUX_VERSION_CODE test. Fedora headers also define
  * RHEL_RELEASE_CODE (10.99), but Fedora kernels pass the version test.
