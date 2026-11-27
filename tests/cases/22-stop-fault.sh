@@ -117,7 +117,7 @@ mem_zero || fail "buffer memory not back to 0"
 
 echo "-- unbind while streaming, the audio stop ignored, no domain reset"
 tag=$(kmsg_mark "stop-fault teardown")
-"$cap" -d "$vdev" -n 1000000 > "$work/cap3.log" 2>&1 &
+"$cap" -d "$vdev" -n 100000 > "$work/cap3.log" 2>&1 &
 pids+=($!)
 "$aud" -t 600 > "$work/aud2.log" 2>&1 &
 pids+=($!)

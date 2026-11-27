@@ -269,9 +269,9 @@ once.
 Security review F5 (probe stops the engines before bus mastering). Run
 by the coordinator on the host, where the IOMMU translates the card's
 DMA (domain DMA-FQ), with the card in `gc573-dev`:
-1. In the VM, stream video and audio: `gc573-cap -d /dev/videoN -n 1000000`
-   and `gc573-aud -t 3600`, each in the background (both armed: the
-   audio DMA and the video output on).
+1. In the VM, stream video and audio: `gc573-cap -d /dev/videoN -n 100000`
+   (its limit: 28 min at 60 Hz) and `gc573-aud -t 3600`, each in the
+   background (both armed: the audio DMA and the video output on).
 2. On the host, note `journalctl -k | grep -c DMAR`, then
    `virsh destroy gc573-dev`: the card keeps its registers, engines armed
    (it has no FLR; vfio-pci turns bus mastering off on release).

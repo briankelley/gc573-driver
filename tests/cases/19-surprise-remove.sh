@@ -85,7 +85,7 @@ for r in $(seq "$ITER"); do
 	pcm=$(gc573_pcm_hw)
 	ctl=/dev/snd/controlC$(cat "$pdev"/sound/card*/number)
 	gc573_input_off "$dev"
-	"$cap" -d "$dev" -f NV12 -b 4 -n 1000000 -p > "$tmp/cap" 2>&1 &
+	"$cap" -d "$dev" -f NV12 -b 4 -n 100000 -p > "$tmp/cap" 2>&1 &
 	pc=$!
 	"$aud" -D "$pcm" -t 600 > "$tmp/aud" 2>&1 &
 	pa=$!
