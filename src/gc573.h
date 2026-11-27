@@ -387,6 +387,8 @@ struct gc573 {
 	bool dma_dead;
 	/* probe: bus mastering was on, the engines not yet seen stopped */
 	bool master_unchecked;
+	/* probe: bus mastering was off when it started */
+	bool master_was_off;
 	/* a system sleep is under way: no stream starts (vid.lock, aud.lock) */
 	bool sleeping;
 	struct notifier_block pm_nb;	/* gc573_pm_notify() */

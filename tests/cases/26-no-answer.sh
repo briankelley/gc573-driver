@@ -4,22 +4,20 @@
 # bus mastering), with the test parameter exp_mmio_ones: from a point of
 # the probe on, every register read returns all-ones, as from a card that
 # does not answer MMIO. Setting it must taint the kernel
-# (module_param_unsafe). Each mode, with the device unbound, then a bind:
-# 1 from the probe's start: the probe refuses the card ("does not
-#   answer", -ENODEV) and, bus mastering being off when it started, leaves
-#   it off; nothing of the device is left and nothing is kept.
-# 2 for 1.5 s once bus mastering is on: the probe waits for VERSION to
-#   read as it did before, says how long that took ("answers again"), and
-#   the card works (a pattern-checked capture).
-# After each, a bind with the parameter off brings the card back. The
-# modes that leave the card dead until reboot (3, 4) are
-# tests/cases/27-no-answer-dead.sh.
+# (module_param_unsafe). With the device unbound, then a bind, mode 2:
+# for 1.5 s once bus mastering is on: the probe waits for VERSION to read
+# as it did before, says how long that took ("answers again"), and the
+# card works (a pattern-checked capture). The modes that leave the card
+# dead until reboot are tests/cases/27-no-answer-dead.sh (3, 4, and 1 at
+# the first probe of a boot, bus mastering on) and
+# tests/cases/30-probe-entry.sh (1 after an unbind, bus mastering off:
+# GC573_TEST_ENTRY=ones; up to the delta review's D1 it refused the card
+# and left it usable).
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
 param=/sys/module/$GC573_MOD/parameters/exp_mmio_ones
 drv=/sys/bus/pci/drivers/$GC573_MOD
-pdev=/sys/bus/pci/devices/$GC573_BDF
 work=$(mktemp -d)
 cap=$(gc573_cap_build "$work") || fail "cannot build gc573-cap"
 
@@ -32,22 +30,6 @@ cleanup() {
 {
 	echo 'since bus mastering went on \([0-9a-f]+ before\): the card is not ready; waiting up to 20 s'
 } >> "$GC573_KMSG_ALLOW"
-
-# What a failed probe left of the device (nothing: empty)
-leftovers() {
-	local f x
-	for f in "$pdev"/video4linux/video* "$pdev"/sound/card* "$pdev"/i2c-*; do
-		[ -e "$f" ] && echo "${f#"$pdev"/}"
-	done
-	[ -e "/sys/kernel/debug/$GC573_MOD-$GC573_BDF" ] && echo "debugfs $GC573_MOD-$GC573_BDF"
-	grep -w "$GC573_MOD" /proc/interrupts | awk '{ print "IRQ " $1 }'
-	x=$(find "$pdev/msi_irqs" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l)
-	[ "$x" = 0 ] || echo "MSI vectors: $x"
-	x=$(cat "$pdev/enable")
-	[ "$x" = 0 ] || echo "PCI enable count $x"
-	gc573_master_on && echo "bus mastering on"
-	[ -z "$(gc573_dead_cards)" ] || echo "dead_cards: $(gc573_dead_cards | tr '\n' ' ')"
-}
 
 # The kernel log after tag $1, the lines this case looks at
 show() {
@@ -79,26 +61,8 @@ echo 0 > "$param"
 kmsg_since "$tag" | grep -q 'Setting dangerous option exp_mmio_ones - tainting kernel' ||
 	fail "setting exp_mmio_ones did not taint the kernel"
 
-echo "-- mode 1: no answer from the probe's start"
-gc573_master_on && fail "bus mastering on after the unbind"
-tag=$(kmsg_mark "no-answer 1")
-echo 1 > "$param" || fail "cannot set exp_mmio_ones 1"
-if echo "$GC573_BDF" > "$drv/bind" 2> "$work/bind.err"; then
-	fail "mode 1: the bind succeeded"
-fi
-echo 0 > "$param"
-echo "mode 1: bind refused ($(sed 's/^.*: //' "$work/bind.err"))"
-show "$tag"
-left=$(leftovers)
-[ -z "$left" ] || fail "mode 1: left behind: $(tr '\n' ';' <<< "$left")"
-kmsg_since "$tag" | grep -q ': the card does not answer (VERSION ffffffff .*): not used$' ||
-	fail "mode 1: no 'does not answer' line"
-! kmsg_since "$tag" | grep -q 'kept until reboot' || fail "mode 1: memory kept, but the card was never given any"
-echo "$GC573_BDF" > "$drv/bind" || fail "bind after mode 1 failed"
-up "bind after mode 1"
-echo "$GC573_BDF" > "$drv/unbind" || fail "unbind after mode 1 failed"
-
 echo "-- mode 2: no answer for 1.5 s once bus mastering is on"
+gc573_master_on && fail "bus mastering on after the unbind"
 tag=$(kmsg_mark "no-answer 2")
 echo 2 > "$param"
 echo "$GC573_BDF" > "$drv/bind" || fail "mode 2: bind failed"
@@ -108,4 +72,4 @@ ms=$(kmsg_since "$tag" | sed -n 's/.*the card answers again, \([0-9]*\) ms after
 [ -n "$ms" ] || fail "mode 2: no 'answers again' line"
 [ "$ms" -ge 1400 ] && [ "$ms" -le 3000 ] || fail "mode 2: answered after $ms ms, expected about 1500"
 up "mode 2"
-echo "both modes refused or waited as they should, and the card came back after each"
+echo "the probe waited as it should, and the card works"
