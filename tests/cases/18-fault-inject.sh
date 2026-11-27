@@ -8,9 +8,14 @@
 # of one task fails, for N = 1, 2, ... until the operation has no N-th
 # point. Points count only with module code in the top 32 frames of the
 # stack (the stacktrace filter from the kernel text's end up), so the module
-# loader's and the VFS's own allocations stay out, and none in kmemleak's
-# bookkeeping (a reject range over its allocation path: a failure there
-# only falls back to its pool).
+# loader's and the VFS's own allocations stay out, and none with ACPICA
+# (drivers/acpi/acpica) there: the filter's one reject range is ACPICA's
+# text. An allocation failure in ACPICA can break ACPI's namespace for the
+# rest of the boot (tests/logs/20261127-064813: a reference count left
+# wrong, a use-after-free at the next _PRT evaluation, and from then on no
+# PCI interrupt routing), which then fails what comes after it. kmemleak's
+# own allocations count as points: a failure there falls back to its pool,
+# and the step is one with no failure in the driver.
 # 1. load: finit_module of gc573.ko with the N-th point failed (module init
 #    and, where the device has no NUMA node, the probe in the same task):
 #    every point up to GC573_FI_LOAD_FULL (60), then every
@@ -112,30 +117,71 @@ echo N > "$FPA/ignore-gfp-highmem"
 echo 0 > "$FPA/min-order"	# single pages too: vmalloc's, the driver's
 echo 30 > /proc/sys/kernel/hung_task_timeout_secs
 
-# kmemleak's allocation path (mm/kmemleak.c): a range over its functions
-# that allocate, so a point there never counts (rejected if on the stack)
-# (from the first of these functions to the symbol after the last; all of
-# them are in that one file, so the span holds only its code)
-kml_range=$(sort /proc/kallsyms | awk '
-	{ a[NR] = $1 }
-	$3 ~ /^(mem_pool_alloc|__alloc_object|__link_object|__create_object|create_object|kmemleak_alloc|kmemleak_vmalloc|kmemleak_alloc_percpu)$/ {
-		if (!lo) lo = $1
-		last = NR
-	}
-	END { if (last && (last + 1) in a) print lo, a[last + 1] }')
-if [ -n "$kml_range" ]; then
-	read -r klo khi <<< "$kml_range"
-	if [ $((0x$khi - 0x$klo)) -gt 0 ] && [ $((0x$khi - 0x$klo)) -lt 262144 ]; then
-		fi_set reject-start "0x$klo"
-		fi_set reject-end "0x$khi"
-		echo "kmemleak's allocation path rejected: 0x$klo-0x$khi"
-	else
-		echo "kmemleak's allocation path not found as one range ($kml_range): not rejected"
-	fi
-fi
 # Points under module code: from the end of the kernel's text up
 etext=$(awk '$3 == "_etext" { print $1; exit }' /proc/kallsyms)
 [ -n "$etext" ] && [ $((0x$etext)) != 0 ] || fail "no _etext address in /proc/kallsyms"
+
+# ACPICA's text, the reject range: a point with ACPICA on the stack never
+# counts. Its functions by name: the internal ones acpi_<component>_ (ds
+# ev ex hw ns ps rs tb ut db dm), and its interface, the functions that
+# include/acpi/acpixf.h declares (from the kernel's headers, when
+# installed). The range runs from the first of them in the kernel's text
+# to the symbol after the last (not their .cold parts, which lie
+# elsewhere). A symbol in it not named acpi_* is reported, and the case
+# then ends in SKIP with a note: the points under it were not swept
+acpica_range() {
+	local api=$tmp/acpixf h
+	h=/lib/modules/$(uname -r)/build/include/acpi/acpixf.h
+	: > "$api"
+	if [ -r "$h" ]; then
+		tr '\n' ' ' < "$h" | grep -oE '\bacpi_[a-z0-9_]+[[:space:]]*\(' |
+			tr -d ' \t(' | sort -u > "$api"
+	fi
+	LC_ALL=C sort /proc/kallsyms | awk -v etext="$etext" -v api="$api" '
+		BEGIN { while ((getline x < api) > 0) pub[x] = 1 }
+		function acpica(name) {
+			sub(/^__pfx_/, "", name)
+			if (name ~ /\.cold$/)
+				return 0
+			return name ~ /^acpi_(ds|ev|ex|hw|ns|ps|rs|tb|ut|db|dm)_/ || (name in pub)
+		}
+		NF != 3 || $1 >= etext { next }
+		{ n++; a[n] = $1; t[n] = $2; s[n] = $3 }
+		END {
+			for (i = 1; i <= n; i++)
+				if (t[i] ~ /^[tT]$/ && acpica(s[i])) {
+					if (!lo)
+						lo = i
+					hi = i
+				}
+			if (!lo)
+				exit
+			for (e = hi + 1; e <= n && a[e] == a[hi]; e++)
+				;
+			if (e > n)
+				exit
+			for (i = lo; i < e; i++) {
+				x = s[i]
+				sub(/^__pfx_/, "", x)
+				if (x !~ /^acpi_/)
+					other = other " " s[i]
+			}
+			print a[lo], a[e], e - lo, s[lo], s[hi], s[e] other
+		}'
+}
+r=$(acpica_range)
+if [ -n "$r" ]; then
+	read -r alo aend acount afirst alast anext aother <<< "$r"
+	fi_set reject-start "0x$alo"
+	fi_set reject-end "0x$aend"
+	echo "ACPICA's text rejected: 0x$alo-0x$aend, $acount symbols ($afirst to $alast; then $anext)"
+	if [ -n "$aother" ]; then
+		echo "NOTE: in that range, not ACPICA's by name:$aother"
+		note+=" the reject range for ACPICA holds other symbols ($aother), whose points were not swept;"
+	fi
+else
+	echo "no ACPICA text found in /proc/kallsyms: nothing rejected"
+fi
 filter_modules() {
 	fi_set require-start "0x$etext"
 	fi_set require-end 0xffffffffffffffff
