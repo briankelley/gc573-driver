@@ -183,6 +183,13 @@ static inline bool gc573_block_generic(struct pci_dev *pdev,
  * block would leave a dead card to any driver, unseen.
  */
 #error "gc573: Kbuild's GC573_HAVE_* probes found no way to keep other drivers off a dead card"
+
+/* so that the #error is the one error */
+static inline bool gc573_block_generic(struct pci_dev *pdev,
+				       struct pci_driver *drv)
+{
+	return false;
+}
 #endif
 
 #if defined(GC573_HAVE_PCI_DRIVER_OVERRIDE)
