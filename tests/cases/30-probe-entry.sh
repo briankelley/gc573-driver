@@ -175,7 +175,7 @@ entry() {
 }
 
 if [ "$mode" = fresh ]; then
-	entry off 'as after a device reset, idle: brought up'
+	entry off 'brought up: bus mastering off, RESET as after a device reset, idle'
 	gc573_bound || fail "fresh: the card was not bound"
 	gc573_master_on || fail "fresh: bus mastering off after the probe"
 	cap=$(gc573_cap_build "$work") || fail "cannot build gc573-cap"
@@ -195,14 +195,14 @@ fi
 gc573_bound && fail "bound after the refused probe"
 case $mode in
 cut)
-	entry off 'after a bring-up: dead until reboot, nothing written'
+	entry off 'dead until reboot, nothing written: bus mastering off after a bring-up'
 	kmsg_since "$tag" | grep -q 'bus mastering was off when the probe started, and RESET 0x[0-9a-f]* shows a bring-up since the card.s last reset' ||
 		fail "the probe did not refuse the card for RESET's done bits with bus mastering off"
 	kmsg_since "$tag" | grep -q 'bus mastering off after a bring-up: bus mastering stays off, and the card gets no driver until reboot' ||
 		fail "no line saying the card is dead with bus mastering off"
 	;;
 armed)
-	entry off 'not idle: dead until reboot, nothing written'
+	entry off 'dead until reboot, nothing written: bus mastering off and not idle'
 	kmsg_since "$tag" | grep -q 'exp_probe_armed: DMA_RUN 0x[0-9a-f]* read as 0x[0-9a-f]* (the audio DMA on)' ||
 		fail "no exp_probe_armed line: the probe did not read DMA_RUN as armed"
 	kmsg_since "$tag" | grep -q 'bus mastering was off when the probe started, and the card does not read idle' ||
@@ -211,7 +211,7 @@ armed)
 		fail "no line saying the card is dead with bus mastering off"
 	;;
 ones)
-	entry on 'the card does not answer: dead until reboot, nothing written'
+	entry on 'dead until reboot, nothing written: the card does not answer'
 	kmsg_since "$tag" | grep -q 'exp_mmio_ones 1: register reads return all-ones from now on' ||
 		fail "no exp_mmio_ones line"
 	kmsg_since "$tag" | grep -q ': the card does not answer (VERSION ffffffff .*): its DMA may run; nothing is written to the card$' ||
