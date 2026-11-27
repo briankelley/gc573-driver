@@ -1,87 +1,154 @@
 # SPDX-License-Identifier: GPL-2.0
 # Sourced by tools/install.sh and tools/uninstall.sh (bash, as root): take
-# the card away from a loaded gc573 so that gc573 can be unloaded.
+# the card away from a loaded gc573 so that gc573 can be unloaded, and the
+# checks before anything touches the card.
 #
-# On a PipeWire desktop WirePlumber keeps the card's ALSA control node open
-# for as long as it manages the card, so "modprobe -r gc573" fails whenever
-# gc573 has the card. Once the device is unbound from gc573, its nodes go
-# away and PipeWire lets go of them, about 0.2 s later; then gc573 unloads.
-# Anything else holding one of the card's nodes (OBS, a capture) would lose
-# the card: then the scripts name it and leave the card alone, unless
-# --yes. So does PipeWire while it holds one of the card's PCM nodes: a
-# stream runs through it then (OBS's PipeWire source, pw-record), and
-# PipeWire closes an idle node's PCM after its suspend timeout.
-# A holder of the card's ALSA or I2C (i2c-dev) nodes other than PipeWire
-# is never overridden, not even with --yes: an unbind would wait,
+# On a desktop the sound server keeps the card's ALSA control node open for
+# as long as it manages the card (WirePlumber for PipeWire, also
+# pipewire-media-session, and PulseAudio), so "modprobe -r gc573" fails
+# whenever gc573 has the card. Once the device is unbound from gc573, its
+# nodes go away and the sound server lets go of them, about 0.2 s later;
+# then gc573 unloads. Anything else holding one of the card's nodes (OBS, a
+# capture) would lose the card: then the scripts name it and leave the
+# card alone, unless --yes. So does a sound server while it holds one of
+# the card's PCM nodes: a stream runs through it then (OBS's PipeWire
+# source, pw-record), and it closes an idle node's PCM by itself.
+# A holder of the card's ALSA or I2C (i2c-dev) nodes other than a sound
+# server is never overridden, not even with --yes: an unbind would wait,
 # uninterruptibly, until it closes them (the I2C core always waits for
-# i2c-dev users, a gc573 older than this script for ALSA files too). The
-# unbind itself is bounded: if it has not finished after 10 s (a program
-# opened a node after the check), the scripts say so and stop.
+# i2c-dev users; a gc573 older than this script waits for ALSA files too).
+# gc573 has i2c-dev nodes only with its i2c_bus1 or i2c_bus02 parameter.
+#
+# The unbind itself is bounded: if it has not finished after 10 s (a
+# program opened a node after the check, or holds one that no /proc fd
+# shows: in flight in a unix socket), the scripts say so and stop. Its
+# writer is recorded in GC573_UNBIND_PID. While that writer runs, or while
+# the card has no driver but still has a driver's devices or interrupt
+# vectors (an unbind still waits), the scripts refuse before they touch
+# the card: whatever takes the device's lock (driverctl, a bind, on some
+# kernels a read of driver_override) would wait for that unbind too.
 #
 # What /proc gives about other processes is theirs to choose (a comm, a
-# file name): holders are found by exact match of each fd's link target
-# with the card's node paths, never by parsing, PipeWire by its executable,
-# and every name is printed with non-printable characters removed.
+# file name, the path a node was opened by): a holder is found by the
+# device number of each open file (stat -L of /proc/PID/fd/N, the file
+# itself) against the card's nodes' sysfs dev files, never by a name or a
+# path; a sound server by the executable it runs; and every name is printed
+# with non-printable characters removed.
 #
 # Uses NAME and say() from the script that sources it.
 
-# The card's device nodes while a driver has it, from sysfs: its video
-# and media nodes, its ALSA card's nodes and its I2C buses' i2c-dev nodes.
-# $1: the PCI device's sysfs dir
+GC573_PCI_ID=${GC573_PCI_ID:-1461:0054}
+GC573_UNBIND_PID=${GC573_UNBIND_PID:-/run/gc573-unbind.pid}
+GC573_VFIO_CLASS=${GC573_VFIO_CLASS:-/sys/class/vfio}
+
+# The card's PCI devices (GC573_PCI_ID), one sysfs dir per line
+gc573_cards() {
+	local d
+	for d in /sys/bus/pci/devices/*; do
+		[ "$(cat "$d/vendor" 2>/dev/null)" = "0x${GC573_PCI_ID%%:*}" ] &&
+			[ "$(cat "$d/device" 2>/dev/null)" = "0x${GC573_PCI_ID##*:}" ] &&
+			printf '%s\n' "$d"
+	done
+	return 0
+}
+
+# A sysfs dev file's "MAJOR:MINOR" (decimal), as stat's %t:%T prints a
+# device number (hex); status 1 for anything else. $1: the dev file's text
+gc573_hexdev() {
+	case $1 in
+	*[!0-9:]* | :* | *: | *:*:*) return 1 ;;
+	*:*) printf '%x:%x\n' "$((10#${1%%:*}))" "$((10#${1##*:}))" ;;
+	*) return 1 ;;
+	esac
+}
+
+# The card's device nodes while a driver has it, "RDEV NODE" per node
+# (RDEV as gc573_hexdev prints it): its video and media nodes, its ALSA
+# card's nodes and its I2C buses' i2c-dev nodes, from sysfs. $1: the PCI
+# device's sysfs dir
 gc573_card_nodes() {
-	local d c n f
-	for d in "$1"/video4linux/* "$1"/media[0-9]* "$1"/i2c-*/i2c-dev/i2c-*; do
-		[ -e "$d" ] && printf '/dev/%s\n' "$(basename "$d")"
+	local d r n
+	for d in "$1"/video4linux/*/dev "$1"/media[0-9]*/dev \
+		 "$1"/i2c-*/i2c-dev/i2c-*/dev "$1"/sound/card[0-9]*/*/dev; do
+		[ -r "$d" ] || continue
+		r=$(gc573_hexdev "$(cat "$d" 2>/dev/null)") || continue
+		n=${d%/dev}
+		n=${n##*/}
+		case $d in
+		*/sound/*) n=snd/$n ;;
+		esac
+		printf '%s /dev/%s\n' "$r" "$n"
 	done
-	for c in "$1"/sound/card[0-9]*; do
-		[ -e "$c" ] || continue
-		n=${c##*card}
-		for f in /dev/snd/controlC"$n" /dev/snd/pcmC"$n"D* /dev/snd/hwC"$n"D* /dev/snd/midiC"$n"D*; do
-			[ -e "$f" ] && printf '%s\n' "$f"
-		done
-	done
+	return 0
+}
+
+# "PID RDEV" for every open character device file, in any process, whose
+# device number is one of the RDEVs given (gc573_hexdev's form), sorted.
+# stat -L of /proc/PID/fd/N describes the open file itself, whatever path
+# it was opened by. Never fails: processes come and go meanwhile.
+gc573_fd_holders() {
+	local want=" $* "
+	find /proc/[0-9]*/fd -mindepth 1 -maxdepth 1 -type l -print0 2>/dev/null |
+		xargs -0 -r stat -L -c '%F|%t:%T|%n' 2>/dev/null |
+		awk -F'|' -v want="$want" '
+			$1 == "character special file" && index(want, " " $2 " ") {
+				p = $3
+				sub(/^\/proc\//, "", p)
+				sub(/\/.*/, "", p)
+				if (p ~ /^[0-9]+$/)
+					print p, $2
+			}' |
+		sort -u -k1,1n -k2,2
 	return 0
 }
 
 # A process's name for messages: its comm, printable characters only
 gc573_comm() {
 	local c
-	c=$(LC_ALL=C tr -cd '[:print:]' < "/proc/$1/comm" 2>/dev/null | head -c 32)
+	c=$(LC_ALL=C tr -cd '[:print:]' 2>/dev/null < "/proc/$1/comm" | head -c 32) || true
 	printf '%s' "${c:-?}"
 }
 
-# PipeWire's own processes (pipewire, pipewire-pulse, wireplumber), by
-# the executable they run: a comm is the process's to set. $1: pid
-gc573_is_pw() {
-	case $(readlink "/proc/$1/exe" 2>/dev/null) in
-	/usr/bin/pipewire|/usr/bin/pipewire-pulse|/usr/bin/wireplumber) return 0 ;;
-	/bin/pipewire|/bin/pipewire-pulse|/bin/wireplumber) return 0 ;;
+# A sound server's own process, by the executable it runs, which only root
+# can put there (a comm is the process's to set): PipeWire (pipewire,
+# pipewire-pulse, wireplumber, pipewire-media-session) or PulseAudio. The
+# file that runs must be that executable (device and inode), not another
+# one mounted over its path in a mount namespace of the process's own.
+# Prints which. $1: pid
+gc573_sound_server() {
+	local e i
+	e=$(readlink "/proc/$1/exe" 2>/dev/null) || return 1
+	case $e in
+	/usr/bin/* | /bin/*) ;;
+	*) return 1 ;;
 	esac
-	return 1
+	i=$(stat -L -c %d:%i "/proc/$1/exe" 2>/dev/null) || return 1
+	[ -n "$i" ] && [ "$i" = "$(stat -L -c %d:%i "$e" 2>/dev/null)" ] || return 1
+	case ${e##*/} in
+	pipewire | pipewire-pulse | wireplumber | pipewire-media-session) echo PipeWire ;;
+	pulseaudio) echo PulseAudio ;;
+	*) return 1 ;;
+	esac
 }
 
-# "pid node comm" for each of the card's nodes a process holds open, sorted
-# by pid: every /proc/PID/fd link whose target is exactly a node's path
-# (find -lname; node paths from sysfs have no glob characters). $1: the
-# PCI device's sysfs dir
-gc573_holders() {
-	local n p f match=()
-	while read -r n; do
-		case $n in
-		/dev/*[!A-Za-z0-9/_-]* | "") continue ;;
-		/dev/*) match+=(-o -lname "$n") ;;
-		esac
-	done < <(gc573_card_nodes "$1")
-	[ ${#match[@]} -gt 0 ] || return 0
-	find /proc/[0-9]*/fd -maxdepth 1 -type l \( "${match[@]:1}" \) \
-		-printf '%h %l\n' 2>/dev/null |
-		while read -r p f; do
-			p=${p#/proc/}
-			p=${p%/fd}
-			case $p in *[!0-9]* | "") continue ;; esac
-			printf '%s %s %s\n' "$p" "$f" "$(gc573_comm "$p")"
+# "pid node comm" for each node in $1 (gc573_card_nodes output) a process
+# holds open, sorted by pid
+gc573_holders_of() {
+	local p r
+	[ -n "$1" ] || return 0
+	# shellcheck disable=SC2046
+	gc573_fd_holders $(awk '{ print $1 }' <<< "$1") |
+		while read -r p r; do
+			printf '%s %s %s\n' "$p" "$(awk -v r="$r" '$1 == r { print $2; exit }' <<< "$1")" \
+				"$(gc573_comm "$p")"
 		done | sort -u -k1,1n -k2,2
 	return 0
+}
+
+# "pid node comm" for each of the card's nodes a process holds open,
+# sorted by pid. $1: the PCI device's sysfs dir
+gc573_holders() {
+	gc573_holders_of "$(gc573_card_nodes "$1")"
 }
 
 # "pid comm", one line per process; $1: gc573_holders output
@@ -94,15 +161,15 @@ gc573_procs() {
 }
 
 # The holders that would lose the card, "pid name", one per process: every
-# process but PipeWire's own, and PipeWire's too while it holds a PCM node
-# (a stream). $1: gc573_holders output
+# process but a sound server's own, and a sound server's too while it
+# holds a PCM node (a stream). $1: gc573_holders output
 gc573_others() {
-	local p f c
+	local p f c s
 	while read -r p f c; do
 		[ -n "$p" ] || continue
-		if gc573_is_pw "$p"; then
+		if s=$(gc573_sound_server "$p"); then
 			case $f in
-			/dev/snd/pcmC*) printf '%s %s\n' "$p" "PipeWire, streaming the card's audio" ;;
+			/dev/snd/pcmC*) printf '%s %s\n' "$p" "$s, streaming the card's audio" ;;
 			esac
 		else
 			printf '%s %s\n' "$p" "$c"
@@ -111,16 +178,17 @@ gc573_others() {
 	return 0
 }
 
-# The holders an unbind would wait for, "pid name": every process but
-# PipeWire's own that holds an ALSA or i2c-dev node of the card (PipeWire
-# closes its ALSA nodes when the card goes). $1: gc573_holders output
+# The holders an unbind would wait for, "pid name": every process but a
+# sound server's own that holds an ALSA or i2c-dev node of the card (a
+# sound server closes its ALSA nodes when the card goes). $1:
+# gc573_holders output
 gc573_blockers() {
 	local p f c
 	while read -r p f c; do
 		[ -n "$p" ] || continue
 		case $f in
 		/dev/i2c-*) printf '%s %s\n' "$p" "$c" ;;
-		/dev/snd/*) gc573_is_pw "$p" || printf '%s %s\n' "$p" "$c" ;;
+		/dev/snd/*) gc573_sound_server "$p" > /dev/null || printf '%s %s\n' "$p" "$c" ;;
 		esac
 	done <<< "$1" | sort -u -k1,1n
 	return 0
@@ -129,6 +197,77 @@ gc573_blockers() {
 # "name (pid P), ..." for messages; $1: "pid name" lines
 gc573_names() {
 	awk 'NF { p = $1; sub(/^[^ ]+ /, ""); printf "%s%s (pid %s)", (n++ ? ", " : ""), $0, p }' <<< "$1"
+}
+
+# A process that uses the card through VFIO, found by device number: it
+# holds the card's VFIO group node (/dev/vfio/N) or its VFIO device node
+# (iommufd: /dev/vfio/devices/vfioN) open. Prints "process PID (comm)",
+# with the virtual machine's name if its command line has one, for the
+# first such process; nothing if none. Never fails: processes come and go
+# meanwhile. $1: the PCI device's sysfs dir
+gc573_vfio_user() {
+	local d r want="" p vm
+	if [ -e "$1/iommu_group" ]; then
+		d=$GC573_VFIO_CLASS/$(basename "$(readlink -f "$1/iommu_group")")/dev
+		r=$(gc573_hexdev "$(cat "$d" 2>/dev/null)") && want="$want $r"
+	fi
+	for d in "$1"/vfio-dev/vfio*/dev; do
+		r=$(gc573_hexdev "$(cat "$d" 2>/dev/null)") && want="$want $r"
+	done
+	[ -n "$want" ] || return 0
+	# shellcheck disable=SC2086
+	p=$(gc573_fd_holders $want | awk 'NR == 1 { print $1 }')
+	[ -n "$p" ] || return 0
+	vm=$(tr '\0' ' ' 2>/dev/null < "/proc/$p/cmdline" | LC_ALL=C tr -cd '[:print:]' |
+		grep -o 'guest=[^, ]*' | head -1) || true
+	printf 'process %s (%s)%s\n' "$p" "$(gc573_comm "$p")" "${vm:+, virtual machine ${vm#guest=}}"
+	return 0
+}
+
+# A process's start time (/proc/PID/stat field 22), which tells it from a
+# later process with the same pid; nothing if there is no such process
+gc573_starttime() {
+	local s
+	s=$(cat "/proc/$1/stat" 2>/dev/null) || return 0
+	s=${s##*) }
+	# shellcheck disable=SC2086
+	set -- $s
+	printf '%s\n' "${20:-}"
+}
+
+# An unbind of a card that has not finished: the writer gc573_unbind()
+# recorded still runs, or a card has no driver but still has a driver's
+# devices, MSI vectors or interrupt handler (an unbind that waits in the
+# I2C core for an i2c-dev holder has only the vectors and the handler
+# left). Prints why; status 0 when one is pending.
+gc573_unbind_pending() {
+	local pid start b d f irq
+	if read -r pid start b 2>/dev/null < "$GC573_UNBIND_PID"; then
+		if [ -n "$start" ] && [ "$(gc573_starttime "$pid")" = "$start" ]; then
+			printf 'the unbind of %s that an earlier run started (pid %s) has not finished\n' \
+				"$b" "$pid"
+			return 0
+		fi
+		rm -f "$GC573_UNBIND_PID"
+	fi
+	while read -r d; do
+		{ [ -n "$d" ] && [ ! -e "$d/driver" ]; } || continue
+		for f in "$d"/i2c-* "$d"/sound/card[0-9]* "$d"/video4linux/* "$d"/msi_irqs/*; do
+			if [ -e "$f" ]; then
+				printf '%s has no driver but still has %s: an unbind has not finished\n' \
+					"$(basename "$d")" "${f#"$d"/}"
+				return 0
+			fi
+		done
+		irq=$(cat "$d/irq" 2>/dev/null) || irq=
+		if [ -n "$irq" ] && [ "$irq" != 0 ] &&
+		   awk -v i="$irq:" -v n="$NAME" '$1 == i { for (k = 2; k <= NF; k++) if ($k == n) f = 1 } END { exit !f }' /proc/interrupts; then
+			printf '%s has no driver but %s still has its interrupt: an unbind has not finished\n' \
+				"$(basename "$d")" "$NAME"
+			return 0
+		fi
+	done < <(gc573_cards)
+	return 1
 }
 
 # gc573 unloaded once nothing holds it any more: up to 5 s for its users
@@ -148,14 +287,17 @@ gc573_unload_wait() {
 
 # Unbind one device, bounded: 0 when it finished within 10 s. Otherwise
 # it goes on in the background until the holders close their nodes, on
-# none of the caller's files: a pipe or an ssh session reading the
-# script's output would wait for it too. $1: the device
+# none of the caller's files (a pipe or an ssh session reading the
+# script's output would wait for it too), with its pid and start time in
+# GC573_UNBIND_PID. $1: the device
 gc573_unbind() {
 	local u i
 	( echo "$1" > "/sys/bus/pci/drivers/$NAME/unbind" ) < /dev/null > /dev/null 2>&1 &
 	u=$!
+	printf '%s %s %s\n' "$u" "$(gc573_starttime "$u")" "$1" > "$GC573_UNBIND_PID" 2>/dev/null || true
 	for i in $(seq 100); do
 		if ! kill -0 "$u" 2>/dev/null; then
+			rm -f "$GC573_UNBIND_PID"
 			wait "$u"
 			return
 		fi
@@ -165,20 +307,27 @@ gc573_unbind() {
 }
 
 # Take every card gc573 has away from it, and unload it. Refuses (status 1,
-# nothing changed) when anything but PipeWire holds a node of a card and
-# $1 is not 1 (--yes), and always when such a holder has an ALSA or i2c-dev
-# node open (an unbind would wait for it). Status 2: the cards were
+# nothing changed) when anything but a sound server holds a node of a card
+# and $1 is not 1 (--yes), and always when such a holder has an ALSA or
+# i2c-dev node open (an unbind would wait for it). Status 2: the cards were
 # unbound but gc573 could not be unloaded within 5 s (a holder did not let
 # go); then the cards are bound to gc573 again, so that they stay usable.
-# Status 3: an unbind did not finish within 10 s; it goes on, nothing
-# else is done.
+# Status 3: an unbind did not finish within 10 s (it goes on, nothing else
+# is done), or one from an earlier run is still pending.
 gc573_release() {
-	local yes=$1 d h o b all="" others="" blockers="" bdfs="" hint=""
+	local yes=$1 d h o b n why all="" others="" blockers="" bdfs="" hint="" nodes=""
+	# before anything that takes a device's lock, which waits for that unbind
+	if why=$(gc573_unbind_pending); then
+		say "$why: a program holds the card; it finishes once that program closes it. Nothing was changed"
+		return 3
+	fi
 	for d in /sys/bus/pci/drivers/"$NAME"/0000:*; do
 		[ -e "$d" ] || continue
 		d=$(readlink -f "$d")
 		bdfs="$bdfs $(basename "$d")"
-		h=$(gc573_holders "$d")
+		n=$(gc573_card_nodes "$d")
+		nodes="$nodes$n"$'\n'
+		h=$(gc573_holders_of "$n")
 		all="$all$h"$'\n'
 		o=$(gc573_others "$h")
 		[ -z "$o" ] || others="$others$o"$'\n'
@@ -192,7 +341,8 @@ gc573_release() {
 	if [ -n "${others//$'\n'/}" ]; then
 		if [ "$yes" != 1 ]; then
 			case $others in
-			*"PipeWire, streaming"*) hint=" (for PipeWire: stop what records the card's audio through it)" ;;
+			*"PipeWire, streaming"* | *"PulseAudio, streaming"*)
+				hint=" (for a sound server: stop what records the card's audio through it)" ;;
 			esac
 			say "the card is in use by $(gc573_names "$others"): close it$hint and run this again, or run this with --yes, and it loses the card"
 			return 1
@@ -205,7 +355,14 @@ gc573_release() {
 	for d in $bdfs; do
 		gc573_unbind "$d" && continue
 		if [ $? = 3 ]; then
-			say "the unbind of $d has not finished after 10 s: a program holds the card (now: $(gc573_names "$(gc573_procs "$(gc573_holders "/sys/bus/pci/devices/$d")")")); it finishes once they close it. Nothing else was changed"
+			# the nodes are gone from sysfs by now: their numbers from before
+			h=$(gc573_procs "$(gc573_holders_of "$(sed '/^$/d' <<< "$nodes")")")
+			if [ -n "$h" ]; then
+				h="now: $(gc573_names "$h")"
+			else
+				h="no process shows it open: one may be in flight between programs"
+			fi
+			say "the unbind of $d has not finished after 10 s: a program holds the card ($h); it finishes once that program closes it. Run this again after that. Nothing else was changed"
 			return 3
 		fi
 		say "warning: could not unbind $d from $NAME"

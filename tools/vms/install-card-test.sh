@@ -62,10 +62,23 @@
 #   pw-uninstall-this-boot  uninstall.sh: the card taken from gc573, the
 #                      saved override loaded again, nothing left; then the
 #                      override unset and the udev rule back
+# Then the holders an unbind would wait for (tools/card-release.sh):
+#   blocker-alsa       install.sh: gc573 has the card; sleep holding its ALSA
+#                      control node: install.sh --yes and uninstall.sh --yes
+#                      refuse, name it, change nothing
+#   blocker-i2c        "options gc573 i2c_bus1=1" in modprobe.d, install.sh
+#                      (an update): bus 1's i2c-dev node; sleep holding it:
+#                      install.sh --yes and uninstall.sh --yes refuse
+#   unbind-timeout     the i2c-dev node in flight in a unix socket (no /proc
+#                      fd shows it): uninstall.sh --yes takes the card, the
+#                      unbind does not finish within 10 s, exit 1
+#   pending-refused    install.sh and uninstall.sh refuse at once while that
+#                      unbind waits; once the holder ends it finishes, and
+#                      uninstall.sh leaves nothing; the modprobe.d file goes
 #   cleanup            driverctl purged, as before the test; reboot (then
 #                      tools/vmbuild.sh load for development)
-# --pw-only: prepare, then (the override unset) the PipeWire steps and
-# cleanup: no reboot before cleanup, about 10 minutes
+# --pw-only: prepare, then (the override unset) the PipeWire and holder
+# steps and cleanup: no reboot before cleanup, about 12 minutes
 # Log: tests/logs/install/<UTC>-<sha>/gc573-dev-card.log (+ summary.tsv)
 # Usage: tools/vms/install-card-test.sh [-r REF] [--pw-only]
 set -uo pipefail
@@ -75,7 +88,7 @@ while [ $# -gt 0 ]; do
 	case $1 in
 	-r) REF=$2; shift 2 ;;
 	--pw-only) pw_only=1; shift ;;
-	-h|--help) sed -n '3,69p' "$0"; exit 0 ;;
+	-h|--help) sed -n '3,83p' "$0"; exit 0 ;;
 	*) echo "unknown argument $1" >&2; exit 2 ;;
 	esac
 done
@@ -539,8 +552,99 @@ else
 	res pw-uninstall-this-boot FAIL "exit $rc; left '$left'; $s"
 fi
 
+echo "=== blocker-alsa"
+o=$(vm "$I" 2>&1); rc0=$?
+echo "$o" | sed 's/^/  /'
+ctl=/dev/snd/controlC$(vm "c=\$(ls -d /sys/bus/pci/devices/$bdf/sound/card[0-9]* | head -1); echo \${c##*card}")
+sp=$(vm "sudo nohup sleep 600 < $ctl > /dev/null 2>&1 & echo \$!")
+sleep 1
+h=$(holders); echo "  holders: $h"
+o=$(vm "$I --yes" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+o2=$(vm "$U --yes" 2>&1); rc2=$?
+echo "$o2" | sed 's/^/  /'
+s2=$(state); echo "  $s2"
+vm "sudo pkill -x -f 'sleep 600'"
+if [ $rc0 = 0 ] && has "$sp sleep" "$h" && [ $rc = 1 ] && has "open in sleep (pid $sp): an unbind would wait" "$o" &&
+	[ $rc2 = 1 ] && has "open in sleep (pid $sp): an unbind would wait" "$o2" && has 'nothing was changed' "$o2" &&
+	has 'driver: gc573' "$s2" && has 'dkms: gc573/' "$s2"; then
+	res blocker-alsa PASS "sleep (pid $sp) with $ctl open: install.sh --yes and uninstall.sh --yes exit 1, name it, the card stays with gc573"
+else
+	res blocker-alsa FAIL "exit $rc0/$rc/$rc2; holders '$h'; $s2"
+fi
+
+echo "=== blocker-i2c"
+vm "echo 'options gc573 i2c_bus1=1' | sudo tee /etc/modprobe.d/gc573-i2c-test.conf > /dev/null"
+o=$(vm "$I" 2>&1); rc0=$?
+echo "$o" | sed 's/^/  /'
+i2c=$(vm "for a in /sys/bus/pci/devices/$bdf/i2c-*; do [ \"\$(cat \$a/name)\" = 'gc573 $bdf bus 1' ] && echo /dev/\${a##*/}; done")
+echo "  bus 1: ${i2c:-none}"
+sp=$(vm "sudo nohup sleep 600 < ${i2c:-/nonexistent} > /dev/null 2>&1 & echo \$!")
+sleep 1
+o=$(vm "$I --yes" 2>&1); rc=$?
+echo "$o" | sed 's/^/  /'
+o2=$(vm "$U --yes" 2>&1); rc2=$?
+echo "$o2" | sed 's/^/  /'
+s2=$(state); echo "  $s2"
+vm "sudo pkill -x -f 'sleep 600'"
+if [ $rc0 = 0 ] && [ -n "$i2c" ] && [ $rc = 1 ] && has "open in sleep (pid $sp): an unbind would wait" "$o" &&
+	[ $rc2 = 1 ] && has "open in sleep (pid $sp): an unbind would wait" "$o2" &&
+	has 'driver: gc573' "$s2" && has 'dkms: gc573/' "$s2"; then
+	res blocker-i2c PASS "i2c_bus1=1: sleep (pid $sp) with $i2c open: install.sh --yes and uninstall.sh --yes exit 1, name it, the card stays with gc573"
+else
+	res blocker-i2c FAIL "exit $rc0/$rc/$rc2; bus 1 '${i2c:-none}'; $s2"
+fi
+
+echo "=== unbind-timeout"
+ssh -o BatchMode=yes "$VM" 'cat > /tmp/gc573-inflight.py' <<'EOF'
+# the i2c-dev node in flight in a unix socket: no /proc fd shows it
+import os, socket, sys, time
+fd = os.open(sys.argv[1], os.O_RDWR)
+a, b = socket.socketpair()
+socket.send_fds(a, [b"x"], [fd])
+os.close(fd)
+print("in flight", flush=True)
+time.sleep(600)
+EOF
+fp=$(vm "sudo nohup python3 /tmp/gc573-inflight.py ${i2c:-/nonexistent} > /tmp/gc573-inflight.out 2>&1 & echo \$!")
+sleep 2
+vm "cat /tmp/gc573-inflight.out" | sed 's/^/  /'
+t0=$(date +%s)
+o=$(vm "$U --yes" 2>&1); rc=$?
+dt=$(($(date +%s) - t0))
+echo "$o" | sed 's/^/  /'
+s=$(state); echo "  $s (${dt} s)"
+if [ $rc = 1 ] && has 'has not finished after 10 s' "$o" && has 'run this again once the unbind has finished' "$o" &&
+	has 'driver:  ' "$s" && has 'loaded: yes' "$s" && [ "$dt" -ge 10 ] && [ "$dt" -le 25 ]; then
+	res unbind-timeout PASS "the i2c-dev node in flight (python3, pid $fp): uninstall.sh --yes unbound the card, the unbind did not finish within 10 s, exit 1 after $dt s"
+else
+	res unbind-timeout FAIL "exit $rc after $dt s; $s"
+fi
+
+echo "=== pending-refused"
+t0=$(date +%s)
+o=$(vm "$I" 2>&1); rc=$?
+o2=$(vm "$U" 2>&1); rc2=$?
+dt=$(($(date +%s) - t0))
+echo "$o" | sed 's/^/  /'
+echo "$o2" | sed 's/^/  /'
+vm "sudo kill $fp"
+done=$(vm "read p _ < /run/gc573-unbind.pid 2>/dev/null || exit 0; for i in \$(seq 50); do kill -0 \$p 2>/dev/null || { echo finished; exit 0; }; sleep 0.2; done; echo waiting")
+echo "  the unbind once the holder ended: $done"
+o3=$(vm "$U" 2>&1); rc3=$?
+echo "$o3" | sed 's/^/  /'
+vm "sudo rm -f /etc/modprobe.d/gc573-i2c-test.conf /tmp/gc573-inflight.py /tmp/gc573-inflight.out"
+s3=$(state); left=$(not_left); echo "  $s3; left: '$left'"
+if [ $rc = 1 ] && has 'has not finished' "$o" && has 'nothing was changed' "$o" &&
+	[ $rc2 = 1 ] && has 'has not finished' "$o2" && has 'nothing was changed' "$o2" && [ "$dt" -le 10 ] &&
+	[ "$done" = finished ] && [ $rc3 = 0 ] && has 'unloaded gc573' "$o3" && has 'loaded: no' "$s3" && [ -z "$left" ]; then
+	res pending-refused PASS "while that unbind waited, install.sh and uninstall.sh refused at once ($dt s for both); once the holder ended it finished, and uninstall.sh left nothing"
+else
+	res pending-refused FAIL "exit $rc/$rc2 in $dt s; unbind: $done; exit $rc3; left '$left'; $s3"
+fi
+
 echo "=== cleanup"
-vm "sudo DEBIAN_FRONTEND=noninteractive apt-get purge -y -q driverctl | tail -1; rm -rf ~/gc573-install"
+vm "sudo DEBIAN_FRONTEND=noninteractive apt-get purge -y -q driverctl | tail -1; rm -rf ~/gc573-install; sudo rm -f /etc/modprobe.d/gc573-i2c-test.conf"
 pw_rule on
 reboot_vm
 s=$(state); echo "  $s"

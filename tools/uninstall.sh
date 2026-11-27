@@ -8,12 +8,15 @@
 # - the override removed for good (install.sh --permanent): put back as it
 #   was. Asks first on a terminal; --yes skips that; without a terminal and
 #   without --yes it only prints the command.
-# First gc573 lets go of the card and is unloaded. PipeWire, which keeps
-# the card's ALSA control node open on a desktop, lets go by itself; any
-# other program with the card open (OBS, a capture) is named and nothing
-# is changed, unless --yes: then it loses the card. Then every gc573
-# version is removed from DKMS, with its sources in /usr/src, and the
-# modprobe.d entry install.sh may have left is removed.
+# First gc573 lets go of the card and is unloaded. The sound server
+# (PipeWire, PulseAudio), which keeps the card's ALSA control node open on
+# a desktop, lets go by itself; any other program with the card open (OBS,
+# a capture) is named and nothing is changed, unless --yes: then it loses
+# the card. An unbind that has not finished (a program holds the card's
+# I2C or, with an older gc573, sound devices) stops the script before it
+# touches the card. Then every gc573 version is removed from DKMS, with
+# its sources in /usr/src, and the modprobe.d entry install.sh may have
+# left is removed.
 # Usage: sudo tools/uninstall.sh [--yes]
 #   --yes: the override is put back without a question, and programs that
 #   have the card open lose it
@@ -43,8 +46,15 @@ command -v dkms > /dev/null || die "dkms is not installed: nothing to remove wit
 
 bound() { if [ -L "/sys/bus/pci/devices/$1/driver" ]; then basename "$(readlink "/sys/bus/pci/devices/$1/driver")"; fi; }
 
-# gc573 lets go of the card (PipeWire by itself; another program only with
-# --yes), then unloads. inuse: it could not be unloaded yet (a program
+# An unbind that has not finished: whatever takes the device's lock below
+# (driverctl, a bind, on some kernels a read of driver_override) would
+# wait for it too
+if why=$(gc573_unbind_pending); then
+	die "$why: a program holds the card's I2C or sound devices, and the unbind finishes once that program closes them. Run this again after that; nothing was changed"
+fi
+
+# gc573 lets go of the card (a sound server by itself; another program
+# only with --yes), then unloads. inuse: it could not be unloaded yet (a program
 # with --yes did not let go): the card is back with it, and the binding
 # below takes it away again
 inuse=0
