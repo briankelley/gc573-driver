@@ -883,7 +883,7 @@ int gc573_video_hw_stop(struct gc573 *gc)
 	unsigned int fault = READ_ONCE(gc573_exp_stop_fault);
 	unsigned long t0 = jiffies;
 	int domains = READ_ONCE(exp_stop_domains);
-	bool term = true, reset;
+	bool term = true, reset, counted = false;
 	u32 vip;
 
 	spin_lock(&v->slock);
@@ -928,8 +928,15 @@ int gc573_video_hw_stop(struct gc573 *gc)
 			term = false;
 		if (fault & GC573_STOP_FAULT_RESET)
 			reset = false;
+		counted = true;
 	}
 	if (!term && !reset) {
+		/* tests only: a system sleep started now meets the stop */
+		if (counted && (fault & GC573_STOP_FAULT_SLOW)) {
+			dev_warn(dev, "exp_stop_fault %#x: the video stop counts as failed in %u ms, vid.lock held\n",
+				 fault, GC573_STOP_FAULT_SLOW_MS);
+			msleep(GC573_STOP_FAULT_SLOW_MS);
+		}
 		gc573_dma_dead(gc, "video stop (no INT bit 0, no reset of domain 0) failed");
 		return -EIO;
 	}

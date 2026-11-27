@@ -12,6 +12,14 @@
 #   frames) with bit 0 and 1 (no INT bit 0, no domain 0 reset).
 # - teardown: an unbind while video and audio stream, with bit 2 (the
 #   teardown's check counts the audio DMA as still on).
+# - sleep (delta review D4): the streamoff part with bit 4 too, which
+#   holds the stop, counted as failed, for 2 s under the video lock
+#   before the card is dead; within those 2 s a system sleep with
+#   /sys/power/pm_test at "freezer" (the notifiers, then 5 s of frozen
+#   tasks; no device sees a suspend). The sleep must start inside the hold
+#   (its "suspend entry" line between the hold's and the failed stop's),
+#   and the driver must refuse it for the card whose stop failed, not let
+#   it through because the stream is off by then. SKIP without pm_test.
 # Before anything else is judged, the kernel log must say the stop was
 # confirmed and only counted as failed, and BAR0 must read idle (VIP_CTRL
 # output and DMA_RUN audio off). If not, the case stops there: no unbind,
@@ -42,7 +50,11 @@ param=/sys/module/$GC573_MOD/parameters/exp_stop_fault
 drv=/sys/bus/pci/drivers/$GC573_MOD
 pdev=/sys/bus/pci/devices/$GC573_BDF
 part=${GC573_TEST_STOP:-streamoff}
-case $part in streamoff | teardown) ;; *) fail "GC573_TEST_STOP: streamoff or teardown, not '$part'" ;; esac
+case $part in streamoff | teardown | sleep) ;; *) fail "GC573_TEST_STOP: streamoff, teardown or sleep, not '$part'" ;; esac
+if [ "$part" = sleep ]; then
+	[ -w /sys/power/pm_test ] && grep -qw freeze /sys/power/state ||
+		skip "no /sys/power/pm_test or no freeze state"
+fi
 work=$(mktemp -d)
 pids=()
 
@@ -66,6 +78,8 @@ cleanup() {
 
 {
 	echo 'exp_stop_fault 0x[0-9a-f]+: the (video|teardown) stop was confirmed'
+	echo 'exp_stop_fault 0x[0-9a-f]+: the video stop counts as failed in [0-9]+ ms, vid.lock held'
+	echo 'system sleep refused: the card did not confirm its DMA stopped'
 	echo 'video stop \(no INT bit 0, no reset of domain 0\) failed: the card keeps bus mastering and gets no driver until reboot'
 	echo 'teardown stop failed: DMA still on'
 	echo 'teardown stop failed: the card keeps bus mastering and gets no driver until reboot'
@@ -140,6 +154,44 @@ dead_checks() {
 	esac
 }
 
+# sleep: the stop is held (its line in the kernel log after $tag), or
+# gc573-sec ($spid) ended without that
+held() {
+	local i
+	for i in $(seq 600); do
+		kmsg_since "$tag" | grep -q 'the video stop counts as failed in [0-9]* ms, vid.lock held' && return 0
+		kill -0 "$spid" 2>/dev/null || break
+		sleep 0.05
+	done
+	wait "$spid"
+	echo 0 > "$param"
+	sed 's/^/stopoff: /' "$work/stopoff.log"
+	confirmed_idle "$tag" video
+	fail "the stop was not held (a driver without exp_stop_fault bit 4)"
+}
+
+# sleep: the system sleep started while the stop was held, and the driver
+# refused it for the failed stop ($1: tag, $2: gc573_sleep_test's status)
+sleep_during_stop() {
+	local t0 t1 t2
+	t0=$(kmsg_since "$1" | sed -n 's/^\[ *\([0-9.]*\)\].*: exp_stop_fault 0x[0-9a-f]*: the video stop counts as failed in .*/\1/p' | head -1)
+	t1=$(kmsg_since "$1" | sed -n 's/^\[ *\([0-9.]*\)\] PM: suspend entry .*/\1/p' | head -1)
+	t2=$(kmsg_since "$1" | sed -n 's/^\[ *\([0-9.]*\)\].*: video stop (no INT bit 0, no reset of domain 0) failed: .*/\1/p' | head -1)
+	kmsg_since "$1" | grep -E 'counts as failed in|PM: suspend|system sleep refused|video stop \(no INT' | sed 's/^/  | /'
+	[ -n "$t0" ] && [ -n "$t1" ] && [ -n "$t2" ] ||
+		fail "a line is missing: the hold '$t0', the sleep's entry '$t1', the failed stop '$t2'"
+	awk -v a="$t0" -v b="$t1" -v c="$t2" 'BEGIN { exit !(a < b && b < c) }' ||
+		fail "the sleep did not start while the stop was held (hold at $t0 s, entry $t1 s, failed stop $t2 s): not judged"
+	echo "the sleep started $(awk -v a="$t0" -v b="$t1" 'BEGIN { printf "%.3f", b - a }') s into the hold, the failed stop came $(awk -v a="$t0" -v c="$t2" 'BEGIN { printf "%.3f", c - a }') s after the hold began"
+	case $2 in
+	0) fail "system sleep went through the freezer stage while the stop failed: the driver let it through, the stream being off by then" ;;
+	1) echo "system sleep refused: $(cat "$work/sleep1.out")" ;;
+	*) fail "pm_test: the sleep could not be tried" ;;
+	esac
+	kmsg_since "$1" | grep -q 'system sleep refused: the card did not confirm its DMA stopped' ||
+		fail "the refusal was not the driver's for the failed stop"
+}
+
 gc573_load || fail "insmod failed"
 trap cleanup EXIT
 [ -w "$param" ] || fail "no exp_stop_fault parameter"
@@ -149,18 +201,30 @@ vdev=$(gc573_video_dev) || fail "no video device"
 gc573_input_off "$vdev"
 gc573_master_on || fail "bus mastering off after the load"
 
-if [ "$part" = streamoff ]; then
+if [ "$part" != teardown ]; then
 	echo "-- STREAMOFF, confirmed, then counted as without INT bit 0 and domain 0 reset"
-	tag=$(kmsg_mark "stop-fault streamoff")
-	echo 3 > "$param" || fail "cannot set exp_stop_fault"
+	tag=$(kmsg_mark "stop-fault $part")
+	if [ "$part" = sleep ]; then val=19; else val=3; fi
+	echo "$val" > "$param" || fail "cannot set exp_stop_fault"
 	kmsg_since "$tag" | grep -q 'Setting dangerous option exp_stop_fault - tainting kernel' ||
 		fail "setting exp_stop_fault did not taint the kernel"
-	timeout 60 "$sec" stopoff -d "$vdev" -n 120 -b 4 > "$work/stopoff.log" 2>&1
-	rc=$?
+	if [ "$part" = sleep ]; then
+		timeout 60 "$sec" stopoff -d "$vdev" -n 120 -b 4 > "$work/stopoff.log" 2>&1 &
+		spid=$!
+		held
+		gc573_sleep_test > "$work/sleep1.out"
+		src=$?
+		wait "$spid"
+		rc=$?
+	else
+		timeout 60 "$sec" stopoff -d "$vdev" -n 120 -b 4 > "$work/stopoff.log" 2>&1
+		rc=$?
+	fi
 	echo 0 > "$param"
 	sed 's/^/stopoff: /' "$work/stopoff.log"
 	confirmed_idle "$tag" video
 	[ $rc = 0 ] || fail "gc573-sec stopoff: exit $rc"
+	[ "$part" = sleep ] && sleep_during_stop "$tag" "$src"
 	kmsg_since "$tag" | grep -q 'video stop (no INT bit 0, no reset of domain 0) failed: the card keeps bus mastering and gets no driver until reboot' ||
 		fail "no line for the failed stop"
 	kib=$(kept_kib "$tag")

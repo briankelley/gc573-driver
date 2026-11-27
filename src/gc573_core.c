@@ -69,7 +69,7 @@
 unsigned int gc573_exp_stop_fault;
 module_param_named_unsafe(exp_stop_fault, gc573_exp_stop_fault, uint, 0644);
 MODULE_PARM_DESC(exp_stop_fault,
-		 "Test only; setting it taints the kernel. A DMA stop the card confirmed then counts as failed, and the driver handles it as a real failure: the card is unusable until reboot. Read at each stop. Bit 0: a video stop's INT bit 0 counts as missing, bit 1: its reset of domain 0 counts as failed (with both, the video stop fails), bit 2: the teardown counts the audio DMA as still on, bit 3: the probe's stop counts the audio DMA as still on (0: off)");
+		 "Test only; setting it taints the kernel. A DMA stop the card confirmed then counts as failed, and the driver handles it as a real failure: the card is unusable until reboot. Read at each stop. Bit 0: a video stop's INT bit 0 counts as missing, bit 1: its reset of domain 0 counts as failed (with both, the video stop fails), bit 2: the teardown counts the audio DMA as still on, bit 3: the probe's stop counts the audio DMA as still on, bit 4: a video stop counted as failed by bits 0 and 1 is so only 2 s later, its lock held (0: off)");
 
 /* Tests only (tests/cases/26-no-answer.sh): see GC573_MMIO_ONES_* */
 static unsigned int exp_mmio_ones;
