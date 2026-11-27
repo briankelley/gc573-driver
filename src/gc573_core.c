@@ -341,11 +341,12 @@ void gc573_stop_end(void)
 
 /*
  * The probe's decision at its start, from reads alone, logged with what
- * it read (final review F1). Dead until reboot (gc573_card_dead()), with
- * no register of the card's written and bus mastering left as it is
- * (config space only: pcim_enable_device()'s memory decode and INTx
- * enable, and gc573_dead_intx() at the unwind), the card given none of
- * the driver's memory:
+ * it read (final review F1). Dead until reboot (gc573_card_dead()): no
+ * register write, bus mastering untouched, and none of the driver's
+ * memory given to the card. Only config space is written, harmlessly
+ * (final review F7): pcim_enable_device() turns memory decode on and
+ * clears Interrupt Disable, and gc573_dead_intx() sets it again at the
+ * unwind. Dead are:
  * - a card that does not answer (all-ones): its DMA may run;
  * - bus mastering off with RESET's sticky done bits set: a driver brought
  *   the card up since its last device reset, and someone else turned bus
