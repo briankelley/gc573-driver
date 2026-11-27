@@ -146,6 +146,14 @@
 #             (followed with tests/kmsg-tail.py; the driver's error lines
 #             are INFO), then a verified capture at 1080p60 and the
 #             driver's memory at 0
+#   remnant   (not in the default steps) no earlier user's picture in a
+#             new stream (security review, section 3 test 5): user A
+#             captures the pattern at 1080p60 (checked), filling the
+#             card's frame store; then each the first stream after it:
+#             with the source off, B's frames, the first delivered one
+#             too, must all be one uniform (black) frame; with the source
+#             at 720p60 (locked 3 s, no capture in between), every frame
+#             B gets must carry the same picture, the 720p pattern
 # Host-local mode (GC573_LOCAL=1, or VM=local): the driver runs on this
 # machine, bound by the user (tools/install.sh), and the checks run here
 # with no ssh. live.sh then never loads, unloads, binds or unbinds the
@@ -2547,6 +2555,53 @@ step_stress() {
 		"(locked $lt ms after the source came back; $(grep -E '^(RESULT capture|FAIL)' <<< "$out" | head -2 | tr '\n' ' '))"
 	m=$(drv_mem)
 	check stress-driver-mem "$([ "$m" = "$DRV_MEM_ZERO" ]; echo $?)" "(after the stress: ${m:-no mem line})"
+}
+
+# ---- remnant: a new stream shows nothing of an earlier user's ----
+# "frames signatures": the number of FRAME lines and of distinct
+# signatures in gc573-cap -F output ($1)
+frame_sigs() {
+	local sigs
+	sigs=$(sed -nE 's/^FRAME seq=[0-9]+ .*sig=([0-9a-fx]+).*/\1/p' <<< "$1")
+	echo "$(grep -c . <<< "$sigs") $(sort -u <<< "$sigs" | grep -c .)"
+}
+# the pattern at WxH ($1, $2) compared with frame file $3 (YUYV)
+remnant_compare() {
+	vm "[ -f $W/p-$1x$2.png ] || python3 $W/pattern.py $W/p-$1x$2.png $1 $2 >/dev/null"
+	vm "python3 $W/live-compare.py $W/p-$1x$2.png $3 YUYV $1 $2 709" 2>&1
+}
+step_remnant() {
+	local out n u cmp rc t
+	# A: the pattern at 1080p60, the last frame checked
+	src_mode 1920x1080 60
+	out=$(cap "-L 10 -f YUYV -b 4 -n 60 -o $W/remnant-a -F" 2>&1)
+	cmp=$(remnant_compare 1920 1080 "$W/remnant-a.YUYV")
+	rc=$?
+	echo "$cmp" | grep '^RESULT' | sed 's/^/  A: /'
+	check remnant-a "$([ "$rc" = 0 ]; echo $?)" "(user A's frames are the 1080p pattern: $(frame_sigs "$out") frames/signatures)"
+
+	# B, no input: the first stream after A
+	src_off
+	wait_unlocked || { result remnant-noinput FAIL "(the input did not go away)"; return; }
+	out=$(cap "-f YUYV -b 4 -n 60 -o $W/remnant-b0 -F" 2>&1)
+	read -r n u <<< "$(frame_sigs "$out")"
+	cmp=$(vm "python3 $VMDIR/tests/frame-uniform.py $W/remnant-b0.YUYV" 2>&1)
+	rc=$?
+	check remnant-noinput "$([ "$n" -ge 60 ] && [ "$u" = 1 ] && [ "$rc" = 0 ]; echo $?)" \
+		"(no input: $n frames, $u distinct; last frame: $cmp)"
+
+	# B, a smaller input: locked 3 s, no stream in between
+	src_on 1280x720 60
+	t=$(time_to_lock 15)
+	sleep 3
+	out=$(cap "-L 10 -f YUYV -b 4 -n 60 -o $W/remnant-b1 -F" 2>&1)
+	read -r n u <<< "$(frame_sigs "$out")"
+	cmp=$(remnant_compare 1280 720 "$W/remnant-b1.YUYV")
+	rc=$?
+	echo "$cmp" | grep '^RESULT' | sed 's/^/  B: /'
+	check remnant-720p "$([ "$n" -ge 60 ] && [ "$u" = 1 ] && [ "$rc" = 0 ]; echo $?)" \
+		"(720p60 locked $t ms after the mode set: $n frames, $u distinct, the last the 720p pattern: rc $rc)"
+	src_mode 1920x1080 60
 }
 
 step_compliance() {
