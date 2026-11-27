@@ -15,7 +15,7 @@ gc573-bus-h := $(srctree)/include/linux/device/bus.h
 gc573-lp := [(]
 ccflags-y += $(if $(shell grep -Eqs '^[[:space:]]+bool[[:space:]]+match_driver;' \
 	$(gc573-pci-h) && echo y),-DGC573_HAVE_PCI_MATCH_DRIVER)
-ccflags-y += $(if $(shell grep -Eqs '^[[:space:]]+(const[[:space:]]+)?char[[:space:]]*\*[[:space:]]*driver_override;' \
+ccflags-y += $(if $(shell grep -Eqs '^[[:space:]]+(const[[:space:]]+)?char[[:space:]]*\*[[:space:]]*driver_override_BROKEN;' \
 	$(gc573-pci-h) && echo y),-DGC573_HAVE_PCI_DRIVER_OVERRIDE)
 ccflags-y += $(if $(shell grep -Eqs 'int[[:space:]]+device_set_driver_override$(gc573-lp)' \
 	$(gc573-dev-h) && echo y),-DGC573_HAVE_DEVICE_SET_DRIVER_OVERRIDE)
