@@ -372,8 +372,11 @@ int main(int argc, char **argv)
 
 	t0 = now_ns();
 	next_restart = stress;
-	if (snd_pcm_start(pcm) < 0)
+	ret = snd_pcm_start(pcm);
+	if (ret < 0) {
+		fprintf(stderr, "start: %s\n", snd_strerror(ret));
 		return 2;
+	}
 	for (;;) {
 		struct pollfd pfd[8];
 		int n = snd_pcm_poll_descriptors(pcm, pfd, 7);

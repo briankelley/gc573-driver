@@ -181,7 +181,7 @@ if [ "$part" = streamoff ]; then
 	if "$aud" -t 1 > "$work/aud1.log" 2>&1; then
 		fail "an audio stream started after the failed stop"
 	fi
-	echo "audio after it: $(grep -m1 -E "^(read|snd_pcm_open|hw_params|sw_params): " "$work/aud1.log" || tail -1 "$work/aud1.log")"
+	echo "audio after it: $(grep -m1 -E "^(read|snd_pcm_open|hw_params|sw_params|start): " "$work/aud1.log" || tail -1 "$work/aud1.log")"
 	tag=$(kmsg_mark "stop-fault unbind")
 	timeout 30 sh -c "echo $GC573_BDF > $drv/unbind" || fail "unbind did not finish"
 	dead_checks
