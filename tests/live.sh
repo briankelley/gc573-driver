@@ -132,6 +132,20 @@
 #   unload    unload while streaming video and audio
 #   reload    GC573_RELOADS (50) unload/load cycles with the source active
 #   compliance  v4l2-compliance -s with the live input
+#   stress    (VM only, not in the default steps) tests/gc573-stress.c in
+#             the VM for GC573_STRESS_SECS (600): video, audio, control and
+#             EDID workers at random (S_EDID every 2-10 s: hot-plugs) and
+#             the bind role (unbind and bind every 15-45 s; off with
+#             GC573_STRESS_BIND=0), while the host sets the output at
+#             random every 3-15 s, with no test player: 1080p60, 1080p59.94
+#             (rate only: the stream restarts), 720p60 and 720p59.94 (other
+#             timings: a stream holds, and the hold expires), or off for
+#             2-6 s. The VM's hung_task_timeout_secs is 30 for the step.
+#             PASS: no unexpected error and no hang in the workers, no
+#             KMSG_BAD line in the VM's whole kernel log over the step
+#             (followed with tests/kmsg-tail.py; the driver's error lines
+#             are INFO), then a verified capture at 1080p60 and the
+#             driver's memory at 0
 # Host-local mode (GC573_LOCAL=1, or VM=local): the driver runs on this
 # machine, bound by the user (tools/install.sh), and the checks run here
 # with no ssh. live.sh then never loads, unloads, binds or unbinds the
@@ -2428,6 +2442,111 @@ step_reload() {
 	done
 	check reload "$([ $ok = "$RELOADS" ]; echo $?)" \
 		"($ok of $RELOADS locked, host output lost $hostfail, no lock $lockfail, slowest lock $tmax ms after the output came back)"
+}
+
+# The output to a mode with no test player, right of the primary output as
+# show.sh puts it (an HPD pulse can drop the mode, and the window manager
+# would move a player's window to the primary output)
+STRESS_SECS=${GC573_STRESS_SECS:-600}
+STRESS_BIND=${GC573_STRESS_BIND:-1}
+stress_out() {
+	local primary
+	primary=$(xrandr --query | awk '/ connected primary/ { print $1; exit }')
+	[ -n "$primary" ] && [ "$primary" != "$OUT" ] || return 1
+	ev "output $OUT $1@$2 (stress)"
+	xrandr --output "$OUT" --mode "$1" --rate "$2" --right-of "$primary" 2>/dev/null
+}
+step_stress() {
+	local bdf pid rc=0 kpid hung0 t0 i n=0 mark out res log bad drv lost m lt
+	if [ "$LOCAL" = 1 ]; then
+		result stress SKIP "(VM only: the bind role unbinds the driver)"
+		return
+	fi
+	bdf=${dbgdir##*/gc573-}
+	vm "gcc -O2 -Wall -o $W/gc573-stress $VMDIR/tests/gc573-stress.c -lasound" ||
+		{ result stress FAIL "(cannot build gc573-stress in the VM)"; return; }
+	"$ROOT/tools/testsrc/avsync.sh" --off
+	"$ROOT/tools/testsrc/show.sh" --off
+	hung0=$(vm "cat /proc/sys/kernel/hung_task_timeout_secs")
+	vm "echo 30 | sudo tee /proc/sys/kernel/hung_task_timeout_secs > /dev/null"
+	# the VM's whole kernel log over the step: more than its ring buffer holds
+	kpid=$(vm "sudo rm -f $W/stress.klog; sudo sh -c 'python3 $VMDIR/tests/kmsg-tail.py $W/stress.klog > /dev/null 2>&1 & echo \$!'")
+	for i in $(seq 50); do
+		vm "sudo grep -q '^# kmsg-tail: following' $W/stress.klog 2>/dev/null" && break
+		sleep 0.1
+	done
+	mark=stress-$(date +%s%N)
+	kmsg_mark "$mark"
+	ev "stress start: $STRESS_SECS s, bind role $STRESS_BIND"
+	vm "sudo $W/gc573-stress -B $bdf -t $STRESS_SECS $([ "$STRESS_BIND" = 1 ] && echo -U)" \
+		> /tmp/gc573-live-stress.txt 2>&1 &
+	pid=$!
+	t0=$(date +%s)
+	while kill -0 "$pid" 2>/dev/null; do
+		sleep $((3 + RANDOM % 13))
+		kill -0 "$pid" 2>/dev/null || break
+		[ $(($(date +%s) - t0)) -lt $((STRESS_SECS + 180)) ] || break
+		# HPD low (an EDID change, an unbind): nothing to set
+		connected || continue
+		n=$((n + 1))
+		case $((RANDOM % 5)) in
+		0) stress_out 1920x1080 60 ;;
+		1) stress_out 1920x1080 59.94 ;;
+		2) stress_out 1280x720 60 ;;
+		3) stress_out 1280x720 59.94 ;;
+		*)
+			ev "output off $OUT (stress)"
+			xrandr --output "$OUT" --off
+			sleep $((2 + RANDOM % 5))
+			! connected || stress_out 1920x1080 60
+			;;
+		esac
+	done
+	if kill -0 "$pid" 2>/dev/null; then
+		kill "$pid"
+		rc=hung
+	else
+		wait "$pid"
+		rc=$?
+	fi
+	ev "stress end (exit $rc)"
+	vm "echo $hung0 | sudo tee /proc/sys/kernel/hung_task_timeout_secs > /dev/null"
+	grep -E '^(PARAMS|WORKER|UNEXPECTED|HANG)' /tmp/gc573-live-stress.txt | sed 's/^/  /'
+	res=$(grep '^RESULT stress ' /tmp/gc573-live-stress.txt)
+	check stress-workers "$([ "$rc" = 0 ] && grep -q '^RESULT stress PASS ' <<< "$res"; echo $?)" \
+		"(${res#RESULT stress }; exit $rc; $n output changes on the host)"
+
+	# the log from the step's mark to an end mark the follower has seen
+	kmsg_mark "$mark-end"
+	for i in $(seq 30); do
+		vm "sudo grep -qF 'gc573-live: $mark-end' $W/stress.klog" && break
+		sleep 0.1
+	done
+	vm "sudo kill $kpid" 2>/dev/null
+	log=$(vm "sudo cat $W/stress.klog" | awk -v s="gc573-live: $mark" -v e="gc573-live: $mark-end" '
+		index($0, e) { exit } f; index($0, s) { f = 1 }')
+	lib_kmsg_patterns
+	lost=$(grep -c '^LOST ' <<< "$log")
+	bad=$(grep -E "$KMSG_BAD" <<< "$log" | head -20)
+	drv=$(grep -E "$KMSG_DRV_BAD" <<< "$log")
+	[ -z "$bad" ] || sed 's/^/  | /' <<< "$bad"
+	[ -z "$drv" ] || {
+		echo "  INFO the driver's error lines over the stress: $(grep -c . <<< "$drv"), the first 10:"
+		head -10 <<< "$drv" | sed 's/^/  | /'
+	}
+	check stress-kernel-log "$([ -z "$bad" ] && [ "$lost" = 0 ] && [ -n "$log" ]; echo $?)" \
+		"($(grep -c . <<< "$log") lines, $(grep -c gc573 <<< "$log") with gc573, bad $(grep -c . <<< "$bad"), LOST $lost)"
+
+	# afterwards: the source back, a verified capture, no driver memory left
+	wait_connected 15
+	src_on 1920x1080 60
+	find_vdev
+	lt=$(time_to_lock 15)
+	out=$(cap "-L 10 -f YUYV -b 4 -n 60 -p" 2>&1)
+	check stress-capture-after "$(grep -q '^RESULT capture fmt=YUYV 1920x1080 frames=60 ' <<< "$out"; echo $?)" \
+		"(locked $lt ms after the source came back; $(grep -E '^(RESULT capture|FAIL)' <<< "$out" | head -2 | tr '\n' ' '))"
+	m=$(drv_mem)
+	check stress-driver-mem "$([ "$m" = "$DRV_MEM_ZERO" ]; echo $?)" "(after the stress: ${m:-no mem line})"
 }
 
 step_compliance() {
