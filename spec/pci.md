@@ -34,3 +34,8 @@
     - stop the DMA and confirm it before mastering goes off;
     - if the stop cannot be confirmed, leave mastering on and keep all memory the card can address until reboot;
     - a VM using the card must be shut down, not destroyed, while it streams (vfio-pci clears mastering at release).
+  - A probe that finds mastering off cannot tell from the registers whether it was cut mid-DMA.
+    - Before test 22's rebind turned mastering on, the card answered normally and showed no engine running: no "DMA running at probe" line. The stop had cleared OUT_EN itself before the cut.
+    - A cleanly unbound card reads the same: GPIO 0x0001f970/0x0001f974, RESET 0x00000309, mastering off, OUT_EN and the audio DMA off.
+    - Only RESET's sticky done bits (3, 8, 9) show whether a device reset has come since a driver last brought the card up (`init.md`): 0x00000001 after a VM's (VFIO) reset, 0x00000309 after any bring-up. The value at a host cold boot is not yet recorded.
+    - So a driver should leave mastering on after a confirmed stop. It should turn mastering on over a card found with it off only when RESET shows such a reset. (`tests/logs/20261127-025603_6.8.0-151-generic.log` on the driver branch; delta and final reviews; C for the observation, L for the policy.)
