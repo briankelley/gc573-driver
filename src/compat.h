@@ -123,8 +123,9 @@ gc573_pcim_iomap_region(struct pci_dev *pdev, int bar, const char *name)
  *   first; gc573_quiesce() writes it in place again at the teardown.
  *   The work holds a module reference from before it is queued, never
  *   put, so the module and the work's code stay; a caller without the
- *   device lock while the module unloads cannot take one, gets no block,
- *   and says so.
+ *   device lock while the module unloads cannot take one and queues
+ *   nothing: the module's exit unbinds the card, and that teardown's
+ *   gc573_quiesce() writes the block in place.
  */
 #define GC573_NO_DRIVER		"gc573-dead-card"
 
