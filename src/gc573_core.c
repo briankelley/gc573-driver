@@ -15,8 +15,8 @@
  * device and its buffers, the HDMI workqueue, source HPD low, I2C
  * adapters, quiesce (interrupts off, reset domains), free IRQ, free
  * vectors, bus mastering off, the DMA memory the card itself uses (audio
- * buffers, the dummy list), unmap BAR0, disable the device, and last the
- * v4l2_device reference. No DMA memory goes back and bus mastering never
+ * buffers, the dummy list), unmap BAR0, disable the device, a dead card's
+ * INTx off, and last the v4l2_device reference. No DMA memory goes back and bus mastering never
  * goes off before the engines were stopped (spec/pci.md). After a stop
  * that cannot be confirmed none of the memory the card was given goes
  * back at all: it is kept, mapped, until reboot, and the card keeps bus
@@ -864,6 +864,27 @@ static void gc573_v4l2_put(void *data)
 }
 
 /*
+ * Devres, added before pcim_enable_device(), so after pcim's disable: a
+ * dead card's INTx stays disabled. The MSI teardown enables it again
+ * (pci_msi_shutdown()), and a wedged card that asserts it would hold a
+ * line another driver may share until the kernel turns the line off for
+ * all of them; the card may not honour INTx Disable at all
+ * (spec/open-questions.md #43). Not written if config space reads
+ * all-ones.
+ */
+static void gc573_dead_intx(void *data)
+{
+	struct gc573 *gc = data;
+	u16 cmd;
+
+	if (!READ_ONCE(gc->dma_dead))
+		return;
+	pci_read_config_word(gc->pdev, PCI_COMMAND, &cmd);
+	if (cmd != (u16)~0)
+		pci_intx(gc->pdev, 0);
+}
+
+/*
  * Devres: bus mastering off in every teardown and probe unwind once it was
  * on, after the quiesce and free_irq and before the DMA memory goes back.
  * pcim's disable, which turns it off too, comes only after those frees.
@@ -1031,6 +1052,9 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	 * and the card not idle, it never goes on (gc573_hw_stop_engines()).
 	 */
 	gc->master_unchecked = gc573_master_unchecked(gc);
+	ret = devm_add_action_or_reset(dev, gc573_dead_intx, gc);
+	if (ret)
+		return ret;
 	ret = pcim_enable_device(pdev);
 	if (ret)
 		return dev_err_probe(dev, ret, "cannot enable device\n");
