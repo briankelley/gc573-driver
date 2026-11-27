@@ -1,0 +1,91 @@
+# GC573 regression suite
+date:    2026-11-27 16:05:52 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 9566EDFE009E7661279F096
+rev:     407a50de139e
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 22-stop-fault
+  -- unbind while streaming, the teardown's stop confirmed, then counted as the audio DMA still on
+  after the unbind, power/control auto: runtime active
+    | [   26.952981] Setting dangerous option exp_stop_fault - tainting kernel
+    | [   27.131787] gc573 0000:07:00.0: exp_stop_fault 0x4: the teardown stop was confirmed (DMA_RUN 0x00000000 VIP_CTRL 0x00000000), counted as the audio DMA still on
+    | [   27.131792] gc573 0000:07:00.0: teardown stop failed: DMA still on, DMA_RUN 0x00000002 VIP_CTRL 0x00000000
+    | [   27.132309] gc573 0000:07:00.0: teardown stop failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+    | [   27.132941] gc573 0000:07:00.0: 16236 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+    | [   27.236825] Setting dangerous option exp_stop_fault - tainting kernel
+  stop confirmed, then counted as failed; BAR0 idle: DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  capture: gc573-cap: STREAMOFF: No such device
+  audio:   RESULT audio frames=98880 secs=2.050 rate=48001.592 xruns=0 restarts=0
+  kept at the teardown: 16236 KiB
+  rmmod refused: rmmod: ERROR: Module gc573 is in use
+  bind refused: No such device
+  unbound: PCI enable count 2, bus mastering on
+  runtime PM, control auto: the card active, its port 0000:00:02.6 active (control on)
+  INTx: PCI_COMMAND 0407 (INTx Disable 1), PCI_STATUS 0010 (interrupt status 0); line 22:  0 0 0 0 IO-APIC 22-fasteoi virtio4
+  system sleep refused: /home/dev/gc573-driver/tests/cases/../lib.sh: line 238: echo: write error: Device or resource busy
+  the failed teardown stop kept the memory and bus mastering, and the card is left until reboot
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (32 lines)
+  | [   22.795247] mc: Linux media interface: v0.10
+  | [   22.802341] videodev: Linux video capture interface: v2.00
+  | [   22.806218] gc573: loading out-of-tree module taints kernel.
+  | [   22.806226] gc573: module verification failed: signature and/or required key missing - tainting kernel
+  | [   22.807316] gc573 0000:07:00.0: probe entry: bus mastering on, RESET 0x00000001, GPIO 0x0001f850, VERSION 20200811, DMA_RUN 0x00000000, VIP_CTRL 0x00000000: the engines are stopped and checked
+  | [   22.912220] gc573 0000:07:00.0: using MSI, irq 60
+  | [   22.912241] gc573 0000:07:00.0: FPGA version 20200811
+  | [   23.045854] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [   23.047776] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [   23.159763] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [   23.160452] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [   23.262222] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [   23.401228] gc573 0000:07:00.0: video device video0
+  | [   23.401727] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [   23.416864] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [   23.953671] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [   26.952725] gc573-test: 1795795557836073476-12569 stop-fault teardown
+  | [   26.952981] Setting dangerous option exp_stop_fault - tainting kernel
+  | [   27.131787] gc573 0000:07:00.0: exp_stop_fault 0x4: the teardown stop was confirmed (DMA_RUN 0x00000000 VIP_CTRL 0x00000000), counted as the audio DMA still on
+  | [   27.131792] gc573 0000:07:00.0: teardown stop failed: DMA still on, DMA_RUN 0x00000002 VIP_CTRL 0x00000000
+  | [   27.132309] gc573 0000:07:00.0: teardown stop failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  | [   27.132941] gc573 0000:07:00.0: 16236 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+  | [   27.133901] gc573 0000:07:00.0: HDMI: 0x70 bank 3 select failed: -19
+  | [   27.134224] gc573 0000:07:00.0: HDMI: sp_hpd_low row 0 failed: -19
+  | [   27.134521] gc573 0000:07:00.0: HDMI: 0x70 bank 0 select failed: -19
+  | [   27.236825] Setting dangerous option exp_stop_fault - tainting kernel
+  | [   29.403511] PM: suspend entry (s2idle)
+  | [   29.428753] Filesystems sync: 0.025 seconds
+  | [   29.428974] gc573: system sleep refused: 1 card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first
+  | [   29.428982] random: crng reseeded on system resumption
+  | [   29.428985] PM: suspend exit
+  | [   29.431408] Setting dangerous option exp_stop_fault - tainting kernel
+  expected: [   27.131792] gc573 0000:07:00.0: teardown stop failed: DMA still on, DMA_RUN 0x00000002 VIP_CTRL 0x00000000
+  expected: [   27.132309] gc573 0000:07:00.0: teardown stop failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  expected: [   27.133901] gc573 0000:07:00.0: HDMI: 0x70 bank 3 select failed: -19
+  expected: [   27.134224] gc573 0000:07:00.0: HDMI: sp_hpd_low row 0 failed: -19
+  expected: [   27.134521] gc573 0000:07:00.0: HDMI: 0x70 bank 0 select failed: -19
+RESULT 22-stop-fault        PASS (7s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 22-stop-fault        PASS (7s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+NOTE: 22-stop-fault left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=1 fail=0 skip=2
