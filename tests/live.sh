@@ -235,6 +235,9 @@
 #             capture that neither hangs nor delivers garbage (the unbind
 #             is the coordinator's)
 #   q25back   the filter back: the lock without a reload, and the pattern
+# Every run ends with live-holders: no process may hold the card's nodes
+# open then but the sound server's own (tests/card-holders.sh), so that a
+# test process that outlived its step fails the run.
 # Prints RESULT lines and a SUMMARY; log: tests/logs/<UTC>_<kernel>_live.log.
 # Event log: tests/logs/<UTC>_<kernel>_live-events.log, every action that
 # changes the card's input or its streams (UTC, ms), and the lines of
@@ -549,7 +552,26 @@ setup() {
 		"$ROOT/tests/obsws.py" "$ROOT/tests/obs-check.py" \
 		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" \
 		"$ROOT/tests/obsbridge.py" "$ROOT/tests/app-check.py" \
-		"$ROOT/tools/testsrc/scrub.py" "$ROOT/tests/remnant-frames.py" "$W/"
+		"$ROOT/tools/testsrc/scrub.py" "$ROOT/tests/remnant-frames.py" \
+		"$ROOT/tests/card-holders.sh" "$ROOT/tools/card-release.sh" "$W/"
+}
+
+# At the run's end no process may hold the card's nodes open but the
+# sound server's own (tests/card-holders.sh: tools/card-release.sh's scan
+# of open files): a test process that outlived its step, as the OBS bridge
+# did in the VM (2d533cf), holds the module and the card from the next
+# unload, unbind or dead case
+holders_check() {
+	local out rc
+	out=$(vm "sudo $W/card-holders.sh" 2>&1)
+	rc=$?
+	[ -z "$out" ] || sed 's/^/  /' <<< "$out"
+	case $rc in
+	0) result live-holders PASS "(no process holds the card's nodes but the sound server's own)" ;;
+	1) result live-holders FAIL "(processes hold the card's nodes at the run's end: $(paste -sd ';' <<< "$out"))" ;;
+	3) result live-holders SKIP "(no GC573)" ;;
+	*) result live-holders FAIL "(the scan of open files did not finish, status $rc: $out)" ;;
+	esac
 }
 
 # The frame interval G_PARM must report for the timings in a gc573-cap
@@ -4387,6 +4409,9 @@ fi
 		echo "## $s"
 		"step_$s"
 	done
+	echo
+	echo "## card holders"
+	holders_check
 	echo
 	echo "## test source"
 	testsrc_check

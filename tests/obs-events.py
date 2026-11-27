@@ -656,10 +656,12 @@ class BridgeProc:
         if LOCAL:
             cmd = [sys.executable, '-u', BRIDGE, '--host', HOST] + args
         else:
-            cmd = ['ssh', '-o', 'BatchMode=yes', VM, f'exec python3 -u {shlex.quote(BRIDGE_VM)} '
-                   '--host 127.0.0.1 ' + ' '.join(shlex.quote(a) for a in args)]
+            # its pid first: the shell's, which exec makes the bridge's
+            cmd = ['ssh', '-o', 'BatchMode=yes', VM, f'echo "BRIDGEPID $$"; exec python3 -u '
+                   f'{shlex.quote(BRIDGE_VM)} --host 127.0.0.1 ' + ' '.join(shlex.quote(a) for a in args)]
         self.p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, text=True, bufsize=1, start_new_session=True)
+        self.rpid = None	# the bridge's pid in the VM
         self.lines = []
         self.lock = threading.Lock()
         self.up = threading.Event()
@@ -668,6 +670,11 @@ class BridgeProc:
     def _read(self):
         for line in self.p.stdout:
             line = line.rstrip('\n')
+            m = re.fullmatch(r'BRIDGEPID (\d+)', line)
+            if m and self.rpid is None:
+                self.rpid = int(m.group(1))
+                ev(f'bridge pid {self.rpid} in {VM}')
+                continue
             text = line.split(' ', 2)[2] if line.startswith('BRIDGE ') and line.count(' ') >= 2 else line
             with self.lock:
                 self.lines.append((time.monotonic(), text))
@@ -695,17 +702,32 @@ class BridgeProc:
         return r[-1] if r else 0.0
 
     def stop(self):
+        """The process the harness started ends: terminate, wait, then
+        kill. In the VM that is the ssh client, whose end leaves the
+        bridge running there with the card's video node open (no
+        terminal, so no hangup): the bridge is ended by its own pid in the
+        same way, once checked to be the bridge still"""
         if self.p.poll() is None:
             self.p.terminate()
             try:
                 self.p.wait(5)
             except subprocess.TimeoutExpired:
                 self.p.kill()
-        # the ssh client's end leaves the remote bridge running: it is
-        # BRIDGE_VM there, the only command (bash execs pkill, so no shell
-        # of ours matches)
-        if not LOCAL:
-            vm('pkill -f ' + shlex.quote(BRIDGE_VM))
+                self.p.wait(5)
+        if LOCAL:
+            return
+        if self.rpid is None:
+            ev('bridge: no pid from the VM, so it cannot be ended there')
+            print('BRIDGE no pid from the VM: not ended there (tests/card-holders.sh at the run\'s end)',
+                  flush=True)
+            return
+        p = self.rpid
+        r = vm(f'grep -qa obsbridge /proc/{p}/cmdline 2>/dev/null || exit 0; kill {p}; '
+               f'for i in $(seq 50); do kill -0 {p} 2>/dev/null || exit 0; sleep 0.1; done; '
+               f'kill -9 {p}; sleep 0.5; ! kill -0 {p} 2>/dev/null')
+        ev(f'bridge pid {p} ended in {VM}' if r.returncode == 0 else f'bridge pid {p}: still running')
+        if r.returncode != 0:
+            print(f'BRIDGE pid {p} in {VM} still runs after SIGKILL', flush=True)
 
 
 def bridge_summary(bridge, windows, out=print):
