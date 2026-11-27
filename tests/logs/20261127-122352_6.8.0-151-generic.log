@@ -1,0 +1,67 @@
+# GC573 regression suite
+date:    2026-11-27 12:23:52 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 515426BC65FAEDF1C989726
+rev:     d02ed9e47797
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 01-probe
+  FAIL: setting exp_stop_fault, exp_stop_domains, exp_probe_armed and exp_intx tainted the kernel 3 times, not 4
+  -- kernel log (33 lines)
+  | [   79.749604] gc573-test: 1795782232767377109-6723 probe
+  | [   79.769334] mc: Linux media interface: v0.10
+  | [   79.781735] videodev: Linux video capture interface: v2.00
+  | [   79.787502] gc573: loading out-of-tree module taints kernel.
+  | [   79.787509] gc573: module verification failed: signature and/or required key missing - tainting kernel
+  | [   79.788602] gc573 0000:07:00.0: state at probe: VERSION=20200811 RESET=0x00000001 INT_ENABLE=0x00000000 INT_STATUS=0x00000000 GPIO=0x0001f850 DMA_RUN=0x00000000 VIP_CTRL=0x00000000
+  | [   79.789627] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000009
+  | [   79.823780] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000109
+  | [   79.857865] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [   79.892752] gc573 0000:07:00.0: using MSI, irq 60
+  | [   79.892774] gc573 0000:07:00.0: DDR_STATUS=0x3
+  | [   79.892780] gc573 0000:07:00.0: FPGA version 20200811
+  | [   80.025695] gc573 0000:07:00.0: init done: GPIO=0x0001f970
+  | [   80.025710] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [   80.027074] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [   80.134626] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [   80.135332] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [   80.239530] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [   80.384213] gc573 0000:07:00.0: video device video0
+  | [   80.385634] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [   80.391292] gc573 0000:07:00.0: splitter: RX events 01 00 00 00 00 00 00 00, 13 01 then 01, 19 20 then 20
+  | [   80.392217] gc573-test: 1795782233410765786-17720 probe: test parameters
+  | [   80.392352] Setting dangerous option exp_stop_fault - tainting kernel
+  | [   80.392366] Setting dangerous option exp_stop_domains - tainting kernel
+  | [   80.392373] Setting dangerous option exp_probe_armed - tainting kernel
+  | [   80.399881] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [   80.405381] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [   80.439591] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [   80.473672] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [   80.511349] gc573 0000:07:00.0: reset domain 0x1 done, 1 poll(s), RESET=0x00000309
+  | [   80.545640] gc573 0000:07:00.0: reset domain 0x100 done, 1 poll(s), RESET=0x00000309
+  | [   80.579824] gc573 0000:07:00.0: reset domain 0x200 done, 1 poll(s), RESET=0x00000309
+  | [   80.611439] gc573 0000:07:00.0: quiesced: INT_ENABLE=0x00000000 INT_STATUS=0x00000000 RESET=0x00000309
+RESULT 01-probe             FAIL (1s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 01-probe             FAIL (1s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=0 fail=1 skip=2

@@ -90,9 +90,9 @@ MODULE_PARM_DESC(exp_probe_armed,
  * so by default the probe takes MSI or nothing
  */
 static unsigned int exp_intx;
-module_param(exp_intx, uint, 0644);
+module_param_unsafe(exp_intx, uint, 0644);
 MODULE_PARM_DESC(exp_intx,
-		 "Test only. 0: MSI only, a probe without MSI fails (default); 1: MSI, else the shared legacy interrupt (INTx); 2: INTx even with MSI there; other values as 0. INTx is untested on this card. Read at each probe");
+		 "Test only; setting it taints the kernel. 0: MSI only, a probe without MSI fails (default); 1: MSI, else the shared legacy interrupt (INTx); 2: INTx even with MSI there; other values as 0. INTx is untested on this card. Read at each probe");
 
 /* The interrupt types the probe may take (exp_intx) */
 static unsigned int gc573_irq_types(void)
