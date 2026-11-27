@@ -2,10 +2,15 @@
 # SPDX-License-Identifier: GPL-2.0
 """Follow the kernel log from now on into FILE, every record, until
 SIGTERM: for a case whose kernel log outgrows the ring buffer, where dmesg
-no longer has the case's start and run.sh's check would miss what was
-overwritten (tests/cases/18-fault-inject.sh: hundreds of probes). Lines as
-dmesg prints them ("[seconds] message"); records the ring overwrote before
-this reader got them give a "LOST" line instead. Run as root.
+no longer has the case's start and a check of it would miss what was
+overwritten (tests/run.sh follows every case this way). The first line,
+"# kmsg-tail: following", is written once the reader is at the end of the
+log: whatever is logged after it is in the file. Then the records, one line
+each as dmesg prints them ("[seconds] message"; a record with newlines in
+it gives one line per part, each with the record's time). Records the ring
+overwrote before this reader got them give a "LOST" line instead. Other
+escapes stay as /dev/kmsg gives them (\\xNN): no control character reaches
+the file. Run as root.
 
 Usage: kmsg-tail.py FILE
 """
@@ -23,6 +28,7 @@ def main():
     fd = os.open('/dev/kmsg', os.O_RDONLY)
     os.lseek(fd, 0, os.SEEK_END)    # from now on
     signal.signal(signal.SIGTERM, lambda *a: sys.exit(0))
+    out.write('# kmsg-tail: following\n')
     last = None
     while True:
         try:
@@ -42,8 +48,9 @@ def main():
             out.write(f'LOST kmsg records: {seq - last - 1} between {last} and {seq}\n')
         if seq is not None:
             last = seq
-        line = msg.split('\n', 1)[0]
-        out.write(f'[{usec // 1000000:5d}.{usec % 1000000:06d}] {line}\n')
+        ts = f'[{usec // 1000000:5d}.{usec % 1000000:06d}]'
+        for part in msg.split('\n', 1)[0].split('\\x0a'):
+            out.write(f'{ts} {part}\n')
 
 
 if __name__ == '__main__':
