@@ -229,6 +229,7 @@ static int gc573_oc_msg(struct gc573_ocbus *bus, struct i2c_msg *msg,
 	ret = gc573_oc_cmd(bus, GC573_OC_CR_STA | GC573_OC_CR_WR, &sr);
 	if (ret)
 		goto stop;
+	/* arbitration lost: the bus is not ours to STOP (no unwind, on purpose) */
 	if (sr & GC573_OC_SR_AL)
 		return -EAGAIN;
 	if (sr & GC573_OC_SR_RXACK) {
@@ -253,6 +254,7 @@ static int gc573_oc_msg(struct gc573_ocbus *bus, struct i2c_msg *msg,
 		ret = gc573_oc_cmd(bus, cmd, &sr);
 		if (ret)
 			goto stop;
+		/* arbitration lost: no STOP on a bus that is not ours (on purpose) */
 		if (sr & GC573_OC_SR_AL)
 			return -EAGAIN;
 		if (rd) {
