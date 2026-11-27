@@ -53,10 +53,13 @@ void gc573_i2c1_irq(struct gc573 *gc)
 static int gc573_i2c1_wait(struct gc573 *gc, u8 ok)
 {
 	unsigned long t = msecs_to_jiffies(GC573_I2C1_TIMEOUT_MS);
+	u8 st;
 
 	if (!wait_for_completion_timeout(&gc->i2c1_done, t))
 		return -ETIMEDOUT;
-	return (READ_ONCE(gc->i2c1_status) & ok) ? 0 : -EIO;
+	/* only ever 0x01 or 0x04 (spec/i2c.md); all-ones: no answer */
+	st = READ_ONCE(gc->i2c1_status);
+	return st != 0xff && (st & ok) ? 0 : -EIO;
 }
 
 /* spec/i2c.md "Read (LEN bytes)" */

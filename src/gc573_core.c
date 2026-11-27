@@ -65,20 +65,69 @@ module_param_named_unsafe(exp_stop_fault, gc573_exp_stop_fault, uint, 0644);
 MODULE_PARM_DESC(exp_stop_fault,
 		 "Test only; setting it taints the kernel. Removes stop safety steps; read at each stop. Bit 0: a video stop does not wait for INT bit 0 (as if it never came), bit 1: video and teardown stops reset no domain (as if the reset failed), bit 2: an audio stop leaves DMA_RUN set (0: off)");
 
+/* Tests only (tests/cases/26-no-answer.sh): see GC573_MMIO_ONES_* */
+static unsigned int exp_mmio_ones;
+module_param_unsafe(exp_mmio_ones, uint, 0644);
+MODULE_PARM_DESC(exp_mmio_ones,
+		 "Test only; setting it taints the kernel. Register reads return all-ones, as from a card that does not answer; read at each probe. 1: from the start of the probe, 2: for 1.5 s once bus mastering is on, 3: for 25 s once it is on, 4: from the probe's check after that on, for good (0: off)");
+
+/* gc573_rd(), with exp_mmio_ones on: all-ones now? */
+bool gc573_mmio_ones_now(struct gc573 *gc)
+{
+	if (READ_ONCE(gc->mmio_ones_timed) &&
+	    time_after_eq(jiffies, READ_ONCE(gc->mmio_ones_until))) {
+		WRITE_ONCE(gc->mmio_ones, false);
+		return false;
+	}
+	return true;
+}
+
+/* exp_mmio_ones: its reads start here if @mode is the one set */
+static void gc573_mmio_ones_start(struct gc573 *gc, unsigned int mode)
+{
+	unsigned int ms = 0;
+
+	if (READ_ONCE(exp_mmio_ones) != mode)
+		return;
+	if (mode == GC573_MMIO_ONES_BRIEF)
+		ms = 1500;
+	else if (mode == GC573_MMIO_ONES_LONG)
+		ms = 25000;
+	gc->mmio_ones_until = jiffies + msecs_to_jiffies(ms);
+	gc->mmio_ones_timed = ms != 0;
+	WRITE_ONCE(gc->mmio_ones, true);
+	if (ms)
+		dev_info(&gc->pdev->dev, "exp_mmio_ones %u: register reads return all-ones for %u ms\n",
+			 mode, ms);
+	else
+		dev_info(&gc->pdev->dev, "exp_mmio_ones %u: register reads return all-ones from now on\n",
+			 mode);
+}
+
+/*
+ * GPIO (0x040) read-modify-write. Nothing is written when the read gives
+ * all-ones: the card does not answer, and its every bit set is no state to
+ * write back
+ */
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val)
 {
 	u32 v;
 
 	spin_lock(&gc->gpio_lock);
 	v = gc573_rd(gc, GC573_GPIO);
-	gc573_wr(gc, GC573_GPIO, (v & ~mask) | (val & mask));
+	if (v != U32_MAX)
+		gc573_wr(gc, GC573_GPIO, (v & ~mask) | (val & mask));
+	else
+		dev_warn_once(&gc->pdev->dev, "GPIO update: the card does not answer (reads all-ones): not written\n");
 	spin_unlock(&gc->gpio_lock);
 }
 
 /*
  * DMA_RUN (0x008): bit 1 runs the audio DMA, the other bits are unknown;
  * RD wrote the whole register only with video idle. Every change is a
- * read-modify-write under this lock (spec/audio.md "Driver notes").
+ * read-modify-write under this lock (spec/audio.md "Driver notes"). An
+ * all-ones read writes nothing: every run bit set is no state to write
+ * back to a card that does not answer.
  */
 void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val)
 {
@@ -87,7 +136,10 @@ void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val)
 
 	spin_lock_irqsave(&gc->dma_run_lock, flags);
 	v = gc573_rd(gc, GC573_DMA_RUN);
-	gc573_wr(gc, GC573_DMA_RUN, (v & ~mask) | (val & mask));
+	if (v != U32_MAX)
+		gc573_wr(gc, GC573_DMA_RUN, (v & ~mask) | (val & mask));
+	else
+		dev_warn_once(&gc->pdev->dev, "DMA_RUN update: the card does not answer (reads all-ones): not written\n");
 	spin_unlock_irqrestore(&gc->dma_run_lock, flags);
 }
 
@@ -95,7 +147,8 @@ void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val)
  * spec/init.md step 2, also the last step of a video stop and of the
  * quiesce: reset each domain in @mask in turn, in the spec's order (the
  * spec's sequence resets all three: gc573_reset_domains()). A domain's
- * bit reads back 1 once its reset is done.
+ * bit reads back 1 once its reset is done. All-ones is no answer, not
+ * done: -ENODEV at once.
  */
 int gc573_reset_domain_mask(struct gc573 *gc, u32 mask)
 {
@@ -114,6 +167,11 @@ int gc573_reset_domain_mask(struct gc573 *gc, u32 mask)
 		for (tries = 1; tries <= GC573_RESET_TRIES; tries++) {
 			fsleep(GC573_RESET_POLL_US);
 			v = gc573_rd(gc, GC573_RESET);
+			if (v == U32_MAX) {
+				dev_err(dev, "reset domain %#x: the card does not answer (RESET reads all-ones)\n",
+					domains[i]);
+				return -ENODEV;
+			}
 			if (v & domains[i])
 				break;
 		}
@@ -145,6 +203,10 @@ static int gc573_ddr_check(struct gc573 *gc)
 
 	for (recover = 0; ; recover++) {
 		v = gc573_rd(gc, GC573_DDR_STATUS);
+		if (v == U32_MAX) {
+			dev_err(dev, "DDR check: the card does not answer (DDR_STATUS reads all-ones)\n");
+			return -ENODEV;
+		}
 		if (v & GC573_DDR_READY)
 			break;
 		if (recover == GC573_DDR_RECOVER_TRIES) {
@@ -165,11 +227,18 @@ static int gc573_ddr_check(struct gc573 *gc)
 static int gc573_gpio_enable(struct gc573 *gc, u32 bit)
 {
 	unsigned int tries;
+	u32 v;
 
 	for (tries = 1; tries <= GC573_GPIO_EN_TRIES; tries++) {
 		gc573_gpio_update(gc, bit, bit);
 		fsleep(GC573_GPIO_EN_WAIT_US);
-		if (gc573_rd(gc, GC573_GPIO) & bit)
+		v = gc573_rd(gc, GC573_GPIO);
+		if (v == U32_MAX) {
+			dev_err(&gc->pdev->dev, "GPIO enable %#x: the card does not answer (GPIO reads all-ones)\n",
+				bit);
+			return -ENODEV;
+		}
+		if (v & bit)
 			return 0;
 	}
 	dev_err(&gc->pdev->dev, "GPIO enable %#x timeout, GPIO=%#010x\n",
@@ -215,18 +284,29 @@ static void gc573_irq_hw_disable(struct gc573 *gc)
  * first interrupts off with their status cleared, the audio DMA and the
  * video output off as the spec's stops do, every video channel disarmed,
  * then step 2's domain resets.
+ *
+ * A card that does not answer reads all-ones (VERSION too): the probe
+ * ends there. VERSION is read again after the resets, for
+ * gc573_answer_check().
  */
 static int gc573_hw_stop_engines(struct gc573 *gc)
 {
 	struct device *dev = &gc->pdev->dev;
-	u32 run, vip;
+	u32 ver, run, vip;
+	int ret;
 
+	ver = gc573_rd(gc, GC573_VERSION);
 	run = gc573_rd(gc, GC573_DMA_RUN);
 	vip = gc573_rd(gc, GC573_VIP_CTRL);
-	dev_dbg(dev, "state at probe: RESET=%#010x INT_ENABLE=%#010x INT_STATUS=%#010x GPIO=%#010x DMA_RUN=%#010x VIP_CTRL=%#010x\n",
-		gc573_rd(gc, GC573_RESET), gc573_rd(gc, GC573_INT_ENABLE),
+	dev_dbg(dev, "state at probe: VERSION=%08x RESET=%#010x INT_ENABLE=%#010x INT_STATUS=%#010x GPIO=%#010x DMA_RUN=%#010x VIP_CTRL=%#010x\n",
+		ver, gc573_rd(gc, GC573_RESET), gc573_rd(gc, GC573_INT_ENABLE),
 		gc573_rd(gc, GC573_INT_STATUS), gc573_rd(gc, GC573_GPIO),
 		run, vip);
+	if (ver == U32_MAX || run == U32_MAX || vip == U32_MAX) {
+		dev_err(dev, "the card does not answer (VERSION %08x DMA_RUN %#010x VIP_CTRL %#010x): not used\n",
+			ver, run, vip);
+		return -ENODEV;
+	}
 
 	gc573_irq_hw_disable(gc);
 	if (run & GC573_DMA_RUN_AUDIO)
@@ -239,7 +319,49 @@ static int gc573_hw_stop_engines(struct gc573 *gc)
 			 run, vip);
 
 	/* 2: reset domains */
-	return gc573_reset_domains(gc);
+	ret = gc573_reset_domains(gc);
+	gc->fw_version = gc573_rd(gc, GC573_VERSION);
+	if (!ret && gc->fw_version != ver) {
+		dev_err(dev, "the card stopped answering during the resets (VERSION %08x, %08x before)\n",
+			gc->fw_version, ver);
+		ret = -ENODEV;
+	}
+	return ret;
+}
+
+/* After bus mastering goes on: up to this long for the card to answer */
+#define GC573_ANSWER_WAIT_MS		20000
+#define GC573_ANSWER_POLL_MS		100
+
+/*
+ * After bus mastering and the IRQ vectors: VERSION must read what it read
+ * just before (gc573_hw_stop_engines()). A card whose bus mastering had
+ * been turned off mid-transfer read all-ones for some 15 s once the next
+ * probe turned it on again, and stalled a CPU meanwhile (spec/pci.md). So
+ * wait for it, bounded, and say how long it took; a card that does not
+ * answer again is not used (gc573_dma_dead()).
+ */
+static int gc573_answer_check(struct gc573 *gc, unsigned long t_master)
+{
+	struct device *dev = &gc->pdev->dev;
+	unsigned long end = t_master + msecs_to_jiffies(GC573_ANSWER_WAIT_MS);
+	u32 v = gc573_rd(gc, GC573_VERSION);
+
+	if (v == gc->fw_version)
+		return 0;
+	dev_warn(dev, "VERSION reads %08x since bus mastering went on (%08x before): the card is not ready; waiting up to %u s\n",
+		 v, gc->fw_version, GC573_ANSWER_WAIT_MS / 1000);
+	while (time_before(jiffies, end)) {
+		msleep(GC573_ANSWER_POLL_MS);
+		v = gc573_rd(gc, GC573_VERSION);
+		if (v == gc->fw_version) {
+			dev_warn(dev, "the card answers again, %u ms after bus mastering went on\n",
+				 jiffies_to_msecs(jiffies - t_master));
+			return 0;
+		}
+	}
+	gc573_dma_dead(gc, "the check that the card answers after bus mastering went on");
+	return -ENODEV;
 }
 
 /*
@@ -256,8 +378,7 @@ static int gc573_hw_init(struct gc573 *gc)
 	if (ret)
 		return ret;
 
-	/* 4: version */
-	gc->fw_version = gc573_rd(gc, GC573_VERSION);
+	/* 4: version, read before bus mastering and checked after it */
 	dev_info(dev, "FPGA version %08x\n", gc->fw_version);
 
 	/* 5: I2C clocks: bus 0, bus 1, bus 2 */
@@ -356,8 +477,9 @@ void gc573_dma_stop(struct gc573 *gc)
 	run = gc573_rd(gc, GC573_DMA_RUN);
 	vip = gc573_rd(gc, GC573_VIP_CTRL);
 	if ((run & GC573_DMA_RUN_AUDIO) || (vip & GC573_VIP_CTRL_OUT_EN)) {
-		dev_err(dev, "teardown stop failed: DMA still on, DMA_RUN %#010x VIP_CTRL %#010x\n",
-			run, vip);
+		dev_err(dev, "teardown stop failed: %s, DMA_RUN %#010x VIP_CTRL %#010x\n",
+			run == U32_MAX || vip == U32_MAX ?
+			"the card does not answer" : "DMA still on", run, vip);
 		gc573_dma_dead(gc, "teardown stop");
 	}
 }
@@ -492,6 +614,7 @@ static int gc573_debugfs_init(struct gc573 *gc)
 static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	struct device *dev = &pdev->dev;
+	unsigned long t_master;
 	struct gc573 *gc;
 	int ret;
 
@@ -546,10 +669,14 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return ret;
 
 	/* no engine a previous owner left armed may write once this is on */
+	gc573_mmio_ones_start(gc, GC573_MMIO_ONES_PROBE);
 	ret = gc573_hw_stop_engines(gc);
 	if (ret)
 		return ret;
 	pci_set_master(pdev);
+	t_master = jiffies;
+	gc573_mmio_ones_start(gc, GC573_MMIO_ONES_BRIEF);
+	gc573_mmio_ones_start(gc, GC573_MMIO_ONES_LONG);
 
 	ret = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_MSI | PCI_IRQ_INTX);
 	if (ret < 0)
@@ -557,6 +684,12 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	gc->irq = pci_irq_vector(pdev, 0);
 	if (gc->irq < 0)
 		return dev_err_probe(dev, gc->irq, "no IRQ number\n");
+
+	/* the card answers as it did before bus mastering went on */
+	ret = gc573_answer_check(gc, t_master);
+	if (ret)
+		return ret;
+	gc573_mmio_ones_start(gc, GC573_MMIO_ONES_INIT);
 
 	ret = devm_request_threaded_irq(dev, gc->irq, gc573_irq, gc573_irq_thread,
 					pci_dev_msi_enabled(pdev) ? 0 : IRQF_SHARED,

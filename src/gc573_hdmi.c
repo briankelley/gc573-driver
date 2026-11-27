@@ -376,7 +376,9 @@ static bool gc573_hdmi_fpga_ok(struct gc573_hdmi *h, u32 period, u32 prev,
 	u64 frame = (u64)m->htotal * mul * m->vtotal;
 	u64 it_hz = (u64)m->pclk_khz * 1000 * mul, hz;
 
-	if ((fpga[0] & 3) != 3 || !gc573_hdmi_fpga_size_ok(h, fpga))
+	/* all-ones: a card that does not answer, not a stable timing */
+	if (fpga[0] == U32_MAX || (fpga[0] & 3) != 3 ||
+	    !gc573_hdmi_fpga_size_ok(h, fpga))
 		return false;
 	if (!gc573_period_valid(period) || !frame ||
 	    abs_diff(period, prev) > period / 5000)

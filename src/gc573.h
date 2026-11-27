@@ -374,9 +374,13 @@ struct gc573 {
 	struct pci_dev *pdev;
 	void __iomem *mmio;
 	int irq;
-	u32 fw_version;
+	u32 fw_version;			/* VERSION, read before bus mastering */
 	bool dma_stopped;		/* gc573_dma_stop() ran: teardown */
 	bool dma_dead;			/* a stop failed: bus mastering is off */
+	/* tests only, exp_mmio_ones: register reads return all-ones */
+	bool mmio_ones;
+	bool mmio_ones_timed;		/* until mmio_ones_until (jiffies) */
+	unsigned long mmio_ones_until;
 	struct v4l2_device v4l2_dev;	/* refcount owner of this struct */
 	struct dentry *debugfs;
 
@@ -412,6 +416,16 @@ struct gc573 {
 #define GC573_STOP_FAULT_RESET		BIT(1)	/* video, teardown: no reset */
 #define GC573_STOP_FAULT_AUDIO		BIT(2)	/* audio: DMA_RUN left set */
 extern unsigned int gc573_exp_stop_fault;
+
+/*
+ * exp_mmio_ones (gc573_core.c), tests only: every register read returns
+ * all-ones, as from a card that does not answer, from the point named
+ */
+#define GC573_MMIO_ONES_PROBE		1	/* the start of the probe */
+#define GC573_MMIO_ONES_BRIEF		2	/* bus mastering on, 1.5 s */
+#define GC573_MMIO_ONES_LONG		3	/* bus mastering on, 25 s */
+#define GC573_MMIO_ONES_INIT		4	/* the check after it, for good */
+bool gc573_mmio_ones_now(struct gc573 *gc);
 
 int gc573_reset_domain_mask(struct gc573 *gc, u32 mask);
 int gc573_reset_domains(struct gc573 *gc);
@@ -473,8 +487,15 @@ void gc573_audio_reset_done(struct gc573 *gc);
 void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns);
 void gc573_audio_debugfs(struct gc573 *gc);
 
+/*
+ * A card that does not answer reads all-ones (a completion timeout), and
+ * every read of it can stall the CPU: readiness checks take all-ones as
+ * a failure, never as ready, and no read-modify-write writes it back.
+ */
 static inline u32 gc573_rd(struct gc573 *gc, u32 off)
 {
+	if (unlikely(READ_ONCE(gc->mmio_ones)) && gc573_mmio_ones_now(gc))
+		return U32_MAX;
 	return ioread32(gc->mmio + off);
 }
 

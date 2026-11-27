@@ -719,16 +719,23 @@ static bool gc573_vid_slots_writable(struct gc573_video *v, unsigned int c,
 
 /*
  * Set and clear CH_CTRL bits of channel c. ch0 is read-modify-written:
- * hardware clears its slot bits as slots complete. ch1/ch2 cannot be read
- * back, so they get the exact value software intends. slock held.
+ * hardware clears its slot bits as slots complete (an all-ones read, a
+ * card that does not answer, is not written back: every slot and the run
+ * bit set). ch1/ch2 cannot be read back, so they get the exact value
+ * software intends. slock held.
  */
 static void gc573_vid_ctrl(struct gc573 *gc, unsigned int c, u32 set, u32 clr)
 {
 	struct gc573_video *v = &gc->vid;
 	u32 reg = gc573_vch_base[c] + GC573_VCH_CTRL;
+	u32 val;
 
 	if (!c) {
-		gc573_wr(gc, reg, (gc573_rd(gc, reg) & ~clr) | set);
+		val = gc573_rd(gc, reg);
+		if (val != U32_MAX)
+			gc573_wr(gc, reg, (val & ~clr) | set);
+		else
+			dev_warn_once(&gc->pdev->dev, "ch0 CH_CTRL update: the card does not answer (reads all-ones): not written\n");
 	} else {
 		v->ch_ctrl[c] = (v->ch_ctrl[c] & ~clr) | set;
 		gc573_wr(gc, reg, v->ch_ctrl[c]);
@@ -860,7 +867,11 @@ int gc573_video_hw_stop(struct gc573 *gc)
 	spin_unlock(&v->slock);
 
 	vip = gc573_rd(gc, GC573_VIP_CTRL);
-	if (vip & GC573_VIP_CTRL_OUT_EN) {
+	if (vip == U32_MAX) {
+		/* no answer: no terminate to ask for or wait on */
+		term = false;
+		dev_warn(dev, "video stop: the card does not answer (VIP_CTRL reads all-ones)\n");
+	} else if (vip & GC573_VIP_CTRL_OUT_EN) {
 		reinit_completion(&v->term);
 		gc573_wr(gc, GC573_VIP_CTRL, vip & ~GC573_VIP_CTRL_OUT_EN);
 		if ((fault & GC573_STOP_FAULT_TERM) ||

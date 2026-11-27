@@ -81,6 +81,7 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `23-channel-disarm` | security review | F4, no input: after a YV12 and an NV12 stream, and during and after a YUYV stream, the ch1/ch2 CH_CTRL values last written (debugfs) are 0; every stream pattern-checked |
 | `24-unbind-alsa-held` | security review | F6: two processes hold the ALSA control node and the capture PCM; the unbind finishes within 20 s with them still running; once they close, the module references go to 0 and gc573 unloads |
 | `25-card-release` | security review | F6, F7: `tools/card-release.sh` (synced by `tools/vmbuild.sh`) with gc573 loaded. `gc573_release --yes` refuses (status 1, the card still bound, the holder named) an i2c-dev holder of bus 1, an ALSA control holder, and an ALSA holder whose comm is `wireplumber`; a video holder with escapes in its comm is named without control characters; a holder of a file named `x<newline>1 /dev/videoN` is no holder. Each release is bounded: after 30 s the case kills the holder and fails |
+| `26-no-answer` | fix review | N2, with the test parameter `exp_mmio_ones` (setting it taints the kernel): register reads all-ones from a point of the probe on. 1, from the start: the probe refuses the card, bus mastering stays off (off at the probe's start), nothing left or kept. 2, for 1.5 s after bus mastering: the probe waits and says so ("answers again, N ms"), the card works. A bind with the parameter off brings the card back after each |
 | `17-audio` | M4 | no input: ALSA hw params (S16_LE, 2 channels, 48 kHz, periods from 480 frames); 3 s capture at 48 kHz +- 0.1 % against the clock, no overrun, all samples zero, every period silent, AUDIO_DONE in order (debugfs `audio`); 20 stop/start cycles (INT bit 4 each), audio across 3 video stream start/stops and across 30 video stop/start cycles in every format (while audio runs the video stop leaves out reset domain 8, which holds the audio DMA: no restart, nothing filled, AUDIO_DONE in order, rate within 0.1 %), rmmod refused while the PCM is open, unbind while capturing (< 5 s, the application exits), capture after the rebind. SKIP without the alsa-lib headers |
 
 Experiment `exp-delivery.sh RATE [N] [TAG]` (host side like `live.sh`,
@@ -246,7 +247,7 @@ locking, with the card in `gc573-dev`:
    `tools/devvm/dbg-boot.sh`): the whole suite, `tools/vmbuild.sh test`
    (load/unload x50 in `02-load-unload`; kmemleak, lockdep and DMA-API
    debug over all of it), with `18-fault-inject`, `19-surprise-remove` and
-   the security cases `20-ioctl-limits` to `25-card-release` in it.
+   the security cases `20-ioctl-limits` to `26-no-answer` in it.
 3. On the debug kernel, `tests/live.sh blip fpgawait fpgaheal avchange
    obsevents remnant stress` (the last for `GC573_STRESS_SECS`, 600 s).
 4. The same new gates again with the debug kernel booted with
@@ -262,8 +263,8 @@ from the current tree against it, `sudo GC573_KO=/path/gc573.ko
 tests/run.sh CASE`. `21-i2c-bus1-policy` stops before its writes and its
 bank part on an older driver, which would otherwise change its chips;
 `25-card-release` kills its holders after 30 s, which ends an unbind that
-waits for them; `22-stop-fault` needs the parameter it tests and fails at
-once.
+waits for them; `22-stop-fault` and `26-no-answer` need the parameter
+they test and fail at once.
 
 ## Host step: probe with an engine still armed
 Security review F5 (probe stops the engines before bus mastering). Run

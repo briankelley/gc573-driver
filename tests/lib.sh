@@ -144,6 +144,13 @@ gc573_cap_build() {
 		echo "$1/gc573-cap"
 }
 
+# PCI_COMMAND bit 2, bus master enable, as the card's config space has it
+gc573_master_on() {
+	local cmd
+	cmd=$(od -An -tx2 -j4 -N2 "/sys/bus/pci/devices/$GC573_BDF/config" | tr -d ' ')
+	[ -n "$cmd" ] && [ $((0x$cmd & 4)) != 0 ]
+}
+
 # Build the audio test tool into directory $1 (alsa-lib headers:
 # libasound2-dev); print the binary's path.
 gc573_aud_build() {
