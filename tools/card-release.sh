@@ -147,11 +147,12 @@ gc573_unload_wait() {
 }
 
 # Unbind one device, bounded: 0 when it finished within 10 s. Otherwise
-# it goes on in the background until the holders close their nodes.
-# $1: the device
+# it goes on in the background until the holders close their nodes, on
+# none of the caller's files: a pipe or an ssh session reading the
+# script's output would wait for it too. $1: the device
 gc573_unbind() {
 	local u i
-	( echo "$1" > "/sys/bus/pci/drivers/$NAME/unbind" ) 2>/dev/null &
+	( echo "$1" > "/sys/bus/pci/drivers/$NAME/unbind" ) < /dev/null > /dev/null 2>&1 &
 	u=$!
 	for i in $(seq 100); do
 		if ! kill -0 "$u" 2>/dev/null; then
