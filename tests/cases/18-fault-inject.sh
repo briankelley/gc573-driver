@@ -52,7 +52,11 @@
 #   entry of /proc/irq/N after a failure in register_irq_proc():
 #   register_irq_proc() ignores its failures, and unregister_irq_proc()
 #   removes every entry, made or not (kernel/irq/proc.c in 6.8), so the
-#   warning is the kernel's, not the driver's.
+#   warning is the kernel's, not the driver's;
+# - the probe's "error -EBUSY: cannot map BAR0" after a failure in
+#   __request_region() under the PCI core's region request: a region
+#   request whose allocation fails gives -EBUSY, the errno of a region in
+#   use (__pci_request_region(), drivers/pci/pci.c in 6.8).
 # SKIP without fault injection.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
@@ -346,6 +350,13 @@ explained() {
 		allow_line "$1" "$line" "remove_proc_entry('$name') after a failure in register_irq_proc()"
 		k=$((k + 1))
 	done < <(irq_proc_warnings <<< "$2")
+	n=$(awk '/ __request_region( |$)/ && / (__)?pci_request_region( |$)/' <<< "$stacks" | grep -c .)
+	k=0
+	while read -r line; do
+		[ "$k" -lt "$n" ] || break
+		allow_line "$1" "$line" "-EBUSY from BAR0's region request after a failure in __request_region()"
+		k=$((k + 1))
+	done < <(grep -E "\] $GC573_MOD [^ ]+: error -EBUSY: cannot map BAR0$" <<< "$bad")
 }
 # The kernel's lines of step $1 (klog_bad), each a problem; at the step's
 # end, after its unload or unbind, so the lines that undoing it brings are
