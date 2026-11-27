@@ -171,16 +171,25 @@ helpers (frame runs, kept frames and their times) on made-up output.
 it in every matrix VM): the checks `tools/install.sh` and `uninstall.sh`
 make before they touch the card (`tools/card-release.sh`), in a PID and
 mount namespace of its own, on its own processes (one holding `/dev/full`
-open, one with an O_PATH descriptor of it) and a made-up sysfs tree. A
+open, one with an O_PATH descriptor of it) and a made-up sysfs tree. The
+namespaces are checked, not trusted: the run inside must find another
+mount namespace than its caller's and be PID 1, or it does nothing, and
+mktemp's directory goes at the exit (final review F6). A
 holder is found under another language (a catalog of its own for stat's
 "character special file", in a tmpfs over `/usr/share/locale`, with
 `LANGUAGE=xx`), and both scripts export `LC_ALL=C` first; an O_PATH
-descriptor is no holder; a stat that hangs (a stand-in first in `PATH`)
+descriptor is no holder (checked once the helper has said which
+descriptor it opened); a stat that hangs (a stand-in first in `PATH`)
 ends the scan after `GC573_SCAN_TIMEOUT` s with status 2, which the
-callers refuse on; a card in gc573's `dead_cards`, or with driver_override
-`gc573-dead-card`, is dead (delta review D2, D8, D16, D5).
-`logs/20261127-130828_6.8.0-151-generic_card-release-check.log` is the
-scripts before those fixes.
+callers refuse on; so does any other failed scan (timeout or xargs
+exiting other than 0 or 123, a scan that saw no open file) and a
+`GC573_SCAN_TIMEOUT` that is not a whole number of seconds from 1 to 600
+(final review F5); a card in gc573's `dead_cards`, or with
+driver_override `gc573-dead-card`, is dead (delta review D2, D8, D16,
+D5); `card-holders.sh`, which ends every `live.sh` run, names a made-up
+card's holder. `logs/20261127-130828_6.8.0-151-generic_card-release-check.log`
+is the scripts before the delta review's fixes,
+`logs/20261127-154406_6.8.0-151-generic_card-release-check.log` before F5.
 
 ## Live input (`live.sh`, host)
 `tests/live.sh [STEP...]` runs on the host: it drives the loopback output

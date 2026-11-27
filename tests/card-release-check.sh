@@ -41,6 +41,11 @@
 #   d5-dead     gc573_dead_check on a made-up sysfs: a card in gc573's
 #               dead_cards, or with driver_override gc573-dead-card, is
 #               dead; neither, or no gc573 and no card, is not
+#   holders-script  tests/card-holders.sh (the end of every live.sh run)
+#               on a made-up card whose video node is the device: names
+#               the holder and exits 1, with every card or the card's BDF;
+#               0 once the node is another device; 2 with the scan's
+#               message for a bad GC573_SCAN_TIMEOUT; 3 with no card
 # Usage: sudo tests/card-release-check.sh   (RESULT lines; exit 1 on a FAIL)
 set -u
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -303,5 +308,39 @@ dead_res listed "$d1" 0 0000:07:00.0
 dead_res driver_override "$d2" 0 gc573-dead-card
 dead_res neither "$d3" 1 ""
 dead_res nothing "$d4" 1 ""
+
+# ---- holders-script: a made-up card, its video node the device above
+hs=$tmp/hsys
+hc=$hs/bus/pci/devices/0000:07:00.0
+mkdir -p "$hc/video4linux/video0" "$hc/sound/card0/controlC0" "$tmp/nosys"
+echo 0x1461 > "$hc/vendor"
+echo 0x0054 > "$hc/device"
+printf '%d:%d\n' "$((16#${rdev%%:*}))" "$((16#${rdev##*:}))" > "$hc/video4linux/video0/dev"
+echo 250:250 > "$hc/sound/card0/controlC0/dev"
+# $1 the case, $2 the status wanted, $3 the output wanted (a glob), then
+# card-holders.sh's environment (VAR=VALUE), and after a -- its arguments
+hs_res() {
+	local what=$1 want_r=$2 want_o=$3 o r e=()
+	shift 3
+	while [ $# -gt 0 ] && [ "$1" != -- ]; do
+		e+=("$1")
+		shift
+	done
+	[ "${1:-}" != -- ] || shift
+	o=$(env "${e[@]}" bash "$ROOT/tests/card-holders.sh" "$@" 2>&1)
+	r=$?
+	# shellcheck disable=SC2053
+	if [ "$r" = "$want_r" ] && [[ $o == $want_o ]]; then
+		res holders-script PASS "$what: status $r, '$o'"
+	else
+		res holders-script FAIL "$what: status $r, '$o' (want status $want_r, '$want_o')"
+	fi
+}
+hs_res "every card" 1 "0000:07:00.0: sleep (pid $open_pid): /dev/video0" GC573_SYSFS="$hs"
+hs_res "the card's BDF" 1 "0000:07:00.0: sleep (pid $open_pid): /dev/video0" GC573_SYSFS="$hs" -- 0000:07:00.0
+echo 250:251 > "$hc/video4linux/video0/dev"
+hs_res "no holder" 0 "" GC573_SYSFS="$hs"
+hs_res "a bad GC573_SCAN_TIMEOUT" 2 "0000:07:00.0: GC573_SCAN_TIMEOUT is 'x', *" GC573_SYSFS="$hs" GC573_SCAN_TIMEOUT=x
+hs_res "no card" 3 "no GC573" GC573_SYSFS="$tmp/nosys"
 
 exit $fail
