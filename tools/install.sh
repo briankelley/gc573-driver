@@ -38,7 +38,11 @@
 # touches the card.
 #
 # An update while an older gc573 has the card takes the card from it
-# (unbind), unloads it and loads the new one. The sound server (PipeWire,
+# (unbind), unloads it and loads the new one. Once, from a gc573 older
+# than this one, the new one then refuses the card until a reboot: the
+# older one turned the card's bus mastering off when it let go of it,
+# which the new one cannot tell from a cut under running DMA. The script
+# says so; reboot and run it again. The sound server (PipeWire,
 # PulseAudio), which keeps the card's ALSA control node open on a desktop,
 # lets go of it by itself. Any other program with the card open (OBS, a
 # capture) would lose the card: the script names it and leaves the card
@@ -305,6 +309,18 @@ card_up() {
 
 record() { mkdir -p "$STATE_DIR"; printf 'bind %s %s %s\n' "$1" "$bdf" "$persistent" > "$STATE"; }
 
+# After a load that did not take the card: gc573 left it as it is until
+# reboot (gc573_dead_check). An update from an older gc573 meets this once:
+# every version before this one turned the card's bus mastering off when
+# it let go of the card, and this one cannot tell that from a cut under
+# running DMA. Says so and what to do; status 1 if the card is not dead
+refused() {
+	local why
+	why=$(gc573_dead_check listed) || return 1
+	say "$why."
+	say "That happens once after an update from an older $NAME, which turned the card's bus mastering off when it let go of the card, and after a kexec or a write to the card's sysfs enable file. A reboot resets the card: reboot, then run this script again, and $NAME takes the card"
+}
+
 if [ -n "$persistent" ] && [ "$persistent" != "$NAME" ]; then
 	say ""
 	say "A persistent driverctl override gives the card ($bdf) to $persistent."
@@ -358,7 +374,8 @@ if [ -n "$persistent" ] && [ "$persistent" != "$NAME" ]; then
 		# untouched. Judged by the result, not driverctl's exit status
 		driverctl --nosave set-override "$bdf" "$NAME" > /dev/null 2>&1 || true
 		if ! card_up; then
-			say "warning: $NAME did not take the card; see: sudo dmesg | grep $NAME. A reboot gives the card back to $persistent"
+			refused ||
+				say "warning: $NAME did not take the card; see: sudo dmesg | grep $NAME. A reboot gives the card back to $persistent"
 			exit 1
 		fi
 		say "$NAME has the card for this boot. A reboot gives it back to $persistent: the override stays saved."
@@ -435,6 +452,7 @@ fi
 # system down, the next boot does not try again
 noload_on "until $NAME has taken the card once"
 if ! load_module || ! card_up; then
+	refused && exit 1
 	[ -d "/sys/module/$NAME" ] && say "warning: $NAME loaded but did not bind $bdf; see: sudo dmesg | grep $NAME"
 	say "$NAME does not load by itself until it has taken the card once: run this script again after fixing that ($NOLOAD)"
 	exit 1

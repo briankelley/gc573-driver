@@ -69,21 +69,23 @@ gc573_cards() {
 	return 0
 }
 
-# A card the driver keeps until reboot: it could not confirm that the
-# card's DMA stopped (gc573_card_dead() in src/gc573_core.c). gc573 lists
-# such a card in its dead_cards parameter; on kernels without the PCI
-# core's match_driver its driver_override also names no driver
+# A card the driver keeps until reboot (gc573_card_dead() in
+# src/gc573_core.c): it could not confirm that the card's DMA stopped, or
+# its probe found bus mastering turned off after a bring-up, which it
+# cannot tell from a cut under running DMA (gc573_entry_dead()). gc573
+# lists such a card in its dead_cards parameter; on kernels without the
+# PCI core's match_driver its driver_override also names no driver
 # (GC573_NO_DRIVER), which outlasts the module. Prints why; status 0 when
 # there is one. $1 = listed: dead_cards alone, since on some kernels a read
 # of driver_override waits for an unbind that has not finished (check
 # gc573_unbind_pending first)
 gc573_dead_check() {
-	local l d o
+	local l d o why
+	why="$NAME could not confirm that the card's DMA stopped, or found its bus mastering turned off after a bring-up (after a kexec, a write to the card's sysfs enable file, or an older $NAME letting go of the card; sudo dmesg | grep $NAME says which)"
 	l=$(cat "$GC573_SYSFS/module/$NAME/parameters/dead_cards" 2>/dev/null) || l=
 	l=$(printf '%s\n' "$l" | awk 'NF { printf "%s%s", (n++ ? ", " : ""), $1 }')
 	if [ -n "$l" ]; then
-		printf '%s: %s could not confirm that the card'"'"'s DMA stopped (dead_cards), so it is left as it is until reboot' \
-			"$l" "$NAME"
+		printf '%s: left as it is until reboot (dead_cards): %s' "$l" "$why"
 		return 0
 	fi
 	[ "${1:-}" != listed ] || return 1
@@ -91,8 +93,8 @@ gc573_dead_check() {
 		[ -n "$d" ] || continue
 		o=$(cat "$d/driver_override" 2>/dev/null) || o=
 		if [ "$o" = "$GC573_NO_DRIVER" ]; then
-			printf '%s: its driver_override is %s: %s could not confirm that the card'"'"'s DMA stopped, so it is left as it is until reboot' \
-				"$(basename "$d")" "$o" "$NAME"
+			printf '%s: left as it is until reboot (its driver_override is %s): %s' \
+				"$(basename "$d")" "$o" "$why"
 			return 0
 		fi
 	done < <(gc573_cards)
