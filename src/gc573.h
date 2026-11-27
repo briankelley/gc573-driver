@@ -441,6 +441,7 @@ extern struct gc573_mem_live gc573_mem_live;
 void gc573_video_early_init(struct gc573 *gc);
 int gc573_video_init(struct gc573 *gc);
 void gc573_video_hw_stop(struct gc573 *gc);
+void gc573_video_disarm(struct gc573 *gc);
 void gc573_video_irq_done(struct gc573 *gc);
 void gc573_video_irq_term(struct gc573 *gc);
 void gc573_video_debugfs(struct gc573 *gc);

@@ -5,7 +5,8 @@
  * Probe brings the FPGA up per spec/init.md steps 1-11; remove quiesces it
  * per spec/init.md "Remove / quiesce". The card has no function-level reset
  * and keeps its register state across driver reloads (spec/pci.md), so
- * probe runs the full sequence every time and never assumes reset values.
+ * probe runs the full sequence every time and never assumes reset values,
+ * and it stops the engines before it turns bus mastering on.
  *
  * Teardown is entirely devres-managed. Release order is the reverse of
  * probe: debugfs, HDMI polling (stopped), the ALSA card (stops a running
@@ -195,33 +196,51 @@ static void gc573_irq_hw_disable(struct gc573 *gc)
 	gc573_wr(gc, GC573_INT_STATUS, gc573_rd(gc, GC573_INT_STATUS));
 }
 
-/* spec/init.md steps 2-11. Step 1 (PCI) is done by the caller. */
+/*
+ * Probe, with MMIO only, before bus mastering goes on (spec/init.md step
+ * 2, and what comes before it). The card keeps its registers from one
+ * owner to the next (spec/pci.md), and RD leaves its DMA running when it
+ * unloads (spec/init.md "Remove / quiesce"): an engine a previous owner
+ * left armed (a driver, a virtual machine through VFIO, a crashed kernel)
+ * would write to that owner's memory as soon as bus mastering is on. So
+ * first interrupts off with their status cleared, the audio DMA and the
+ * video output off as the spec's stops do, every video channel disarmed,
+ * then step 2's domain resets.
+ */
+static int gc573_hw_stop_engines(struct gc573 *gc)
+{
+	struct device *dev = &gc->pdev->dev;
+	u32 run, vip;
+
+	run = gc573_rd(gc, GC573_DMA_RUN);
+	vip = gc573_rd(gc, GC573_VIP_CTRL);
+	dev_dbg(dev, "state at probe: RESET=%#010x INT_ENABLE=%#010x INT_STATUS=%#010x GPIO=%#010x DMA_RUN=%#010x VIP_CTRL=%#010x\n",
+		gc573_rd(gc, GC573_RESET), gc573_rd(gc, GC573_INT_ENABLE),
+		gc573_rd(gc, GC573_INT_STATUS), gc573_rd(gc, GC573_GPIO),
+		run, vip);
+
+	gc573_irq_hw_disable(gc);
+	if (run & GC573_DMA_RUN_AUDIO)
+		gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
+	if (vip & GC573_VIP_CTRL_OUT_EN)
+		gc573_wr(gc, GC573_VIP_CTRL, vip & ~GC573_VIP_CTRL_OUT_EN);
+	gc573_video_disarm(gc);
+	if ((run & GC573_DMA_RUN_AUDIO) || (vip & GC573_VIP_CTRL_OUT_EN))
+		dev_info(dev, "DMA running at probe (DMA_RUN %#010x, VIP_CTRL %#010x): stopped before bus mastering\n",
+			 run, vip);
+
+	/* 2: reset domains */
+	return gc573_reset_domains(gc);
+}
+
+/*
+ * spec/init.md steps 3-11. Step 1 (PCI) is done by the caller, step 2
+ * before bus mastering (gc573_hw_stop_engines()).
+ */
 static int gc573_hw_init(struct gc573 *gc)
 {
 	struct device *dev = &gc->pdev->dev;
 	int ret;
-
-	dev_dbg(dev, "state at probe: RESET=%#010x INT_ENABLE=%#010x INT_STATUS=%#010x GPIO=%#010x DMA_RUN=%#010x\n",
-		gc573_rd(gc, GC573_RESET), gc573_rd(gc, GC573_INT_ENABLE),
-		gc573_rd(gc, GC573_INT_STATUS), gc573_rd(gc, GC573_GPIO),
-		gc573_rd(gc, GC573_DMA_RUN));
-
-	/*
-	 * The card keeps its registers across driver loads (spec/pci.md), and
-	 * RD leaves its DMA running when it unloads (spec/init.md "Remove /
-	 * quiesce"): stop audio DMA a previous driver left on, as the spec's
-	 * stop does, before it writes anywhere else.
-	 */
-	if (gc573_rd(gc, GC573_DMA_RUN) & GC573_DMA_RUN_AUDIO) {
-		dev_info(dev, "audio DMA running at probe: stopped\n");
-		gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
-		fsleep(1000);
-	}
-
-	/* 2: reset domains */
-	ret = gc573_reset_domains(gc);
-	if (ret)
-		return ret;
 
 	/* 3: on-board DDR ready */
 	ret = gc573_ddr_check(gc);
@@ -451,6 +470,10 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	/* one descriptor per segment: tell the DMA layer how long they get */
 	dma_set_max_seg_size(dev, GC573_DMA_SEG_MAX);
 
+	/* no engine a previous owner left armed may write once this is on */
+	ret = gc573_hw_stop_engines(gc);
+	if (ret)
+		return ret;
 	pci_set_master(pdev);
 
 	ret = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_MSI | PCI_IRQ_INTX);

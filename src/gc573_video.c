@@ -725,6 +725,21 @@ static void gc573_vid_ctrl(struct gc573 *gc, unsigned int c, u32 set, u32 clr)
 	}
 }
 
+/*
+ * Every channel disarmed: CH_CTRL 0, no run bit and no slot valid (ch0's
+ * gates every channel, spec/video-dma.md "Slots"). At probe before bus
+ * mastering, with nothing else running.
+ */
+void gc573_video_disarm(struct gc573 *gc)
+{
+	unsigned int c;
+
+	for (c = 0; c < GC573_VCH_NUM; c++) {
+		gc573_wr(gc, gc573_vch_base[c] + GC573_VCH_CTRL, 0);
+		gc->vid.ch_ctrl[c] = 0;
+	}
+}
+
 /* Point slot n of every channel in use at b's lists. slock held. */
 static void gc573_vid_program_slot(struct gc573 *gc, unsigned int n,
 				   struct gc573_vbuf *b)
