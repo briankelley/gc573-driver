@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0
 # A stop the card does not confirm (security review of a0adb1d, F4; fix
-# review N1, N7), with the test parameter exp_stop_fault, no input
+# review N1, N6, N7), with the test parameter exp_stop_fault, no input
 # (free-running). Setting it must taint the kernel (module_param_unsafe).
 # The parameter never stops a DMA itself: the driver carries the stop out
 # in full, and only once the card confirmed it (INT bit 0 or the reset of
@@ -19,9 +19,9 @@
 # - the driver's line for the failed stop, how much DMA memory it keeps
 #   until reboot, debugfs dma_dead 1 and "mem kept" above 0; bus mastering
 #   still on (PCI_COMMAND bit 2); the card in dead_cards;
-# - streamoff: REQBUFS 0 on the same file works, no video or audio stream
-#   starts again; the unbind finishes and leaves the device enabled with
-#   bus mastering on;
+# - streamoff: LOG_STATUS, G_EDID and S_EDID on the same file fail with
+#   ENODEV, REQBUFS 0 works, no video or audio stream starts again; the
+#   unbind finishes and leaves the device enabled with bus mastering on;
 # - teardown: the unbind finishes and both programs end;
 # - the module cannot be unloaded, and the card cannot be bound again
 #   (ENODEV: no driver matches it);
@@ -157,6 +157,10 @@ if [ "$part" = streamoff ]; then
 	kib=$(kept_kib "$tag")
 	[ -n "$kib" ] && [ "$kib" -gt 0 ] || fail "no line saying how much DMA memory is kept"
 	grep -q 'dma_dead 1' "$(gc573_debugfs)" || fail "debugfs does not say dma_dead 1"
+	for i in LOG_STATUS G_EDID S_EDID; do
+		grep -q "^ioctl $i rc=-1 errno=ENODEV$" "$work/stopoff.log" ||
+			fail "$i after the failed stop: '$(grep "^ioctl $i " "$work/stopoff.log")', expected ENODEV"
+	done
 	grep -q '^ioctl REQBUFS0 rc=0$' "$work/stopoff.log" || fail "REQBUFS 0 after the failed stop failed"
 	kb=$(kept_bytes)
 	echo "kept: $kib KiB (kernel log); debugfs once the buffers went back: ${kb:-?} bytes"

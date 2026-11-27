@@ -1548,11 +1548,20 @@ static int gc573_enum_dv_timings(struct file *file, void *priv,
 					gc573_timings_offered, gc);
 }
 
+/*
+ * The ioctls that reach the card (S_EDID: bus 1 and GPIO; LOG_STATUS:
+ * registers), and G_EDID with them: -ENODEV once the card is dead or its
+ * teardown has begun. The teardown sets vid.dead under vid.lock
+ * (gc573_dma_stop()), which the V4L2 core holds around every ioctl, so
+ * none of them reaches the card after that.
+ */
 static int gc573_g_edid(struct file *file, void *priv, struct v4l2_edid *e)
 {
 	struct gc573 *gc = video_drvdata(file);
 
 	memset(e->reserved, 0, sizeof(e->reserved));
+	if (READ_ONCE(gc->vid.dead))
+		return -ENODEV;
 	if (e->pad)
 		return -EINVAL;
 	return gc573_hdmi_get_edid(gc, e);
@@ -1563,6 +1572,8 @@ static int gc573_s_edid(struct file *file, void *priv, struct v4l2_edid *e)
 	struct gc573 *gc = video_drvdata(file);
 
 	memset(e->reserved, 0, sizeof(e->reserved));
+	if (READ_ONCE(gc->vid.dead))
+		return -ENODEV;
 	if (e->pad)
 		return -EINVAL;
 	return gc573_hdmi_set_edid(gc, e);
@@ -1580,6 +1591,8 @@ static int gc573_log_status(struct file *file, void *priv)
 	struct gc573 *gc = video_drvdata(file);
 	struct gc573_video *v = &gc->vid;
 
+	if (READ_ONCE(v->dead))
+		return -ENODEV;
 	v4l2_print_dv_timings(gc->v4l2_dev.name, "timings: ", &v->timings,
 			      true);
 	v4l2_info(&gc->v4l2_dev, "format: %p4cc %ux%u, %u bytes\n",
@@ -2052,13 +2065,21 @@ void gc573_video_early_init(struct gc573 *gc)
 	gc573_fill_pix(gc, v->fmt, &v->pix);
 }
 
-/* the buffers go here: every engine stopped first (gc573_dma_stop()) */
+/*
+ * The buffers go here: every engine stopped first (gc573_dma_stop()).
+ * Then vid.lock once, so that an ioctl that got past the core's
+ * registered check before the unregister has ended before anything it
+ * may touch goes, whatever locking vb2_video_unregister_device() does on
+ * a given kernel.
+ */
 static void gc573_video_unregister(void *data)
 {
 	struct gc573 *gc = data;
 
 	gc573_dma_stop(gc);
 	vb2_video_unregister_device(&gc->vid.vdev);
+	mutex_lock(&gc->vid.lock);
+	mutex_unlock(&gc->vid.lock);
 }
 
 /* From the v4l2_device release: no file handle is left */
