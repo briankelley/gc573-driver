@@ -17,7 +17,13 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
   for 1 s), so the suite runs with the loopback source on or off. Live-input
   checks are in `live.sh` (below).
 - Leak, lockdep, KASAN and DMA-API gates need the debug kernel
-  (`6.8.12-gc573dbg`); on other kernels the kmemleak result is SKIP.
+  (`6.8.12-gc573dbg`); on other kernels the kmemleak result is SKIP. So do
+  the sanitizer and fault-injection gates (UBSAN, `18-fault-inject`: SKIP
+  without failslab and fail_page_alloc).
+- `GC573_KLOG_LINES` (default 1000): a case kernel log longer than this is
+  printed as its first and last 400 lines plus every line between that
+  matches `KMSG_BAD` or `KMSG_DRV_BAD` or says `LOST` (at most 200, then a
+  count). The check always reads the whole log.
 
 ## Case format
 - `cases/NN-name.sh`: bash, run as root in numeric order, sourcing `lib.sh`.
@@ -29,6 +35,13 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
   `KMSG_DRV_BAD` in `lib.sh`). A case that provokes such a message on
   purpose appends a regex for it to the file `$GC573_KMSG_ALLOW`; matching
   lines are logged as expected instead.
+- `run.sh` follows each case's kernel log while it runs
+  (`tests/kmsg-tail.py` into a file, exported to the case as
+  `GC573_KLOG_FILE`), so the log is complete even when the case writes more
+  than dmesg's ring buffer holds (`18-fault-inject`). A log that is not
+  complete fails the case (`kernel log INCOMPLETE`): the ring overran the
+  follower (`LOST` lines), or, without python3, dmesg no longer has the
+  case's mark.
 - `run.sh` pauses kmemleak's automatic scan, reports and clears old leaks,
   and checks once after the last case: any unreferenced object fails the
   `kmemleak` result. kmemleak only reports an object after two consecutive
@@ -60,6 +73,8 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `14-exp-slot-bits` | exp. | open question 8 result check via `exp_slot_mode` 1-5: ch0 CH_CTRL (run, slot-valid bits) gates all channels; ch1/ch2 CH_CTRL, even 0, has no visible effect |
 | `15-video-returned-buffers` | M2 fix | `gc573-cap -R`: `GC573_RB_QBUFS` (default 6000) QBUFs at random points of the frame (NV12, 3 buffers, each dequeued buffer pattern-filled and held 0-20 ms): no DMA into a dequeued buffer, no completion for an unarmed slot |
 | `16-probe-fail-hpd` | M3 review | a probe that fails after the HDMI chips came up (bpftrace overrides `gc573_video_init()` with -ENOMEM) leaves GPIO bit 2, the IT6805-side HPD, low (read through `resource0`); before that: bit 2 high while bound, low after a normal unbind. SKIP without bpftrace or function error injection |
+| `18-fault-inject` | security review | debug kernel (failslab, fail_page_alloc, the stacktrace filter; SKIP without them). `gc573-fault` fails the N-th fault point of its own task (fail-nth), N = 1, 2, ... until the operation has no N-th point; only points with module code in the top 32 frames count (the filter from `_etext` up), none in kmemleak's bookkeeping (a reject range). Load: `finit_module` with every point to `GC573_FI_LOAD_FULL` (60), then every `GC573_FI_LOAD_STRIDE`-th (10). Bind: every point of the probe (`GC573_FI_BIND_FULL`, `GC573_FI_BIND_STRIDE`). After each: bound and a capture and audio read pass, or nothing of the device left (video node, sound card, debugfs directory, I2C adapters, IRQ, MSI vectors, PCI enable count, bus mastering). The ioctls with the input off: open, REQBUFS, S_FMT, STREAMON, S_EDID, the PCM's open and hw_params; after each failure the step clean, a short stream, the driver's memory at 0. Random: `GC573_FI_CYCLES` (20) bind/capture/EDID/audio/unbind cycles with `GC573_FI_PROB` (5) % of the points under gc573's text failing in any task. Fails on a warning, oops, KASAN/UBSAN or lockdep report, a hung task (`hung_task_timeout_secs` 30; an operation over 120 s), a debugfs or sysfs name already present, a driver error that is not the injected -ENOMEM, an incomplete log. With a NUMA node the probe runs on a worker, out of fail-nth's reach: SKIP with a note |
+| `19-surprise-remove` | security review | `GC573_REMOVE_ITER` (3) rounds: sysfs `remove` while `gc573-cap` (NV12, pattern check) and `gc573-aud` stream and two holders keep the video node and the ALSA control node open. The removal returns within 20 s with the files still held (else the holders are killed and the case fails), the device directory is gone, both tools exit with an error within 10 s, the holders' QUERYCAP and CARD_INFO get ENODEV (or EIO) and they close; `rescan` binds it again within 10 s with its nodes, a capture and an audio read pass, the driver's memory is 0. `hung_task_timeout_secs` 30 |
 | `17-audio` | M4 | no input: ALSA hw params (S16_LE, 2 channels, 48 kHz, periods from 480 frames); 3 s capture at 48 kHz +- 0.1 % against the clock, no overrun, all samples zero, every period silent, AUDIO_DONE in order (debugfs `audio`); 20 stop/start cycles (INT bit 4 each), audio across 3 video stream start/stops and across 30 video stop/start cycles in every format (while audio runs the video stop leaves out reset domain 8, which holds the audio DMA: no restart, nothing filled, AUDIO_DONE in order, rate within 0.1 %), rmmod refused while the PCM is open, unbind while capturing (< 5 s, the application exits), capture after the rebind. SKIP without the alsa-lib headers |
 
 Experiment `exp-delivery.sh RATE [N] [TAG]` (host side like `live.sh`,
@@ -212,3 +227,21 @@ identifiers, no pictures of what the Roku shows.
 | `unload` | `rmmod` while streaming video and audio (refused, in use), unbind (< 5 s, both applications exit), rebind, lock |
 | `reload` | `GC573_RELOADS` (50) unload/load cycles with the source on: host output back and input locked each time |
 | `compliance` | `v4l2-compliance -s` with the live input |
+| `stress` | VM only, not in the default steps: `gc573-stress` in the VM for `GC573_STRESS_SECS` (600), workers in random order: video (3: S_FMT, REQBUFS, mmap, STREAMON, frames, then STREAMOFF, REQBUFS 0 or close while streaming; DV timings, events, information ioctls), audio (2: one substream, so EBUSY for one; hw_params, start, reads, overrun recovery, drop, close), control (the ALSA control node, the video node, the debugfs files), EDID (S_EDID every 2-10 s: the default, another serial, none for a few seconds) and the bind role (unbind and bind every 15-45 s; `GC573_STRESS_BIND=0`: off), while the host sets `DVI-D-0` at random every 3-15 s with no test player: 1080p60, 1080p59.94, 720p60, 720p59.94 (streams hold, the hold expires), off for 2-6 s. VM `hung_task_timeout_secs` 30. PASS: no unexpected errno and no hang in the workers (an operation over 10 s, 30 s for unbind/bind), no `KMSG_BAD` line and no lost record in the VM's whole kernel log over the step (`kmsg-tail.py`; the driver's error lines INFO), a verified capture at 1080p60 after, the driver's memory at 0 |
+
+## VM gates
+Before a release, and after any change to the driver's teardown, DMA or
+locking, with the card in `gc573-dev`:
+1. `v4l2-compliance`: `tools/vmbuild.sh test 11-v4l2-compliance`, and
+   `tests/live.sh compliance` with the live input.
+2. The debug kernel (`tools/devvm/debug-kernel.sh`; boot it once with
+   `ssh gc573-dev 'sudo grub-reboot "$(cat /etc/gc573-dbg-entry)" && sudo reboot'`):
+   the whole suite, `tools/vmbuild.sh test` (load/unload x50 in
+   `02-load-unload`; kmemleak, lockdep and DMA-API debug over all of it),
+   with `18-fault-inject` and `19-surprise-remove` in it.
+3. On the debug kernel, `tests/live.sh blip fpgawait fpgaheal avchange
+   obsevents stress` (the last for `GC573_STRESS_SECS`, 600 s).
+4. The same three new gates again with the debug kernel booted with
+   `threadirqs` (the hard IRQ handler in a thread too): `18-fault-inject`,
+   `19-surprise-remove` and `live.sh stress`. Boot: TODO (the command for a
+   one-time `threadirqs` boot of the debug kernel).
