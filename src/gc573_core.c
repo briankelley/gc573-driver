@@ -16,8 +16,9 @@
  * adapters, quiesce (interrupts off, reset domains), free IRQ, free
  * vectors, the DMA memory the card itself uses (audio buffers, the dummy
  * list), unmap BAR0, pcim's disable (the device stays enabled: the
- * driver's own enable), a dead card's INTx off, and last the v4l2_device
- * reference. No DMA memory goes back before the engines were stopped, and
+ * driver's own enable), a dead card's INTx off, the probe's runtime PM
+ * reference (kept for a dead card), and last the v4l2_device reference.
+ * No DMA memory goes back before the engines were stopped, and
  * bus mastering never goes off: a probe that finds it off knows another
  * owner turned it off, maybe under running DMA (spec/pci.md). After a
  * stop that cannot be confirmed none of the memory the card was given
@@ -698,10 +699,12 @@ MODULE_PARM_DESC(dead_cards,
  *   mastering on (pci_disable_device() turns it off only with the last
  *   enable gone). A dead card is probed only once a boot, so it does not
  *   add up.
- * - A runtime PM usage count that is never put: with no driver and
- *   power/control at auto, the PCI core would count the card suspended
- *   while it stays in D0 (pci_pm_runtime_suspend()), and the port above
- *   it could then suspend under its DMA.
+ * - A runtime PM usage count that is never put, with the card resumed if
+ *   it was counted suspended, and the probe's own reference kept too
+ *   (gc573_rpm_put()): with no driver and power/control at auto, the PCI
+ *   core would count the card suspended while it stays in D0
+ *   (pci_pm_runtime_suspend()), and the port above it could then suspend
+ *   under its DMA.
  * - No driver takes the card again: not this one, and not vfio-pci, whose
  *   release (a VM's end) turns bus mastering off (gc573_block_drivers(),
  *   compat.h: complete where the kernel has pci_dev.match_driver, up to
@@ -727,8 +730,11 @@ static void gc573_card_dead(struct gc573 *gc, const char *why, bool locked)
 	WRITE_ONCE(gc->hdmi.polling, false);
 	if (pci_enable_device(pdev))
 		dev_err(&pdev->dev, "cannot keep the device enabled: its teardown will turn bus mastering off\n");
-	/* never put: no runtime suspend, of it or of the port above it */
-	pm_runtime_get_noresume(&pdev->dev);
+	/*
+	 * Never put: no runtime suspend, of it or of the port above it. A
+	 * card already counted suspended is resumed (final review F4)
+	 */
+	pm_runtime_get_sync(&pdev->dev);
 	gc573_block_drivers(pdev, &gc573_pci_driver, locked);
 	gc573_dead_add(pdev);
 	/*
@@ -977,6 +983,19 @@ static void gc573_v4l2_put(void *data)
 }
 
 /*
+ * Devres, the teardown's last but one action: the runtime PM reference
+ * the probe took (gc573_probe()), put once every stop is done and
+ * confirmed. Never for a dead card (gc573_card_dead() takes one more).
+ */
+static void gc573_rpm_put(void *data)
+{
+	struct gc573 *gc = data;
+
+	if (!READ_ONCE(gc->dma_dead))
+		pm_runtime_put(&gc->pdev->dev);
+}
+
+/*
  * Devres, added before pcim_enable_device(), so after pcim's disable: a
  * dead card's INTx stays disabled. The MSI teardown enables it again
  * (pci_msi_shutdown()), and a wedged card that asserts it would hold a
@@ -1151,6 +1170,18 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return dev_err_probe(dev, ret, "cannot register v4l2 device\n");
 	}
 	ret = devm_add_action_or_reset(dev, gc573_v4l2_put, gc);
+	if (ret)
+		return ret;
+	/*
+	 * A runtime PM reference from here to the teardown's end (final
+	 * review F4): the PCI core drops its own before the devres teardown
+	 * (pci_device_remove(), and local_pci_probe() after a probe that
+	 * fails), and with power/control at auto the card, and the port above
+	 * it, could then runtime-suspend while the teardown stops its DMA. The
+	 * card is active here (local_pci_probe() resumed it).
+	 */
+	pm_runtime_get_noresume(dev);
+	ret = devm_add_action_or_reset(dev, gc573_rpm_put, gc);
 	if (ret)
 		return ret;
 
