@@ -155,7 +155,9 @@ static void gc573_aud_hw_start(struct gc573 *gc)
 static void gc573_aud_hw_stop(struct gc573 *gc)
 {
 	reinit_completion(&gc->aud.stopped);
-	gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
+	/* exp_stop_fault, tests only: a stop the DMA never sees */
+	if (!(READ_ONCE(gc573_exp_stop_fault) & GC573_STOP_FAULT_AUDIO))
+		gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
 }
 
 /* An audio stream is running: a video stop leaves its reset domain alone */
@@ -181,7 +183,7 @@ void gc573_audio_reset_done(struct gc573 *gc)
 	unsigned long flags;
 
 	spin_lock_irqsave(&a->lock, flags);
-	if (a->running &&
+	if (a->running && !a->dead &&
 	    !(gc573_rd(gc, GC573_DMA_RUN) & GC573_DMA_RUN_AUDIO)) {
 		a->st.restarts++;
 		a->next = GC573_AUDIO_DONE_BUF0;
@@ -526,29 +528,38 @@ void gc573_audio_early_init(struct gc573 *gc)
 }
 
 /*
- * Devres: the card goes before the DMA buffers it uses. snd_card_free()
- * disconnects the card, stopping a running stream (sync_stop waits for
- * the DMA), and returns once every file on it is closed.
+ * The two DMA buffers, allocated before the quiesce's devres action is
+ * added (gc573_probe()), so that they go only after it ran: whatever the
+ * audio DMA still does then, it does into memory the driver owns.
+ */
+int gc573_audio_alloc(struct gc573 *gc)
+{
+	struct gc573_audio *a = &gc->aud;
+
+	a->buf = dmam_alloc_coherent(&gc->pdev->dev, 2 * GC573_AUD_BUF_STRIDE,
+				     &a->buf_dma, GFP_KERNEL);
+	return a->buf ? 0 : -ENOMEM;
+}
+
+/*
+ * Devres, the first teardown step that frees DMA memory: every engine is
+ * stopped first (gc573_dma_stop()). snd_card_free() disconnects the card,
+ * stopping a running stream, and returns once every file on it is closed.
  */
 static void gc573_audio_free(void *data)
 {
 	struct gc573 *gc = data;
 
+	gc573_dma_stop(gc);
 	snd_card_free(gc->aud.card);
 }
 
 int gc573_audio_init(struct gc573 *gc)
 {
 	struct device *dev = &gc->pdev->dev;
-	struct gc573_audio *a = &gc->aud;
 	struct snd_card *card;
 	struct snd_pcm *pcm;
 	int ret;
-
-	a->buf = dmam_alloc_coherent(dev, 2 * GC573_AUD_BUF_STRIDE, &a->buf_dma,
-				     GFP_KERNEL);
-	if (!a->buf)
-		return -ENOMEM;
 
 	ret = snd_card_new(dev, SNDRV_DEFAULT_IDX1, "GC573", THIS_MODULE, 0,
 			   &card);
@@ -570,7 +581,7 @@ int gc573_audio_init(struct gc573 *gc)
 	ret = snd_card_register(card);
 	if (ret)
 		goto err;
-	a->card = card;
+	gc->aud.card = card;
 	dev_info(dev, "audio: ALSA card %d (%s)\n", card->number, card->id);
 	return devm_add_action_or_reset(dev, gc573_audio_free, gc);
 

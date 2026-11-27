@@ -120,6 +120,9 @@ int gc573_i2c1_transfer(struct gc573 *gc, u8 addr8, u8 reg, u8 *buf, u16 len,
 
 	if (!len || len > (rd ? GC573_I2C1_MAX_READ : GC573_I2C1_MAX_WRITE))
 		return -EINVAL;
+	/* no MSI without bus mastering: INT bit 11 would never come */
+	if (READ_ONCE(gc->dma_dead))
+		return -ENODEV;
 
 	mutex_lock(&gc->i2c_lock);
 	for (tries = 1; tries <= GC573_I2C1_TRIES; tries++) {

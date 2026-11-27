@@ -373,6 +373,8 @@ struct gc573 {
 	void __iomem *mmio;
 	int irq;
 	u32 fw_version;
+	bool dma_stopped;		/* gc573_dma_stop() ran: teardown */
+	bool dma_dead;			/* a stop failed: bus mastering is off */
 	struct v4l2_device v4l2_dev;	/* refcount owner of this struct */
 	struct dentry *debugfs;
 
@@ -400,8 +402,19 @@ struct gc573 {
 	struct gc573_audio aud;
 };
 
+/*
+ * exp_stop_fault (gc573_core.c), tests only: stops that fail. Each bit
+ * removes one of the stop's safety steps.
+ */
+#define GC573_STOP_FAULT_TERM		BIT(0)	/* video: no INT bit 0 wait */
+#define GC573_STOP_FAULT_RESET		BIT(1)	/* video, teardown: no reset */
+#define GC573_STOP_FAULT_AUDIO		BIT(2)	/* audio: DMA_RUN left set */
+extern unsigned int gc573_exp_stop_fault;
+
 int gc573_reset_domain_mask(struct gc573 *gc, u32 mask);
 int gc573_reset_domains(struct gc573 *gc);
+void gc573_dma_stop(struct gc573 *gc);
+void gc573_dma_dead(struct gc573 *gc, const char *why);
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val);
 void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val);
 
@@ -440,7 +453,7 @@ extern struct gc573_mem_live gc573_mem_live;
 
 void gc573_video_early_init(struct gc573 *gc);
 int gc573_video_init(struct gc573 *gc);
-void gc573_video_hw_stop(struct gc573 *gc);
+int gc573_video_hw_stop(struct gc573 *gc);
 void gc573_video_disarm(struct gc573 *gc);
 void gc573_video_irq_done(struct gc573 *gc);
 void gc573_video_irq_term(struct gc573 *gc);
@@ -449,6 +462,7 @@ void gc573_video_input_changed(struct gc573 *gc);
 void gc573_video_release(struct gc573 *gc);
 
 void gc573_audio_early_init(struct gc573 *gc);
+int gc573_audio_alloc(struct gc573 *gc);
 int gc573_audio_init(struct gc573 *gc);
 void gc573_audio_quiesce(struct gc573 *gc);
 bool gc573_audio_running(struct gc573 *gc);

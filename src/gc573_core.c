@@ -9,12 +9,15 @@
  * and it stops the engines before it turns bus mastering on.
  *
  * Teardown is entirely devres-managed. Release order is the reverse of
- * probe: debugfs, HDMI polling (stopped), the ALSA card (stops a running
- * stream; waits until its files are closed), the audio DMA buffers, the
- * video device (stops a running stream), the HDMI workqueue, source HPD
- * low, I2C adapters, quiesce (video and audio stopped, interrupts off,
- * reset domains), free IRQ, free vectors, unmap BAR0, disable the device,
- * and last the v4l2_device reference.
+ * probe: debugfs, HDMI polling (stopped), every DMA engine stopped and the
+ * stop checked (gc573_dma_stop(), at the head of the ALSA card's release),
+ * the ALSA card (waits until its files are closed), the video device and
+ * its buffers, the HDMI workqueue, source HPD low, I2C adapters, quiesce
+ * (interrupts off, reset domains), free IRQ, free vectors, the DMA memory
+ * the card itself uses (audio buffers), unmap BAR0, disable the device,
+ * and last the v4l2_device reference. No DMA memory goes back before the
+ * engines were stopped: a stop that cannot be confirmed turns bus
+ * mastering off first (gc573_dma_dead()).
  * struct gc573 is freed when the last reference goes, which can be after
  * remove while a file handle is still open.
  */
@@ -55,6 +58,12 @@
  * the first bus-1 transfer (RD: 52.3-52.5 ms; the minimum is unverified)
  */
 #define GC573_CHIP_RESET_SETTLE_MS	50
+
+/* Tests only (tests/cases/22-stop-fault.sh): see GC573_STOP_FAULT_* */
+unsigned int gc573_exp_stop_fault;
+module_param_named(exp_stop_fault, gc573_exp_stop_fault, uint, 0644);
+MODULE_PARM_DESC(exp_stop_fault,
+		 "Test only: removes stop safety steps; read at each stop. Bit 0: a video stop does not wait for INT bit 0 (as if it never came), bit 1: video and teardown stops reset no domain (as if the reset failed), bit 2: an audio stop leaves DMA_RUN set (0: off)");
 
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val)
 {
@@ -288,14 +297,51 @@ static int gc573_hw_init(struct gc573 *gc)
 }
 
 /*
- * spec/init.md "Remove / quiesce". Runs from devres on remove and on probe
- * failure, after the child devices are gone and before the IRQ is freed.
+ * A DMA stop could not be confirmed (no INT bit 0 and no domain reset, or
+ * an engine still on after the teardown's stop): bus mastering off, so
+ * the device can write nothing the driver frees next, and no stream ever
+ * starts again. Its MSI needs bus mastering too, so bus 1 is off as well
+ * and the HDMI poll stops. The card stays off until it is bound again
+ * (probe turns bus mastering back on).
  */
-static void gc573_quiesce(void *data)
+void gc573_dma_dead(struct gc573 *gc, const char *why)
 {
-	struct gc573 *gc = data;
+	struct gc573_audio *a = &gc->aud;
+	unsigned long flags;
 
-	/* 1: stop video and audio, and never start them again */
+	if (READ_ONCE(gc->dma_dead))
+		return;
+	pci_clear_master(gc->pdev);
+	WRITE_ONCE(gc->dma_dead, true);
+	WRITE_ONCE(gc->vid.dead, true);
+	spin_lock_irqsave(&a->lock, flags);
+	a->dead = true;
+	a->running = false;
+	spin_unlock_irqrestore(&a->lock, flags);
+	WRITE_ONCE(gc->hdmi.polling, false);
+	dev_err(&gc->pdev->dev,
+		"%s failed: bus mastering off, so the DMA cannot write what the driver frees; the card is unusable until it is bound again\n",
+		why);
+}
+
+/*
+ * Before any of the driver's DMA memory goes back (remove, a probe that
+ * fails once the video device or the ALSA card exists): every engine
+ * stopped for good, the domains reset (spec/init.md "Remove / quiesce"
+ * steps 1 and 3), and the stop checked by what DMA_RUN and VIP_CTRL read
+ * back. Interrupts stay on: the HDMI teardown still uses bus 1. Runs once,
+ * from the first teardown action that frees DMA memory.
+ */
+void gc573_dma_stop(struct gc573 *gc)
+{
+	unsigned int fault = READ_ONCE(gc573_exp_stop_fault);
+	struct device *dev = &gc->pdev->dev;
+	u32 run, vip;
+
+	if (gc->dma_stopped)
+		return;
+	gc->dma_stopped = true;
+
 	mutex_lock(&gc->vid.lock);
 	gc->vid.dead = true;
 	if (gc573_rd(gc, GC573_VIP_CTRL) & GC573_VIP_CTRL_OUT_EN)
@@ -304,6 +350,28 @@ static void gc573_quiesce(void *data)
 	/* a held stream's deadline: nothing queues it once dead is set */
 	cancel_delayed_work_sync(&gc->vid.hold_work);
 	gc573_audio_quiesce(gc);
+
+	if (!(fault & GC573_STOP_FAULT_RESET))
+		gc573_reset_domains(gc);
+	run = gc573_rd(gc, GC573_DMA_RUN);
+	vip = gc573_rd(gc, GC573_VIP_CTRL);
+	if ((run & GC573_DMA_RUN_AUDIO) || (vip & GC573_VIP_CTRL_OUT_EN)) {
+		dev_err(dev, "teardown stop failed: DMA still on, DMA_RUN %#010x VIP_CTRL %#010x\n",
+			run, vip);
+		gc573_dma_dead(gc, "teardown stop");
+	}
+}
+
+/*
+ * spec/init.md "Remove / quiesce". Runs from devres on remove and on probe
+ * failure, after the child devices are gone and before the IRQ is freed.
+ */
+static void gc573_quiesce(void *data)
+{
+	struct gc573 *gc = data;
+
+	/* 1: stop video and audio, and never start them again */
+	gc573_dma_stop(gc);
 
 	/* 2: interrupts off, status cleared */
 	gc573_irq_hw_disable(gc);
@@ -315,7 +383,7 @@ static void gc573_quiesce(void *data)
 		gc573_rd(gc, GC573_INT_ENABLE), gc573_rd(gc, GC573_INT_STATUS),
 		gc573_rd(gc, GC573_RESET));
 
-	/* 4: IRQ, then DMA memory, are released by devres after this */
+	/* 4: IRQ, then the card's own DMA memory, go after this (devres) */
 }
 
 /*
@@ -469,6 +537,11 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		return dev_err_probe(dev, ret, "no 32-bit DMA\n");
 	/* one descriptor per segment: tell the DMA layer how long they get */
 	dma_set_max_seg_size(dev, GC573_DMA_SEG_MAX);
+
+	/* before the quiesce's action: devres frees this after it ran */
+	ret = gc573_audio_alloc(gc);
+	if (ret)
+		return ret;
 
 	/* no engine a previous owner left armed may write once this is on */
 	ret = gc573_hw_stop_engines(gc);

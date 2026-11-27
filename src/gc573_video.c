@@ -817,14 +817,19 @@ static void gc573_vid_return_all(struct gc573 *gc, enum vb2_buffer_state st)
  * video path reads back (open question 13, driver M5: domain 0 resets the
  * video DMA, COLOR_CTRL, CLIP and the CSC banks, the same as all three):
  * while an audio stream runs it is left out, and audio carries on through
- * the stop. vid.lock held. Safe to call when not running.
+ * the stop. Either the terminate or the reset of domain 0 stops the video
+ * DMA; with neither, the buffers about to go back may still be written,
+ * so bus mastering goes off first (gc573_dma_dead()) and -EIO is
+ * returned. vid.lock held. Safe to call when not running.
  */
-void gc573_video_hw_stop(struct gc573 *gc)
+int gc573_video_hw_stop(struct gc573 *gc)
 {
 	struct gc573_video *v = &gc->vid;
 	struct device *dev = &gc->pdev->dev;
+	unsigned int fault = READ_ONCE(gc573_exp_stop_fault);
 	unsigned long t0 = jiffies;
 	int domains = READ_ONCE(exp_stop_domains);
+	bool term = true, reset = false;
 	u32 vip;
 
 	spin_lock(&v->slock);
@@ -835,9 +840,11 @@ void gc573_video_hw_stop(struct gc573 *gc)
 	if (vip & GC573_VIP_CTRL_OUT_EN) {
 		reinit_completion(&v->term);
 		gc573_wr(gc, GC573_VIP_CTRL, vip & ~GC573_VIP_CTRL_OUT_EN);
-		if (!wait_for_completion_timeout(&v->term,
+		if ((fault & GC573_STOP_FAULT_TERM) ||
+		    !wait_for_completion_timeout(&v->term,
 						 msecs_to_jiffies(GC573_VID_TERM_MS))) {
 			v->st.term_missing++;
+			term = false;
 			dev_warn(dev, "video stop: timeout waiting for INT bit 0\n");
 		}
 	}
@@ -846,11 +853,18 @@ void gc573_video_hw_stop(struct gc573 *gc)
 		if (gc573_audio_running(gc))
 			domains &= ~GC573_RESET_DOMAIN_8;
 	}
-	gc573_reset_domain_mask(gc, domains);
+	if (!(fault & GC573_STOP_FAULT_RESET))
+		reset = !gc573_reset_domain_mask(gc, domains) &&
+			(domains & GC573_RESET_DOMAIN_0);
+	if (!term && !reset) {
+		gc573_dma_dead(gc, "video stop (no INT bit 0, no reset of domain 0)");
+		return -EIO;
+	}
 	/* a reset of domain 8 stops the audio DMA: start it again */
 	gc573_audio_reset_done(gc);
 	dev_dbg(dev, "video stopped in %u ms\n",
 		jiffies_to_msecs(jiffies - t0));
+	return 0;
 }
 
 /* ---- IRQ thread ---- */
@@ -1626,11 +1640,11 @@ static int gc573_vid_debugfs_show(struct seq_file *m, void *unused)
 	struct gc573_vstats *st = &v->st;
 	unsigned int i, n;
 
-	seq_printf(m, "core: INT_STATUS %#010x INT_ENABLE %#010x RESET %#010x TLP_ALIGN %#010x INT seen %#010x\n",
+	seq_printf(m, "core: INT_STATUS %#010x INT_ENABLE %#010x RESET %#010x TLP_ALIGN %#010x INT seen %#010x dma_dead %d\n",
 		   gc573_rd(gc, GC573_INT_STATUS),
 		   gc573_rd(gc, GC573_INT_ENABLE), gc573_rd(gc, GC573_RESET),
 		   gc573_rd(gc, GC573_TLP_ALIGN),
-		   (u32)atomic_read(&gc->irq_seen));
+		   (u32)atomic_read(&gc->irq_seen), READ_ONCE(gc->dma_dead));
 	seq_printf(m, "input: 1004 %#010x 1008 %#010x 100c %#010x 1010 %#010x\n",
 		   gc573_rd(gc, GC573_IN_STATUS), gc573_rd(gc, GC573_IN_WIDTH),
 		   gc573_rd(gc, GC573_IN_HEIGHT),
@@ -1822,7 +1836,10 @@ static void gc573_vid_follow_input(struct gc573 *gc)
 		/* held already: the hold counts from its start */
 		if (v->held)
 			return;
-		gc573_video_hw_stop(gc);
+		if (gc573_video_hw_stop(gc)) {
+			gc573_vid_fail(gc);
+			return;
+		}
 		spin_lock(&v->slock);
 		gc573_vid_unarm(v);
 		spin_unlock(&v->slock);
@@ -1839,7 +1856,10 @@ static void gc573_vid_follow_input(struct gc573 *gc)
 	/* free-running already, and still no input */
 	if (!v->in.locked && !v->live && (v->running || v->start_pending))
 		return;
-	gc573_video_hw_stop(gc);
+	if (gc573_video_hw_stop(gc)) {
+		gc573_vid_fail(gc);
+		return;
+	}
 	spin_lock(&v->slock);
 	gc573_vid_unarm(v);
 	v->start_pending = list_empty(&v->queued);
@@ -1905,10 +1925,12 @@ void gc573_video_early_init(struct gc573 *gc)
 	gc573_fill_pix(gc, v->fmt, &v->pix);
 }
 
+/* the buffers go here: every engine stopped first (gc573_dma_stop()) */
 static void gc573_video_unregister(void *data)
 {
 	struct gc573 *gc = data;
 
+	gc573_dma_stop(gc);
 	vb2_video_unregister_device(&gc->vid.vdev);
 }
 
