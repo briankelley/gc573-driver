@@ -95,9 +95,14 @@ gc573_pcim_iomap_region(struct pci_dev *pdev, int bar, const char *name)
  * v6.16 and later, and RHEL 10 (with the change backported): there is
  * no such API. A driver_override naming no driver refuses a plain bind
  * and new_id, but driverctl and libvirt write their own over it (README,
- * Known limitations). From v7.1 PCI keeps the override in struct device
- * (cb3d1049f4ea): device_set_driver_override() takes a spinlock of its
- * own. Before that, driver_set_override() takes the device lock, which
+ * Known limitations). v7.0 added the override in struct device
+ * (cb3d1049f4ea), device_set_driver_override(), under a spinlock of its
+ * own, and a bus_type flag for the buses that match with it; PCI moved
+ * to it in v7.1, and Ubuntu's 7.0 has that backported (no
+ * pci_dev.driver_override), so from 7.0 the generic one, where the bus
+ * says it uses it; on vanilla 7.0 PCI does not, and other drivers can
+ * take the card (logged). Before 7.0, driver_set_override() takes the
+ * device lock, which
  * probe, remove and shutdown hold where a stop fails: from a work item,
  * which waits for that lock, so a bind queued behind the same remove can
  * come first. gc573_card_dead() keeps the module for good, and with it
@@ -111,11 +116,16 @@ static inline void gc573_block_drivers(struct pci_dev *pdev)
 {
 	pdev->match_driver = false;
 }
-#elif KERNEL_VERSION(7, 1, 0) <= LINUX_VERSION_CODE
+#elif KERNEL_VERSION(7, 0, 0) <= LINUX_VERSION_CODE
 static inline void gc573_block_drivers(struct pci_dev *pdev)
 {
-	int ret = device_set_driver_override(&pdev->dev, GC573_NO_DRIVER);
+	int ret;
 
+	if (!pdev->dev.bus->driver_override) {
+		dev_err(&pdev->dev, "this kernel's PCI bus keeps no generic driver_override: other drivers can take the card\n");
+		return;
+	}
+	ret = device_set_driver_override(&pdev->dev, GC573_NO_DRIVER);
 	if (ret)
 		dev_err(&pdev->dev, "cannot set driver_override: %d\n", ret);
 }
