@@ -877,7 +877,8 @@ static void gc573_clear_master(void *data)
  * that while its DMA may run. So no sleep while a stream is on, and from
  * the notice of one to its end no stream starts. An idle card sleeps as
  * the core has it (and needs a rebind or a reboot after a sleep that cut
- * its power). Cards whose stop failed: gc573_pm_dead_notify().
+ * its power). Cards whose stop failed: gc573_pm_dead_notify(), and here
+ * too, for one whose stop fails while that notifier runs.
  */
 static int gc573_pm_notify(struct notifier_block *nb, unsigned long action,
 			   void *data)
@@ -902,7 +903,13 @@ static int gc573_pm_notify(struct notifier_block *nb, unsigned long action,
 	}
 	mutex_lock(&gc->vid.lock);
 	spin_lock_irq(&gc->aud.lock);
-	if (sleeping && vb2_is_streaming(&gc->vid.queue))
+	/*
+	 * A stop that failed under vid.lock while gc573_pm_dead_notify(),
+	 * which runs first, found no card dead yet: the stream is off by now
+	 */
+	if (sleeping && READ_ONCE(gc->dma_dead))
+		busy = "the card did not confirm its DMA stopped";
+	else if (sleeping && vb2_is_streaming(&gc->vid.queue))
 		busy = "a video stream is on";
 	else if (sleeping && gc->aud.running)
 		busy = "an audio stream is on";
