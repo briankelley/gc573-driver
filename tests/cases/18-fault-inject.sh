@@ -61,6 +61,17 @@
 #   __request_region() under the PCI core's region request: a region
 #   request whose allocation fails gives -EBUSY, the errno of a region in
 #   use (__pci_request_region(), drivers/pci/pci.c in 6.8);
+# - the probe's "error -E...: cannot allocate the interrupt vector" after
+#   a failure under pci_alloc_irq_vectors(): for an allocation that fails
+#   the MSI core gives -ENODEV (pci_setup_msi_device_domain(),
+#   drivers/pci/msi/msi.c) or -ENOSPC (msi_handle_pci_fail(),
+#   kernel/irq/msi.c in 6.8). The probe takes MSI only and does not try
+#   INTx (open question 43);
+# - the probe's "error -EINVAL: cannot register sound card" after a
+#   failure in dev_set_name() under snd_ctl_create() or
+#   snd_pcm_new_stream(): ALSA ignores that failure (sound/core/control.c,
+#   pcm.c in 6.8), and its nameless device fails device_add() with
+#   -EINVAL when the card registers;
 # - for run.sh's kmemleak check, after a failure in device_register()
 #   inside __video_register_device(): the 8-byte name of the video device
 #   (dev_set_name()) that task allocated, which videodev leaks there
@@ -393,6 +404,20 @@ explained() {
 		allow_line "$1" "$line" "-EBUSY from BAR0's region request after a failure in __request_region()"
 		k=$((k + 1))
 	done < <(grep -E "\] $GC573_MOD [^ ]+: error -EBUSY: cannot map BAR0$" <<< "$bad")
+	n=$(grep -cE ' pci_alloc_irq_vectors( |$)' <<< "$stacks")
+	k=0
+	while read -r line; do
+		[ "$k" -lt "$n" ] || break
+		allow_line "$1" "$line" "the MSI core's errno for an allocation that failed under pci_alloc_irq_vectors()"
+		k=$((k + 1))
+	done < <(grep -E "\] $GC573_MOD [^ ]+: error -E[A-Z0-9]+: cannot allocate the interrupt vector$" <<< "$bad")
+	n=$(grep -cE ' dev_set_name (snd_ctl_create|snd_pcm_new_stream)( |$)' <<< "$stacks")
+	k=0
+	while read -r line; do
+		[ "$k" -lt "$n" ] || break
+		allow_line "$1" "$line" "-EINVAL from the card's registration after a failure in dev_set_name() that ALSA ignored"
+		k=$((k + 1))
+	done < <(grep -E "\] $GC573_MOD [^ ]+: error -EINVAL: cannot register sound card$" <<< "$bad")
 }
 # The kernel's lines of step $1 (klog_bad), each a problem; at the step's
 # end, after its unload or unbind, so the lines that undoing it brings are
