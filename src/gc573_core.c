@@ -35,6 +35,7 @@
 #include <linux/mutex.h>
 #include <linux/notifier.h>
 #include <linux/pci.h>
+#include <linux/pm_runtime.h>
 #include <linux/slab.h>
 #include <linux/suspend.h>
 
@@ -625,6 +626,10 @@ MODULE_PARM_DESC(dead_cards,
  * - An enable that is never undone: pcim's disable at the teardown then
  *   leaves the device enabled and bus mastering on (pci_disable_device()
  *   turns it off only with the last enable gone).
+ * - A runtime PM usage count that is never put: with no driver and
+ *   power/control at auto, the PCI core would count the card suspended
+ *   while it stays in D0 (pci_pm_runtime_suspend()), and the port above
+ *   it could then suspend under its DMA.
  * - No driver takes the card again: not this one, and not vfio-pci, whose
  *   release (a VM's end) turns bus mastering off (gc573_block_drivers(),
  *   compat.h: complete up to v6.15, weaker from v6.16 and on RHEL 10).
@@ -646,6 +651,8 @@ static void gc573_card_dead(struct gc573 *gc, const char *why)
 	WRITE_ONCE(gc->hdmi.polling, false);
 	if (pci_enable_device(pdev))
 		dev_err(&pdev->dev, "cannot keep the device enabled: its teardown will turn bus mastering off\n");
+	/* never put: no runtime suspend, of it or of the port above it */
+	pm_runtime_get_noresume(&pdev->dev);
 	gc573_block_drivers(pdev);
 	gc573_dead_add(pdev);
 	__module_get(THIS_MODULE);
