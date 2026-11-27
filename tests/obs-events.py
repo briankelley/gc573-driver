@@ -701,8 +701,11 @@ class BridgeProc:
                 self.p.wait(5)
             except subprocess.TimeoutExpired:
                 self.p.kill()
+        # the ssh client's end leaves the remote bridge running: it is
+        # BRIDGE_VM there, the only command (bash execs pkill, so no shell
+        # of ours matches)
         if not LOCAL:
-            vm('pkill -f tests/obsbridge.py')
+            vm('pkill -f ' + shlex.quote(BRIDGE_VM))
 
 
 def bridge_summary(bridge, windows, out=print):
