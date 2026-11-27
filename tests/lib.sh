@@ -162,6 +162,18 @@ gc573_pcm() {
 	return 1
 }
 
+# The same PCM by card index (hw:N,0): alsa-lib opens that card's control
+# node alone (for a card id it opens every card's before it to compare)
+gc573_pcm_hw() {
+	local c
+	for c in /sys/bus/pci/devices/"$GC573_BDF"/sound/card*; do
+		[ -e "$c/number" ] || continue
+		echo "hw:$(cat "$c/number"),0"
+		return 0
+	done
+	return 1
+}
+
 # One counter from the driver's debugfs "audio" file, e.g. gc573_aud_stat periods
 gc573_aud_stat() {
 	grep -o "\b$1 [0-9]*" "/sys/kernel/debug/$GC573_MOD-$GC573_BDF/audio" |

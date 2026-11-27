@@ -6,13 +6,17 @@
  * /proc/self/task/<tid>/fail-nth makes the N-th fault-injection point this
  * thread passes fail: slab and page allocations here, as the case sets up
  * /sys/kernel/debug/failslab and fail_page_alloc (with a stacktrace filter
- * only points with a gc573 function on the stack count). Reading it back
- * gives 0 once the fault was injected.
+ * only points with module code on the stack count). Reading it back gives
+ * 0 once the fault was injected. The count runs across system calls: an
+ * operation of several (snd_pcm_open) is swept as one.
  *
  * gc573-fault load -n N KO [PARAMS]   finit_module(KO, PARAMS) with the
  *                                     N-th point failed
  * gc573-fault bind -n N BDF           BDF written to the gc573 driver's
  *                                     bind file with the N-th point failed
+ * gc573-fault edid-save -d VDEV FILE  the EDID (G_EDID) into FILE, raw
+ * gc573-fault edid-set -d VDEV FILE   S_EDID from FILE (raw); FILE "none":
+ *                                     0 blocks (HPD low, the input off)
  * gc573-fault sweep OP -d VDEV [-D PCM] [-e EDID] [-m DEBUGFS]
  *                  [-F FULL] [-S STRIDE] [-v]
  *     OP: vopen, reqbufs, s_fmt, streamon, s_edid, pcm_open, hw_params.
@@ -253,6 +257,16 @@ static int vstreamoff(char *why)
 	return 0;
 }
 
+/* STREAMOFF after a failure already in why: its own error appended */
+static void vstreamoff_after(char *why)
+{
+	char e[64];
+	size_t l = strlen(why);
+
+	if (vstreamoff(e) && l + 2 < WHY)
+		snprintf(why + l, WHY - l, "; %s", e);
+}
+
 /* nf frames on a stream already on: DQBUF, then QBUF again */
 static int vframes(unsigned int nf, char *why)
 {
@@ -290,11 +304,11 @@ static int vstream(unsigned int nf, char *why)
 		return -1;
 	if (xioctl(vfd, VIDIOC_STREAMON, &t)) {
 		snprintf(why, WHY, "STREAMON: %s", ename(errno));
-		vstreamoff(why + strlen(why) / 2);
+		vstreamoff_after(why);
 		return -1;
 	}
 	if (vframes(nf, why)) {
-		vstreamoff(why + strlen(why) / 2);
+		vstreamoff_after(why);
 		return -1;
 	}
 	return vstreamoff(why);
@@ -408,6 +422,61 @@ static int edid_check(char *why)
 	return 0;
 }
 
+/* edid-save: the EDID the driver has now, raw */
+static int cmd_edid_save(const char *file)
+{
+	struct v4l2_edid e = { .blocks = 2, .edid = edid };
+	FILE *f;
+
+	vfd = open(vdev, O_RDWR | O_NONBLOCK | O_CLOEXEC);
+	if (vfd < 0)
+		die(vdev);
+	if (xioctl(vfd, VIDIOC_G_EDID, &e))
+		die("G_EDID");
+	if (!e.blocks) {
+		fprintf(stderr, "gc573-fault: %s has no EDID\n", vdev);
+		return 2;
+	}
+	f = fopen(file, "wb");
+	if (!f || fwrite(edid, 128, e.blocks, f) != e.blocks || fclose(f))
+		die(file);
+	printf("FI edid-save blocks=%u\n", e.blocks);
+	close(vfd);
+	return 0;
+}
+
+/* edid-set: S_EDID from a raw file, or 0 blocks */
+static int cmd_edid_set(const char *file)
+{
+	struct v4l2_edid e = { .edid = edid };
+	size_t len = 0;
+	FILE *f;
+
+	if (strcmp(file, "none")) {
+		f = fopen(file, "rb");
+		if (!f)
+			die(file);
+		len = fread(edid, 1, sizeof(edid), f);
+		fclose(f);
+		if (len < 128 || len % 128) {
+			fprintf(stderr, "gc573-fault: %s: %zu bytes, not 128-byte blocks\n",
+				file, len);
+			return 2;
+		}
+	}
+	e.blocks = len / 128;
+	vfd = open(vdev, O_RDWR | O_NONBLOCK | O_CLOEXEC);
+	if (vfd < 0)
+		die(vdev);
+	if (xioctl(vfd, VIDIOC_S_EDID, &e)) {
+		printf("FI edid-set blocks=%u errno=%s\n", e.blocks, ename(errno));
+		return 1;
+	}
+	printf("FI edid-set blocks=%u\n", e.blocks);
+	close(vfd);
+	return 0;
+}
+
 /* ---- audio ---- */
 
 #define PERIOD	480
@@ -517,6 +586,9 @@ static int step(enum op op, unsigned int n, int *inj, int *err, char *why)
 	snd_pcm_t *p;
 	int r, e = 0, fd, c, type = CAP;
 
+	/* a setup failure before the fault: not injected, the step failed */
+	*inj = 0;
+	*err = 0;
 	why[0] = 0;
 	switch (op) {
 	case VOPEN:
@@ -628,8 +700,10 @@ static int step(enum op op, unsigned int n, int *inj, int *err, char *why)
 		*err = e;
 		if (!e) {
 			r = vframes(5, why);
-			if (vstreamoff(r ? why + strlen(why) : why) && !r)
-				r = -1;
+			if (r)
+				vstreamoff_after(why);
+			else
+				r = vstreamoff(why);
 		} else {
 			/* STREAMOFF gives every buffer back; then a clean start */
 			r = vstreamoff(why);
@@ -800,8 +874,12 @@ static int cmd_sweep(enum op op, unsigned int full, unsigned int stride)
 			break;
 		}
 	}
-	printf("FI %s points=%u injected=%u op_failed=%u errnos=", opnames[op],
-	       points, injected, opfail);
+	if (n <= full + 1)
+		printf("FI %s points=%u", opnames[op], points);
+	else
+		printf("FI %s points=%u..%u", opnames[op], points - stride + 1,
+		       points);
+	printf(" injected=%u op_failed=%u errnos=", injected, opfail);
 	for (k = 0, r = 0; k < 160; k++)
 		if (ecount[k])
 			printf("%s%s:%u", r++ ? "," : "", k ? ename(k) : "other",
@@ -818,6 +896,8 @@ static void usage(void)
 	fprintf(stderr,
 		"usage: gc573-fault load -n N KO [PARAMS]\n"
 		"       gc573-fault bind -n N BDF\n"
+		"       gc573-fault edid-save -d VDEV FILE\n"
+		"       gc573-fault edid-set -d VDEV FILE|none\n"
 		"       gc573-fault sweep OP -d VDEV [-D PCM] [-e EDID] [-m DEBUGFS]\n"
 		"                   [-F FULL] [-S STRIDE] [-v]\n"
 		"       OP: vopen reqbufs s_fmt streamon s_edid pcm_open hw_params\n");
@@ -865,6 +945,12 @@ int main(int argc, char **argv)
 		if (!n || optind >= argc)
 			usage();
 		return cmd_bind(n, argv[optind]);
+	}
+	if (!strcmp(cmd, "edid-save") || !strcmp(cmd, "edid-set")) {
+		if (!vdev || optind >= argc)
+			usage();
+		return !strcmp(cmd, "edid-save") ? cmd_edid_save(argv[optind]) :
+							 cmd_edid_set(argv[optind]);
 	}
 	if (strcmp(cmd, "sweep") || !stride)
 		usage();
