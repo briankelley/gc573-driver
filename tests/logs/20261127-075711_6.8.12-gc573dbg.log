@@ -1,0 +1,1263 @@
+# GC573 regression suite
+date:    2026-11-27 07:57:12 UTC
+host:    gc573-dev
+kernel:  6.8.12-gc573dbg #5 SMP PREEMPT_DYNAMIC Thu Nov 26 19:04:38 MST 2026
+debug:   KASAN=y PROVE_LOCKING=y DEBUG_KMEMLEAK=y DMA_API_DEBUG=y DEBUG_ATOMIC_SLEEP=y
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 1C7FDFCC9BF43040EFA3201
+rev:     5e37773b6579
+input:   none
+checks:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+
+## 18-fault-inject
+  ACPICA's text rejected: 0xffffffff85e93e40-0xffffffff85f61fc0, 1684 symbols (__pfx_acpi_ds_execute_arguments to acpi_rs_dump_irq_list; then __pfx_acpi_ac_get_state)
+  device 0000:07:00.0 numa_node -1
+  PROBLEM: load n=1: left behind after rmmod: bus mastering on (COMMAND 7);
+    load n=31: allowed, -EBUSY from BAR0's region request after a failure in __request_region(): gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+    load: 50 faults so far (n=50)
+  PROBLEM: load n=70: kernel: [  283.151888] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  283.152291] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  283.153005] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  283.153317] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: load n=80: kernel: [  284.396033] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  284.396515] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  284.396863] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+    load: 100 faults so far (n=460)
+    load n=630: a failure in device_register() under __video_register_device() (pid 9600): its leak of the device's name is allowed for that task
+    load: 150 faults so far (n=960)
+  load: 155 faults (n=1..1019, every point to 60, then every 10-th): module loaded 150 times (bound 111), errnos 0:150,EINVAL:1,ENOMEM:4; 349 s
+    bind n=11: allowed, -EBUSY from BAR0's region request after a failure in __request_region(): gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+  PROBLEM: bind n=12: kernel: [  538.783110] irq 22: nobody cared (try booting with the "irqpoll" option)|[  538.784157] Disabling IRQ #22|
+  PROBLEM: bind n=42: kernel: [  600.239442] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  600.241417] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=44: kernel: [  604.040581] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  604.041293] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=46: kernel: [  607.735858] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  607.736359] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  607.736686] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=48: kernel: [  611.380891] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  611.382831] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  611.383169] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=50: kernel: [  614.940813] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  614.941275] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  614.941625] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+    bind: 50 faults so far (n=50)
+  PROBLEM: bind n=52: kernel: [  618.527278] gc573 0000:07:00.0: HDMI: it_init row 6 failed: -5|[  618.527592] gc573 0000:07:00.0: error -EIO: IT6805 init failed|[  618.528919] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=54: kernel: [  622.265927] gc573 0000:07:00.0: HDMI: it_init row 11 failed: -5|[  622.266260] gc573 0000:07:00.0: error -EIO: IT6805 init failed|[  622.266862] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  622.267194] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=56: kernel: [  625.908042] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  625.909143] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  625.909479] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=58: kernel: [  629.604627] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  629.605070] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  629.605474] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=60: kernel: [  633.138361] gc573 0000:07:00.0: HDMI: it_init row 12 failed: -5|[  633.138705] gc573 0000:07:00.0: error -EIO: IT6805 init failed|[  633.139175] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  633.139525] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=64: kernel: [  642.621223] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  642.621647] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  642.621989] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=66: kernel: [  646.057881] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  646.059164] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  646.060144] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=71: kernel: [  657.808631] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed|[  657.809989] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5|[  657.810319] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=95: kernel: [  721.158780] gc573 0000:07:00.0: HDMI: it_init row 182 failed: -5|[  721.159094] gc573 0000:07:00.0: error -EIO: IT6805 init failed|[  721.166035] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+  PROBLEM: bind n=99: kernel: [  730.329276] gc573 0000:07:00.0: HDMI: it_init row 138 failed: -5|[  730.329597] gc573 0000:07:00.0: error -EIO: IT6805 init failed|[  730.335847] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed|
+    bind: 100 faults so far (n=100)
+  PROBLEM: bind n=106: kernel: [  747.302046] gc573 0000:07:00.0: I2C bus 1: 0x90 reg 0x0f write timeout|[  747.302054] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -110|[  747.302436] gc573 0000:07:00.0: error -ETIMEDOUT: IT6805 (I2C 0x90): ID read failed|[  747.304017] gc573 0000:07:00.0: error -ETIMEDOUT: HDMI front-end bring-up failed|
+  PROBLEM: bind n=109: kernel: [  751.126146] irq 22: nobody cared (try booting with the "irqpoll" option)|[  751.127252] Disabling IRQ #22|
+    bind n=131: allowed, remove_proc_entry('spurious') after a failure in register_irq_proc(): WARNING: CPU: 3 PID: 19619 at fs/proc/generic.c:733 remove_proc_entry+0x187/0x4a0
+    bind: 150 faults so far (n=150)
+Terminated
+  case left gc573 loaded: unloading
+  -- kernel log (17039 lines)
+  | [  172.023131] mc: Linux media interface: v0.10
+  | [  172.042245] videodev: Linux video capture interface: v2.00
+  | [  172.074968] gc573: loading out-of-tree module taints kernel.
+  | [  172.078130] FAULT_INJECTION: forcing a failure.
+  | [  172.078130] name failslab, interval 1, probability 0, space 0, times 1
+  | [  172.078137] CPU: 0 PID: 3186 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  172.078141] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  172.078144] Call Trace:
+  | [  172.078146]  <TASK>
+  | [  172.078148]  dump_stack_lvl+0xc1/0xf0
+  | [  172.078154]  dump_stack+0x10/0x20
+  | [  172.078157]  should_fail_ex+0x4f4/0x5f0
+  | [  172.078161]  ? __pfx_lock_release+0x10/0x10
+  | [  172.078166]  ? bus_add_driver+0xe4/0x650
+  | [  172.078170]  __should_failslab+0xee/0x150
+  | [  172.078174]  ? __might_sleep+0xb4/0x180
+  | [  172.078178]  should_failslab+0xe/0x20
+  | [  172.078181]  kmalloc_trace+0x72/0x440
+  | [  172.078188]  bus_add_driver+0xe4/0x650
+  | [  172.078191]  ? bus_add_driver+0xe4/0x650
+  | [  172.078195]  driver_register+0x135/0x480
+  | [  172.078200]  __pci_register_driver+0x1d7/0x280
+  | [  172.078206]  ? blocking_notifier_chain_register+0x6a/0xc0
+  | [  172.078210]  ? __pfx_gc573_init+0x10/0x10 [gc573]
+  | [  172.078222]  gc573_init+0x48/0xff0 [gc573]
+  | [  172.078231]  do_one_initcall+0xef/0x4a0
+  | [  172.078237]  ? __pfx_do_one_initcall+0x10/0x10
+  | [  172.078244]  ? kasan_unpoison+0x45/0x80
+  | [  172.078248]  ? kasan_poison+0x3a/0x70
+  | [  172.078251]  ? __asan_register_globals+0x5e/0x90
+  | [  172.078257]  do_init_module+0x2a7/0x7c0
+  | [  172.078261]  ? klp_module_coming+0x3f4/0x780
+  | [  172.078270]  load_module+0x86c2/0x89f0
+  | [  172.078286]  ? __pfx_load_module+0x10/0x10
+  | [  172.078293]  ? rw_verify_area+0x24e/0x490
+  | [  172.078299]  ? security_kernel_post_read_file+0xae/0xe0
+  | [  172.078306]  ? kernel_read_file+0x272/0x980
+  | [  172.078314]  ? __pfx_kernel_read_file+0x10/0x10
+  | [  172.078321]  init_module_from_file+0xf6/0x180
+  | [  172.078324]  ? init_module_from_file+0xf6/0x180
+  | [  172.078328]  ? __pfx_init_module_from_file+0x10/0x10
+  | [  172.078332]  ? find_held_lock+0x36/0x140
+  | [  172.078345]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  172.078351]  idempotent_init_module+0x283/0x8f0
+  | [  172.078356]  ? __pfx_idempotent_init_module+0x10/0x10
+  | [  172.078366]  ? __kasan_check_read+0x11/0x20
+  | [  172.078369]  ? __fget_light+0x59/0x200
+  | [  172.078375]  __x64_sys_finit_module+0xc0/0x140
+  | [  172.078380]  x64_sys_call+0x2019/0x25a0
+  | [  172.078383]  do_syscall_64+0x9a/0x1a0
+  | [  172.078390]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  172.078395]  ? irqentry_exit+0x77/0xb0
+  | [  172.078398]  ? clear_bhb_loop+0x40/0x90
+  | [  172.078401]  ? clear_bhb_loop+0x40/0x90
+  | [  172.078405]  ? clear_bhb_loop+0x40/0x90
+  | [  172.078409]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  172.078412] RIP: 0033:0x778df19274ed
+  | [  172.078416] Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d fb c8 0d 00 f7 d8 64 89 01 48
+  | [  172.078419] RSP: 002b:00007ffc60600a28 EFLAGS: 00000246 ORIG_RAX: 0000000000000139
+  | [  172.078424] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000778df19274ed
+  | [  172.078426] RDX: 0000000000000000 RSI: 00007ffc60601de2 RDI: 0000000000000003
+  | [  172.078429] RBP: 00007ffc60601dc2 R08: 0000000000000000 R09: 0000000001000000
+  | [  172.078431] R10: 0000000000000075 R11: 0000000000000246 R12: 00007ffc60601de2
+  | [  172.078433] R13: 0000570a40b1d2e5 R14: 0000000000000001 R15: 0000000000000025
+  | [  172.078443]  </TASK>
+  | [  172.261782] gc573-test: 1795766317105833291-10539 18-fault-inject load n=1
+  | [  172.466005] gc573 0000:07:00.0: using MSI, irq 60
+  | [  172.466029] gc573 0000:07:00.0: FPGA version 20200811
+  | [  172.607473] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  172.608846] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  172.717357] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  172.718093] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  172.824104] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  172.969581] gc573 0000:07:00.0: video device video0
+  | [  172.972051] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  172.992645] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  174.094119] gc573 0000:07:00.0: splitter: EQ search found no valid channel (d0 = 2a), attempt 1
+  | [  174.958173] gc573-test: 1795766319802015797-7358 18-fault-inject load n=2
+  | [  175.064892] FAULT_INJECTION: forcing a failure.
+  | [  175.064892] name failslab, interval 1, probability 0, space 0, times 0
+  | [  175.064902] CPU: 2 PID: 3282 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  175.064906] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  175.064908] Call Trace:
+  | [  175.064910]  <TASK>
+  | [  175.064913]  dump_stack_lvl+0xc1/0xf0
+  | [  175.064919]  dump_stack+0x10/0x20
+  | [  175.064921]  should_fail_ex+0x4f4/0x5f0
+  | [  175.064925]  ? idempotent_init_module+0x283/0x8f0
+  | [  175.064929]  ? __x64_sys_finit_module+0xc0/0x140
+  | [  175.064933]  __should_failslab+0xee/0x150
+  | [  175.064937]  ? __might_sleep+0xb4/0x180
+  | [  175.064941]  should_failslab+0xe/0x20
+  | [  175.064944]  __kmalloc_node_track_caller+0xfc/0x5d0
+  | [  175.064948]  ? kstrdup_const+0x2c/0x40
+  | [  175.064955]  kstrdup+0x36/0x70
+  | [  175.064958]  ? kstrdup+0x36/0x70
+  | [  175.064962]  kstrdup_const+0x2c/0x40
+  | [  175.064965]  kvasprintf_const+0xd8/0x150
+  | [  175.064969]  kobject_set_name_vargs+0x44/0x120
+  | [  175.064973]  ? kobject_init+0x69/0x200
+  | [  175.064977]  kobject_init_and_add+0xce/0x170
+  | [  175.064980]  ? __pfx_kobject_init_and_add+0x10/0x10
+  | [  175.064985]  ? __kasan_kmalloc+0xc3/0xd0
+  | [  175.064999]  bus_add_driver+0x1d3/0x650
+  | [  175.065005]  driver_register+0x135/0x480
+  | [  175.065010]  __pci_register_driver+0x1d7/0x280
+  | [  175.065013]  ? blocking_notifier_chain_register+0x6a/0xc0
+  | [  175.065017]  ? __pfx_gc573_init+0x10/0x10 [gc573]
+  | [  175.065028]  gc573_init+0x48/0xff0 [gc573]
+  | [  175.065037]  do_one_initcall+0xef/0x4a0
+  | [  175.065042]  ? __pfx_do_one_initcall+0x10/0x10
+  | [  175.065047]  ? kasan_unpoison+0x45/0x80
+  | [  175.065051]  ? kasan_poison+0x3a/0x70
+  | [  175.065054]  ? __asan_register_globals+0x5e/0x90
+  | [  175.065059]  do_init_module+0x2a7/0x7c0
+  | [  175.065062]  ? klp_module_coming+0x3f4/0x780
+  | [  175.065069]  load_module+0x86c2/0x89f0
+  | [  175.065081]  ? __pfx_load_module+0x10/0x10
+  | [  175.065087]  ? rw_verify_area+0x24e/0x490
+  | [  175.065092]  ? security_kernel_post_read_file+0xae/0xe0
+  | [  175.065098]  ? kernel_read_file+0x272/0x980
+  | [  175.065102]  ? get_pid_task+0xab/0x1b0
+  | [  175.065108]  ? __pfx_kernel_read_file+0x10/0x10
+  | [  175.065114]  init_module_from_file+0xf6/0x180
+  | [  175.065117]  ? init_module_from_file+0xf6/0x180
+  | [  175.065120]  ? __pfx_init_module_from_file+0x10/0x10
+  | [  175.065123]  ? find_held_lock+0x36/0x140
+  | [  175.065133]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  175.065138]  idempotent_init_module+0x283/0x8f0
+  | [  175.065142]  ? __pfx_idempotent_init_module+0x10/0x10
+  | [  175.065150]  ? __kasan_check_read+0x11/0x20
+  | [  175.065153]  ? __fget_light+0x59/0x200
+  | [  175.065158]  __x64_sys_finit_module+0xc0/0x140
+  | [  175.065162]  x64_sys_call+0x2019/0x25a0
+  | [  175.065165]  do_syscall_64+0x9a/0x1a0
+  | [  175.065168]  ? rcu_read_unlock+0x26/0x80
+  | [  175.065172]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  175.065178]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  175.065182]  ? irqentry_exit+0x77/0xb0
+  | [  175.065185]  ? clear_bhb_loop+0x40/0x90
+  | [  175.065188]  ? clear_bhb_loop+0x40/0x90
+  | [  175.065191]  ? clear_bhb_loop+0x40/0x90
+  | [  175.065195]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  175.065198] RIP: 0033:0x788d63f274ed
+  | [  175.065201] Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d fb c8 0d 00 f7 d8 64 89 01 48
+  | [  175.065204] RSP: 002b:00007fffc5ecc058 EFLAGS: 00000246 ORIG_RAX: 0000000000000139
+  | [  175.065208] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000788d63f274ed
+  | [  175.065210] RDX: 0000000000000000 RSI: 00007fffc5eccde2 RDI: 0000000000000003
+  | [  175.065214] RBP: 00007fffc5eccdc2 R08: 0000000000000000 R09: 0000000001000000
+  | [  175.065216] R10: 0000000000000075 R11: 0000000000000246 R12: 00007fffc5eccde2
+  | [  175.065219] R13: 00006387d3f802e5 R14: 0000000000000003 R15: 0000000000000025
+  | [  175.065228]  </TASK>
+  | [  175.065254] kobject: can not set name properly!
+  | [  175.238824] gc573-test: 1795766320082904010-22294 18-fault-inject load n=3
+  | [  175.447274] gc573 0000:07:00.0: using MSI, irq 60
+  | [  175.447336] gc573 0000:07:00.0: FPGA version 20200811
+  | [  175.586000] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  175.588343] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  175.710364] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  175.711104] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  175.817274] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  175.967345] gc573 0000:07:00.0: video device video0
+  | [  175.975919] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  176.004610] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  177.215805] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147911 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  177.855759] gc573-test: 1795766322699763435-16172 18-fault-inject load n=4
+  | [  177.954411] FAULT_INJECTION: forcing a failure.
+  | [  177.954411] name failslab, interval 1, probability 0, space 0, times 0
+  | [  177.954421] CPU: 2 PID: 3374 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  177.954425] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  177.954428] Call Trace:
+  | [  177.954430]  <TASK>
+  | [  177.954432]  dump_stack_lvl+0xc1/0xf0
+  | [  177.954438]  dump_stack+0x10/0x20
+  | [  177.954441]  should_fail_ex+0x4f4/0x5f0
+  | [  177.954445]  ? mark_lock+0xfd/0x17c0
+  | [  177.954451]  __should_failslab+0xee/0x150
+  | [  177.954455]  ? __might_sleep+0xb4/0x180
+  | [  177.954459]  should_failslab+0xe/0x20
+  | [  177.954463]  __kmalloc_node_track_caller+0xfc/0x5d0
+  | [  177.954466]  ? __kmalloc_node_track_caller+0x268/0x5d0
+  | [  177.954468]  ? kstrdup+0x36/0x70
+  | [  177.954472]  ? kstrdup_const+0x2c/0x40
+  | [  177.954475]  ? kstrdup_const+0x2c/0x40
+  | [  177.954480]  kstrdup+0x36/0x70
+  | [  177.954483]  ? kstrdup+0x36/0x70
+  | [  177.954487]  kstrdup_const+0x2c/0x40
+  | [  177.954490]  __kernfs_new_node+0xaf/0x7f0
+  | [  177.954494]  ? __kasan_check_read+0x11/0x20
+  | [  177.954499]  ? __pfx___kernfs_new_node+0x10/0x10
+  | [  177.954506]  ? __pfx___lock_acquire+0x10/0x10
+  | [  177.954512]  kernfs_new_node+0x130/0x2b0
+  | [  177.954514]  ? find_held_lock+0x36/0x140
+  | [  177.954520]  kernfs_create_dir_ns+0x2c/0x150
+  | [  177.954524]  sysfs_create_dir_ns+0x12d/0x2a0
+  | [  177.954528]  ? __pfx_lock_release+0x10/0x10
+  | [  177.954531]  ? __pfx_sysfs_create_dir_ns+0x10/0x10
+  | [  177.954535]  ? __asan_memcpy+0x4d/0x80
+  | [  177.954540]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  177.954544]  kobject_add_internal+0x280/0x8d0
+  | [  177.954550]  kobject_init_and_add+0xf2/0x170
+  | [  177.954554]  ? __pfx_kobject_init_and_add+0x10/0x10
+  | [  177.954558]  ? __kasan_kmalloc+0xc3/0xd0
+  | [  177.954568]  bus_add_driver+0x1d3/0x650
+  | [  177.954574]  driver_register+0x135/0x480
+  | [  177.954578]  __pci_register_driver+0x1d7/0x280
+  | [  177.954582]  ? blocking_notifier_chain_register+0x6a/0xc0
+  | [  177.954586]  ? __pfx_gc573_init+0x10/0x10 [gc573]
+  | [  177.954597]  gc573_init+0x48/0xff0 [gc573]
+  | [  177.954606]  do_one_initcall+0xef/0x4a0
+  | [  177.954611]  ? __pfx_do_one_initcall+0x10/0x10
+  | [  177.954617]  ? kasan_unpoison+0x45/0x80
+  | [  177.954620]  ? kasan_poison+0x3a/0x70
+  | [  177.954624]  ? __asan_register_globals+0x5e/0x90
+  | [  177.954628]  do_init_module+0x2a7/0x7c0
+  | [  177.954632]  ? klp_module_coming+0x3f4/0x780
+  | [  177.954640]  load_module+0x86c2/0x89f0
+  | [  177.954653]  ? __pfx_load_module+0x10/0x10
+  | [  177.954658]  ? rw_verify_area+0x24e/0x490
+  | [  177.954664]  ? security_kernel_post_read_file+0xae/0xe0
+  | [  177.954670]  ? kernel_read_file+0x272/0x980
+  | [  177.954676]  ? __pfx_kernel_read_file+0x10/0x10
+  | [  177.954682]  init_module_from_file+0xf6/0x180
+  | [  177.954685]  ? init_module_from_file+0xf6/0x180
+  | [  177.954688]  ? __pfx_init_module_from_file+0x10/0x10
+  | [  177.954691]  ? find_held_lock+0x36/0x140
+  | [  177.954701]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  177.954706]  idempotent_init_module+0x283/0x8f0
+  | [  177.954710]  ? __pfx_idempotent_init_module+0x10/0x10
+  | [  177.954718]  ? __kasan_check_read+0x11/0x20
+  | [  177.954721]  ? __fget_light+0x59/0x200
+  | [  177.954726]  __x64_sys_finit_module+0xc0/0x140
+  | [  177.954730]  x64_sys_call+0x2019/0x25a0
+  | [  177.954733]  do_syscall_64+0x9a/0x1a0
+  | [  177.954738]  ? __pfx___lock_acquire+0x10/0x10
+  | [  177.954742]  ? __x64_sys_openat+0x128/0x220
+  | [  177.954746]  ? __pfx___x64_sys_openat+0x10/0x10
+  | [  177.954748]  ? do_user_addr_fault+0x411/0xc40
+  | [  177.954755]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [  177.954760]  ? do_syscall_64+0xa7/0x1a0
+  | [  177.954762]  ? do_user_addr_fault+0x483/0xc40
+  | [  177.954766]  ? lock_release+0x203/0x7e0
+  | [  177.954768]  ? __up_read+0x1b4/0x7e0
+  | [  177.954772]  ? __pfx_lock_release+0x10/0x10
+  | [  177.954774]  ? __pfx___up_read+0x10/0x10
+  | [  177.954778]  ? rcu_read_unlock+0x26/0x80
+  | [  177.954781]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  177.954787]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  177.954791]  ? irqentry_exit+0x77/0xb0
+  | [  177.954793]  ? clear_bhb_loop+0x40/0x90
+  | [  177.954797]  ? clear_bhb_loop+0x40/0x90
+  | [  177.954800]  ? clear_bhb_loop+0x40/0x90
+  | [  177.954804]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  177.954807] RIP: 0033:0x7b987e9274ed
+  | [  177.954810] Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d fb c8 0d 00 f7 d8 64 89 01 48
+  | [  177.954813] RSP: 002b:00007ffceb6415d8 EFLAGS: 00000246 ORIG_RAX: 0000000000000139
+  | [  177.954818] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007b987e9274ed
+  | [  177.954820] RDX: 0000000000000000 RSI: 00007ffceb642de2 RDI: 0000000000000003
+  | [  177.954822] RBP: 00007ffceb642dc2 R08: 0000000000000000 R09: 0000000001000000
+  | [  177.954824] R10: 0000000000000075 R11: 0000000000000246 R12: 00007ffceb642de2
+  | [  177.954826] R13: 000060518b2082e5 R14: 0000000000000005 R15: 0000000000000025
+  | [  177.954833]  </TASK>
+  | [  177.954836] kobject: kobject_add_internal failed for gc573 (error: -12 parent: drivers)
+  | [  178.127679] gc573-test: 1795766322971698138-15178 18-fault-inject load n=5
+  | [  178.351929] gc573 0000:07:00.0: using MSI, irq 60
+  | [  178.352002] gc573 0000:07:00.0: FPGA version 20200811
+  | [  178.490058] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  178.493895] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  178.609438] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  178.610173] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  178.717518] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  178.862628] gc573 0000:07:00.0: video device video0
+  | [  178.870755] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  178.901779] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  180.102252] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 148645 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  180.785796] gc573-test: 1795766325629573899-16850 18-fault-inject load n=6
+  | [  180.894748] FAULT_INJECTION: forcing a failure.
+  | [  180.894748] name failslab, interval 1, probability 0, space 0, times 0
+  | [  180.894757] CPU: 3 PID: 3466 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  180.894762] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  180.894764] Call Trace:
+  | [  180.894766]  <TASK>
+  | [  180.894768]  dump_stack_lvl+0xc1/0xf0
+  | [  180.894775]  dump_stack+0x10/0x20
+  | [  180.894777]  should_fail_ex+0x4f4/0x5f0
+  | [  180.894781]  ? __kasan_kmalloc+0xc3/0xd0
+  | [  180.894787]  ? __kernfs_new_node+0xea/0x7f0
+  | [  180.894791]  __should_failslab+0xee/0x150
+  | [  180.894794]  ? __might_sleep+0xb4/0x180
+  | [  180.894798]  should_failslab+0xe/0x20
+  | [  180.894802]  kmem_cache_alloc+0x6b/0x420
+  | [  180.894806]  ? kstrdup+0x4c/0x70
+  | [  180.894811]  __kernfs_new_node+0xea/0x7f0
+  | [  180.894814]  ? __kasan_check_read+0x11/0x20
+  | [  180.894819]  ? __pfx___kernfs_new_node+0x10/0x10
+  | [  180.894825]  ? __pfx___lock_acquire+0x10/0x10
+  | [  180.894832]  kernfs_new_node+0x130/0x2b0
+  | [  180.894834]  ? find_held_lock+0x36/0x140
+  | [  180.894840]  kernfs_create_dir_ns+0x2c/0x150
+  | [  180.894844]  sysfs_create_dir_ns+0x12d/0x2a0
+  | [  180.894848]  ? __pfx_lock_release+0x10/0x10
+  | [  180.894851]  ? __pfx_sysfs_create_dir_ns+0x10/0x10
+  | [  180.894855]  ? __asan_memcpy+0x4d/0x80
+  | [  180.894862]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  180.894866]  kobject_add_internal+0x280/0x8d0
+  | [  180.894872]  kobject_init_and_add+0xf2/0x170
+  | [  180.894876]  ? __pfx_kobject_init_and_add+0x10/0x10
+  | [  180.894880]  ? __kasan_kmalloc+0xc3/0xd0
+  | [  180.894888]  bus_add_driver+0x1d3/0x650
+  | [  180.894894]  driver_register+0x135/0x480
+  | [  180.894899]  __pci_register_driver+0x1d7/0x280
+  | [  180.894903]  ? blocking_notifier_chain_register+0x6a/0xc0
+  | [  180.894906]  ? __pfx_gc573_init+0x10/0x10 [gc573]
+  | [  180.894916]  gc573_init+0x48/0xff0 [gc573]
+  | [  180.894925]  do_one_initcall+0xef/0x4a0
+  | [  180.894930]  ? __pfx_do_one_initcall+0x10/0x10
+  | [  180.894935]  ? kasan_unpoison+0x45/0x80
+  | [  180.894939]  ? kasan_poison+0x3a/0x70
+  | [  180.894942]  ? __asan_register_globals+0x5e/0x90
+  | [  180.894946]  do_init_module+0x2a7/0x7c0
+  | [  180.894950]  ? klp_module_coming+0x3f4/0x780
+  | [  180.894957]  load_module+0x86c2/0x89f0
+  | [  180.894970]  ? __pfx_load_module+0x10/0x10
+  | [  180.894975]  ? rw_verify_area+0x24e/0x490
+  | [  180.894980]  ? security_kernel_post_read_file+0xae/0xe0
+  | [  180.894986]  ? kernel_read_file+0x272/0x980
+  | [  180.894989]  ? lockdep_hardirqs_on_prepare+0x331/0x410
+  | [  180.894994]  ? __pfx_kernel_read_file+0x10/0x10
+  | [  180.895000]  init_module_from_file+0xf6/0x180
+  | [  180.895002]  ? init_module_from_file+0xf6/0x180
+  | [  180.895005]  ? __pfx_init_module_from_file+0x10/0x10
+  | [  180.895009]  ? find_held_lock+0x36/0x140
+  | [  180.895019]  ? do_raw_spin_unlock+0x14c/0x200
+  | [  180.895023]  idempotent_init_module+0x283/0x8f0
+  | [  180.895025]  ? rcu_read_lock_any_held+0x97/0xd0
+  | [  180.895030]  ? __pfx_idempotent_init_module+0x10/0x10
+  | [  180.895037]  ? __kasan_check_read+0x11/0x20
+  | [  180.895040]  ? __fget_light+0x59/0x200
+  | [  180.895046]  __x64_sys_finit_module+0xc0/0x140
+  | [  180.895050]  x64_sys_call+0x2019/0x25a0
+  | [  180.895052]  do_syscall_64+0x9a/0x1a0
+  | [  180.895059]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [  180.895064]  ? do_syscall_64+0xa7/0x1a0
+  | [  180.895066]  ? __lock_acquire+0xd71/0x6c00
+  | [  180.895069]  ? __pfx_do_sys_openat2+0x10/0x10
+  | [  180.895076]  ? __x64_sys_openat+0x128/0x220
+  | [  180.895080]  ? __pfx___x64_sys_openat+0x10/0x10
+  | [  180.895086]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [  180.895089]  ? do_syscall_64+0xa7/0x1a0
+  | [  180.895092]  ? find_held_lock+0x36/0x140
+  | [  180.895096]  ? do_user_addr_fault+0x483/0xc40
+  | [  180.895100]  ? lock_release+0x203/0x7e0
+  | [  180.895103]  ? __up_read+0x1b4/0x7e0
+  | [  180.895106]  ? __pfx_lock_release+0x10/0x10
+  | [  180.895109]  ? __pfx___up_read+0x10/0x10
+  | [  180.895112]  ? rcu_read_unlock+0x26/0x80
+  | [  180.895115]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  180.895122]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  180.895125]  ? irqentry_exit+0x77/0xb0
+  | [  180.895128]  ? clear_bhb_loop+0x40/0x90
+  | [  180.895131]  ? clear_bhb_loop+0x40/0x90
+  | [  180.895134]  ? clear_bhb_loop+0x40/0x90
+  | [  180.895138]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  180.895141] RIP: 0033:0x70aecc1274ed
+  | [  180.895144] Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d fb c8 0d 00 f7 d8 64 89 01 48
+  | [  180.895147] RSP: 002b:00007fff81714538 EFLAGS: 00000246 ORIG_RAX: 0000000000000139
+  | [  180.895151] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 000070aecc1274ed
+  | [  180.895154] RDX: 0000000000000000 RSI: 00007fff81714de2 RDI: 0000000000000003
+  | [  180.895156] RBP: 00007fff81714dc2 R08: 0000000000000000 R09: 0000000001000000
+  | [  180.895158] R10: 0000000000000075 R11: 0000000000000246 R12: 00007fff81714de2
+  | [  180.895160] R13: 00005f281adcd2e5 R14: 0000000000000007 R15: 0000000000000025
+  | [  180.895167]  </TASK>
+  | [  180.895174] kobject: kobject_add_internal failed for gc573 (error: -12 parent: drivers)
+  | [  181.080851] gc573-test: 1795766325924918823-26322 18-fault-inject load n=7
+  | [  181.312384] gc573 0000:07:00.0: using MSI, irq 60
+  | [  181.312449] gc573 0000:07:00.0: FPGA version 20200811
+  | [  181.456072] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  181.461639] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  181.562770] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  181.563594] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  181.660011] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  181.804662] gc573 0000:07:00.0: video device video0
+  | [  181.811936] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  181.833867] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  183.120137] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 148277 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  183.695440] gc573-test: 1795766328539295969-9444 18-fault-inject load n=8
+  | [  183.803141] FAULT_INJECTION: forcing a failure.
+  | [  183.803141] name failslab, interval 1, probability 0, space 0, times 0
+  | [  183.803151] CPU: 0 PID: 3559 Comm: gc573-fault Tainted: G           OE      6.8.12-gc573dbg #5
+  | [  183.803155] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  183.803157] Call Trace:
+  | [  183.803160]  <TASK>
+  | [  183.803162]  dump_stack_lvl+0xc1/0xf0
+  | [  183.803168]  dump_stack+0x10/0x20
+  | [  183.803171]  should_fail_ex+0x4f4/0x5f0
+  | [  183.803175]  ? __kasan_check_write+0x14/0x30
+  | [  183.803181]  __should_failslab+0xee/0x150
+  | [  183.803184]  ? __might_sleep+0xb4/0x180
+  | [  183.803189]  should_failslab+0xe/0x20
+  | [  183.803193]  __kmalloc_node_track_caller+0xfc/0x5d0
+  | ... lines 401-16639 not shown (all checked); among them these match KMSG_BAD or KMSG_DRV_BAD, or say LOST:
+  | 490: [  186.866976] Call Trace:
+  | 600: [  192.023741] Call Trace:
+  | 711: [  197.260619] Call Trace:
+  | 812: [  200.249776] Call Trace:
+  | 906: [  203.294399] Call Trace:
+  | 1002: [  206.359480] Call Trace:
+  | 1126: [  206.800405] Call Trace:
+  | 1238: [  207.290103] Call Trace:
+  | 1354: [  210.341692] Call Trace:
+  | 1474: [  213.356676] Call Trace:
+  | 1612: [  218.646973] Call Trace:
+  | 1729: [  221.709613] Call Trace:
+  | 1824: [  221.710087] gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+  | 1843: [  224.733364] Call Trace:
+  | 1968: [  227.849047] Call Trace:
+  | 2093: [  230.925370] Call Trace:
+  | 2242: [  236.533804] Call Trace:
+  | 2453: [  257.776772] Call Trace:
+  | 2579: [  260.823612] Call Trace:
+  | 2816: [  282.361375] Call Trace:
+  | 2915: [  282.939651] Call Trace:
+  | 3038: [  283.151888] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 3039: [  283.152291] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 3040: [  283.153005] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 3041: [  283.153317] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 3048: [  284.240461] Call Trace:
+  | 3159: [  284.396033] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 3160: [  284.396515] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 3161: [  284.396863] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 3216: [  296.481719] Call Trace:
+  | 3355: [  303.035304] Call Trace:
+  | 3536: [  317.161777] Call Trace:
+  | 3725: [  331.018532] Call Trace:
+  | 3892: [  339.542639] Call Trace:
+  | 3913: [  339.543117]  ? lockdep_init_map_type+0x169/0x7f0
+  | 4019: [  340.772681] Call Trace:
+  | 4169: [  341.966247] Call Trace:
+  | 4318: [  346.028935] Call Trace:
+  | 4474: [  352.927241] Call Trace:
+  | 4663: [  366.839110] Call Trace:
+  | 4821: [  372.391303] Call Trace:
+  | 4991: [  383.390868] Call Trace:
+  | 5117: [  384.544499] Call Trace:
+  | 5260: [  390.181112] Call Trace:
+  | 5508: [  413.014865] Call Trace:
+  | 5681: [  425.617783] Call Trace:
+  | 5881: [  440.874720] Call Trace:
+  | 6010: [  445.561328] Call Trace:
+  | 6157: [  454.091324] Call Trace:
+  | 6287: [  455.699096] Call Trace:
+  | 6422: [  457.203453] Call Trace:
+  | 6562: [  458.746528] Call Trace:
+  | 6715: [  466.079581] Call Trace:
+  | 6852: [  467.614987] Call Trace:
+  | 6991: [  469.437692] Call Trace:
+  | 7149: [  476.783198] Call Trace:
+  | 7310: [  488.030767] Call Trace:
+  | 7457: [  489.739858] Call Trace:
+  | 7615: [  494.133937] Call Trace:
+  | 7742: [  495.652038] Call Trace:
+  | 7885: [  500.092746] Call Trace:
+  | 7904: [  500.092963]  ? lockdep_init_map_type+0x169/0x7f0
+  | 7905: [  500.092975]  ? lockdep_init_map_type+0x169/0x7f0
+  | 8015: [  503.002221] Call Trace:
+  | 8136: [  508.759570] Call Trace:
+  | 8275: [  514.280994] Call Trace:
+  | 8362: [  515.973888] Call Trace:
+  | 8452: [  520.623526] Call Trace:
+  | 8561: [  523.375382] Call Trace:
+  | 8671: [  526.466667] Call Trace:
+  | 8784: [  529.656718] Call Trace:
+  | 8908: [  535.254601] Call Trace:
+  | 9012: [  538.305450] Call Trace:
+  | 9098: [  538.305984] gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+  | 9101: [  538.783110] irq 22: nobody cared (try booting with the "irqpoll" option)
+  | 9104: [  538.783467] Call Trace:
+  | 9166: [  538.784157] Disabling IRQ #22
+  | 9183: [  541.540321] Call Trace:
+  | 9310: [  544.375880] Call Trace:
+  | 9420: [  547.252633] Call Trace:
+  | 9547: [  552.516813] Call Trace:
+  | 9777: [  578.481657] Call Trace:
+  | 9956: [  594.246607] Call Trace:
+  | 10052: [  597.122403] Call Trace:
+  | 10159: [  600.099714] Call Trace:
+  | 10247: [  600.239442] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 10248: [  600.241417] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 10267: [  603.812481] Call Trace:
+  | 10357: [  604.040581] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 10358: [  604.041293] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 10377: [  607.547424] Call Trace:
+  | 10476: [  607.735858] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 10477: [  607.736359] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 10478: [  607.736686] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 10497: [  611.241374] Call Trace:
+  | 10620: [  611.380891] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 10621: [  611.382831] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 10622: [  611.383169] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 10641: [  614.800629] Call Trace:
+  | 10746: [  614.940813] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 10747: [  614.941275] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 10748: [  614.941625] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 10767: [  618.363205] Call Trace:
+  | 10871: [  618.527278] gc573 0000:07:00.0: HDMI: it_init row 6 failed: -5
+  | 10872: [  618.527592] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  | 10873: [  618.528919] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 10892: [  622.119347] Call Trace:
+  | 10981: [  622.265927] gc573 0000:07:00.0: HDMI: it_init row 11 failed: -5
+  | 10982: [  622.266260] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  | 10983: [  622.266862] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 10984: [  622.267194] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 11003: [  625.758190] Call Trace:
+  | 11103: [  625.908042] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 11104: [  625.909143] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 11105: [  625.909479] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 11124: [  629.465011] Call Trace:
+  | 11217: [  629.604627] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 11218: [  629.605070] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 11219: [  629.605474] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 11238: [  632.908893] Call Trace:
+  | 11329: [  633.138361] gc573 0000:07:00.0: HDMI: it_init row 12 failed: -5
+  | 11330: [  633.138705] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  | 11331: [  633.139175] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 11332: [  633.139525] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 11350: [  637.078229] Call Trace:
+  | 11470: [  642.418969] Call Trace:
+  | 11572: [  642.621223] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 11573: [  642.621647] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 11574: [  642.621989] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 11593: [  645.888041] Call Trace:
+  | 11719: [  646.057881] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 11720: [  646.059164] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 11721: [  646.060144] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 11776: [  657.671707] Call Trace:
+  | 11888: [  657.808631] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  | 11889: [  657.809989] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  | 11890: [  657.810319] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 11909: [  661.547183] Call Trace:
+  | 12118: [  677.639998] Call Trace:
+  | 12266: [  682.951644] Call Trace:
+  | 12435: [  688.306739] Call Trace:
+  | 12610: [  693.600706] Call Trace:
+  | 12773: [  699.054061] Call Trace:
+  | 12917: [  701.747027] Call Trace:
+  | 13073: [  704.373941] Call Trace:
+  | 13238: [  709.892790] Call Trace:
+  | 13406: [  715.330490] Call Trace:
+  | 13566: [  718.155463] Call Trace:
+  | 13726: [  720.930458] Call Trace:
+  | 13845: [  721.158780] gc573 0000:07:00.0: HDMI: it_init row 182 failed: -5
+  | 13846: [  721.159094] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  | 13847: [  721.166035] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 13890: [  730.110369] Call Trace:
+  | 14013: [  730.329276] gc573 0000:07:00.0: HDMI: it_init row 138 failed: -5
+  | 14014: [  730.329597] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  | 14015: [  730.335847] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  | 14094: [  747.107696] Call Trace:
+  | 14209: [  747.302046] gc573 0000:07:00.0: I2C bus 1: 0x90 reg 0x0f write timeout
+  | 14210: [  747.302054] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -110
+  | 14211: [  747.302436] gc573 0000:07:00.0: error -ETIMEDOUT: IT6805 (I2C 0x90): ID read failed
+  | 14212: [  747.304017] gc573 0000:07:00.0: error -ETIMEDOUT: HDMI front-end bring-up failed
+  | 14231: [  750.789353] Call Trace:
+  | 14324: [  751.126146] irq 22: nobody cared (try booting with the "irqpoll" option)
+  | 14327: [  751.126493] Call Trace:
+  | 14406: [  751.127252] Disabling IRQ #22
+  | 14483: [  766.654827] Call Trace:
+  | 14766: [  805.561328] Call Trace:
+  | 14879: [  807.709039] WARNING: CPU: 3 PID: 19619 at fs/proc/generic.c:733 remove_proc_entry+0x187/0x4a0
+  | 14896: [  807.710494] Call Trace:
+  | 15079: [  826.059619] Call Trace:
+  | 15235: [  842.193713] Call Trace:
+  | 15386: [  848.067786] Call Trace:
+  | 15525: [  856.655625] Call Trace:
+  | 15784: [  888.213821] Call Trace:
+  | 15896: [  888.996031] Call Trace:
+  | 16089: [  905.368670] Call Trace:
+  | 16265: [  918.926785] Call Trace:
+  | 16397: [  922.254947] Call Trace:
+  | 16508: [  922.960010] Call Trace:
+  | ...
+  | [  929.396025] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  930.679987] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147911 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  931.191700] gc573-test: 1795767076064184960-8235 18-fault-inject bind n=186
+  | [  931.431862] gc573 0000:07:00.0: using MSI, irq 60
+  | [  931.431895] gc573 0000:07:00.0: FPGA version 20200811
+  | [  931.563824] FAULT_INJECTION: forcing a failure.
+  | [  931.563824] name failslab, interval 1, probability 0, space 0, times 0
+  | [  931.563854] CPU: 3 PID: 22815 Comm: gc573-fault Tainted: G        W  OE      6.8.12-gc573dbg #5
+  | [  931.563860] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  931.563864] Call Trace:
+  | [  931.563868]  <TASK>
+  | [  931.563872]  dump_stack_lvl+0xc1/0xf0
+  | [  931.563881]  dump_stack+0x10/0x20
+  | [  931.563886]  should_fail_ex+0x4f4/0x5f0
+  | [  931.563896]  ? i2cdev_attach_adapter+0x12b/0x4b0
+  | [  931.563902]  __should_failslab+0xee/0x150
+  | [  931.563908]  ? __might_sleep+0xb4/0x180
+  | [  931.563915]  should_failslab+0xe/0x20
+  | [  931.563929]  kmalloc_trace+0x72/0x440
+  | [  931.563942]  i2cdev_attach_adapter+0x12b/0x4b0
+  | [  931.563947]  ? i2cdev_attach_adapter+0x12b/0x4b0
+  | [  931.563957]  i2cdev_notifier_call+0x32/0x40
+  | [  931.563962]  notifier_call_chain+0x9c/0x270
+  | [  931.563975]  blocking_notifier_call_chain+0x66/0xa0
+  | [  931.563982]  bus_notify+0x53/0x80
+  | [  931.563990]  device_add+0xedf/0x1920
+  | [  931.563999]  ? __pfx_device_add+0x10/0x10
+  | [  931.564004]  ? up_write+0x1b0/0x570
+  | [  931.564010]  ? _raw_spin_unlock+0x22/0x50
+  | [  931.564019]  ? debugfs_create_dir+0x363/0x560
+  | [  931.564028]  i2c_register_adapter+0x531/0x1aa0
+  | [  931.564033]  ? __pfx_idr_alloc+0x10/0x10
+  | [  931.564044]  i2c_add_adapter+0xae/0x110
+  | [  931.564049]  devm_i2c_add_adapter+0x1e/0x80
+  | [  931.564056]  gc573_i2c_add+0x165/0x280 [gc573]
+  | [  931.564069]  ? __pfx_usleep_range_state+0x10/0x10
+  | [  931.564079]  gc573_i2c_init+0x28f/0x480 [gc573]
+  | [  931.564095]  gc573_probe+0x26f9/0x3420 [gc573]
+  | [  931.564114]  ? __pfx_gc573_probe+0x10/0x10 [gc573]
+  | [  931.564126]  ? lock_acquire+0x1ad/0x4f0
+  | [  931.564130]  ? test_taint+0x13/0x40
+  | [  931.564139]  ? __kasan_check_read+0x11/0x20
+  | [  931.564144]  ? mark_lock+0xfd/0x17c0
+  | [  931.564154]  ? __pfx_mark_lock+0x10/0x10
+  | [  931.564160]  ? lock_release+0x203/0x7e0
+  | [  931.564169]  ? find_held_lock+0x36/0x140
+  | [  931.564175]  ? __pm_runtime_resume+0x80/0x120
+  | [  931.564181]  ? lock_release+0x203/0x7e0
+  | [  931.564190]  ? mark_held_locks+0x9a/0xf0
+  | [  931.564196]  ? __pm_runtime_resume+0x80/0x120
+  | [  931.564203]  ? _raw_spin_unlock_irqrestore+0x51/0x80
+  | [  931.564208]  ? trace_hardirqs_on+0x22/0x120
+  | [  931.564215]  ? _raw_spin_unlock_irqrestore+0x51/0x80
+  | [  931.564224]  ? __pfx_gc573_probe+0x10/0x10 [gc573]
+  | [  931.564235]  local_pci_probe+0xe2/0x1a0
+  | [  931.564244]  pci_device_probe+0x29e/0x980
+  | [  931.564252]  ? __pfx_pci_device_probe+0x10/0x10
+  | [  931.564265]  ? __kasan_check_write+0x14/0x30
+  | [  931.564270]  ? kernfs_put+0x1c/0x50
+  | [  931.564280]  ? sysfs_create_link+0x44/0xc0
+  | [  931.564292]  really_probe+0x40a/0xba0
+  | [  931.564301]  __driver_probe_device+0x1d8/0x500
+  | [  931.564310]  device_driver_attach+0xc9/0x1f0
+  | [  931.564318]  bind_store+0xd2/0x150
+  | [  931.564323]  ? __pfx_bind_store+0x10/0x10
+  | [  931.564328]  ? __pfx_drv_attr_store+0x10/0x10
+  | [  931.564334]  drv_attr_store+0x6d/0xc0
+  | [  931.564342]  sysfs_kf_write+0x106/0x160
+  | [  931.564350]  kernfs_fop_write_iter+0x399/0x5a0
+  | [  931.564360]  vfs_write+0x65b/0x1360
+  | [  931.564365]  ? __pfx_kstrtouint_from_user+0x10/0x10
+  | [  931.564372]  ? lock_is_held_type+0xa4/0x140
+  | [  931.564381]  ? __pfx_vfs_write+0x10/0x10
+  | [  931.564391]  ? __pfx_lock_release+0x10/0x10
+  | [  931.564399]  ? __kasan_check_read+0x11/0x20
+  | [  931.564404]  ? __fget_light+0x59/0x200
+  | [  931.564415]  ksys_write+0x11b/0x250
+  | [  931.564422]  ? __pfx_ksys_write+0x10/0x10
+  | [  931.564428]  ? __pfx_vfs_write+0x10/0x10
+  | [  931.564439]  __x64_sys_write+0x72/0xc0
+  | [  931.564443]  ? trace_hardirqs_on+0x22/0x120
+  | [  931.564449]  x64_sys_call+0x7e/0x25a0
+  | [  931.564454]  do_syscall_64+0x9a/0x1a0
+  | [  931.564460]  ? __kasan_check_read+0x11/0x20
+  | [  931.564465]  ? __fget_light+0x59/0x200
+  | [  931.564474]  ? __x64_sys_pwrite64+0x1c0/0x260
+  | [  931.564488]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [  931.564495]  ? do_syscall_64+0xa7/0x1a0
+  | [  931.564501]  ? __pfx___lock_acquire+0x10/0x10
+  | [  931.564513]  ? do_user_addr_fault+0x411/0xc40
+  | [  931.564519]  ? reacquire_held_locks+0x219/0x4e0
+  | [  931.564523]  ? do_user_addr_fault+0x411/0xc40
+  | [  931.564534]  ? find_held_lock+0x36/0x140
+  | [  931.564540]  ? do_user_addr_fault+0x483/0xc40
+  | [  931.564547]  ? lock_release+0x203/0x7e0
+  | [  931.564550]  ? __up_read+0x1b4/0x7e0
+  | [  931.564557]  ? __pfx_lock_release+0x10/0x10
+  | [  931.564561]  ? __pfx___up_read+0x10/0x10
+  | [  931.564567]  ? rcu_read_unlock+0x26/0x80
+  | [  931.564572]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  931.564585]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  931.564592]  ? irqentry_exit+0x77/0xb0
+  | [  931.564595]  ? clear_bhb_loop+0x40/0x90
+  | [  931.564601]  ? clear_bhb_loop+0x40/0x90
+  | [  931.564605]  ? clear_bhb_loop+0x40/0x90
+  | [  931.564612]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  931.564617] RIP: 0033:0x7054f691c804
+  | [  931.564623] Code: c7 00 16 00 00 00 b8 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 f3 0f 1e fa 80 3d 45 f8 0e 00 00 74 13 b8 01 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 54 c3 0f 1f 00 55 48 89 e5 48 83 ec 20 48 89
+  | [  931.564628] RSP: 002b:00007ffcbbc799b8 EFLAGS: 00000202 ORIG_RAX: 0000000000000001
+  | [  931.564635] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007054f691c804
+  | [  931.564639] RDX: 000000000000000c RSI: 00007ffcbbc7adec RDI: 0000000000000003
+  | [  931.564642] RBP: 00007ffcbbc7adec R08: 0000000000000075 R09: 0000000000000000
+  | [  931.564645] R10: 0000000000000000 R11: 0000000000000202 R12: 000056e06f5d9804
+  | [  931.564649] R13: 000056e06f5d92e5 R14: 00000000000000bb R15: 0000000000000025
+  | [  931.564665]  </TASK>
+  | [  931.568694] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  931.569825] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  931.680353] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  931.681091] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  931.787587] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  931.927089] gc573 0000:07:00.0: video device video0
+  | [  931.930272] gc573 0000:07:00.0: audio: ALSA card 2 (GC573)
+  | [  931.959493] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  933.256587] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147911 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  933.749147] gc573-test: 1795767078621682182-25107 18-fault-inject bind n=187
+  | [  933.984066] gc573 0000:07:00.0: using MSI, irq 60
+  | [  933.984088] gc573 0000:07:00.0: FPGA version 20200811
+  | [  934.118304] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  934.120447] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  934.236033] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  934.237470] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  934.342879] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  934.489693] gc573 0000:07:00.0: video device video0
+  | [  934.495674] gc573 0000:07:00.0: audio: ALSA card 2 (GC573)
+  | [  934.520478] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  935.833824] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147184 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  936.326820] gc573-test: 1795767081199710468-1399 18-fault-inject bind n=188
+  | [  936.529826] gc573 0000:07:00.0: using MSI, irq 60
+  | [  936.529850] gc573 0000:07:00.0: FPGA version 20200811
+  | [  936.662941] FAULT_INJECTION: forcing a failure.
+  | [  936.662941] name failslab, interval 1, probability 0, space 0, times 0
+  | [  936.662962] CPU: 0 PID: 22929 Comm: gc573-fault Tainted: G        W  OE      6.8.12-gc573dbg #5
+  | [  936.662975] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  936.662982] Call Trace:
+  | [  936.662989]  <TASK>
+  | [  936.662997]  dump_stack_lvl+0xc1/0xf0
+  | [  936.663014]  dump_stack+0x10/0x20
+  | [  936.663024]  should_fail_ex+0x4f4/0x5f0
+  | [  936.663044]  __should_failslab+0xee/0x150
+  | [  936.663054]  ? __might_sleep+0xb4/0x180
+  | [  936.663068]  should_failslab+0xe/0x20
+  | [  936.663083]  __kmalloc_node_track_caller+0xfc/0x5d0
+  | [  936.663097]  ? __pfx_mark_lock+0x10/0x10
+  | [  936.663106]  ? kvasprintf_const+0x4b/0x150
+  | [  936.663131]  kvasprintf+0xc2/0x150
+  | [  936.663140]  ? kvasprintf+0xc2/0x150
+  | [  936.663154]  ? __pfx_kvasprintf+0x10/0x10
+  | [  936.663171]  ? lock_release+0x203/0x7e0
+  | [  936.663199]  kvasprintf_const+0x4b/0x150
+  | [  936.663216]  kobject_set_name_vargs+0x44/0x120
+  | [  936.663236]  dev_set_name+0xb4/0xf0
+  | [  936.663252]  ? __pfx_dev_set_name+0x10/0x10
+  | [  936.663270]  ? __raw_spin_lock_init+0x40/0x130
+  | [  936.663302]  i2cdev_attach_adapter+0x35f/0x4b0
+  | [  936.663328]  i2cdev_notifier_call+0x32/0x40
+  | [  936.663340]  notifier_call_chain+0x9c/0x270
+  | [  936.663368]  blocking_notifier_call_chain+0x66/0xa0
+  | [  936.663386]  bus_notify+0x53/0x80
+  | [  936.663401]  device_add+0xedf/0x1920
+  | [  936.663424]  ? __pfx_device_add+0x10/0x10
+  | [  936.663436]  ? up_write+0x1b0/0x570
+  | [  936.663447]  ? _raw_spin_unlock+0x22/0x50
+  | [  936.663468]  ? debugfs_create_dir+0x363/0x560
+  | [  936.663489]  i2c_register_adapter+0x531/0x1aa0
+  | [  936.663499]  ? __pfx_idr_alloc+0x10/0x10
+  | [  936.663525]  i2c_add_adapter+0xae/0x110
+  | [  936.663538]  devm_i2c_add_adapter+0x1e/0x80
+  | [  936.663553]  gc573_i2c_add+0x165/0x280 [gc573]
+  | [  936.663583]  ? __pfx_usleep_range_state+0x10/0x10
+  | [  936.663605]  gc573_i2c_init+0x28f/0x480 [gc573]
+  | [  936.663642]  gc573_probe+0x26f9/0x3420 [gc573]
+  | [  936.663688]  ? __pfx_gc573_probe+0x10/0x10 [gc573]
+  | [  936.663714]  ? lock_acquire+0x1ad/0x4f0
+  | [  936.663725]  ? test_taint+0x13/0x40
+  | [  936.663745]  ? __kasan_check_read+0x11/0x20
+  | [  936.663758]  ? mark_lock+0xfd/0x17c0
+  | [  936.663781]  ? __pfx_mark_lock+0x10/0x10
+  | [  936.663794]  ? lock_release+0x203/0x7e0
+  | [  936.663822]  ? find_held_lock+0x36/0x140
+  | [  936.663837]  ? __pm_runtime_resume+0x80/0x120
+  | [  936.663852]  ? lock_release+0x203/0x7e0
+  | [  936.663873]  ? mark_held_locks+0x9a/0xf0
+  | [  936.663887]  ? __pm_runtime_resume+0x80/0x120
+  | [  936.663904]  ? _raw_spin_unlock_irqrestore+0x51/0x80
+  | [  936.663915]  ? trace_hardirqs_on+0x22/0x120
+  | [  936.663932]  ? _raw_spin_unlock_irqrestore+0x51/0x80
+  | [  936.663952]  ? __pfx_gc573_probe+0x10/0x10 [gc573]
+  | [  936.663978]  local_pci_probe+0xe2/0x1a0
+  | [  936.663999]  pci_device_probe+0x29e/0x980
+  | [  936.664017]  ? __pfx_pci_device_probe+0x10/0x10
+  | [  936.664043]  ? __kasan_check_write+0x14/0x30
+  | [  936.664055]  ? kernfs_put+0x1c/0x50
+  | [  936.664078]  ? sysfs_create_link+0x44/0xc0
+  | [  936.664107]  really_probe+0x40a/0xba0
+  | [  936.664129]  __driver_probe_device+0x1d8/0x500
+  | [  936.664149]  device_driver_attach+0xc9/0x1f0
+  | [  936.664168]  bind_store+0xd2/0x150
+  | [  936.664181]  ? __pfx_bind_store+0x10/0x10
+  | [  936.664193]  ? __pfx_drv_attr_store+0x10/0x10
+  | [  936.664206]  drv_attr_store+0x6d/0xc0
+  | [  936.664226]  sysfs_kf_write+0x106/0x160
+  | [  936.664245]  kernfs_fop_write_iter+0x399/0x5a0
+  | [  936.664269]  vfs_write+0x65b/0x1360
+  | [  936.664287]  ? __pfx_lock_release+0x10/0x10
+  | [  936.664307]  ? __pfx_vfs_write+0x10/0x10
+  | [  936.664332]  ? rcu_read_lock_any_held+0x97/0xd0
+  | [  936.664355]  ? __kasan_check_read+0x11/0x20
+  | [  936.664368]  ? __fget_light+0x59/0x200
+  | [  936.664396]  ksys_write+0x11b/0x250
+  | [  936.664414]  ? __pfx_ksys_write+0x10/0x10
+  | [  936.664446]  __x64_sys_write+0x72/0xc0
+  | [  936.664457]  ? trace_hardirqs_on+0x22/0x120
+  | [  936.664472]  x64_sys_call+0x7e/0x25a0
+  | [  936.664484]  do_syscall_64+0x9a/0x1a0
+  | [  936.664513]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [  936.664531]  ? do_syscall_64+0xa7/0x1a0
+  | [  936.664549]  ? find_held_lock+0x36/0x140
+  | [  936.664565]  ? do_user_addr_fault+0x483/0xc40
+  | [  936.664582]  ? lock_release+0x203/0x7e0
+  | [  936.664591]  ? __up_read+0x1b4/0x7e0
+  | [  936.664609]  ? __pfx_lock_release+0x10/0x10
+  | [  936.664618]  ? __pfx___up_read+0x10/0x10
+  | [  936.664632]  ? rcu_read_unlock+0x26/0x80
+  | [  936.664646]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  936.664679]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  936.664696]  ? irqentry_exit+0x77/0xb0
+  | [  936.664705]  ? clear_bhb_loop+0x40/0x90
+  | [  936.664718]  ? clear_bhb_loop+0x40/0x90
+  | [  936.664729]  ? clear_bhb_loop+0x40/0x90
+  | [  936.664747]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  936.664759] RIP: 0033:0x70ec4051c804
+  | [  936.664772] Code: c7 00 16 00 00 00 b8 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 f3 0f 1e fa 80 3d 45 f8 0e 00 00 74 13 b8 01 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 54 c3 0f 1f 00 55 48 89 e5 48 83 ec 20 48 89
+  | [  936.664783] RSP: 002b:00007ffff2b8da78 EFLAGS: 00000202 ORIG_RAX: 0000000000000001
+  | [  936.664813] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 000070ec4051c804
+  | [  936.664823] RDX: 000000000000000c RSI: 00007ffff2b8edec RDI: 0000000000000003
+  | [  936.664831] RBP: 00007ffff2b8edec R08: 0000000000000075 R09: 0000000000000000
+  | [  936.664840] R10: 0000000000000000 R11: 0000000000000202 R12: 0000575936ec1804
+  | [  936.664848] R13: 0000575936ec12e5 R14: 00000000000000bd R15: 0000000000000025
+  | [  936.664890]  </TASK>
+  | [  936.671198] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  936.672655] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  936.786400] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  936.787134] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  936.881950] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  937.026496] gc573 0000:07:00.0: video device video0
+  | [  937.031134] gc573 0000:07:00.0: audio: ALSA card 2 (GC573)
+  | [  937.055400] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  938.372392] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147911 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  938.889443] gc573-test: 1795767083762485341-24552 18-fault-inject bind n=189
+  | [  939.098272] gc573 0000:07:00.0: using MSI, irq 60
+  | [  939.098295] gc573 0000:07:00.0: FPGA version 20200811
+  | [  939.240101] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  939.243463] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  939.351338] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  939.352701] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  939.454974] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  939.601090] gc573 0000:07:00.0: video device video0
+  | [  939.608262] gc573 0000:07:00.0: audio: ALSA card 2 (GC573)
+  | [  939.631270] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  940.946564] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147184 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  941.464942] gc573-test: 1795767086337908196-18025 18-fault-inject bind n=190
+  | [  941.685572] gc573 0000:07:00.0: using MSI, irq 60
+  | [  941.685597] gc573 0000:07:00.0: FPGA version 20200811
+  | [  941.818334] FAULT_INJECTION: forcing a failure.
+  | [  941.818334] name failslab, interval 1, probability 0, space 0, times 0
+  | [  941.818344] CPU: 1 PID: 23043 Comm: gc573-fault Tainted: G        W  OE      6.8.12-gc573dbg #5
+  | [  941.818349] Hardware name: QEMU Ubuntu 24.04 PC (Q35 + ICH9, 2009), BIOS 2024.02-2ubuntu0.10 09/23/2026
+  | [  941.818352] Call Trace:
+  | [  941.818354]  <TASK>
+  | [  941.818357]  dump_stack_lvl+0xc1/0xf0
+  | [  941.818364]  dump_stack+0x10/0x20
+  | [  941.818367]  should_fail_ex+0x4f4/0x5f0
+  | [  941.818375]  __should_failslab+0xee/0x150
+  | [  941.818379]  ? __might_sleep+0xb4/0x180
+  | [  941.818384]  should_failslab+0xe/0x20
+  | [  941.818388]  __kmalloc_node_track_caller+0xfc/0x5d0
+  | [  941.818393]  ? __pfx_mark_lock+0x10/0x10
+  | [  941.818396]  ? kvasprintf_const+0x4b/0x150
+  | [  941.818403]  kvasprintf+0xc2/0x150
+  | [  941.818406]  ? kvasprintf+0xc2/0x150
+  | [  941.818410]  ? __pfx_kvasprintf+0x10/0x10
+  | [  941.818415]  ? lock_release+0x203/0x7e0
+  | [  941.818422]  kvasprintf_const+0x4b/0x150
+  | [  941.818427]  kobject_set_name_vargs+0x44/0x120
+  | [  941.818433]  dev_set_name+0xb4/0xf0
+  | [  941.818439]  ? __pfx_dev_set_name+0x10/0x10
+  | [  941.818444]  ? __raw_spin_lock_init+0x40/0x130
+  | [  941.818452]  i2cdev_attach_adapter+0x35f/0x4b0
+  | [  941.818461]  i2cdev_notifier_call+0x32/0x40
+  | [  941.818464]  notifier_call_chain+0x9c/0x270
+  | [  941.818472]  blocking_notifier_call_chain+0x66/0xa0
+  | [  941.818477]  bus_notify+0x53/0x80
+  | [  941.818482]  device_add+0xedf/0x1920
+  | [  941.818488]  ? __pfx_device_add+0x10/0x10
+  | [  941.818491]  ? up_write+0x1b0/0x570
+  | [  941.818495]  ? _raw_spin_unlock+0x22/0x50
+  | [  941.818501]  ? debugfs_create_dir+0x363/0x560
+  | [  941.818507]  i2c_register_adapter+0x531/0x1aa0
+  | [  941.818510]  ? __pfx_idr_alloc+0x10/0x10
+  | [  941.818517]  i2c_add_adapter+0xae/0x110
+  | [  941.818521]  devm_i2c_add_adapter+0x1e/0x80
+  | [  941.818525]  gc573_i2c_add+0x165/0x280 [gc573]
+  | [  941.818536]  ? __pfx_usleep_range_state+0x10/0x10
+  | [  941.818542]  gc573_i2c_init+0x28f/0x480 [gc573]
+  | [  941.818552]  gc573_probe+0x26f9/0x3420 [gc573]
+  | [  941.818564]  ? __pfx_gc573_probe+0x10/0x10 [gc573]
+  | [  941.818572]  ? lock_acquire+0x1ad/0x4f0
+  | [  941.818575]  ? test_taint+0x13/0x40
+  | [  941.818581]  ? __kasan_check_read+0x11/0x20
+  | [  941.818586]  ? mark_lock+0xfd/0x17c0
+  | [  941.818592]  ? __pfx_mark_lock+0x10/0x10
+  | [  941.818595]  ? lock_release+0x203/0x7e0
+  | [  941.818601]  ? find_held_lock+0x36/0x140
+  | [  941.818605]  ? __pm_runtime_resume+0x80/0x120
+  | [  941.818610]  ? lock_release+0x203/0x7e0
+  | [  941.818616]  ? mark_held_locks+0x9a/0xf0
+  | [  941.818619]  ? __pm_runtime_resume+0x80/0x120
+  | [  941.818624]  ? _raw_spin_unlock_irqrestore+0x51/0x80
+  | [  941.818627]  ? trace_hardirqs_on+0x22/0x120
+  | [  941.818633]  ? _raw_spin_unlock_irqrestore+0x51/0x80
+  | [  941.818638]  ? __pfx_gc573_probe+0x10/0x10 [gc573]
+  | [  941.818646]  local_pci_probe+0xe2/0x1a0
+  | [  941.818653]  pci_device_probe+0x29e/0x980
+  | [  941.818658]  ? __pfx_pci_device_probe+0x10/0x10
+  | [  941.818664]  ? __kasan_check_write+0x14/0x30
+  | [  941.818668]  ? kernfs_put+0x1c/0x50
+  | [  941.818675]  ? sysfs_create_link+0x44/0xc0
+  | [  941.818690]  really_probe+0x40a/0xba0
+  | [  941.818696]  __driver_probe_device+0x1d8/0x500
+  | [  941.818702]  device_driver_attach+0xc9/0x1f0
+  | [  941.818707]  bind_store+0xd2/0x150
+  | [  941.818711]  ? __pfx_bind_store+0x10/0x10
+  | [  941.818715]  ? __pfx_drv_attr_store+0x10/0x10
+  | [  941.818719]  drv_attr_store+0x6d/0xc0
+  | [  941.818724]  sysfs_kf_write+0x106/0x160
+  | [  941.818730]  kernfs_fop_write_iter+0x399/0x5a0
+  | [  941.818736]  vfs_write+0x65b/0x1360
+  | [  941.818741]  ? __kasan_check_read+0x11/0x20
+  | [  941.818744]  ? __fget_light+0x59/0x200
+  | [  941.818751]  ? __pfx_vfs_write+0x10/0x10
+  | [  941.818760]  ? __kasan_check_read+0x11/0x20
+  | [  941.818764]  ? __fget_light+0x59/0x200
+  | [  941.818770]  ksys_write+0x11b/0x250
+  | [  941.818775]  ? __pfx_ksys_write+0x10/0x10
+  | [  941.818779]  ? syscall_exit_to_user_mode+0x90/0x250
+  | [  941.818786]  __x64_sys_write+0x72/0xc0
+  | [  941.818789]  ? trace_hardirqs_on+0x22/0x120
+  | [  941.818793]  x64_sys_call+0x7e/0x25a0
+  | [  941.818797]  do_syscall_64+0x9a/0x1a0
+  | [  941.818800]  ? lock_release+0x203/0x7e0
+  | [  941.818803]  ? __up_read+0x1b4/0x7e0
+  | [  941.818807]  ? __pfx_lock_release+0x10/0x10
+  | [  941.818810]  ? __pfx___up_read+0x10/0x10
+  | [  941.818814]  ? rcu_read_unlock+0x26/0x80
+  | [  941.818818]  ? handle_mm_fault+0x1b5/0x9c0
+  | [  941.818826]  ? irqentry_exit_to_user_mode+0x86/0x250
+  | [  941.818831]  ? irqentry_exit+0x77/0xb0
+  | [  941.818833]  ? clear_bhb_loop+0x40/0x90
+  | [  941.818837]  ? clear_bhb_loop+0x40/0x90
+  | [  941.818841]  ? clear_bhb_loop+0x40/0x90
+  | [  941.818845]  entry_SYSCALL_64_after_hwframe+0x78/0x80
+  | [  941.818849] RIP: 0033:0x781af0d1c804
+  | [  941.818854] Code: c7 00 16 00 00 00 b8 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 f3 0f 1e fa 80 3d 45 f8 0e 00 00 74 13 b8 01 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 54 c3 0f 1f 00 55 48 89 e5 48 83 ec 20 48 89
+  | [  941.818857] RSP: 002b:00007fff031daea8 EFLAGS: 00000202 ORIG_RAX: 0000000000000001
+  | [  941.818862] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 0000781af0d1c804
+  | [  941.818865] RDX: 000000000000000c RSI: 00007fff031dcdec RDI: 0000000000000003
+  | [  941.818867] RBP: 00007fff031dcdec R08: 0000000000000075 R09: 0000000000000000
+  | [  941.818869] R10: 0000000000000000 R11: 0000000000000202 R12: 00005e01ea239804
+  | [  941.818872] R13: 00005e01ea2392e5 R14: 00000000000000bf R15: 0000000000000025
+  | [  941.818881]  </TASK>
+  | [  941.823644] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  941.825573] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  941.933469] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  941.934581] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  942.038513] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  942.182741] gc573 0000:07:00.0: video device video0
+  | [  942.185241] gc573 0000:07:00.0: audio: ALSA card 2 (GC573)
+  | [  942.213501] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  943.483917] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147911 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+  | [  943.943638] gc573-test: 1795767088816815747-21912 18-fault-inject bind n=191
+  | [  944.153219] gc573 0000:07:00.0: using MSI, irq 60
+  | [  944.153267] gc573 0000:07:00.0: FPGA version 20200811
+  | [  944.287574] gc573 0000:07:00.0: I2C adapters: bus 0 i2c-1, bus 1 i2c-3, bus 2 i2c-2 (parameters i2c_bus1, i2c_bus02)
+  | [  944.289584] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  944.401242] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  944.402074] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  944.495874] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  944.641642] gc573 0000:07:00.0: video device video0
+  | [  944.648880] gc573 0000:07:00.0: audio: ALSA card 2 (GC573)
+  | [  944.662784] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  expected: (allowed warning) [  807.709039] WARNING: CPU: 3 PID: 19619 at fs/proc/generic.c:733 remove_proc_entry+0x187/0x4a0
+  expected: (allowed warning) [  807.710494] Call Trace:
+  expected: [  172.078144] Call Trace:
+  expected: [  175.064908] Call Trace:
+  expected: [  177.954428] Call Trace:
+  expected: [  180.894764] Call Trace:
+  expected: [  180.894989]  ? lockdep_hardirqs_on_prepare+0x331/0x410
+  expected: [  183.803157] Call Trace:
+  expected: [  186.866976] Call Trace:
+  expected: [  192.023741] Call Trace:
+  expected: [  197.260619] Call Trace:
+  expected: [  200.249776] Call Trace:
+  expected: [  203.294399] Call Trace:
+  expected: [  206.359480] Call Trace:
+  expected: [  206.800405] Call Trace:
+  expected: [  207.290103] Call Trace:
+  expected: [  210.341692] Call Trace:
+  expected: [  213.356676] Call Trace:
+  expected: [  218.646973] Call Trace:
+  expected: [  221.709613] Call Trace:
+  expected: [  221.710087] gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+  expected: [  224.733364] Call Trace:
+  expected: [  227.849047] Call Trace:
+  expected: [  230.925370] Call Trace:
+  expected: [  236.533804] Call Trace:
+  expected: [  257.776772] Call Trace:
+  expected: [  260.823612] Call Trace:
+  expected: [  282.361375] Call Trace:
+  expected: [  282.939651] Call Trace:
+  expected: [  284.240461] Call Trace:
+  expected: [  296.481719] Call Trace:
+  expected: [  303.035304] Call Trace:
+  expected: [  317.161777] Call Trace:
+  expected: [  331.018532] Call Trace:
+  expected: [  339.542639] Call Trace:
+  expected: [  339.543117]  ? lockdep_init_map_type+0x169/0x7f0
+  expected: [  340.772681] Call Trace:
+  expected: [  341.966247] Call Trace:
+  expected: [  346.028935] Call Trace:
+  expected: [  352.927241] Call Trace:
+  expected: [  366.839110] Call Trace:
+  expected: [  372.391303] Call Trace:
+  expected: [  383.390868] Call Trace:
+  expected: [  384.544499] Call Trace:
+  expected: [  390.181112] Call Trace:
+  expected: [  413.014865] Call Trace:
+  expected: [  425.617783] Call Trace:
+  expected: [  440.874720] Call Trace:
+  expected: [  445.561328] Call Trace:
+  expected: [  454.091324] Call Trace:
+  expected: [  455.699096] Call Trace:
+  expected: [  457.203453] Call Trace:
+  expected: [  458.746528] Call Trace:
+  expected: [  466.079581] Call Trace:
+  expected: [  467.614987] Call Trace:
+  expected: [  469.437692] Call Trace:
+  expected: [  476.783198] Call Trace:
+  expected: [  488.030767] Call Trace:
+  expected: [  489.739858] Call Trace:
+  expected: [  494.133937] Call Trace:
+  expected: [  495.652038] Call Trace:
+  expected: [  500.092746] Call Trace:
+  expected: [  500.092963]  ? lockdep_init_map_type+0x169/0x7f0
+  expected: [  500.092975]  ? lockdep_init_map_type+0x169/0x7f0
+  expected: [  503.002221] Call Trace:
+  expected: [  508.759570] Call Trace:
+  expected: [  514.280994] Call Trace:
+  expected: [  515.973888] Call Trace:
+  expected: [  520.623526] Call Trace:
+  expected: [  523.375382] Call Trace:
+  expected: [  526.466667] Call Trace:
+  expected: [  529.656718] Call Trace:
+  expected: [  535.254601] Call Trace:
+  expected: [  538.305450] Call Trace:
+  expected: [  538.305984] gc573 0000:07:00.0: error -EBUSY: cannot map BAR0
+  expected: [  538.783467] Call Trace:
+  expected: [  541.540321] Call Trace:
+  expected: [  544.375880] Call Trace:
+  expected: [  547.252633] Call Trace:
+  expected: [  552.516813] Call Trace:
+  expected: [  578.481657] Call Trace:
+  expected: [  594.246607] Call Trace:
+  expected: [  597.122403] Call Trace:
+  expected: [  600.099714] Call Trace:
+  expected: [  603.812481] Call Trace:
+  expected: [  607.547424] Call Trace:
+  expected: [  611.241374] Call Trace:
+  expected: [  614.800629] Call Trace:
+  expected: [  618.363205] Call Trace:
+  expected: [  622.119347] Call Trace:
+  expected: [  625.758190] Call Trace:
+  expected: [  629.465011] Call Trace:
+  expected: [  632.908893] Call Trace:
+  expected: [  637.078229] Call Trace:
+  expected: [  642.418969] Call Trace:
+  expected: [  645.888041] Call Trace:
+  expected: [  657.671707] Call Trace:
+  expected: [  661.547183] Call Trace:
+  expected: [  677.639998] Call Trace:
+  expected: [  682.951644] Call Trace:
+  expected: [  688.306739] Call Trace:
+  expected: [  693.600706] Call Trace:
+  expected: [  699.054061] Call Trace:
+  expected: [  701.747027] Call Trace:
+  expected: [  704.373941] Call Trace:
+  expected: [  709.892790] Call Trace:
+  expected: [  715.330490] Call Trace:
+  expected: [  718.155463] Call Trace:
+  expected: [  720.930458] Call Trace:
+  expected: [  730.110369] Call Trace:
+  expected: [  747.107696] Call Trace:
+  expected: [  750.789353] Call Trace:
+  expected: [  751.126493] Call Trace:
+  expected: [  766.654827] Call Trace:
+  expected: [  805.561328] Call Trace:
+  expected: [  826.059619] Call Trace:
+  expected: [  842.193713] Call Trace:
+  expected: [  848.067786] Call Trace:
+  expected: [  856.655625] Call Trace:
+  expected: [  888.213821] Call Trace:
+  expected: [  888.996031] Call Trace:
+  expected: [  905.368670] Call Trace:
+  expected: [  918.926785] Call Trace:
+  expected: [  922.254947] Call Trace:
+  expected: [  922.960010] Call Trace:
+  expected: [  931.563864] Call Trace:
+  expected: [  936.662982] Call Trace:
+  expected: [  941.818352] Call Trace:
+  -- bad kernel messages
+  ! [  283.151888] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  283.152291] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  283.153005] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  283.153317] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  284.396033] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  284.396515] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  284.396863] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  538.783110] irq 22: nobody cared (try booting with the "irqpoll" option)
+  ! [  538.784157] Disabling IRQ #22
+  ! [  600.239442] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  600.241417] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  604.040581] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  604.041293] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  607.735858] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  607.736359] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  607.736686] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  611.380891] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  611.382831] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  611.383169] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  614.940813] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  614.941275] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  614.941625] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  618.527278] gc573 0000:07:00.0: HDMI: it_init row 6 failed: -5
+  ! [  618.527592] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  ! [  618.528919] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  622.265927] gc573 0000:07:00.0: HDMI: it_init row 11 failed: -5
+  ! [  622.266260] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  ! [  622.266862] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  622.267194] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  625.908042] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  625.909143] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  625.909479] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  629.604627] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  629.605070] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  629.605474] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  633.138361] gc573 0000:07:00.0: HDMI: it_init row 12 failed: -5
+  ! [  633.138705] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  ! [  633.139175] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  633.139525] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  642.621223] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  642.621647] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  642.621989] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  646.057881] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  646.059164] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  646.060144] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  657.808631] gc573 0000:07:00.0: error -EIO: IT6805 (I2C 0x90): ID read failed
+  ! [  657.809989] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -5
+  ! [  657.810319] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  721.158780] gc573 0000:07:00.0: HDMI: it_init row 182 failed: -5
+  ! [  721.159094] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  ! [  721.166035] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  730.329276] gc573 0000:07:00.0: HDMI: it_init row 138 failed: -5
+  ! [  730.329597] gc573 0000:07:00.0: error -EIO: IT6805 init failed
+  ! [  730.335847] gc573 0000:07:00.0: error -EIO: HDMI front-end bring-up failed
+  ! [  747.302046] gc573 0000:07:00.0: I2C bus 1: 0x90 reg 0x0f write timeout
+  ! [  747.302054] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -110
+  ! [  747.302436] gc573 0000:07:00.0: error -ETIMEDOUT: IT6805 (I2C 0x90): ID read failed
+  ! [  747.304017] gc573 0000:07:00.0: error -ETIMEDOUT: HDMI front-end bring-up failed
+  ! [  751.126146] irq 22: nobody cared (try booting with the "irqpoll" option)
+  ! [  751.127252] Disabling IRQ #22
+RESULT 18-fault-inject      FAIL (849s, exit 1)
+
+## kmemleak (whole suite)
+  allowed, the kernel's own leaks after a failure a case injected (1 objects):
+  unreferenced object 0xffff888112c7a0c0 (size 8):
+    comm "gc573-fault", pid 9600, jiffies 4295092346
+    hex dump (first 8 bytes):
+      76 69 64 65 6f 30 00 00                          video0..
+    backtrace (crc f1882695):
+      kmemleak_alloc+0x4a/0x90
+      __kmalloc_node_track_caller+0x468/0x5d0
+      kvasprintf+0xc2/0x150
+      kvasprintf_const+0x4b/0x150
+      kobject_set_name_vargs+0x44/0x120
+      dev_set_name+0xb4/0xf0
+      __video_register_device+0x1ba0/0x5050 [videodev]
+      0xffffffffc20aeeae
+      0xffffffffc20a63fe
+      local_pci_probe+0xe2/0x1a0
+      pci_device_probe+0x29e/0x980
+      really_probe+0x40a/0xba0
+      __driver_probe_device+0x1d8/0x500
+      driver_probe_device+0x4f/0x150
+      __driver_attach+0x21d/0x500
+      bus_for_each_dev+0x115/0x1b0
+  why: videodev's name of a video device whose device_register() failed (pid 9600, step load n=630): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)
+  no other new unreferenced objects
+RESULT kmemleak             PASS (1 allowed)
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  after:  lockdep debug_locks=1, DMA-API error_count=0 disabled=N
+  DMA-API errors reported and allowed in the cases: 0
+RESULT debug-checkers       PASS 
+
+## summary
+kernel:  6.8.12-gc573dbg
+card fw: 20200811 
+input:   none
+RESULT 18-fault-inject      FAIL (849s, exit 1)
+RESULT kmemleak             PASS (1 allowed)
+RESULT debug-checkers       PASS 
+SUMMARY pass=2 fail=1 skip=0
