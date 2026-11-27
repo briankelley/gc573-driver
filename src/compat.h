@@ -116,7 +116,7 @@ gc573_pcim_iomap_region(struct pci_dev *pdev, int bar, const char *name)
  *   worker or an ALSA callback holds vid.lock or aud.lock, which an unbind
  *   takes under the device lock: from a work item then, which waits for
  *   the device lock, so a bind queued behind the same remove could come
- *   first; gc573_dma_stop() writes it in place again at the teardown.
+ *   first; gc573_quiesce() writes it in place again at the teardown.
  *   The work holds a module reference from before it is queued, never
  *   put, so the module and the work's code stay; a caller without the
  *   device lock while the module unloads cannot take one, gets no block,

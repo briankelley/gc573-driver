@@ -728,9 +728,7 @@ static void gc573_master_guard(void *data)
  * steps 1 and 3), and the stop checked by what DMA_RUN and VIP_CTRL read
  * back. Interrupts stay on: the HDMI teardown still uses bus 1. Runs once,
  * from the first teardown action that frees DMA memory, under the device
- * lock (devres, shutdown). A card that died under an ioctl or a worker
- * gets its block again here, in place, before the unbind ends
- * (gc573_block_drivers()).
+ * lock (devres, shutdown).
  */
 void gc573_dma_stop(struct gc573 *gc)
 {
@@ -741,8 +739,6 @@ void gc573_dma_stop(struct gc573 *gc)
 	if (gc->dma_stopped)
 		return;
 	gc->dma_stopped = true;
-	if (READ_ONCE(gc->dma_dead))
-		gc573_block_drivers(gc->pdev, &gc573_pci_driver, true);
 
 	mutex_lock(&gc->vid.lock);
 	gc->vid.dead = true;
@@ -792,6 +788,16 @@ static void gc573_quiesce(void *data)
 	dev_dbg(&gc->pdev->dev, "quiesced: INT_ENABLE=%#010x INT_STATUS=%#010x RESET=%#010x\n",
 		gc573_rd(gc, GC573_INT_ENABLE), gc573_rd(gc, GC573_INT_STATUS),
 		gc573_rd(gc, GC573_RESET));
+
+	/*
+	 * A card that died under an ioctl, a worker or an ALSA callback (the
+	 * ALSA card's disconnect, in gc573_audio_free(), runs sync_stop after
+	 * gc573_dma_stop()) got its block from a work item, which waits for
+	 * the device lock: here, under that lock, it is written in place
+	 * before the unbind ends (gc573_block_drivers())
+	 */
+	if (READ_ONCE(gc->dma_dead))
+		gc573_block_drivers(gc->pdev, &gc573_pci_driver, true);
 
 	/* 4: IRQ, then the card's own DMA memory, go after this (devres) */
 }
