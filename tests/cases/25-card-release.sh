@@ -47,12 +47,46 @@ ctl=/dev/snd/controlC${c##*card}
 [ -c "$ctl" ] || fail "no ALSA control node"
 bad=0
 
-# Start a holder: "$@" runs in the background; its pid in $hp
+# Process $1 has file $2 open (within 2 s): every holder is checked, so
+# that a holder that holds nothing cannot pass a case
+holds() {
+	local i f
+	for i in $(seq 20); do
+		for f in /proc/"$1"/fd/*; do
+			[ "$(readlink "$f" 2>/dev/null)" = "$2" ] && return 0
+		done
+		sleep 0.1
+	done
+	return 1
+}
+
+# Start a holder of file $1: "${@:2}" runs in the background and opens it;
+# its pid in $hp
 hold() {
-	"$@" &
+	"${@:2}" &
 	hp=$!
 	holders+=("$hp")
-	sleep 0.5
+	holds "$hp" "$1" || fail "the holder (pid $hp) does not hold $1"
+}
+
+# Start sleep with file $1 as its standard input. The redirection goes on
+# the background command itself: bash gives a background command of a
+# non-interactive shell /dev/null as its input otherwise
+hold_open() {
+	sleep 600 < "$1" &
+	hp=$!
+	holders+=("$hp")
+	holds "$hp" "$1" || fail "sleep (pid $hp) does not hold $1"
+}
+
+# The python holder $1 has set its comm (within 2 s)
+renamed() {
+	local i
+	for i in $(seq 20); do
+		[ "$(cat "/proc/$1/comm" 2>/dev/null)" != python3 ] && return 0
+		sleep 0.1
+	done
+	return 1
 }
 
 # gc573_release $1 in the background, at most 30 s; then the holder $2 is
@@ -105,24 +139,25 @@ expect_refused() {
 stop() { kill "$1" 2>/dev/null; wait "$1" 2>/dev/null; }
 
 echo "-- i2c-dev holder, --yes"
-hold sleep 600 < "$i2c"
+hold_open "$i2c"
 release 1 "$hp"
 expect_refused "i2c-dev holder" "$hp"
 still_bound "i2c-dev holder"
 stop "$hp"
 
 echo "-- ALSA control holder, --yes"
-hold sleep 600 < "$ctl"
+hold_open "$ctl"
 release 1 "$hp"
 expect_refused "ALSA holder" "$hp"
 still_bound "ALSA holder"
 stop "$hp"
 
 echo "-- ALSA holder that calls itself wireplumber, --yes"
-hold python3 -c 'import ctypes, sys, time
+hold "$ctl" python3 -c 'import ctypes, sys, time
 f = open(sys.argv[1], "rb")
 ctypes.CDLL(None).prctl(15, b"wireplumber", 0, 0, 0)
 time.sleep(600)' "$ctl"
+renamed "$hp" || fail "the holder did not rename itself"
 echo "comm: $(cat "/proc/$hp/comm")"
 release 1 "$hp"
 expect_refused "fake wireplumber" "$hp"
@@ -130,10 +165,11 @@ still_bound "fake wireplumber"
 stop "$hp"
 
 echo "-- video holder with escapes in its comm"
-hold python3 -c 'import ctypes, sys, time
+hold "$vdev" python3 -c 'import ctypes, sys, time
 f = open(sys.argv[1], "rb")
 ctypes.CDLL(None).prctl(15, b"\x1b[2J\x1b]0;x\x07\nfake", 0, 0, 0)
 time.sleep(600)' "$vdev"
+renamed "$hp" || fail "the holder did not rename itself"
 release 0 "$hp"
 expect_refused "escape-laden comm" "$hp"
 if LC_ALL=C grep -q '[[:cntrl:]]' <<< "$out"; then
@@ -146,9 +182,12 @@ still_bound "video holder"
 stop "$hp"
 
 echo "-- a file named like a holder record"
+# a path ending in "<newline>1 /dev/videoN": made of directories, as a
+# file name cannot hold a /
 f="$work/x"$'\n'"1 $vdev"
+mkdir -p "${f%/*}"
 : > "$f"
-hold sleep 600 < "$f"
+hold_open "$f"
 h=$(gc573_holders "$(readlink -f "$dev")")
 if [ -z "$h" ]; then
 	echo "ok:   no holder found"
