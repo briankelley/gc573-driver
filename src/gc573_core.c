@@ -77,11 +77,28 @@ module_param_unsafe(exp_mmio_ones, uint, 0644);
 MODULE_PARM_DESC(exp_mmio_ones,
 		 "Test only; setting it taints the kernel. Register reads return all-ones, as from a card that does not answer; read at each probe. 1: from the start of the probe, 2: for 1.5 s once bus mastering is on, 3: for 25 s once it is on, 4: from the probe's check after that on, for good (0: off)");
 
-/* Tests only (tests/cases/29-intx.sh): the INTx fallback with MSI there */
-static bool exp_intx;
-module_param(exp_intx, bool, 0644);
+/*
+ * Tests only (tests/cases/29-intx.sh, bare metal): the card's INTx is
+ * untested, and under VFIO its line storms (spec/open-questions.md #43),
+ * so by default the probe takes MSI or nothing
+ */
+static unsigned int exp_intx;
+module_param(exp_intx, uint, 0644);
 MODULE_PARM_DESC(exp_intx,
-		 "Test only. Take the shared legacy interrupt (INTx) even when MSI is there, as when MSI cannot be had; read at each probe (default: N, MSI)");
+		 "Test only. 0: MSI only, a probe without MSI fails (default); 1: MSI, else the shared legacy interrupt (INTx); 2: INTx even with MSI there; other values as 0. INTx is untested on this card. Read at each probe");
+
+/* The interrupt types the probe may take (exp_intx) */
+static unsigned int gc573_irq_types(void)
+{
+	switch (READ_ONCE(exp_intx)) {
+	case 1:
+		return PCI_IRQ_MSI | PCI_IRQ_INTX;
+	case 2:
+		return PCI_IRQ_INTX;
+	default:
+		return PCI_IRQ_MSI;
+	}
+}
 
 /* gc573_rd(), with exp_mmio_ones on: all-ones now? */
 bool gc573_mmio_ones_now(struct gc573 *gc)
@@ -885,6 +902,7 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	struct device *dev = &pdev->dev;
 	unsigned long t_master;
+	unsigned int types;
 	struct gc573 *gc;
 	int ret;
 
@@ -969,8 +987,11 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	gc573_mmio_ones_start(gc, GC573_MMIO_ONES_BRIEF);
 	gc573_mmio_ones_start(gc, GC573_MMIO_ONES_LONG);
 
-	ret = pci_alloc_irq_vectors(pdev, 1, 1, READ_ONCE(exp_intx) ?
-				    PCI_IRQ_INTX : PCI_IRQ_MSI | PCI_IRQ_INTX);
+	types = gc573_irq_types();
+	ret = pci_alloc_irq_vectors(pdev, 1, 1, types);
+	if (ret < 0 && types == PCI_IRQ_MSI)
+		return dev_err_probe(dev, ret,
+				     "MSI unavailable: INTx is untested on this card (exp_intx=1 allows it)\n");
 	if (ret < 0)
 		return dev_err_probe(dev, ret, "no IRQ vector\n");
 	gc->irq = pci_irq_vector(pdev, 0);

@@ -109,7 +109,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 ## Driver design constraints
 - `pcim_*` managed resources. `pci_enable_device` + `pci_set_master` + iomap. (vendor drv omitted → dead BAR.)
 - Bus mastering never goes off while the card's DMA may run (`spec/pci.md`): stop the DMA and confirm the stop first. After a stop that cannot be confirmed, the card stays as it is until reboot (`gc573_dma_dead()`): bus mastering on, memory kept, no driver. No test may stop a DMA by turning bus mastering off, by killing the card's VM, or by a reset.
-- MSI if cap present else INTx. Threaded IRQ.
+- MSI only by default: without MSI the probe fails ("MSI unavailable"). INTx only through the test parameter `exp_intx` (1: MSI, else INTx; 2: INTx): untested on the card, and under VFIO its INTx line storms (`spec/open-questions.md` #43). Threaded IRQ.
 - No sleeping under spinlock. FPGA i2c master → `i2c_adapter`, sleepable. HDMI rx event handling in threaded irq / workqueue. (vendor drv: scheduling-while-atomic.)
 - IT6805 / splitter (ITE 0x6663) → v4l2 subdevs preferred.
 - vb2 memory: driver-private `vb2_mem_ops` (EL9 5.14 ships neither videobuf2-dma-sg nor -dma-contig). Pages from `alloc_pages(GFP_KERNEL | __GFP_DMA32)` while the DMA mask is 32-bit; `vmap` for kernel access; `sg_table` → `dma_map_sgtable` → descriptor lists; mmap by page insertion. Not videobuf2-vmalloc: its pages land above 4 GB, which a 32-bit mask bounces through swiotlb when no IOMMU translates (VM, `iommu=pt`): small pool, a copy per frame. MMAP first; USERPTR/DMABUF import later. Mem-ops signature differences across kernels in `src/compat.h`. DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.

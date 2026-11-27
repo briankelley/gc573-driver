@@ -8,6 +8,11 @@
 # Fix review N7: setting a stop test parameter (exp_stop_fault,
 # exp_stop_domains) taints the kernel, here with their defaults (no
 # effect).
+# MSI only by default (exp_intx 0; INTx is untested on the card and storms
+# its line under VFIO, spec/open-questions.md #43): with MSI disallowed for
+# the device (sysfs msi_bus 0, which the PCI core reads at the next MSI
+# request), the probe refuses the card with its "MSI unavailable" line and
+# requests no IRQ, INTx included; with msi_bus 1 again it binds with MSI.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
@@ -51,3 +56,31 @@ if echo "$log" | grep -q ': state at probe: '; then
 else
 	echo "no dynamic debug output: quiesce readback not checked"
 fi
+
+# MSI disallowed: no bind, no IRQ, and the reason in the log
+msi_bus=/sys/bus/pci/devices/$GC573_BDF/msi_bus
+want="MSI unavailable: INTx is untested on this card (exp_intx=1 allows it)"
+echo "$GC573_MOD [^ ]+: error -[A-Z0-9]+: MSI unavailable: INTx is untested on this card \\(exp_intx=1 allows it\\)\$" \
+	>> "${GC573_KMSG_ALLOW:-/dev/null}"
+trap 'echo 1 > "$msi_bus" 2>/dev/null' EXIT
+mtag=$(kmsg_mark "probe: MSI disallowed")
+echo 0 > "$msi_bus" || fail "cannot disallow MSI for $GC573_BDF ($msi_bus)"
+gc573_load || fail "insmod with MSI disallowed failed"
+bound=0
+gc573_bound && bound=1
+irqs=$(grep -cw "$GC573_MOD" /proc/interrupts)
+gc573_unload || fail "rmmod failed"
+echo 1 > "$msi_bus" || fail "cannot allow MSI again ($msi_bus)"
+trap - EXIT
+mlog=$(kmsg_since "$mtag")
+[ "$bound" = 0 ] || fail "bound with MSI disallowed"
+[ "$irqs" = 0 ] || fail "with MSI disallowed: $irqs gc573 IRQs in /proc/interrupts"
+grep -q ": using INTx" <<< "$mlog" && fail "took INTx with MSI disallowed"
+grep -qF ": $want" <<< "$mlog" || fail "with MSI disallowed: no line \"$want\""
+echo "MSI disallowed: not bound, no IRQ: $(grep -oF -- "$want" <<< "$mlog" | head -1)"
+mtag=$(kmsg_mark "probe: MSI allowed again")
+gc573_load || fail "insmod failed"
+gc573_bound || { gc573_unload; fail "not bound with MSI allowed again"; }
+gc573_unload || fail "rmmod failed"
+kmsg_since "$mtag" | grep -q ': using MSI, irq ' || fail "not using MSI with MSI allowed again"
+echo "MSI allowed again: binds with MSI"

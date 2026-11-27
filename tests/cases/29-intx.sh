@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0
-# INTx with MSI off (the test parameter exp_intx), no input: the card's
-# pin A, shared (spec/pci.md, spec/interrupts.md), which the driver takes
-# when it cannot have MSI. 18-fault-inject's binds that fell back to it
-# ran with the VM's PCI interrupt routing broken
-# (tests/logs/20261127-064813), so the path had no test of its own.
-# Loaded with exp_intx=1, then again after an unbind and a bind:
+# gc573-run: named; bare metal only, with the user present (the card's INTx, spec/open-questions.md #43)
+# INTx with MSI off (exp_intx=2), no input: the card's pin A, shared
+# (spec/pci.md, spec/interrupts.md). By default the driver takes MSI only;
+# exp_intx=1 lets it fall back to INTx, which is untested on the card. In
+# the gc573-dev VM every INTx bind failed its I2C transfers (-EIO, once
+# -ETIMEDOUT), and the line stormed in the guest ("irq 22: nobody
+# cared") and on the host ("irq 16: nobody cared", vfio_intx_handler,
+# "Disabling IRQ #16"; tests/logs/20261127-064813 and 20261127-075711).
+# So this case is not in the default suite (run.sh runs it only by name)
+# and SKIPs in a virtual machine: it is for bare-metal validation, with
+# the user present. On the development host the card's IRQ 16 is shared
+# with both NVMe drives (0000:02:00.0, 0000:04:00.0), which use MSI-X; a
+# storm that disabled the line would stop every handler on it. The case
+# first loads the driver with its default (MSI) and unloads it, which
+# routes the card's INTx; then it lists the PCI devices whose irq is the
+# card's (sysfs) and the handlers on it (/proc/interrupts), and SKIPs
+# while there are handlers, unless GC573_INTX_SHARED=1.
+# Loaded with exp_intx=2, then again after an unbind and a bind:
 # - the probe took INTx: "using INTx, irq N", N the device's irq in sysfs,
 #   no MSI vector, MSI Enable off in config space, the line an IO-APIC one
 #   in /proc/interrupts with gc573 on it;
@@ -30,11 +42,50 @@ drv=/sys/bus/pci/drivers/$GC573_MOD
 pdev=/sys/bus/pci/devices/$GC573_BDF
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
+virt=$(systemd-detect-virt --vm 2>/dev/null) || virt=""
+if [ -n "$virt" ] || grep -qw hypervisor /proc/cpuinfo; then
+	skip "in a virtual machine (${virt:-the hypervisor flag in /proc/cpuinfo}): under VFIO the card's INTx storms the host's line (spec/open-questions.md #43); bare metal only, with the user present"
+fi
 [ -e /usr/include/alsa/asoundlib.h ] || skip "alsa-lib headers (libasound2-dev) not installed"
 pin=$(od -An -tu1 -j61 -N1 "$pdev/config" | tr -d ' ')
 [ "${pin:-0}" != 0 ] || skip "the device has no INTx pin (config 0x3d is 0)"
 modinfo -p "$GC573_KO" | grep -q '^exp_intx:' ||
 	fail "the module has no exp_intx parameter"
+
+# The card's INTx IRQ is the device's irq, which ACPI routes at the
+# first PCI enable and keeps after the disable: sysfs irq while MSI is
+# off. A load with the default (MSI) and an unload make sure of the
+# enable. Config 0x3c, the firmware's line register, need not hold it
+# (0xff on the development host).
+gc573_load || fail "insmod failed"
+gc573_bound || { gc573_unload; fail "not bound with the default (MSI)"; }
+gc573_unload || fail "rmmod failed"
+line=$(cat "$pdev/irq")
+case $line in
+'' | 0 | 255) skip "cannot tell the card's INTx IRQ (sysfs irq ${line:-empty} after a load and an unload)" ;;
+esac
+# The handlers on that IRQ now: a storm on the line disables them all
+handlers=$(awk -v n="$line:" '$1 == n {
+	for (i = 2; i <= NF && $i ~ /^[0-9]+$/; i++)
+		;
+	s = ""
+	for (j = i + 2; j <= NF; j++)
+		s = s (s == "" ? "" : " ") $j
+	print s
+}' /proc/interrupts)
+echo "the card's INTx IRQ: $line; handlers on it now: ${handlers:-none}"
+echo "the other PCI devices whose irq is $line (sysfs; a device with MSI on shows its MSI vector instead):"
+for d in /sys/bus/pci/devices/*; do
+	[ "$d" = "$pdev" ] && continue
+	[ "$(cat "$d/irq" 2>/dev/null)" = "$line" ] || continue
+	dn=$(readlink "$d/driver" 2>/dev/null)
+	dn=${dn##*/}
+	nv=$(find "$d/msi_irqs" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l)
+	echo "  ${d##*/} (driver ${dn:-none}, $nv MSI/MSI-X vectors)"
+done
+if [ -n "$handlers" ] && [ "${GC573_INTX_SHARED:-0}" != 1 ]; then
+	skip "IRQ $line has handlers ($handlers): a storm on the card's INTx would disable them; GC573_INTX_SHARED=1 runs the case anyway"
+fi
 cap=$(gc573_cap_build "$tmp") || fail "cannot build gc573-cap"
 aud=$(gc573_aud_build "$tmp") || fail "cannot build gc573-aud"
 
@@ -128,8 +179,8 @@ stream_check() {
 }
 
 tag=$(kmsg_mark intx)
-gc573_load exp_intx=1 || fail "insmod exp_intx=1 failed"
-gc573_bound || { gc573_unload; fail "not bound with exp_intx=1"; }
+gc573_load exp_intx=2 || fail "insmod exp_intx=2 failed"
+gc573_bound || { gc573_unload; fail "not bound with exp_intx=2"; }
 mode_check "load" "$tag"
 stream_check "load"
 

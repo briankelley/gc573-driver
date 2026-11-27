@@ -34,6 +34,10 @@
 # driver. Every DMA-API error is printed while the suite runs
 # (dma-api/all_errors), and a case's error_count must rise by exactly the
 # errors its log reports and allows.
+#
+# A case whose header has the line "# gc573-run: named; REASON" runs only
+# when named (29-intx: bare metal only); the default suite lists it as
+# SKIP with REASON.
 set -uo pipefail
 
 # shellcheck source=tests/lib.sh
@@ -257,12 +261,19 @@ kml_allowed() {
 		END { flush() }'
 }
 
-[ $# -gt 0 ] || set -- "$GC573_TESTS"/cases/*.sh
-# the cases that keep DMA memory until reboot go last, in their order
-first=() last=()
+named=1
+if [ $# -eq 0 ]; then
+	named=0
+	set -- "$GC573_TESTS"/cases/*.sh
+fi
+# the cases that keep DMA memory until reboot go last, in their order; a
+# case marked "named" runs only when named, not in the default suite
+first=() last=() byname=()
 for c in "$@"; do
 	[ -f "$c" ] || c="$GC573_TESTS/cases/${c%.sh}.sh"
-	if [ -f "$c" ] && grep -q '^# gc573-run: last' "$c"; then
+	if [ "$named" = 0 ] && [ -f "$c" ] && grep -q '^# gc573-run: named' "$c"; then
+		byname+=("$c")
+	elif [ -f "$c" ] && grep -q '^# gc573-run: last' "$c"; then
 		last+=("$c")
 	else
 		first+=("$c")
@@ -335,6 +346,13 @@ result() {
 	*) nfail=$((nfail + 1)) ;;
 	esac
 }
+
+for c in "${byname[@]}"; do
+	name=$(basename "$c" .sh)
+	echo
+	echo "## $name"
+	result "$name" SKIP "(not in the default suite: run it by name; $(sed -n 's/^# gc573-run: named;* *//p' "$c" | head -1))"
+done
 
 dead_by=""
 lockdep_off_in=""
