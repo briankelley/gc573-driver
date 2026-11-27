@@ -82,20 +82,22 @@ check live-av-results-ok "$(grep -qx 'ok 0' <<< "$out"; echo $?)" \
 # the remnant step's helpers on made-up gc573-cap output: the frame list
 # as runs, the capture's size, the kept frames with their times from
 # STREAMON and from the lock line before gc573-cap's STREAMON mark, their
-# classification, and a capture that kept nothing
+# classification, a capture that kept nothing, and the 720p verdict on
+# the kept frames' classes in turn (a black start allowed, as INFO)
 out=$(bash -s "$LIVE" <<'EOF' 2>&1
-. <(for f in frame_runs cap_size remnant_kept; do sed -n "/^$f() {/,/^}/p" "$1"; done)
+. <(for f in frame_runs cap_size remnant_kept remnant_order; do sed -n "/^$f() {/,/^}/p" "$1"; done)
 W=/w
 vm() {
 	case $1 in
 	'sudo dmesg') printf '%s\n' '[  100.000100] gc573 0000:07:00.0: HDMI: locked: 1280x720p, 74250000 Hz' \
 		'[  200.500000] gc573 0000:07:00.0: HDMI: locked: 1280x720p, 74250000 Hz' \
 		'[  205.000000] gc573-cap: STREAMON /w/b1k' ;;
-	*) echo "RESULT a-content PASS (vm: $1)" ;;
+	*) printf '%s\n' 'FRAME file=/w/b1k-0.YUYV class=uniform word=80108010' \
+		'FRAME file=/w/b1k-1.YUYV class=expected' "RESULT a-content PASS (vm: $1)" ;;
 	esac
 }
 result() { echo "R $1 $2 $3"; }
-av_results() { echo "AV $1 $2"; }
+av_results() { echo "AV $1 $(grep '^RESULT' <<< "$2")"; }
 cap=$(printf '%s\n' 'FRAME seq=0 ts_ms=5.000 sig=00000000000000aa' \
 	'FRAME seq=1 ts_ms=21.700 sig=00000000000000bb' 'FRAME seq=2 ts_ms=38.300 sig=00000000000000bb' \
 	'  | stats: irqs 10 frames 3 skipped 1' 'RESULT capture fmt=YUYV 1280x720 frames=3 seq_gaps=0' \
@@ -104,6 +106,16 @@ cap=$(printf '%s\n' 'FRAME seq=0 ts_ms=5.000 sig=00000000000000aa' \
 frame_runs "$cap"
 echo "size $(cap_size "$cap")"
 remnant_kept "$cap" /w/b1k 1280x720 /w/p.png 1280 720 r720
+echo "runs $(tr '\n' ';' <<< "$REMNANT_RUNS")"
+echo "order1 $(remnant_order "$cap" | tr '\n' ';')"
+REMNANT_RUNS='0 146.0 3302.1 expected'
+echo "order2 $(remnant_order "$cap" | tr '\n' ';')"
+REMNANT_RUNS=$'0 1 - black\n5 2 - expected\n9 3 - black'
+echo "order3 $(remnant_order "$cap" | tr '\n' ';')"
+REMNANT_RUNS=$'0 1 - other\n5 2 - expected'
+echo "order4 $(remnant_order "$cap" | tr '\n' ';')"
+REMNANT_RUNS=$'0 1 - black\n5 2 - expected'
+echo "order5 $(remnant_order "$cap"$'\nINFO not kept: 3 more frames with a new signature (at most 16 kept)' | tr '\n' ';')"
 remnant_kept 'nothing kept' /w/b0k "" - 1920 1080 r0
 EOF
 )
@@ -115,5 +127,11 @@ check live-remnant-kept "$(grep -qF 'kept: seq 0 at 16.7 ms after STREAMON, 4516
 	grep -qF 'remnant-frames.py /w/remnant-a.YUYV 1920 1080 /w/p.png 1280 720 /w/b1k-0.YUYV /w/b1k-1.YUYV' <<< "$out" &&
 	grep -qF 'R r0-a-content FAIL (gc573-cap kept no frame)' <<< "$out"; echo $?)" \
 	"($(grep -E 'kept:|^AV|^R ' <<< "$out" | cut -c1-90 | tr '\n' ';'))"
+check live-remnant-order "$(grep -qxF 'runs 0 16.7 4516.7 black;1 33.4 4533.4 expected;' <<< "$out" &&
+	grep -qxF 'order1 OK black expected;INFO black start: 1 frames (seq 0-0), the pattern from seq 1, 33.4 ms after STREAMON, 4533.4 ms after the lock;' <<< "$out" &&
+	grep -qxF 'order2 OK expected;' <<< "$out" && grep -qxF 'order3 BAD black expected black;' <<< "$out" &&
+	grep -qxF 'order4 BAD other expected;' <<< "$out" &&
+	grep -qxF 'order5 BAD black expected, not every change kept;INFO black start: 5 frames (seq 0-4), the pattern from seq 5, 2 ms after STREAMON, - ms after the lock;' <<< "$out"; echo $?)" \
+	"($(grep -E '^(runs|order)' <<< "$out" | tr '\n' ' '))"
 echo "FAILS $fails"
 [ "$fails" = 0 ]

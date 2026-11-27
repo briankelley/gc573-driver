@@ -2602,9 +2602,14 @@ remnant_compare() {
 # (WxH) also from the driver's last "HDMI: locked: WxH" line before
 # gc573-cap's STREAMON mark (kernel log, the kernel's clock). Then each
 # frame against A's (tests/remnant-frames.py; $4 the expected pattern's
-# PNG or - for the free-run black, $5 $6 the size) as RESULT $7-a-content
+# PNG or - for the free-run black, $5 $6 the size) as RESULT $7-a-content.
+# REMNANT_RUNS: per kept frame "SEQ MS_AFTER_STREAMON MS_AFTER_LOCK|-
+# CLASS", CLASS black (the free-run black, 0x80108010 in every word),
+# expected, a-content, a-frame, other or uniform-WORD
+REMNANT_RUNS=
 remnant_kept() {
-	local lk="" files
+	local lk="" files cmp
+	REMNANT_RUNS=
 	if [ -n "$3" ]; then
 		lk=$(vm "sudo dmesg" | awk -v m="gc573-cap: STREAMON $2" -v l="HDMI: locked: $3" '
 			function ts(x) { sub(/^\[ */, "", x); sub(/\].*/, "", x); return x + 0 }
@@ -2622,10 +2627,38 @@ remnant_kept() {
 		result "$7-a-content" FAIL "(gc573-cap kept no frame)"
 		return
 	fi
-	av_results "$7" "$(vm "python3 $W/remnant-frames.py $W/remnant-a.YUYV 1920 1080 $4 $5 $6 $files" 2>&1)"
+	cmp=$(vm "python3 $W/remnant-frames.py $W/remnant-a.YUYV 1920 1080 $4 $5 $6 $files" 2>&1)
+	av_results "$7" "$cmp"
+	# the classifier's FRAME lines come in the order of the files
+	REMNANT_RUNS=$(paste -d' ' \
+		<(sed -nE 's/^KEPT seq=([0-9]+) ts_ms=[0-9.]+ from_streamon_ms=([0-9.-]+) .*/\1 \2/p' <<< "$1") \
+		<(sed -nE 's/^FRAME file=[^ ]+ class=([a-z-]+)( word=([0-9a-f]+))?.*/\1 \3/p' <<< "$cmp") |
+		awk -v lk="$lk" '{ c = $3
+			if (c == "uniform") c = $4 == "80108010" ? "black" : "uniform-" $4
+			printf "%s %.1f %s %s\n", $1, $2, lk == "" ? "-" : sprintf("%.1f", lk + $2), c == "" ? "none" : c }')
+}
+# The verdict on B's frames at 720p from REMNANT_RUNS and gc573-cap
+# output $1: every frame the free-run black or the expected pattern, the
+# black only before the first pattern frame, and every signature change
+# kept (no "INFO not kept"). Prints "OK|BAD ORDER" (ORDER: the kept
+# frames' classes in turn, repeats merged) and, after a black start,
+# "INFO" with its length: frames, and the first pattern frame's time
+# after STREAMON and after the lock
+remnant_order() {
+	local order first fseq fms flk
+	order=$(awk '{ print $4 }' <<< "$REMNANT_RUNS" | uniq | paste -sd' ' -)
+	if grep -qxE '(black )?expected' <<< "$order" && ! grep -q '^INFO not kept' <<< "$1"; then
+		echo "OK $order"
+	else
+		echo "BAD ${order:-none}$(grep -q '^INFO not kept' <<< "$1" && echo ', not every change kept')"
+	fi
+	first=$(awk '$4 == "expected" { print; exit }' <<< "$REMNANT_RUNS")
+	read -r fseq fms flk _ <<< "$first"
+	[ -z "$fseq" ] || [ "$order" != "black expected" ] ||
+		echo "INFO black start: $fseq frames (seq 0-$((fseq - 1))), the pattern from seq $fseq, $fms ms after STREAMON, $flk ms after the lock"
 }
 step_remnant() {
-	local out n u cmp rc t
+	local out n u cmp rc t v st order
 	vm "sudo rm -f $W/remnant-b0k-*.YUYV $W/remnant-b1k-*.YUYV"
 	# A: the pattern at 1080p60, the last frame checked
 	src_mode 1920x1080 60
@@ -2660,9 +2693,14 @@ step_remnant() {
 	cmp=$(remnant_compare 1280 720 "$W/remnant-b1.YUYV")
 	rc=$?
 	echo "$cmp" | grep '^RESULT' | sed 's/^/  B: /'
-	check remnant-720p "$([ "$n" -ge 60 ] && [ "$u" = 1 ] && [ "$rc" = 0 ]; echo $?)" \
-		"(720p60 locked $t ms after the mode set: $n frames, $u distinct, the last the 720p pattern: rc $rc)"
 	remnant_kept "$out" "$W/remnant-b1k" 1280x720 "$W/p-1280x720.png" 1280 720 remnant-720p
+	# a black start is the card's after a mode change (spec question;
+	# tests/logs/20261127-103242, -103652): INFO, not a failure
+	v=$(remnant_order "$out")
+	grep '^INFO ' <<< "$v" | sed 's/^INFO /  INFO remnant-720p /'
+	read -r st order <<< "$(head -1 <<< "$v")"
+	check remnant-720p "$([ "$n" -ge 60 ] && [ "$st" = OK ] && [ "$rc" = 0 ]; echo $?)" \
+		"(720p60 locked $t ms after the mode set: $n frames, $u distinct, in turn: $order; the last the 720p pattern: rc $rc)"
 	src_mode 1920x1080 60
 }
 
