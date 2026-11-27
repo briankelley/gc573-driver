@@ -61,9 +61,9 @@
 
 /* Tests only (tests/cases/22-stop-fault.sh): see GC573_STOP_FAULT_* */
 unsigned int gc573_exp_stop_fault;
-module_param_named(exp_stop_fault, gc573_exp_stop_fault, uint, 0644);
+module_param_named_unsafe(exp_stop_fault, gc573_exp_stop_fault, uint, 0644);
 MODULE_PARM_DESC(exp_stop_fault,
-		 "Test only: removes stop safety steps; read at each stop. Bit 0: a video stop does not wait for INT bit 0 (as if it never came), bit 1: video and teardown stops reset no domain (as if the reset failed), bit 2: an audio stop leaves DMA_RUN set (0: off)");
+		 "Test only; setting it taints the kernel. Removes stop safety steps; read at each stop. Bit 0: a video stop does not wait for INT bit 0 (as if it never came), bit 1: video and teardown stops reset no domain (as if the reset failed), bit 2: an audio stop leaves DMA_RUN set (0: off)");
 
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val)
 {

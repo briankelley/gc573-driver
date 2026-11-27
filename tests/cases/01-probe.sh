@@ -5,9 +5,13 @@
 # log keeps the init and quiesce register readbacks.
 # M2: probe registers a V4L2 capture node under the PCI device, with the
 # driver's debugfs state file next to it.
+# Fix review N7: setting a stop test parameter (exp_stop_fault,
+# exp_stop_domains) taints the kernel, here with their defaults (no
+# effect).
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
+par=/sys/module/$GC573_MOD/parameters
 tag=$(kmsg_mark probe)
 gc573_load dyndbg=+p || fail "insmod failed"
 if ! gc573_bound; then
@@ -16,7 +20,14 @@ if ! gc573_bound; then
 fi
 dev=$(gc573_video_dev)
 dbg=$(cat "$(gc573_debugfs)" 2>/dev/null)
+ttag=$(kmsg_mark "probe: test parameters")
+echo 0 > "$par/exp_stop_fault" && echo -1 > "$par/exp_stop_domains"
+rc=$?
+taint=$(kmsg_since "$ttag" | grep -c 'Setting dangerous option exp_stop_\(fault\|domains\) - tainting kernel')
 gc573_unload || fail "rmmod failed"
+[ $rc = 0 ] || fail "cannot write exp_stop_fault and exp_stop_domains"
+[ "$taint" = 2 ] || fail "setting exp_stop_fault and exp_stop_domains tainted the kernel $taint times, not 2"
+echo "exp_stop_fault, exp_stop_domains: setting each taints the kernel"
 
 [ -n "$dev" ] || fail "no video4linux node under $GC573_BDF"
 echo "video node: $dev"

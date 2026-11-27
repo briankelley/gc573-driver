@@ -189,7 +189,10 @@ Name the devices explicitly. Then nothing else is opened, and the names stay put
 
   A source whose signal the card cannot measure gets the same restart and two hot-plugs each time it is plugged in. That may be the case for an interlaced or deep-colour signal or 4K, which the driver does not support yet. To turn the self-heal off until the next load: `echo N | sudo tee /sys/module/gc573/parameters/fpga_heal`. For good: `options gc573 fpga_heal=0` in a file in `/etc/modprobe.d/`. By hand, set the source's mode again or unplug and replug the HDMI cable.
 - Any program that may open the video device (the `video` group, or the desktop user through the seat's access list) can set the EDID that the card shows the source (`VIDIOC_S_EDID`, `v4l2-ctl --set-edid`), as with the kernel's own HDMI receiver drivers. Each change looks to the source like an unplug and a replug, and the source then reads the new EDID. In the PC loopback (a GPU output cabled to the card), that is the host's own GPU driver reading an EDID that any such program chose.
-- Module parameters named `exp_*` are experiments and tests for development (`exp_slot_mode`, `exp_rate_fps`, `exp_rate_bits`, `exp_stop_domains`, `exp_stop_fault`, `exp_audio_raw`, `exp_audio_fill`, `exp_fpga_invalid`). Only root can set them, and several turn off the driver's safety checks: `exp_stop_fault` makes DMA stops fail on purpose, and `exp_stop_domains` changes which parts of the card a stop resets. Leave them at their defaults.
+- Module parameters named `exp_*` are experiments and tests for development (`exp_slot_mode`, `exp_rate_fps`, `exp_rate_bits`, `exp_stop_domains`, `exp_stop_fault`, `exp_audio_raw`, `exp_audio_fill`, `exp_fpga_invalid`). Only root can set them, and several turn off the driver's safety checks. Leave them at their defaults.
+  - `exp_stop_fault` makes DMA stops fail on purpose. It is for tests only.
+  - `exp_stop_domains` changes which parts of the card a stop resets. It is for tests only and can corrupt memory.
+  - Setting either of them taints the kernel.
 - HDCP-protected sources (consoles, streaming boxes) are untested.
 - Tested in a virtual machine with the card passed through, and on a real host (Linux Mint 22, kernel 6.8): a 2-hour OBS recording with a source change every 3 minutes, and frame-exact captures at 1080p60, 1080p59.94 and 720p59.94.
 

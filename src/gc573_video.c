@@ -150,9 +150,9 @@ MODULE_PARM_DESC(exp_rate_bits,
  * trigger (exp_reset) that resets domains while video is idle.
  */
 static int exp_stop_domains = -1;
-module_param(exp_stop_domains, int, 0644);
+module_param_unsafe(exp_stop_domains, int, 0644);
 MODULE_PARM_DESC(exp_stop_domains,
-		 "Experiment, spec/open-questions.md #13; read at stream stop. Domains to reset: mask of 0x001, 0x100, 0x200 (0: none; -1: the driver's choice, all three with 0x100 left out while audio runs)");
+		 "Experiment, spec/open-questions.md #13, can corrupt memory; setting it taints the kernel. Read at stream stop. Domains to reset: mask of 0x001, 0x100, 0x200 (0: none; -1: the driver's choice, all three with 0x100 left out while audio runs)");
 
 static const u32 gc573_vch_base[GC573_VCH_NUM] = {
 	GC573_VCH0_BASE, GC573_VCH1_BASE, GC573_VCH2_BASE,
