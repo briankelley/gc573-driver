@@ -112,7 +112,16 @@
 #             sleep and wake, 60 <-> 59.94, 1080p <-> 720p (reopened through
 #             the websocket), colour format, EDID; time to the first good
 #             frame (GC573_OBSEV_REPS, 2, rounds). Then 1080p <-> 720p
-#             while OBS records, in Hybrid MP4 and (report only) in MKV
+#             while OBS records, in Hybrid MP4 and (report only) in MKV:
+#             the recording starts once OBS has shown the counter live for
+#             1 s (obsrec-baseline, within 10 s of the source's restart);
+#             a sample every 2 s, the first and last live, any other one
+#             not live only inside a change's window (from its step to its
+#             first good frame; none for a change that did not recover by
+#             itself within its budget), progress against the source's
+#             rate at the time
+#             A recording whose checks fail (obsws, obsevents) is kept with
+#             OBS's log in ~/gc573-kept where OBS runs, never in the repo
 #   avchange  the driver's A/V offset across 3 colour-format changes (each a
 #             stream restart) under one avsync.sh session: within 1 ms
 #   obssoak   the event soak with OBS: GC573_OBSSOAK_SECS (7200) recorded, a
@@ -460,6 +469,25 @@ av_results() {
 	[ -n "$err" ] || err=$(grep -m1 -E '[a-z]Error\b|[Ee]rror:|No such file|[Pp]ermission denied|not found|[Cc]annot ' <<< "$2")
 	[ -n "$err" ] || err=$(grep -m1 '[^[:space:]]' <<< "$2")
 	result "$1-check" FAIL "(the checker gave no RESULT line: ${err:-no output})"
+}
+
+# A recording ($2) where OBS runs, after its checks: kept with the run's OBS
+# log in ~/gc573-kept/<UTC>-$1/ (outside the repo, never committed) when a
+# RESULT in the checkers' outputs ($3...) failed, to be looked at; else
+# deleted
+rec_keep() {
+	local step=$1 f=$2 d
+	shift 2
+	if ! printf '%s\n' "$@" | grep -q -E '^RESULT [^ ]+ +FAIL'; then
+		vm "rm -f '$f'"
+		return
+	fi
+	d=gc573-kept/$(date -u +%Y%m%dT%H%M%SZ)-$step
+	if vm "mkdir -p ~/$d && mv '$f' ~/$d/ && cp \"\$(ls -t ~/.config/obs-studio/logs/*.txt | head -1)\" ~/$d/"; then
+		echo "  kept (a check failed): the recording and OBS's log in ~/$d $([ "$LOCAL" = 1 ] && echo here || echo "in $VM"), not in the repo"
+	else
+		echo "  could not keep the recording in ~/$d: $f left as it is"
+	fi
 }
 
 # Seconds from now until QUERY_DV_TIMINGS succeeds (limit $1), or "none"
@@ -2060,7 +2088,7 @@ step_avchange() {
 # recording: its image (pattern, counter steps) and its A/V offset (the
 # source's own offset needs avsync.sh's full-frame flash: step obsav)
 step_obsws() {
-	local out f
+	local out f rc
 	av_on --pattern || { result obsws-source FAIL "(avsync.sh --pattern or the IT6805 audio state ON)"; av_off; return; }
 	sleep 3
 	obs_up || { result obsws-start FAIL "(OBS with obs-websocket)"; obs_down; av_off; return; }
@@ -2071,10 +2099,11 @@ step_obsws() {
 	f=$(sed -n 's/^RECORDING //p' <<< "$out")
 	check obsws-record "$([ -n "$f" ]; echo $?)" "($(grep '^STATS' <<< "$out"))"
 	if [ -n "$f" ]; then
-		av_results obsws "$(vm "cd $W && python3 obs-events.py recheck '$f' --every 5" 2>&1)"
+		rc=$(vm "cd $W && python3 obs-events.py recheck '$f' --every 5" 2>&1)
+		av_results obsws "$rc"
 		out=$(vm "python3 $W/obs-av.py '$f' --box 0.70,0.88,0.92,0.92 --min-secs 55" 2>&1)
 		av_results obsws-rec "$out"
-		vm "rm -f '$f'"
+		rec_keep obsws "$f" "$rc" "$out"
 	fi
 	obs_down
 	av_off
@@ -2086,7 +2115,7 @@ step_obsws() {
 # colour format, and EDID re-sets (tests/obs-events.py events). TTFGF per
 # change; OBS's own log lines for its capture.
 step_obsevents() {
-	local out m lg f
+	local out m lg f rc wins rates
 	obs_up || { result obsevents-start FAIL "(OBS with obs-websocket)"; obs_down; return; }
 	m=$(obs_log_mark)
 	out=$(python3 "$ROOT/tests/obs-events.py" events --reps "$OBSEV_REPS" "${OBSEV_ARGS[@]}" 2>&1)
@@ -2104,8 +2133,15 @@ step_obsevents() {
 	av_results obsevents-hybrid "$(grep -v '^RECFORMAT' <<< "$out")"
 	f=$(sed -n 's/^RECORDING //p' <<< "$out")
 	if [ -n "$f" ]; then
-		av_results obsevents-hybrid "$(vm "cd $W && python3 obs-events.py recheck '$f' --every 2 --across" 2>&1)"
-		vm "rm -f '$f'"
+		# a sample that is not live passes only in a change's window, from
+		# its step to its first good frame (none for a change that did not
+		# recover by itself within its budget); progress against the
+		# source's rate at the sample's time (RECWINDOW, RECRATE)
+		wins=$(awk '$1 == "RECWINDOW" { printf "%s%s:%s:%s", n++ ? "," : "", $2, $3, $4 }' <<< "$out")
+		rates=$(awk '$1 == "RECRATE" { printf "%s%s:%s", n++ ? "," : "", $2, $3 }' <<< "$out")
+		rc=$(vm "cd $W && python3 obs-events.py recheck '$f' --every 2 --across --windows '$wins' --rates '$rates'" 2>&1)
+		av_results obsevents-hybrid "$rc"
+		rec_keep obsevents-hybrid "$f" "$out" "$rc"
 	fi
 	obs_log_since "$m" | grep -E 'Unable to set format|failed to|busy' | sed 's/^/  obs log: /' | head -8
 	obs_down
