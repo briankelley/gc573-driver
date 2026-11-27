@@ -20,7 +20,9 @@
 # neither all-ones, read past any driver (tests/gc573-regs.c, built in the
 # VM with its gcc). Anything else (exit 1, the reason on stderr): leave
 # the VM running. A card whose stop really failed has no safe way out of
-# a VM (README.md, Known limitations). Exit 2: usage.
+# a VM: the guest's reboot (QEMU resets the card) and its end (vfio-pci
+# releases it) both turn bus mastering off, and the host may then need a
+# power cycle (spec/pci.md). Exit 2: usage.
 set -euo pipefail
 
 [ $# = 1 ] && [ -n "$1" ] || { echo "usage: $0 VM" >&2; exit 2; }

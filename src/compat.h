@@ -105,8 +105,9 @@ gc573_pcim_iomap_region(struct pci_dev *pdev, int bar, const char *name)
  * API.
  *
  * Without it there is no such API. A driver_override naming no driver
- * refuses a plain bind and new_id, but driverctl and libvirt write their
- * own over it (README, Known limitations). In order:
+ * refuses a plain bind and new_id, but driverctl and libvirt (a VM's
+ * managed hostdev) write their own over it and hand the card to
+ * vfio-pci. In order:
  * - the override in struct device (cb3d1049f4ea, v7.0; 6.18.y and
  *   Ubuntu's 6.8 and 7.0 have it backported), device_set_driver_override(),
  *   under a spinlock of its own, where the bus says it matches with it

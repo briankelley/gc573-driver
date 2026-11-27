@@ -639,7 +639,7 @@ MODULE_PARM_DESC(dead_cards,
  *   v6.15, weaker without it; modinfo's dead_block says which).
  *   A new pci_dev of it, after a remove and rescan, gets refused by this
  *   driver's record, but nothing keeps other drivers from that one
- *   (README).
+ *   (vfio-pci through new_id or driverctl, then a VM's end).
  * - The module stays loaded, and with it the record. A stop that fails
  *   while the module unloads cannot hold it: then only
  *   gc573_block_drivers() does.
@@ -1198,7 +1198,7 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
  * that: the PCI core turns bus mastering off on every PCI device in D0 to
  * D3hot, bound to a driver or not, after its driver's shutdown
  * (pci_device_shutdown(), the bus's shutdown, which device_shutdown()
- * calls for every device), so a dead card's is turned off too (README).
+ * calls for every device), so a dead card's is turned off too.
  */
 static void gc573_shutdown(struct pci_dev *pdev)
 {

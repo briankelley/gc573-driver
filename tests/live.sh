@@ -180,7 +180,9 @@
 # OBS open every /dev/video* node, cameras too), and the driver's own A/V
 # offset (gc573-aud -V -P) in the source sessions of the first and last
 # segments. sudo: SUDO_ASKPASS (sudo -A), else cached credentials (sudo -n).
-# GC573_OBS_BUFFERING defaults to 0 here, the README's recommendation.
+# GC573_OBS_BUFFERING defaults to 0 here: with OBS's buffering off, each
+# frame is shown as it arrives, so the driver's pauses at source changes
+# do not add to OBS's video delay.
 # GC573_OBS_BRIDGE=0: obsevents and obssoak without tests/obsbridge.py (the
 # reopen from the input's timings; default on).
 # Roku mode (GC573_SOURCE=roku, host-local only; M6): the source is the
@@ -2059,7 +2061,7 @@ step_soak() {
 # one, 0.2-0.4 s without frames). One gc573-aud -V capture; per segment
 # between the changes the offset (live-av.py --segments, corrected by whole
 # frames as in avsync) must stay within 1 ms of the first segment's. OBS
-# with buffering on adds every such gap to its video delay (README); the
+# with buffering on adds every such gap to its video delay for good; the
 # driver's timestamps must not
 step_avchange() {
 	local out p t0 k st n dmax offs rc
