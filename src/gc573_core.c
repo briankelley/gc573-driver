@@ -11,15 +11,15 @@
  * Teardown is entirely devres-managed. Release order is the reverse of
  * probe: debugfs, HDMI polling (stopped), every DMA engine stopped and the
  * stop checked (gc573_dma_stop(), at the head of the ALSA card's release),
- * the ALSA card (waits until its files are closed), the video device and
- * its buffers, the HDMI workqueue, source HPD low, I2C adapters, quiesce
- * (interrupts off, reset domains), free IRQ, free vectors, the DMA memory
- * the card itself uses (audio buffers), unmap BAR0, disable the device,
- * and last the v4l2_device reference. No DMA memory goes back before the
- * engines were stopped: a stop that cannot be confirmed turns bus
- * mastering off first (gc573_dma_dead()).
- * struct gc573 is freed when the last reference goes, which can be after
- * remove while a file handle is still open.
+ * the ALSA card (disconnected; it goes with its last file), the video
+ * device and its buffers, the HDMI workqueue, source HPD low, I2C
+ * adapters, quiesce (interrupts off, reset domains), free IRQ, free
+ * vectors, the DMA memory the card itself uses (audio buffers, the dummy
+ * list), unmap BAR0, disable the device, and last the v4l2_device
+ * reference. No DMA memory goes back before the engines were stopped: a
+ * stop that cannot be confirmed turns bus mastering off first
+ * (gc573_dma_dead()). struct gc573 is freed when the last reference goes,
+ * which can be after remove while a video or PCM file is still open.
  */
 
 #include <linux/debugfs.h>

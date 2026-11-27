@@ -46,6 +46,14 @@
  * (within 3 ms) would read as a pause and add that silence; debugfs
  * "audio" counts pauses.
  *
+ * Unbind and remove do not wait for the card's files: the card is
+ * disconnected (a running stream stopped and synced, every file failing
+ * from then on) and goes when its last file closes. An open substream
+ * holds a reference to struct gc573 until its close, the only callback
+ * left after the disconnect, so the struct outlives every call that can
+ * still reach it. Nothing of gc573 runs when the card itself goes: ALSA
+ * drops its module reference before that, so no private_free.
+ *
  * Locking: aud.lock protects the stream state shared with the hard IRQ
  * handler and the audio DMA registers. DMA_RUN (0x008) changes only by
  * read-modify-write under gc->dma_run_lock (spec/audio.md "Driver notes").
@@ -356,6 +364,7 @@ static const struct snd_pcm_hardware gc573_pcm_hw = {
 
 static int gc573_pcm_open(struct snd_pcm_substream *ss)
 {
+	struct gc573 *gc = snd_pcm_substream_chip(ss);
 	struct snd_pcm_runtime *rt = ss->runtime;
 	int ret;
 
@@ -365,11 +374,20 @@ static int gc573_pcm_open(struct snd_pcm_substream *ss)
 					 GC573_AUD_HW_FRAMES);
 	if (ret < 0)
 		return ret;
-	return snd_pcm_hw_constraint_integer(rt, SNDRV_PCM_HW_PARAM_PERIODS);
+	ret = snd_pcm_hw_constraint_integer(rt, SNDRV_PCM_HW_PARAM_PERIODS);
+	if (ret < 0)
+		return ret;
+	/* struct gc573 stays until the close, which can come after remove */
+	v4l2_device_get(&gc->v4l2_dev);
+	return 0;
 }
 
+/* After an open that succeeded; also once the card is disconnected */
 static int gc573_pcm_close(struct snd_pcm_substream *ss)
 {
+	struct gc573 *gc = snd_pcm_substream_chip(ss);
+
+	v4l2_device_put(&gc->v4l2_dev);
 	return 0;
 }
 
@@ -543,15 +561,17 @@ int gc573_audio_alloc(struct gc573 *gc)
 
 /*
  * Devres, the first teardown step that frees DMA memory: every engine is
- * stopped first (gc573_dma_stop()). snd_card_free() disconnects the card,
- * stopping a running stream, and returns once every file on it is closed.
+ * stopped first (gc573_dma_stop()). The card is disconnected, stopping a
+ * running stream, and goes once every file on it is closed: an unbind
+ * does not wait for them (snd_card_free() would, uninterruptibly, for as
+ * long as any program keeps a node of the card open).
  */
 static void gc573_audio_free(void *data)
 {
 	struct gc573 *gc = data;
 
 	gc573_dma_stop(gc);
-	snd_card_free(gc->aud.card);
+	snd_card_free_when_closed(gc->aud.card);
 }
 
 int gc573_audio_init(struct gc573 *gc)
