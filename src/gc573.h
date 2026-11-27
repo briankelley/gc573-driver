@@ -374,7 +374,9 @@ struct gc573_audio {
 	unsigned int part;		/* bytes into the current ALSA period */
 	unsigned int rate;
 	bool running;			/* periods are being delivered */
-	bool stopping;			/* stopped, INT bit 4 not waited for */
+	bool stopping;			/* stopped, its sync's verdict not in */
+	/* that stop in gc573_stop_begin()'s count: until INT bit 4 or the sync */
+	bool stop_counted;
 	bool dead;			/* quiesced: never start again */
 	bool resync;			/* restarted: fill the gap first */
 	unsigned int pause_us;		/* a late period: pause or latency? */
@@ -467,6 +469,9 @@ int gc573_reset_domain_mask(struct gc573 *gc, u32 mask);
 int gc573_reset_domains(struct gc573 *gc);
 void gc573_dma_stop(struct gc573 *gc);
 void gc573_dma_dead(struct gc573 *gc, const char *why, bool locked);
+/* a DMA stop from its first write to its verdict: no system sleep */
+void gc573_stop_begin(void);
+void gc573_stop_end(void);
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val);
 void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val);
 

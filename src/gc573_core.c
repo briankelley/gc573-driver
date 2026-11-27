@@ -315,6 +315,30 @@ static void gc573_card_dead(struct gc573 *gc, const char *why, bool locked);
 static struct pci_driver gc573_pci_driver;
 
 /*
+ * DMA stops whose verdict is not in yet, every card's (final review F2):
+ * the probe's (gc573_hw_stop_engines()), the teardown's (gc573_dma_stop())
+ * and an audio stop from its write until INT bit 4 or its sync
+ * (gc573_audio.c). gc573_pm_dead_notify() refuses a system sleep
+ * meanwhile, also where no card's own notifier is there to (a probe, an
+ * unbind): a stop that fails leaves the card dead, and a suspend would
+ * turn its bus mastering off. Each counts from before its first write to
+ * after its verdict.
+ */
+static atomic_t gc573_stops = ATOMIC_INIT(0);
+
+void gc573_stop_begin(void)
+{
+	atomic_inc(&gc573_stops);
+}
+
+void gc573_stop_end(void)
+{
+	/* a death is recorded (gc573_dead_add()) before the count drops */
+	smp_mb__before_atomic();
+	atomic_dec(&gc573_stops);
+}
+
+/*
  * The probe's decision at its start, from reads alone, logged with what
  * it read (final review F1). Dead until reboot (gc573_card_dead()), with
  * no register of the card's written and bus mastering left as it is
@@ -418,6 +442,8 @@ static int gc573_hw_stop_engines(struct gc573 *gc)
 		return -ENODEV;
 	}
 
+	/* from the stop's first write to its verdict: no system sleep */
+	gc573_stop_begin();
 	gc573_irq_hw_disable(gc);
 	if (run & GC573_DMA_RUN_AUDIO)
 		gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
@@ -460,6 +486,7 @@ static int gc573_hw_stop_engines(struct gc573 *gc)
 		gc573_dma_dead(gc, "the stop of the engines at probe failed", true);
 	else
 		gc->master_unchecked = false;
+	gc573_stop_end();
 	return ret;
 }
 
@@ -704,6 +731,13 @@ static void gc573_card_dead(struct gc573 *gc, const char *why, bool locked)
 	pm_runtime_get_noresume(&pdev->dev);
 	gc573_block_drivers(pdev, &gc573_pci_driver, locked);
 	gc573_dead_add(pdev);
+	/*
+	 * A system sleep whose notifiers already ran (final review F2): its
+	 * freezer and the device suspend after it stop at a wakeup event. One
+	 * that comes between the notifiers and freeze_processes(), which
+	 * clears such events, goes unseen (spec/open-questions.md #44)
+	 */
+	pm_system_wakeup();
 	__module_get(THIS_MODULE);
 	pci_read_config_word(pdev, PCI_COMMAND, &cmd);
 	if (cmd != (u16)~0 && !(cmd & PCI_COMMAND_MASTER))
@@ -790,6 +824,8 @@ void gc573_dma_stop(struct gc573 *gc)
 		msleep(GC573_STOP_FAULT_SLOW_MS);
 	}
 
+	/* from the stop's first write to its verdict: no system sleep */
+	gc573_stop_begin();
 	mutex_lock(&gc->vid.lock);
 	gc->vid.dead = true;
 	if (gc573_rd(gc, GC573_VIP_CTRL) & GC573_VIP_CTRL_OUT_EN)
@@ -822,6 +858,7 @@ void gc573_dma_stop(struct gc573 *gc)
 			"the card does not answer" : "DMA still on", run, vip);
 		gc573_dma_dead(gc, "teardown stop failed", true);
 	}
+	gc573_stop_end();
 }
 
 /*
@@ -1016,21 +1053,35 @@ static int gc573_pm_notify(struct notifier_block *nb, unsigned long action,
 	return notifier_from_errno(-EBUSY);
 }
 
+/*
+ * Every card's, from the module's load to its unload: a card dead, or a
+ * stop whose verdict is not in (gc573_stops: in a probe or an unbind no
+ * card's own notifier is there). A death after this ran calls
+ * pm_system_wakeup() (gc573_card_dead()).
+ */
 static int gc573_pm_dead_notify(struct notifier_block *nb,
 				unsigned long action, void *data)
 {
 	unsigned int n;
+	int stops;
 
 	if (action != PM_SUSPEND_PREPARE && action != PM_HIBERNATION_PREPARE &&
 	    action != PM_RESTORE_PREPARE)
 		return NOTIFY_DONE;
+	/* the count first: a stop's death is recorded before its count drops */
+	stops = atomic_read_acquire(&gc573_stops);
 	mutex_lock(&gc573_dead_lock);
 	n = gc573_ndead;
 	mutex_unlock(&gc573_dead_lock);
-	if (!n)
+	if (n) {
+		pr_warn("%s: system sleep refused: %u card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first\n",
+			KBUILD_MODNAME, n);
+		return notifier_from_errno(-EBUSY);
+	}
+	if (stops <= 0)
 		return NOTIFY_DONE;
-	pr_warn("%s: system sleep refused: %u card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first\n",
-		KBUILD_MODNAME, n);
+	pr_warn("%s: system sleep refused: %d DMA stop(s) not confirmed yet (a probe, an unbind or an audio stop), and if one fails, the PCI core would turn bus mastering off under the card's DMA; try again in a moment\n",
+		KBUILD_MODNAME, stops);
 	return notifier_from_errno(-EBUSY);
 }
 

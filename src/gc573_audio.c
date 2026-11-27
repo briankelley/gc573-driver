@@ -259,6 +259,12 @@ void gc573_audio_irq(struct gc573 *gc, u32 pending, u32 done, u64 ns)
 	if (pending & GC573_INT_AUD_STOP) {
 		a->st.stops++;
 		complete(&a->stopped);
+		/* confirmed (tests only, bit 5: counted as without INT bit 4) */
+		if (a->stop_counted &&
+		    !(READ_ONCE(gc573_exp_stop_fault) & GC573_STOP_FAULT_AUD_SYNC)) {
+			a->stop_counted = false;
+			gc573_stop_end();
+		}
 	}
 	if (!(pending & GC573_INT_AUD_DONE))
 		goto out;
@@ -441,6 +447,11 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 		/* a domain reset in progress may have stopped it, silently */
 		if (gc573_rd(gc, GC573_DMA_RUN) & GC573_DMA_RUN_AUDIO) {
 			a->stopping = true;
+			/* until INT bit 4 or the sync's verdict: no system sleep */
+			if (!a->stop_counted) {
+				a->stop_counted = true;
+				gc573_stop_begin();
+			}
 			gc573_aud_hw_stop(gc);
 		}
 		break;
@@ -483,7 +494,7 @@ static int gc573_pcm_sync_stop(struct snd_pcm_substream *ss)
 	struct gc573 *gc = snd_pcm_substream_chip(ss);
 	unsigned int fault = READ_ONCE(gc573_exp_stop_fault);
 	struct gc573_audio *a = &gc->aud;
-	bool stopping, missing;
+	bool stopping, missing, counted;
 	u32 run;
 
 	spin_lock_irq(&a->lock);
@@ -523,7 +534,11 @@ static int gc573_pcm_sync_stop(struct snd_pcm_substream *ss)
 	 */
 	spin_lock_irq(&a->lock);
 	a->stopping = false;
+	counted = a->stop_counted;
+	a->stop_counted = false;
 	spin_unlock_irq(&a->lock);
+	if (counted)
+		gc573_stop_end();
 out:
 	synchronize_irq(gc->irq);
 	return 0;
