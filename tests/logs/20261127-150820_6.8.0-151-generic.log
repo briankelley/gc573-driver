@@ -1,0 +1,105 @@
+# GC573 regression suite
+date:    2026-11-27 15:08:20 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 20D46A19323C2535E473B9B
+rev:     2d533cf75517
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 28-sleep-guard
+    | [ 4622.531714] gc573 0000:07:00.0: system sleep refused: a video stream is on, and the PCI core would turn bus mastering off under its DMA
+  a video stream: sleep refused (/home/dev/gc573-driver/tests/cases/../lib.sh: line 238: echo: write error: Device or resource busy)
+    | [ 4624.694923] gc573 0000:07:00.0: system sleep refused: an audio stream is on, and the PCI core would turn bus mastering off under its DMA
+  an audio stream: sleep refused (/home/dev/gc573-driver/tests/cases/../lib.sh: line 238: echo: write error: Device or resource busy)
+    | [ 4624.718036] PM: suspend entry (s2idle)
+    | [ 4624.726733] PM: suspend debug: Waiting for 5 second(s).
+    | [ 4629.728534] PM: suspend exit
+  idle: sleep through the freezer stage; then 30 frames pattern-checked and an audio read
+  -- unbind, the teardown's stop confirmed and its verdict held 2 s; power/control auto
+    | [ 4631.501237] Setting dangerous option exp_stop_fault - tainting kernel
+    | [ 4631.629592] gc573 0000:07:00.0: exp_stop_fault 0x80: the teardown stop holds its verdict for 2000 ms
+    | [ 4631.692864] PM: suspend entry (s2idle)
+    | [ 4633.786500] PM: suspend debug: Waiting for 5 second(s).
+    | [ 4638.789332] PM: suspend exit
+    | [ 4638.789452] Setting dangerous option exp_stop_fault - tainting kernel
+  during the hold: the card runtime suspended, its port 0000:00:02.6 active
+  FAIL: the card was runtime suspended during the teardown's stop (no usage count of the driver's); system sleep went through the freezer stage while the teardown's stop was not confirmed; PCI enable count 0 after the unbind, not 1
+  -- kernel log (53 lines)
+  | [ 4618.494195] gc573 0000:07:00.0: using MSI, irq 60
+  | [ 4618.494212] gc573 0000:07:00.0: FPGA version 20200811
+  | [ 4618.626978] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [ 4618.627688] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [ 4618.727770] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [ 4618.728531] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [ 4618.826956] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [ 4618.964008] gc573 0000:07:00.0: video device video0
+  | [ 4618.964100] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [ 4618.982951] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [ 4619.524998] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [ 4622.473416] gc573-test: 1795792105116368545-25244 sleep guard: a video stream
+  | [ 4622.480977] PM: suspend entry (s2idle)
+  | [ 4622.531350] Filesystems sync: 0.050 seconds
+  | [ 4622.531714] gc573 0000:07:00.0: system sleep refused: a video stream is on, and the PCI core would turn bus mastering off under its DMA
+  | [ 4622.531724] random: crng reseeded on system resumption
+  | [ 4622.531728] PM: suspend exit
+  | [ 4624.684601] gc573-test: 1795792107328275329-28972 sleep guard: an audio stream
+  | [ 4624.686768] PM: suspend entry (s2idle)
+  | [ 4624.694814] Filesystems sync: 0.008 seconds
+  | [ 4624.694923] gc573 0000:07:00.0: system sleep refused: an audio stream is on, and the PCI core would turn bus mastering off under its DMA
+  | [ 4624.694928] random: crng reseeded on system resumption
+  | [ 4624.694929] PM: suspend exit
+  | [ 4624.715951] gc573-test: 1795792107359653680-7010 sleep guard: idle
+  | [ 4624.718036] PM: suspend entry (s2idle)
+  | [ 4624.723982] Filesystems sync: 0.005 seconds
+  | [ 4624.724149] Freezing user space processes
+  | [ 4624.725719] Freezing user space processes completed (elapsed 0.001 seconds)
+  | [ 4624.725722] OOM killer disabled.
+  | [ 4624.725723] Freezing remaining freezable tasks
+  | [ 4624.726732] Freezing remaining freezable tasks completed (elapsed 0.001 seconds)
+  | [ 4624.726733] PM: suspend debug: Waiting for 5 second(s).
+  | [ 4629.727893] OOM killer enabled.
+  | [ 4629.727896] Restarting tasks ... done.
+  | [ 4629.728530] random: crng reseeded on system resumption
+  | [ 4629.728534] PM: suspend exit
+  | [ 4631.500387] gc573-test: 1795792114143506574-27216 sleep guard: teardown stop held
+  | [ 4631.501237] Setting dangerous option exp_stop_fault - tainting kernel
+  | [ 4631.629592] gc573 0000:07:00.0: exp_stop_fault 0x80: the teardown stop holds its verdict for 2000 ms
+  | [ 4631.692864] PM: suspend entry (s2idle)
+  | [ 4631.710584] Filesystems sync: 0.017 seconds
+  | [ 4631.711402] Freezing user space processes
+  | [ 4633.785538] Freezing user space processes completed (elapsed 2.074 seconds)
+  | [ 4633.785545] OOM killer disabled.
+  | [ 4633.785546] Freezing remaining freezable tasks
+  | [ 4633.786495] Freezing remaining freezable tasks completed (elapsed 0.000 seconds)
+  | [ 4633.786500] PM: suspend debug: Waiting for 5 second(s).
+  | [ 4638.787751] OOM killer enabled.
+  | [ 4638.787756] Restarting tasks ... done.
+  | [ 4638.789328] random: crng reseeded on system resumption
+  | [ 4638.789332] PM: suspend exit
+  | [ 4638.789452] Setting dangerous option exp_stop_fault - tainting kernel
+  | [ 4638.817037] Setting dangerous option exp_stop_fault - tainting kernel
+  expected: [ 4622.531714] gc573 0000:07:00.0: system sleep refused: a video stream is on, and the PCI core would turn bus mastering off under its DMA
+  expected: [ 4624.694923] gc573 0000:07:00.0: system sleep refused: an audio stream is on, and the PCI core would turn bus mastering off under its DMA
+RESULT 28-sleep-guard       FAIL (21s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 28-sleep-guard       FAIL (21s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=0 fail=1 skip=2
