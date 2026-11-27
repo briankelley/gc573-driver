@@ -16,6 +16,10 @@
 # PCI interrupt routing), which then fails what comes after it. kmemleak's
 # own allocations count as points: a failure there falls back to its pool,
 # and the step is one with no failure in the driver.
+# First a load without a fault and an unload, so that the device's state
+# is the driver's own: before any probe it is the boot's (bus mastering on
+# in gc573-dev), and a fault that stops the driver before its probe leaves
+# that as it is.
 # 1. load: finit_module of gc573.ko with the N-th point failed (module init
 #    and, where the device has no NUMA node, the probe in the same task):
 #    every point up to GC573_FI_LOAD_FULL (60), then every
@@ -481,6 +485,18 @@ fi
 gc573_loaded && gc573_unload
 filter_modules
 koff=$(stat -c %s "$klogf")
+
+# A load without a fault and an unload first. Before any probe the device
+# has the boot's state (in gc573-dev COMMAND 0x0007, bus mastering on),
+# which a step whose failure stops the driver before its probe leaves as
+# it is (load n=1 in tests/logs/20261127-075711). After the driver's own
+# remove, what the leftovers check finds is the driver's
+gc573_load i2c_bus1=1 i2c_bus02=1 || fail "the load before the sweeps failed"
+gc573_bound || { gc573_unload; fail "the load before the sweeps: not bound"; }
+gc573_unload || fail "rmmod after the load before the sweeps failed"
+left=$(leftovers)
+[ -z "$left" ] || fail "a load and unload without a fault left: $(tr '\n' ';' <<< "$left")"
+klog_step "the load and unload before the sweeps"
 
 # ---- 1. load ----
 if [ "$numa" != -1 ]; then
