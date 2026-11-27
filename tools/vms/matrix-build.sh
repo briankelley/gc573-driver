@@ -11,6 +11,7 @@
 # Usage: tools/vms/matrix-build.sh [-r REF] [-j N] [--load] [--dkms] [VM...]
 #   default VMs: every libvirt domain gc573-* except gc573-ref (vendor driver,
 #   kernel 5.4 is outside the supported range) and gc573-dev (agent bring-up VM).
+#   Those two are refused even when named: both claim the card when they start.
 # Needs: sudo (virsh), ssh aliases = VM names (tools/vms/create.sh, mint.sh).
 set -euo pipefail
 
