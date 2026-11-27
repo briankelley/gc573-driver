@@ -34,7 +34,22 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
   report, or a driver error/timeout/MISMATCH message (`KMSG_BAD`,
   `KMSG_DRV_BAD` in `lib.sh`). A case that provokes such a message on
   purpose appends a regex for it to the file `$GC573_KMSG_ALLOW`; matching
-  lines are logged as expected instead.
+  lines are logged as expected instead. A kernel warning's report ("cut
+  here" to "end trace") is allowed whole, its call trace and registers
+  too, when its `WARNING:` line matches an allowed regex that itself names
+  `WARNING:`; otherwise each of its lines is checked.
+- A case with the header line `# gc573-run: last` runs after all the
+  others (`22-stop-fault`, `27-no-answer-dead`): it leaves the card dead
+  until reboot (a stop the card did not confirm: the memory kept, bus
+  mastering on, no driver, the module held, the card in the parameter
+  `dead_cards`). Once a case has left the card dead, the cases after it
+  SKIP, the module stays loaded, and a new suite refuses to start
+  (exit 2) until a reboot. So each such case runs alone for its other
+  choices (`GC573_TEST_STOP`, `GC573_TEST_NOANSWER`, which
+  `tools/vmbuild.sh` passes on), and every one is followed by a reboot of
+  the VM once `tools/vms/card-idle.sh` says the card is idle. Under
+  DMA-API debug a new suite also refuses to start while the card's device
+  has DMA mappings and no driver.
 - `run.sh` follows each case's kernel log while it runs
   (`tests/kmsg-tail.py` into a file, exported to the case as
   `GC573_KLOG_FILE`), so the log is complete even when the case writes more
@@ -47,8 +62,11 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
   `kmemleak` result. kmemleak only reports an object after two consecutive
   scans found it unreferenced and unchanged, so every check scans twice
   (`kml_reset`, `kml_report` in `lib.sh`); a single scan reports no new leak.
-- `debug-checkers` result: lockdep must still be on (`debug_locks=1`) and the
-  DMA-API debug error count unchanged after the last case.
+- DMA-API debug prints every error while the suite runs (`all_errors`, put
+  back after it). A case's error count must rise by exactly the errors its
+  log reports and allows; `debug-checkers`: lockdep must still be on
+  (`debug_locks=1`) and the error count risen by no more than the cases
+  allowed.
 
 ## Log
 Header: date, kernel, debug options, card IDs, module srcversion, source rev,
@@ -77,11 +95,12 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `19-surprise-remove` | security review | `GC573_REMOVE_ITER` (3) rounds: sysfs `remove` while `gc573-cap` (NV12, pattern check) and `gc573-aud` stream and two holders keep the video node and the ALSA control node open. The removal returns within 20 s with the files still held (else the holders are killed and the case fails), the device directory is gone, both tools exit with an error within 10 s, the holders' QUERYCAP and CARD_INFO get ENODEV (or EIO) and they close; `rescan` binds it again within 10 s with its nodes, a capture and an audio read pass, the driver's memory is 0. `hung_task_timeout_secs` 30 |
 | `20-ioctl-limits` | security review | no input. SOURCE_CHANGE subscriptions (F2): id 0 subscribes, ids 1 and 0xffffffff fail with EINVAL, the control event subscribes. CREATE_BUFS (F1): the current size and 8294400 bytes (1920x1080 XBGR32) succeed, a byte more and 64 MiB fail with EINVAL; driver memory 0 after. In a `GC573_MEMCG_MB` (48) MiB memory cgroup, `nobody` with the node's group asks for 16 buffers of 8294400 bytes: it holds no more than the limit (fewer buffers, or ENOMEM), the cgroup is charged for what it holds, nothing is OOM-killed (`memory.events` oom_kill 0), driver memory 0 after (SKIP of that part without the cgroup v2 memory controller). `tests/gc573-sec.c` issues the ioctls |
 | `21-i2c-bus1-policy` | security review | F8, through i2c-dev on bus 1 (`tests/i2c-xfer.py`): reads of 0x37 (DDC/CI) and 0x50 (EDID) fail with EPERM and the IT6805 ID still reads 54 49 05 68; only then writes to 0x37 and 0x50, which fail with EPERM too. A write of IT6805 0x0f = 1 (another bank) between the driver's sequences: debugfs hdmi `resyncs` goes up and the IT6805 is back in bank 0 0.5 s later |
-| `22-stop-fault` | security review | F4, with the test parameter `exp_stop_fault`, no input. STREAMOFF with no INT bit 0 and no domain reset: bus mastering off (PCI_COMMAND bit 2), debugfs `dma_dead 1`, no video or audio stream starts; a rebind brings bus mastering back and a pattern-checked capture. Unbind while video and audio stream with the audio stop ignored and no domain reset: the teardown sees the audio DMA still on and turns bus mastering off, the unbind finishes, both programs end, a rebind brings the card back. Driver memory 0 each time |
+| `22-stop-fault` | security review | F4, fix review N1, N7, with the test parameter `exp_stop_fault` (setting it taints the kernel), no input; runs last and leaves the card dead until reboot. The parameter never stops a DMA itself: the stop is carried out and confirmed, and only then counted as failed (spec/pci.md). `GC573_TEST_STOP=streamoff` (default): STREAMOFF from `gc573-sec stopoff`, counted as without INT bit 0 and domain 0 reset; `teardown`: an unbind while video and audio stream, the teardown's check counting the audio DMA as still on. First the kernel log must say the stop was confirmed and BAR0 must read idle (VIP_CTRL output and DMA_RUN audio off), or the case stops there: no unbind, and no reboot. Then the failed stop's line, the size of the DMA memory kept until reboot, bus mastering still on (PCI_COMMAND bit 2), the card in `dead_cards`; streamoff: debugfs `dma_dead 1` and `mem kept` above 0, REQBUFS 0 works, no video or audio stream starts; teardown: the unbind finishes and both programs end. After the unbind: the device still enabled with bus mastering on, the module not unloadable, no bind (ENODEV). streamoff: a remove and rescan gives a new device, refused by the driver's record. It refuses a module whose `exp_stop_fault` is of the older kind, which turned bus mastering off under a running DMA |
 | `23-channel-disarm` | security review | F4, no input: after a YV12 and an NV12 stream, and during and after a YUYV stream, the ch1/ch2 CH_CTRL values last written (debugfs) are 0; every stream pattern-checked |
 | `24-unbind-alsa-held` | security review | F6: two processes hold the ALSA control node and the capture PCM; the unbind finishes within 20 s with them still running; once they close, the module references go to 0 and gc573 unloads |
 | `25-card-release` | security review | F6, F7: `tools/card-release.sh` (synced by `tools/vmbuild.sh`) with gc573 loaded. `gc573_release --yes` refuses (status 1, the card still bound, the holder named) an i2c-dev holder of bus 1, an ALSA control holder, and an ALSA holder whose comm is `wireplumber`; a video holder with escapes in its comm is named without control characters; a holder of a file named `x<newline>1 /dev/videoN` is no holder. Each release is bounded: after 30 s the case kills the holder and fails |
 | `26-no-answer` | fix review | N2, with the test parameter `exp_mmio_ones` (setting it taints the kernel): register reads all-ones from a point of the probe on. 1, from the start: the probe refuses the card, bus mastering stays off (off at the probe's start), nothing left or kept. 2, for 1.5 s after bus mastering: the probe waits and says so ("answers again, N ms"), the card works. A bind with the parameter off brings the card back after each |
+| `27-no-answer-dead` | fix review | N2, the `exp_mmio_ones` modes that leave the card dead until reboot, the card itself idle; runs last. `GC573_TEST_NOANSWER=3` (default): all-ones for 25 s after bus mastering, the probe gives up after 20 s; `4`: for good from that check, the FPGA init stops at the DDR check and the unwind's stop is not confirmed. Either: 12 KiB kept (dummy list and audio buffers), bus mastering on and the device still enabled, the card in `dead_cards`, the module not unloadable, no bind (ENODEV), BAR0 (read past the driver) idle |
 | `17-audio` | M4 | no input: ALSA hw params (S16_LE, 2 channels, 48 kHz, periods from 480 frames); 3 s capture at 48 kHz +- 0.1 % against the clock, no overrun, all samples zero, every period silent, AUDIO_DONE in order (debugfs `audio`); 20 stop/start cycles (INT bit 4 each), audio across 3 video stream start/stops and across 30 video stop/start cycles in every format (while audio runs the video stop leaves out reset domain 8, which holds the audio DMA: no restart, nothing filled, AUDIO_DONE in order, rate within 0.1 %), rmmod refused while the PCM is open, unbind while capturing (< 5 s, the application exits), capture after the rebind. SKIP without the alsa-lib headers |
 
 Experiment `exp-delivery.sh RATE [N] [TAG]` (host side like `live.sh`,
@@ -247,15 +266,23 @@ locking, with the card in `gc573-dev`:
    `tools/devvm/dbg-boot.sh`): the whole suite, `tools/vmbuild.sh test`
    (load/unload x50 in `02-load-unload`; kmemleak, lockdep and DMA-API
    debug over all of it), with `18-fault-inject`, `19-surprise-remove` and
-   the security cases `20-ioctl-limits` to `26-no-answer` in it.
+   the security cases `20-ioctl-limits` to `27-no-answer-dead` in it.
+   `22-stop-fault` leaves the card dead until reboot, and
+   `27-no-answer-dead` SKIPs after it. Then each of the other choices
+   alone, each after a reboot once `tools/vms/card-idle.sh` says the card
+   is idle: `GC573_TEST_STOP=teardown tools/vmbuild.sh
+   test 22-stop-fault`, `tools/vmbuild.sh test 27-no-answer-dead` and
+   `GC573_TEST_NOANSWER=4 tools/vmbuild.sh test 27-no-answer-dead`; a
+   reboot after the last one too.
 3. On the debug kernel, `tests/live.sh blip fpgawait fpgaheal avchange
    obsevents remnant stress` (the last for `GC573_STRESS_SECS`, 600 s).
 4. The same new gates again with the debug kernel booted with
    `threadirqs` (the hard IRQ handler in a thread too), booted with
    `tools/devvm/dbg-boot.sh threadirqs`: `18-fault-inject`,
-   `19-surprise-remove`, `22-stop-fault`, `24-unbind-alsa-held` and
-   `live.sh stress`. Then `tools/devvm/dbg-boot.sh` again, or a plain
-   reboot for the generic kernel.
+   `19-surprise-remove`, `22-stop-fault` (last: then the card is dead
+   until reboot), `24-unbind-alsa-held` and `live.sh stress`. Then
+   `tools/devvm/dbg-boot.sh` again, or a plain reboot for the generic
+   kernel.
 
 A fix's test should fail before the fix: build the module of the commit
 before it (a scratch worktree), copy it to the VM, and run the new case
@@ -263,8 +290,12 @@ from the current tree against it, `sudo GC573_KO=/path/gc573.ko
 tests/run.sh CASE`. `21-i2c-bus1-policy` stops before its writes and its
 bank part on an older driver, which would otherwise change its chips;
 `25-card-release` kills its holders after 30 s, which ends an unbind that
-waits for them; `22-stop-fault` and `26-no-answer` need the parameter
-they test and fail at once.
+waits for them; `26-no-answer` and `27-no-answer-dead` need what they
+test (a parameter, the driver's refusal) and fail at once or at their
+first check. `22-stop-fault` refuses a module whose
+`exp_stop_fault` is of the older kind: that one turned bus mastering off
+under a running DMA (spec/pci.md), so a failed stop of an older driver is
+shown by its code, never by a run.
 
 ## Host step: probe with an engine still armed
 Security review F5 (probe stops the engines before bus mastering). Run

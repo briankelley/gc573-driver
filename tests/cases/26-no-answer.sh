@@ -11,7 +11,9 @@
 # 2 for 1.5 s once bus mastering is on: the probe waits for VERSION to
 #   read as it did before, says how long that took ("answers again"), and
 #   the card works (a pattern-checked capture).
-# After each, a bind with the parameter off brings the card back.
+# After each, a bind with the parameter off brings the card back. The
+# modes that leave the card dead until reboot (3, 4) are
+# tests/cases/27-no-answer-dead.sh.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
@@ -44,6 +46,7 @@ leftovers() {
 	x=$(cat "$pdev/enable")
 	[ "$x" = 0 ] || echo "PCI enable count $x"
 	gc573_master_on && echo "bus mastering on"
+	[ -z "$(gc573_dead_cards)" ] || echo "dead_cards: $(gc573_dead_cards | tr '\n' ' ')"
 }
 
 # The kernel log after tag $1, the lines this case looks at

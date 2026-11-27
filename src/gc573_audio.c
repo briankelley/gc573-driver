@@ -163,9 +163,7 @@ static void gc573_aud_hw_start(struct gc573 *gc)
 static void gc573_aud_hw_stop(struct gc573 *gc)
 {
 	reinit_completion(&gc->aud.stopped);
-	/* exp_stop_fault, tests only: a stop the DMA never sees */
-	if (!(READ_ONCE(gc573_exp_stop_fault) & GC573_STOP_FAULT_AUDIO))
-		gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
+	gc573_dma_run_update(gc, GC573_DMA_RUN_AUDIO, 0);
 }
 
 /* An audio stream is running: a video stop leaves its reset domain alone */
@@ -422,7 +420,7 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 			ret = a->dead ? -ENODEV : -EBUSY;
 			break;
 		}
-		memset(a->buf, 0, 2 * GC573_AUD_BUF_STRIDE);
+		memset(a->buf, 0, GC573_AUD_BUF_BYTES);
 		a->ss = ss;
 		a->next = GC573_AUDIO_DONE_BUF0;
 		a->last_ns = 0;
@@ -545,18 +543,35 @@ void gc573_audio_early_init(struct gc573 *gc)
 	gc->aud.st.interval_min_us = UINT_MAX;
 }
 
+/* Devres, with bus mastering off; kept after gc573_dma_dead() */
+static void gc573_audio_free_buf(void *data)
+{
+	struct gc573 *gc = data;
+	struct gc573_audio *a = &gc->aud;
+
+	if (READ_ONCE(gc->dma_dead))
+		atomic_long_add(GC573_AUD_BUF_BYTES, &gc573_mem_live.kept);
+	else
+		dma_free_coherent(&gc->pdev->dev, GC573_AUD_BUF_BYTES, a->buf,
+				  a->buf_dma);
+}
+
 /*
- * The two DMA buffers, allocated before the quiesce's devres action is
- * added (gc573_probe()), so that they go only after it ran: whatever the
- * audio DMA still does then, it does into memory the driver owns.
+ * The two DMA buffers, allocated before bus mastering and the quiesce's
+ * devres actions are added (gc573_probe()), so that they go only after
+ * both ran: whatever the audio DMA still does then, it does into memory
+ * the driver owns. Kept for good if a stop was not confirmed.
  */
 int gc573_audio_alloc(struct gc573 *gc)
 {
 	struct gc573_audio *a = &gc->aud;
 
-	a->buf = dmam_alloc_coherent(&gc->pdev->dev, 2 * GC573_AUD_BUF_STRIDE,
-				     &a->buf_dma, GFP_KERNEL);
-	return a->buf ? 0 : -ENOMEM;
+	a->buf = dma_alloc_coherent(&gc->pdev->dev, GC573_AUD_BUF_BYTES,
+				    &a->buf_dma, GFP_KERNEL);
+	if (!a->buf)
+		return -ENOMEM;
+	return devm_add_action_or_reset(&gc->pdev->dev, gc573_audio_free_buf,
+					gc);
 }
 
 /*

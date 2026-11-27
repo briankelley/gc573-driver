@@ -13,14 +13,16 @@ T_FAIL=1
 T_SKIP=77
 
 # Kernel messages that fail any case: warnings and oopses, sanitizer, lockdep,
-# atomic-sleep and DMA-API debug reports, IRQ and list corruption trouble.
-# kmemleak is checked separately by run.sh (its automatic scan is paused).
+# atomic-sleep and DMA-API debug reports, IRQ and list corruption trouble,
+# and a freed page written to (page_poison=1: "pagealloc: memory
+# corruption"). kmemleak is checked separately by run.sh (its automatic
+# scan is paused).
 KMSG_BAD='WARNING:|BUG:|Oops|general protection fault|Call Trace:|KASAN|UBSAN'
 KMSG_BAD+='|lockdep|possible (circular|recursive) locking|inconsistent lock state'
 KMSG_BAD+='|non-static key|DEBUG_LOCKS_WARN_ON|DMA-API|nobody cared|Disabling IRQ'
 KMSG_BAD+='|list_(add|del) corruption|refcount_t:|scheduling while atomic'
 KMSG_BAD+='|sleeping function called from invalid context|soft lockup|hard LOCKUP'
-KMSG_BAD+='|blocked for more than|rcu.*stall|sysfs: cannot create'
+KMSG_BAD+='|blocked for more than|rcu.*stall|sysfs: cannot create|memory corruption'
 
 # Driver messages that fail any case: the driver's error and warning wording.
 # "refused": something tried a bus 0/2 I2C transfer, which nothing should do.
@@ -144,11 +146,42 @@ gc573_cap_build() {
 		echo "$1/gc573-cap"
 }
 
+# Build the single-ioctl test tool (tests/gc573-sec.c) into directory $1;
+# print the binary's path.
+gc573_sec_build() {
+	gcc -O2 -Wall -Wextra -o "$1/gc573-sec" "$GC573_TESTS/gc573-sec.c" >&2 &&
+		echo "$1/gc573-sec"
+}
+
+# Build the BAR0 register reader (tests/gc573-regs.c) into directory $1;
+# print the binary's path.
+gc573_regs_build() {
+	gcc -O2 -Wall -Wextra -o "$1/gc573-regs" "$GC573_TESTS/gc573-regs.c" >&2 &&
+		echo "$1/gc573-regs"
+}
+
 # PCI_COMMAND bit 2, bus master enable, as the card's config space has it
 gc573_master_on() {
 	local cmd
 	cmd=$(od -An -tx2 -j4 -N2 "/sys/bus/pci/devices/$GC573_BDF/config" | tr -d ' ')
 	[ -n "$cmd" ] && [ $((0x$cmd & 4)) != 0 ]
+}
+
+# The cards the driver leaves as they are until reboot (parameter
+# dead_cards: a DMA stop not confirmed); empty if none or not loaded
+gc573_dead_cards() { cat "/sys/module/$GC573_MOD/parameters/dead_cards" 2>/dev/null; }
+
+# The card's DMA engines idle as BAR0 reads, with register reader $1 and
+# no driver in between: VIP_CTRL output enable (bit 0) and DMA_RUN audio
+# (bit 1) off, neither all-ones. Prints the two values.
+gc573_regs_idle() {
+	local out run vip
+	out=$("$1" "/sys/bus/pci/devices/$GC573_BDF/resource0" 0x008 0x1000) || return 2
+	run=$(awk '$1 == "0x00008" { print $2 }' <<< "$out")
+	vip=$(awk '$1 == "0x01000" { print $2 }' <<< "$out")
+	echo "DMA_RUN $run VIP_CTRL $vip"
+	[ -n "$run" ] && [ -n "$vip" ] && [ "$run" != 0xffffffff ] &&
+		[ "$vip" != 0xffffffff ] && [ $((run & 2)) = 0 ] && [ $((vip & 1)) = 0 ]
 }
 
 # Build the audio test tool into directory $1 (alsa-lib headers:

@@ -500,7 +500,8 @@ static int gc573_dl_build(struct gc573 *gc, struct sg_table *sgt, u32 off,
 	return 0;
 }
 
-static void gc573_dl_free(struct gc573 *gc, struct gc573_vbuf *b)
+/* @keep: never freed, still mapped (after gc573_dma_dead()) */
+static void gc573_dl_free(struct gc573 *gc, struct gc573_vbuf *b, bool keep)
 {
 	unsigned int c;
 
@@ -508,13 +509,27 @@ static void gc573_dl_free(struct gc573 *gc, struct gc573_vbuf *b)
 		struct gc573_dlist *dl = &b->dl[c];
 
 		if (dl->desc) {
-			dma_free_coherent(&gc->pdev->dev, dl->size, dl->desc,
-					  dl->dma);
+			if (keep)
+				atomic_long_add(dl->size, &gc573_mem_live.kept);
+			else
+				dma_free_coherent(&gc->pdev->dev, dl->size,
+						  dl->desc, dl->dma);
 			atomic_dec(&gc573_mem_live.dlists);
 			atomic_long_sub(dl->size, &gc573_mem_live.dl_bytes);
 		}
 		memset(dl, 0, sizeof(*dl));
 	}
+}
+
+/* The memory of a buffer the card can write: its pages and its lists */
+static long gc573_vbuf_dma_bytes(struct gc573_vbuf *b)
+{
+	long n = PAGE_ALIGN(vb2_plane_size(&b->vb.vb2_buf, 0));
+	unsigned int c;
+
+	for (c = 0; c < GC573_VCH_NUM; c++)
+		n += b->dl[c].size;
+	return n;
 }
 
 /* ---- hardware ---- */
@@ -770,12 +785,20 @@ void gc573_video_disarm(struct gc573 *gc)
 	}
 }
 
-/* Point slot n of every channel in use at b's lists. slock held. */
+/*
+ * Point slot n of every channel in use at b's lists, from when on the card
+ * can write b (kept if a stop is not confirmed, gc573_buf_cleanup()).
+ * slock held.
+ */
 static void gc573_vid_program_slot(struct gc573 *gc, unsigned int n,
 				   struct gc573_vbuf *b)
 {
 	unsigned int c;
 
+	if (!b->exposed) {
+		b->exposed = true;
+		atomic_long_add(gc573_vbuf_dma_bytes(b), &gc->vid.exposed_bytes);
+	}
 	for (c = 0; c < gc->vid.fmt->nch; c++) {
 		u32 base = gc573_vch_base[c];
 
@@ -848,9 +871,10 @@ static void gc573_vid_return_all(struct gc573 *gc, enum vb2_buffer_state st)
  * video DMA, COLOR_CTRL, CLIP and the CSC banks, the same as all three):
  * while an audio stream runs it is left out, and audio carries on through
  * the stop. Either the terminate or the reset of domain 0 stops the video
- * DMA; with neither, the buffers about to go back may still be written,
- * so bus mastering goes off first (gc573_dma_dead()) and -EIO is
- * returned. vid.lock held. Safe to call when not running.
+ * DMA; with neither, the buffers about to go back may still be written:
+ * the card is left as it is, with that memory, until reboot
+ * (gc573_dma_dead()), and -EIO is returned. vid.lock held. Safe to call
+ * when not running.
  */
 int gc573_video_hw_stop(struct gc573 *gc)
 {
@@ -859,7 +883,7 @@ int gc573_video_hw_stop(struct gc573 *gc)
 	unsigned int fault = READ_ONCE(gc573_exp_stop_fault);
 	unsigned long t0 = jiffies;
 	int domains = READ_ONCE(exp_stop_domains);
-	bool term = true, reset = false;
+	bool term = true, reset;
 	u32 vip;
 
 	spin_lock(&v->slock);
@@ -874,8 +898,7 @@ int gc573_video_hw_stop(struct gc573 *gc)
 	} else if (vip & GC573_VIP_CTRL_OUT_EN) {
 		reinit_completion(&v->term);
 		gc573_wr(gc, GC573_VIP_CTRL, vip & ~GC573_VIP_CTRL_OUT_EN);
-		if ((fault & GC573_STOP_FAULT_TERM) ||
-		    !wait_for_completion_timeout(&v->term,
+		if (!wait_for_completion_timeout(&v->term,
 						 msecs_to_jiffies(GC573_VID_TERM_MS))) {
 			v->st.term_missing++;
 			term = false;
@@ -887,14 +910,27 @@ int gc573_video_hw_stop(struct gc573 *gc)
 		if (gc573_audio_running(gc))
 			domains &= ~GC573_RESET_DOMAIN_8;
 	}
-	if (!(fault & GC573_STOP_FAULT_RESET))
-		reset = !gc573_reset_domain_mask(gc, domains) &&
-			(domains & GC573_RESET_DOMAIN_0);
+	reset = !gc573_reset_domain_mask(gc, domains) &&
+		(domains & GC573_RESET_DOMAIN_0);
 	spin_lock(&v->slock);
 	gc573_video_disarm(gc);
 	spin_unlock(&v->slock);
+	/* tests only: a stop confirmed with the output off, counted as failed */
+	vip = gc573_rd(gc, GC573_VIP_CTRL);
+	if ((fault & (GC573_STOP_FAULT_TERM | GC573_STOP_FAULT_RESET)) &&
+	    (term || reset) && vip != U32_MAX && !(vip & GC573_VIP_CTRL_OUT_EN)) {
+		dev_warn(dev, "exp_stop_fault %#x: the video stop was confirmed (INT bit 0 %s, domain 0 reset %s, VIP_CTRL %#010x), counted as%s%s\n",
+			 fault, term ? "came" : "missing",
+			 reset ? "done" : "not done", vip,
+			 fault & GC573_STOP_FAULT_TERM ? " no INT bit 0" : "",
+			 fault & GC573_STOP_FAULT_RESET ? " no domain 0 reset" : "");
+		if (fault & GC573_STOP_FAULT_TERM)
+			term = false;
+		if (fault & GC573_STOP_FAULT_RESET)
+			reset = false;
+	}
 	if (!term && !reset) {
-		gc573_dma_dead(gc, "video stop (no INT bit 0, no reset of domain 0)");
+		gc573_dma_dead(gc, "video stop (no INT bit 0, no reset of domain 0) failed");
 		return -EIO;
 	}
 	/* a reset of domain 8 stops the audio DMA: start it again */
@@ -1058,7 +1094,7 @@ static int gc573_buf_init(struct vb2_buffer *vb)
 	return 0;
 
 err:
-	gc573_dl_free(gc, b);
+	gc573_dl_free(gc, b, false);
 	dma_unmap_sgtable(dev, b->sgt, DMA_FROM_DEVICE, 0);
 	return ret;
 }
@@ -1084,13 +1120,25 @@ static void gc573_buf_finish(struct vb2_buffer *vb)
 				 DMA_FROM_DEVICE);
 }
 
+/*
+ * A buffer the card was given, after a stop the card did not confirm
+ * (gc573_dma_dead()), is kept: its lists and pages are never freed and
+ * stay DMA-mapped, so that a transfer the card still holds cannot land in
+ * memory someone else has, or at an IOVA a new buffer was given.
+ */
 static void gc573_buf_cleanup(struct vb2_buffer *vb)
 {
 	struct gc573 *gc = vb2_get_drv_priv(vb->vb2_queue);
 	struct gc573_vbuf *b = to_gc573_vbuf(vb);
+	bool keep = READ_ONCE(gc->dma_dead) && b->exposed;
 
-	gc573_dl_free(gc, b);
-	dma_unmap_sgtable(&gc->pdev->dev, b->sgt, DMA_FROM_DEVICE, 0);
+	if (b->exposed && !keep)
+		atomic_long_sub(gc573_vbuf_dma_bytes(b), &gc->vid.exposed_bytes);
+	gc573_dl_free(gc, b, keep);
+	if (keep)
+		gc573_mem_keep(b->sgt);
+	else
+		dma_unmap_sgtable(&gc->pdev->dev, b->sgt, DMA_FROM_DEVICE, 0);
 }
 
 static void gc573_vid_hw_start(struct gc573 *gc, bool restart);
@@ -1701,6 +1749,9 @@ static int gc573_vid_debugfs_show(struct seq_file *m, void *unused)
 		   atomic_read(&gc573_mem_live.vmaps),
 		   atomic_read(&gc573_mem_live.dlists),
 		   atomic_long_read(&gc573_mem_live.dl_bytes));
+	seq_printf(m, "mem kept (since load, all cards; until reboot): bytes %ld; this card: exposed %ld\n",
+		   atomic_long_read(&gc573_mem_live.kept),
+		   atomic_long_read(&v->exposed_bytes));
 
 	/* seq_printf() does not sleep: print the shared state under slock */
 	spin_lock(&v->slock);
@@ -1947,19 +1998,38 @@ unlock:
 
 /* ---- setup ---- */
 
+/* Devres, with bus mastering off; kept after gc573_dma_dead() */
+static void gc573_video_free_dummy(void *data)
+{
+	struct gc573 *gc = data;
+	struct gc573_video *v = &gc->vid;
+
+	if (READ_ONCE(gc->dma_dead))
+		atomic_long_add(PAGE_SIZE, &gc573_mem_live.kept);
+	else
+		dma_free_coherent(&gc->pdev->dev, PAGE_SIZE, v->dummy,
+				  v->dummy_dma);
+}
+
 /*
- * The dummy list, before the quiesce's devres action is added
- * (gc573_probe()): devres frees it after the quiesce ran. Its one
- * descriptor describes the page's second half.
+ * The dummy list, before bus mastering and the quiesce's devres actions
+ * are added (gc573_probe()): devres frees it after both ran, unless a
+ * stop was not confirmed. Its one descriptor describes the page's second
+ * half.
  */
 int gc573_video_alloc(struct gc573 *gc)
 {
 	struct gc573_video *v = &gc->vid;
+	int ret;
 
-	v->dummy = dmam_alloc_coherent(&gc->pdev->dev, PAGE_SIZE, &v->dummy_dma,
-				       GFP_KERNEL);
+	v->dummy = dma_alloc_coherent(&gc->pdev->dev, PAGE_SIZE, &v->dummy_dma,
+				      GFP_KERNEL);
 	if (!v->dummy)
 		return -ENOMEM;
+	ret = devm_add_action_or_reset(&gc->pdev->dev, gc573_video_free_dummy,
+				       gc);
+	if (ret)
+		return ret;
 	v->dummy[0] = cpu_to_le32(lower_32_bits(v->dummy_dma + GC573_DUMMY_OFF));
 	v->dummy[1] = cpu_to_le32(upper_32_bits(v->dummy_dma + GC573_DUMMY_OFF));
 	v->dummy[2] = cpu_to_le32(GC573_DUMMY_LEN / 4);	/* in dwords */

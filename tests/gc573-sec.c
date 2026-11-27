@@ -13,6 +13,13 @@
  *     VIDIOC_SUBSCRIBE_EVENT of that type and id (default 0), for a
  *     control event the id of V4L2_CID_DV_RX_POWER_PRESENT if no -i.
  *     Prints "subscribe type=T id=ID rc=0" or "... rc=-1 errno=NAME".
+ * gc573-sec stopoff -d /dev/videoN [-n FRAMES] [-b BUFS]
+ *     (tests/cases/22-stop-fault.sh) BUFS (4) MMAP buffers stream FRAMES
+ *     (120) frames, then STREAMOFF ("streamoff rc=..."; the test makes
+ *     that stop count as failed), then LOG_STATUS, G_EDID and S_EDID of 0
+ *     blocks on the same file ("ioctl NAME rc=... errno=..."), then
+ *     REQBUFS 0 gives the buffers back to the driver while they stay
+ *     mapped ("ioctl REQBUFS0 rc=..."). Exit 0 once all ran.
  *
  * Exit status: 0 = the ioctl succeeded, 1 = it failed, 2 = usage or setup
  * error.
@@ -23,9 +30,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <poll.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <unistd.h>
 #include <linux/videodev2.h>
+
+#define STOPOFF_BUFS	32
+
+static int usage(void);
 
 static const char *ename(int e)
 {
@@ -111,19 +124,115 @@ static int cmd_subscribe(const char *dev, const char *type, long id)
 	return rc ? 1 : 0;
 }
 
+static void stopoff_ioctl(int fd, const char *name, unsigned long req, void *arg)
+{
+	int rc = ioctl(fd, req, arg);
+	int err = errno;
+
+	if (rc)
+		printf("ioctl %s rc=%d errno=%s\n", name, rc, ename(err));
+	else
+		printf("ioctl %s rc=0\n", name);
+}
+
+static int cmd_stopoff(const char *dev, unsigned int frames, unsigned int nbufs)
+{
+	enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	struct v4l2_requestbuffers rb;
+	unsigned char edid[256];
+	struct v4l2_buffer b;
+	struct v4l2_edid e;
+	unsigned int i, got = 0;
+	void *map;
+	int fd, rc, err;
+
+	if (!nbufs || nbufs > STOPOFF_BUFS)
+		return usage();
+	fd = vopen(dev);
+	memset(&rb, 0, sizeof(rb));
+	rb.count = nbufs;
+	rb.type = type;
+	rb.memory = V4L2_MEMORY_MMAP;
+	if (ioctl(fd, VIDIOC_REQBUFS, &rb) || rb.count < 1) {
+		fprintf(stderr, "REQBUFS: %s\n", strerror(errno));
+		return 2;
+	}
+	nbufs = rb.count;
+	for (i = 0; i < nbufs; i++) {
+		memset(&b, 0, sizeof(b));
+		b.type = type;
+		b.memory = V4L2_MEMORY_MMAP;
+		b.index = i;
+		if (ioctl(fd, VIDIOC_QUERYBUF, &b)) {
+			fprintf(stderr, "QUERYBUF: %s\n", strerror(errno));
+			return 2;
+		}
+		map = mmap(NULL, b.length, PROT_READ | PROT_WRITE, MAP_SHARED,
+			   fd, b.m.offset);
+		if (map == MAP_FAILED || ioctl(fd, VIDIOC_QBUF, &b)) {
+			fprintf(stderr, "mmap/QBUF: %s\n", strerror(errno));
+			return 2;
+		}
+	}
+	if (ioctl(fd, VIDIOC_STREAMON, &type)) {
+		fprintf(stderr, "STREAMON: %s\n", strerror(errno));
+		return 2;
+	}
+	while (got < frames) {
+		struct pollfd pfd = { .fd = fd, .events = POLLIN };
+
+		if (poll(&pfd, 1, 2000) != 1) {
+			fprintf(stderr, "no frame within 2 s after %u\n", got);
+			return 2;
+		}
+		memset(&b, 0, sizeof(b));
+		b.type = type;
+		b.memory = V4L2_MEMORY_MMAP;
+		if (ioctl(fd, VIDIOC_DQBUF, &b) || ioctl(fd, VIDIOC_QBUF, &b)) {
+			fprintf(stderr, "DQBUF/QBUF: %s\n", strerror(errno));
+			return 2;
+		}
+		got++;
+	}
+	printf("streamed %u frames in %u buffers\n", got, nbufs);
+	rc = ioctl(fd, VIDIOC_STREAMOFF, &type);
+	err = errno;
+	if (rc)
+		printf("streamoff rc=%d errno=%s\n", rc, ename(err));
+	else
+		printf("streamoff rc=0\n");
+
+	stopoff_ioctl(fd, "LOG_STATUS", VIDIOC_LOG_STATUS, NULL);
+	memset(&e, 0, sizeof(e));
+	e.blocks = 2;
+	e.edid = edid;
+	stopoff_ioctl(fd, "G_EDID", VIDIOC_G_EDID, &e);
+	memset(&e, 0, sizeof(e));
+	e.edid = edid;
+	stopoff_ioctl(fd, "S_EDID", VIDIOC_S_EDID, &e);
+
+	/* back to the driver while still mapped: the mappings go at exit */
+	memset(&rb, 0, sizeof(rb));
+	rb.type = type;
+	rb.memory = V4L2_MEMORY_MMAP;
+	stopoff_ioctl(fd, "REQBUFS0", VIDIOC_REQBUFS, &rb);
+	return 0;
+}
+
 static int usage(void)
 {
 	fprintf(stderr,
 		"usage: gc573-sec createbufs -d DEV [-s SIZE] [-n COUNT] [-k]\n"
-		"       gc573-sec subscribe -d DEV -t source_change|ctrl [-i ID]\n");
+		"       gc573-sec subscribe -d DEV -t source_change|ctrl [-i ID]\n"
+		"       gc573-sec stopoff -d DEV [-n FRAMES] [-b BUFS]\n");
 	return 2;
 }
 
 int main(int argc, char **argv)
 {
 	const char *dev = NULL, *type = NULL, *cmd;
+	unsigned int count = 0, bufs = 4;
 	unsigned long size = 0;
-	unsigned int count = 1;
 	int opt, keep = 0;
 	long id = -1;
 
@@ -131,7 +240,7 @@ int main(int argc, char **argv)
 		return usage();
 	cmd = argv[1];
 	optind = 2;
-	while ((opt = getopt(argc, argv, "d:s:n:kt:i:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:s:n:kt:i:b:")) != -1) {
 		switch (opt) {
 		case 'd': dev = optarg; break;
 		case 's': size = strtoul(optarg, NULL, 0); break;
@@ -139,14 +248,17 @@ int main(int argc, char **argv)
 		case 'k': keep = 1; break;
 		case 't': type = optarg; break;
 		case 'i': id = strtol(optarg, NULL, 0); break;
+		case 'b': bufs = strtoul(optarg, NULL, 0); break;
 		default: return usage();
 		}
 	}
 	if (!dev)
 		return usage();
 	if (!strcmp(cmd, "createbufs"))
-		return cmd_createbufs(dev, size, count, keep);
+		return cmd_createbufs(dev, size, count ? count : 1, keep);
 	if (!strcmp(cmd, "subscribe") && type)
 		return cmd_subscribe(dev, type, id);
+	if (!strcmp(cmd, "stopoff"))
+		return cmd_stopoff(dev, count ? count : 120, bufs);
 	return usage();
 }

@@ -252,6 +252,7 @@ struct gc573_vbuf {
 	struct sg_table *sgt;		/* pages, DMA-mapped from buf_init on */
 	struct gc573_dlist dl[GC573_VCH_NUM];
 	u64 armed;			/* gc573_video.arm_seq when armed */
+	bool exposed;			/* its lists were given to the card */
 };
 
 /* Last few slot completions, for debugfs (experiments, bring-up) */
@@ -315,6 +316,8 @@ struct gc573_video {
 	u32 ch_ctrl[GC573_VCH_NUM];	/* CH_CTRL values written (ch1, ch2) */
 	__le32 *dummy;			/* the dummy list (coherent page) */
 	dma_addr_t dummy_dma;
+	/* bytes of the buffers given to the card and not freed since */
+	atomic_long_t exposed_bytes;
 	u32 vip_ctrl;			/* VIP_CTRL while streaming, w/o OUT_EN */
 	bool live;			/* streaming from a locked input */
 	u32 input_stops;		/* streams failed by an input change */
@@ -341,6 +344,9 @@ struct gc573_astats {
 	u32 interval_max_us;		/* longest interval, this stream */
 	u32 interval_min_us;		/* shortest interval, this stream */
 };
+
+/* The audio DMA's two buffers, a page each (gc573_audio.c) */
+#define GC573_AUD_BUF_BYTES		(2 * PAGE_SIZE)
 
 /* Audio capture, src/gc573_audio.c */
 struct gc573_audio {
@@ -376,7 +382,8 @@ struct gc573 {
 	int irq;
 	u32 fw_version;			/* VERSION, read before bus mastering */
 	bool dma_stopped;		/* gc573_dma_stop() ran: teardown */
-	bool dma_dead;			/* a stop failed: bus mastering is off */
+	/* a stop failed: the card stays as it is until reboot */
+	bool dma_dead;
 	/* tests only, exp_mmio_ones: register reads return all-ones */
 	bool mmio_ones;
 	bool mmio_ones_timed;		/* until mmio_ones_until (jiffies) */
@@ -409,12 +416,14 @@ struct gc573 {
 };
 
 /*
- * exp_stop_fault (gc573_core.c), tests only: stops that fail. Each bit
- * removes one of the stop's safety steps.
+ * exp_stop_fault (gc573_core.c), tests only: a stop that fails. The stop
+ * is carried out in full and must be confirmed; only then is what each
+ * bit names counted as failed. A stop that was not confirmed is a real
+ * failure, and nothing is simulated.
  */
-#define GC573_STOP_FAULT_TERM		BIT(0)	/* video: no INT bit 0 wait */
-#define GC573_STOP_FAULT_RESET		BIT(1)	/* video, teardown: no reset */
-#define GC573_STOP_FAULT_AUDIO		BIT(2)	/* audio: DMA_RUN left set */
+#define GC573_STOP_FAULT_TERM		BIT(0)	/* video: no INT bit 0 */
+#define GC573_STOP_FAULT_RESET		BIT(1)	/* video: domain 0 reset failed */
+#define GC573_STOP_FAULT_AUDIO		BIT(2)	/* teardown: audio DMA still on */
 extern unsigned int gc573_exp_stop_fault;
 
 /*
@@ -455,7 +464,9 @@ extern const struct vb2_mem_ops gc573_vb2_mem_ops;
  * buffers (gc573_vb2.c) with their pages and kernel mappings, and the DMA
  * descriptor lists (gc573_video.c). debugfs "video" prints them ("mem:").
  * With no buffers requested they are all 0: a leak check that other
- * programs' memory cannot move (tests/live.sh obssoak).
+ * programs' memory cannot move (tests/live.sh obssoak). Memory kept after
+ * a stop the card did not confirm (gc573_dma_dead()) leaves these counts
+ * for "kept": bytes never freed, still DMA-mapped, until reboot.
  */
 struct gc573_mem_live {
 	atomic_t bufs;
@@ -463,7 +474,10 @@ struct gc573_mem_live {
 	atomic_t vmaps;
 	atomic_t dlists;
 	atomic_long_t dl_bytes;
+	atomic_long_t kept;
 };
+
+void gc573_mem_keep(struct sg_table *sgt);
 
 extern struct gc573_mem_live gc573_mem_live;
 

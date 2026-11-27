@@ -21,6 +21,10 @@
  * - vaddr: vmap() on first use;
  * - mmap: vm_map_pages(). A refcount keeps the pages until the last
  *   mapping is gone, which can be after the driver is unbound.
+ * - keep: a buffer the card was given when a stop could not be confirmed
+ *   (gc573_dma_dead()) is never freed: the driver leaves its DMA mapping
+ *   in place, and its pages go nowhere once the last reference is gone,
+ *   so whatever the card may still write lands in memory nobody else has.
  * MMAP only.
  */
 
@@ -50,7 +54,17 @@ struct gc573_mem {
 	struct sg_table sgt;
 	void *vaddr;
 	refcount_t refcount;
+	bool keep;			/* never free the pages: gc573_mem_keep() */
 };
+
+/*
+ * buf_cleanup, after a stop the card did not confirm: the pages stay
+ * allocated for good, and the driver leaves their DMA mapping in place
+ */
+void gc573_mem_keep(struct sg_table *sgt)
+{
+	container_of(sgt, struct gc573_mem, sgt)->keep = true;
+}
 
 static void gc573_mem_free_pages(struct page **pages, unsigned int n)
 {
@@ -150,8 +164,13 @@ static void gc573_mem_put(void *buf_priv)
 		vunmap(m->vaddr);
 		atomic_dec(&gc573_mem_live.vmaps);
 	}
+	/* the scatterlist only describes the pages: their mapping stays */
 	sg_free_table(&m->sgt);
-	gc573_mem_free_pages(m->pages, m->n_pages);
+	if (m->keep)
+		atomic_long_add((long)m->n_pages << PAGE_SHIFT,
+				&gc573_mem_live.kept);
+	else
+		gc573_mem_free_pages(m->pages, m->n_pages);
 	atomic_long_sub(m->n_pages, &gc573_mem_live.pages);
 	atomic_dec(&gc573_mem_live.bufs);
 	kvfree(m->pages);

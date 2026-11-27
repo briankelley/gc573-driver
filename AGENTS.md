@@ -46,6 +46,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
   - `tools/vms/create.sh <profile> [IP]` (cloud images; profiles in `tools/vms/profiles/`), `tools/vms/mint.sh <ver> [edition] [IP]` (ISO unattended install + virt-customize). Disks standalone (no shared backing). No persistent card.
   - `tools/vms/matrix-build.sh [-r REF] [-j N] [--load] [--dkms] [VM...]` builds REF (git archive) in each VM against every kernel with headers: W=1, any warning fails; `--load` = insmod/rmmod smoke test (no card: init/exit + symbols); `--dkms` = dkms add/build per kernel. Starts/stops VMs. Logs + `summary.tsv` → `tests/logs/matrix/<UTC>-<sha>/` (commit them). Default VMs: all but `gc573-ref`, `gc573-dev`. No tty: set `SUDO_ASKPASS` to a helper printing the sudo password.
   - `tools/vms/card.sh <vm>` moves the card between running VMs (live PCI unplug/plug; detach fails if the guest driver does not release it). `--where` shows the holder.
+  - `tools/vms/card-idle.sh <vm>`: may the VM holding the card shut down, reboot or lose it to a detach now (exit 0), or might the card's DMA run on when its bus mastering goes off (exit 1)? Reads PCI_COMMAND, gc573's `dead_cards` and, past any driver, BAR0's VIP_CTRL and DMA_RUN (`tests/gc573-regs.c`, built in the VM).
   - `tools/vms/install-test.sh [-r REF] [VM...]` runs `tools/install.sh` / `uninstall.sh` (the user's DKMS install) at REF in each matrix VM: missing-headers and missing-dkms errors, install for every kernel with headers, the card's modalias resolving, DKMS AUTOINSTALL via the kernel hook, a reboot, uninstall leaving nothing. Logs + `summary.tsv` → `tests/logs/install/<UTC>-<sha>/` (commit them). Never `gc573-dev` (card) or `gc573-ref`.
   - `tools/vms/install-card-test.sh [-r REF] [--pw-only]`: the same scripts in `gc573-dev`, with the card. A persistent driverctl override to vfio-pci plays a host that passes the card to a VM (in the VM vfio-pci cannot bind: no IOMMU). Steps:
     - without a terminal (card left alone), and `--permanent` refused without `--yes`;
@@ -106,6 +107,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 
 ## Driver design constraints
 - `pcim_*` managed resources. `pci_enable_device` + `pci_set_master` + iomap. (vendor drv omitted → dead BAR.)
+- Bus mastering never goes off while the card's DMA may run (`spec/pci.md`): stop the DMA and confirm the stop first. After a stop that cannot be confirmed, the card stays as it is until reboot (`gc573_dma_dead()`): bus mastering on, memory kept, no driver. No test may stop a DMA by turning bus mastering off, by killing the card's VM, or by a reset.
 - MSI if cap present else INTx. Threaded IRQ.
 - No sleeping under spinlock. FPGA i2c master → `i2c_adapter`, sleepable. HDMI rx event handling in threaded irq / workqueue. (vendor drv: scheduling-while-atomic.)
 - IT6805 / splitter (ITE 0x6663) → v4l2 subdevs preferred.

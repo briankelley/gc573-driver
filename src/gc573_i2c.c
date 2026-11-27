@@ -123,7 +123,7 @@ int gc573_i2c1_transfer(struct gc573 *gc, u8 addr8, u8 reg, u8 *buf, u16 len,
 
 	if (!len || len > (rd ? GC573_I2C1_MAX_READ : GC573_I2C1_MAX_WRITE))
 		return -EINVAL;
-	/* no MSI without bus mastering: INT bit 11 would never come */
+	/* a card whose stop failed is left as it is (gc573_card_dead()) */
 	if (READ_ONCE(gc->dma_dead))
 		return -ENODEV;
 

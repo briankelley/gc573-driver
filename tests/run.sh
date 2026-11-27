@@ -20,6 +20,20 @@
 # case writes more than dmesg's ring buffer holds. Without python3 it comes
 # from dmesg after the case. A log that is not complete (the ring overran
 # the follower, or overwrote the case's start in dmesg) fails the case.
+#
+# A case whose header has the line "# gc573-run: last" runs after all the
+# others: it leaves the card dead until reboot (a stop the card did not
+# confirm, src/gc573_core.c gc573_dma_dead(): the memory kept, bus
+# mastering on, no driver, the module held, the card in the parameter
+# dead_cards). Once a case has left a card dead, the cases after it SKIP
+# (run each alone, after a reboot, with its GC573_TEST_* choice), the
+# module stays loaded, and run.sh refuses to start until the reboot. A
+# reboot of the machine after such a run: in a VM only once
+# tools/vms/card-idle.sh says the card is idle. With DMA-API debug run.sh
+# also refuses to start while the card's device has DMA mappings and no
+# driver. Every DMA-API error is printed while the suite runs
+# (dma-api/all_errors), and a case's error_count must rise by exactly the
+# errors its log reports and allows.
 set -uo pipefail
 
 # shellcheck source=tests/lib.sh
@@ -115,15 +129,87 @@ klog_print() {
 
 # Debug checkers' state: lockdep turns itself off after its first report,
 # DMA-API debug counts errors. "-" = not in this kernel.
+lockdep_state() {
+	if [ -r /proc/lockdep_stats ]; then
+		awk '/debug_locks:/ { print $2 }' /proc/lockdep_stats
+	else
+		echo -
+	fi
+}
+dma_errors() { cat "$DMA_DBG/error_count" 2>/dev/null || echo -; }
 debug_state() {
-	local dl=- de=- dd=-
-	[ -r /proc/lockdep_stats ] && dl=$(awk '/debug_locks:/ { print $2 }' /proc/lockdep_stats)
-	[ -r "$DMA_DBG/error_count" ] && de=$(cat "$DMA_DBG/error_count")
+	local dd=-
 	[ -r "$DMA_DBG/disabled" ] && dd=$(cat "$DMA_DBG/disabled")
-	echo "lockdep debug_locks=$dl, DMA-API error_count=$de disabled=$dd"
+	echo "lockdep debug_locks=$(lockdep_state), DMA-API error_count=$(dma_errors) disabled=$dd"
+}
+
+# The DMA-API debug entries of the card's device ("" without DMA-API debug)
+dma_entries() {
+	[ -r "$DMA_DBG/dump" ] || return 0
+	awk -v d="$GC573_BDF" '$2 == d' "$DMA_DBG/dump" | wc -l
+}
+
+# A kernel warning's report, from "cut here" to "end trace", is one block.
+# When its "WARNING:" line matches a line of the case's allow list that
+# itself names "WARNING:", the whole block is allowed (its message, call
+# trace and registers); otherwise each of its lines is checked as usual.
+# Prints the log with the lines of allowed blocks prefixed "A ", every
+# other line "N ". $1: the case's allow list
+warn_blocks() {
+	awk -v allow="$1" '
+		BEGIN {
+			while ((getline p < allow) > 0)
+				if (p ~ /WARNING:/)
+					pat[++np] = p
+		}
+		function allowed(s,  i) {
+			for (i = 1; i <= np; i++)
+				if (s ~ pat[i])
+					return 1
+			return 0
+		}
+		function flush(ok,  i) {
+			for (i = 1; i <= nb; i++)
+				print (ok ? "A " : "N ") blk[i]
+			nb = 0
+			inb = 0
+			okb = 0
+		}
+		index($0, "------------[ cut here ]------------") {
+			if (inb)
+				flush(0)
+			inb = 1
+		}
+		inb {
+			blk[++nb] = $0
+			if ($0 ~ /WARNING: CPU: /)
+				okb = allowed($0)
+			if (index($0, "---[ end trace "))
+				flush(okb)
+			next
+		}
+		{ print "N " $0 }
+		END { if (inb) flush(0) }'
+}
+
+# DMA-API errors in lines $1 (dma-debug's err_printk: "DMA-API: DRIVER
+# DEVICE: ..."; a PCI device's name)
+dma_error_lines() {
+	grep -cE 'DMA-API: [^ ]+ [0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]: ' <<< "$1"
 }
 
 [ $# -gt 0 ] || set -- "$GC573_TESTS"/cases/*.sh
+# the cases that keep DMA memory until reboot go last, in their order
+first=() last=()
+for c in "$@"; do
+	[ -f "$c" ] || c="$GC573_TESTS/cases/${c%.sh}.sh"
+	if [ -f "$c" ] && grep -q '^# gc573-run: last' "$c"; then
+		last+=("$c")
+	else
+		first+=("$c")
+	fi
+done
+set -- "${first[@]}" "${last[@]}"
 
 echo "# GC573 regression suite"
 echo "date:    $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -140,10 +226,27 @@ echo "input:   ${GC573_INPUT:-none}"
 dbg_before=$(debug_state)
 echo "checks:  $dbg_before"
 
+dead=$(gc573_dead_cards | tr '\n' ' ')
+if [ -n "$dead" ]; then
+	echo "run.sh: $GC573_MOD left card(s) ${dead% } dead until reboot (a stop the card did not confirm): reboot first (in a VM: tools/vms/card-idle.sh first)" >&2
+	exit 2
+fi
 if gc573_loaded; then
 	echo "$GC573_MOD already loaded: unloading"
 	gc573_unload || exit 2
 fi
+n=$(dma_entries)
+if [ -n "$n" ] && [ "$n" != 0 ]; then
+	echo "run.sh: the card's device has $n DMA-API debug entries with no driver bound: memory kept by a stop the card did not confirm (tests/cases/22-stop-fault.sh), and every unbind would report it. Reboot first" >&2
+	exit 2
+fi
+# every DMA-API error printed, not only the first of the boot
+dma_all=""
+if [ -w "$DMA_DBG/all_errors" ]; then
+	dma_all=$(cat "$DMA_DBG/all_errors")
+	echo 1 > "$DMA_DBG/all_errors"
+fi
+dma_allowed=0
 
 if kml_available; then
 	echo scan=off > "$KML"	# no automatic scans while cases run
@@ -168,8 +271,8 @@ result() {
 	esac
 }
 
+dead_by=""
 for c in "$@"; do
-	[ -f "$c" ] || c="$GC573_TESTS/cases/${c%.sh}.sh"
 	name=$(basename "$c" .sh)
 	echo
 	echo "## $name"
@@ -177,11 +280,16 @@ for c in "$@"; do
 		result "$name" FAIL "(no such case)"
 		continue
 	fi
+	if [ -n "$dead_by" ]; then
+		result "$name" SKIP "(the card is dead until reboot since $dead_by: run this case alone after a reboot)"
+		continue
+	fi
 	# the case's whole kernel log, also when it outgrows the ring buffer
 	GC573_KLOG_FILE=$(mktemp)
 	ktail_start "$GC573_KLOG_FILE" ||
 		echo "  (no kernel log follower, tests/kmsg-tail.py: the log comes from dmesg)"
 	tag=$(kmsg_mark "case $name")
+	de0=$(dma_errors)
 	start=$(date +%s)
 	# a case lists the kernel messages it provokes on purpose (regexes)
 	GC573_KMSG_ALLOW=$(mktemp)
@@ -189,31 +297,52 @@ for c in "$@"; do
 	bash "$c" 2>&1 | sed 's/^/  /'
 	rc=${PIPESTATUS[0]}
 	secs=$(($(date +%s) - start))
-	if gc573_loaded; then
+	dead=$(gc573_dead_cards | tr '\n' ' ')
+	if [ -n "$dead" ]; then
+		dead_by=$name
+		echo "  the case left card(s) ${dead% } dead until reboot: $GC573_MOD stays loaded, and the cases after it SKIP"
+	elif gc573_loaded; then
 		echo "  case left $GC573_MOD loaded: unloading"
 		gc573_unload
 	fi
 
 	klog_get "$tag" "$GC573_KLOG_FILE"
+	de1=$(dma_errors)
 	rm -f "$GC573_KLOG_FILE"
 	klog_print
 	v=$(echo "$klog" | sed -n 's/.*: FPGA version \([0-9a-f]*\)$/\1/p' | sort -u | tr '\n' ' ')
 	fw="$fw $v"
-	bad=$(echo "$klog" | grep -E "$KMSG_BAD|$KMSG_DRV_BAD")
+	# the kernel warnings the case allows, whole; then line by line
+	marked=$(warn_blocks "$GC573_KMSG_ALLOW" <<< "$klog")
+	wexp=$(sed -n 's/^A //p' <<< "$marked")
+	bad=$(sed -n 's/^N //p' <<< "$marked" | grep -E "$KMSG_BAD|$KMSG_DRV_BAD")
+	expected=$(grep -E "$KMSG_BAD|$KMSG_DRV_BAD" <<< "$wexp" | sed 's/^/(allowed warning) /')
 	if [ -n "$bad" ] && [ -s "$GC573_KMSG_ALLOW" ]; then
-		expected=$(echo "$bad" | grep -Ef "$GC573_KMSG_ALLOW")
-		if [ -n "$expected" ]; then
-			echo "$expected" | head -n 200 | sed 's/^/  expected: /'
-			n=$(grep -c . <<< "$expected")
-			[ "$n" -le 200 ] || echo "  expected: ... and $((n - 200)) more"
-		fi
+		expected=$(printf '%s\n%s' "$expected" "$(echo "$bad" | grep -Ef "$GC573_KMSG_ALLOW")" | sed '/^$/d')
 		bad=$(echo "$bad" | grep -vEf "$GC573_KMSG_ALLOW")
+	fi
+	if [ -n "$expected" ]; then
+		echo "$expected" | head -n 200 | sed 's/^/  expected: /'
+		n=$(grep -c . <<< "$expected")
+		[ "$n" -le 200 ] || echo "  expected: ... and $((n - 200)) more"
 	fi
 	rm -f "$GC573_KMSG_ALLOW"
 	if [ -n "$bad" ]; then
 		echo "  -- bad kernel messages"
 		echo "$bad" | sed 's/^/  ! /'
 		rc=$T_FAIL
+	fi
+	# DMA-API debug: every error the count gained is one the log reports
+	# and the case allows
+	if [ "$de0" != - ]; then
+		n=$(dma_error_lines "$expected")
+		if [ $((de1 - de0)) != "$n" ]; then
+			echo "  -- DMA-API debug: error_count rose by $((de1 - de0)) ($de0 to $de1), $n of them reported and allowed"
+			rc=$T_FAIL
+		elif [ "$n" != 0 ]; then
+			echo "  DMA-API debug: $n error(s), each reported above and allowed"
+		fi
+		dma_allowed=$((dma_allowed + n))
 	fi
 	if [ -n "$klog_incomplete" ]; then
 		echo "  -- kernel log INCOMPLETE: $klog_incomplete; the check covered only what is above"
@@ -245,13 +374,18 @@ fi
 
 echo
 echo "## debug checkers (whole suite)"
+[ -z "$dma_all" ] || echo "$dma_all" > "$DMA_DBG/all_errors"
 dbg_after=$(debug_state)
 echo "  before: $dbg_before"
 echo "  after:  $dbg_after"
+de_b=$(sed -n 's/.*error_count=\([^ ]*\) .*/\1/p' <<< "$dbg_before")
+de_a=$(sed -n 's/.*error_count=\([^ ]*\) .*/\1/p' <<< "$dbg_after")
+[ "$de_b" = - ] || echo "  DMA-API errors reported and allowed in the cases: $dma_allowed"
 if [ "$dbg_before" = "lockdep debug_locks=-, DMA-API error_count=- disabled=-" ]; then
 	result debug-checkers SKIP "(no lockdep or DMA-API debug)"
-elif [ "$dbg_after" = "$dbg_before" ] && [[ "$dbg_after" != *"debug_locks=0"* ]] &&
-     [[ "$dbg_after" != *"disabled=Y"* ]]; then
+elif [ "${dbg_after%%,*}" = "${dbg_before%%,*}" ] && [[ "$dbg_after" != *"debug_locks=0"* ]] &&
+     [[ "$dbg_after" != *"disabled=Y"* ]] &&
+     { [ "$de_b" = - ] || [ $((de_a - de_b)) = "$dma_allowed" ]; }; then
 	result debug-checkers PASS
 else
 	result debug-checkers FAIL "(a checker reported or is off)"
@@ -263,5 +397,7 @@ echo "kernel:  $(uname -r)"
 echo "card fw: $(echo "$fw" | tr ' ' '\n' | sed '/^$/d' | sort -u | tr '\n' ' ')"
 echo "input:   ${GC573_INPUT:-none}"
 printf '%s\n' "${results[@]}"
+[ -z "$dead_by" ] ||
+	echo "NOTE: $dead_by left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)"
 echo "SUMMARY pass=$npass fail=$nfail skip=$nskip"
 [ "$nfail" = 0 ]
