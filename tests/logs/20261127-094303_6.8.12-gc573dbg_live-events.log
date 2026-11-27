@@ -1,0 +1,5 @@
+2026-11-27T09:43:03.789Z live stream start: mkdir -p /tmp/gc573-live && gcc -O2 -Wall -o /tmp/gc573-live/gc573-cap gc573-driver/tests/gc573-cap.c &&   gcc -O2 -Wall
+2026-11-27T09:43:03.802Z guard start: run pid 107262, output DVI-D-0, audio allowed to alsa_output.pci-0000_01_00.1.*; windows event-driven (X11), audio polled every 50 ms
+2026-11-27T09:43:03.817Z guard x11 start: DVI-D-0 1920x1080+1920+0; outputs DVI-D-0 1920x1080+1920+0, HDMI-0 1920x1200+0+0
+2026-11-27T09:43:03.825Z guard BREACH: the camera watcher ended (exit 1): sudo: a password is required; the camera watcher did not start in 10 s (sudo -n, fanotify): closing every test player and stopping the run
+2026-11-27T09:43:05.880Z guard run stopped; windows now: none; audio links now: none
