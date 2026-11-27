@@ -2425,7 +2425,9 @@ obssoak_local() {
 		END {
 			printf "INFO memory-kmalloc live objects in the kmalloc caches: %d kB before OBS started, %d kB after OBS exited and the recording was deleted, %+d kB (every program: the random kmalloc caches cannot be told apart); SUnreclaim %d -> %d kB (%+d); slab caches that moved by 128 kB or more (kB): %s\n",
 				k0, k1, k1 - k0, a, b, b - a, top == "" ? "none" : top }')
-	av_results obssoak "$out"
+	# INFO only: not through av_results, which takes output without a
+	# RESULT line for a checker that died
+	sed 's/^/  /' <<< "$out"
 	# the leak check: the driver's own buffer memory (debugfs video
 	# "mem"), all of it given back once OBS has gone
 	if [ -z "$drv0" ] || [ -z "$drv1" ]; then
@@ -2441,7 +2443,11 @@ obssoak_local() {
 		$14 == "|" { n++; t[n] = $1; avail[n] = $2; slab[n] = $3; sunr[n] = $4; vm[n] = $5; rss[n] = $7
 			obs[n] = $8; irq[n] = $9; split($10, c, ":"); busy[n] = c[1]; idle[n] = c[2] }
 		END {
-			if (n < 7) { print "INFO memory while recording: " n " samples, fewer than 7"; exit }
+			if (n < 7) {
+				print "INFO memory while recording: " n + 0 " samples, fewer than 7"
+				print "RESULT cpu SKIP (report only: " n + 0 " samples, fewer than 7)"
+				exit
+			}
 			s = 6
 			du = sunr[n] - sunr[s]
 			printf "INFO memory while recording, from minute 5 to the end: SUnreclaim %+d kB (the page cache of the recording counts: memcg vectors, about 600 x 512 bytes per 100 MiB written), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB\n",
@@ -3932,7 +3938,9 @@ step_rokusoakany() {
 		$1 == "SUnreclaim" { a = $2; b = $3; next }
 		$1 ~ /^kmalloc-([0-9]+k?|rnd-[0-9]+-[0-9]+k?)$/ { k0 += $2; k1 += $3 }
 		END { printf "INFO memory-kmalloc live objects in the kmalloc caches: %d kB before OBS started, %d kB after OBS exited and the recording was deleted, %+d kB (every program'"'"'s); SUnreclaim %d -> %d kB (%+d)\n", k0, k1, k1 - k0, a, b, b - a }')
-	av_results roku-soak "$out"
+	# INFO only: not through av_results (no RESULT line reads as a dead
+	# checker there)
+	sed 's/^/  /' <<< "$out"
 	if [ -z "$drv0" ] || [ -z "$drv1" ]; then
 		result roku-soak-memory SKIP "(the loaded gc573 has no live-memory line in debugfs video)"
 	else
@@ -3957,14 +3965,19 @@ soak_samples() {
 				last[k] = x }
 			kall = $11; kdrv = $12; kbad = $13 }
 		END {
-			if (n < 7) { print "INFO memory: " n " samples, fewer than 7"; exit }
-			s = 6
-			printf "INFO memory from minute 5 to the end: SUnreclaim %+d kB (the recording'"'"'s page cache counts), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB\n",
-				sunr[n] - sunr[s], slab[n] - slab[s], vm[n] - vm[s], avail[n] - avail[s], rss[n] - rss[s]
-			wall = t[n] - t[1]
-			printf "RESULT cpu PASS (report only: OBS %.1f %% of one CPU, the IRQ thread %.2f %%, the host %.1f %% of its CPUs, over %d s)\n",
-				(obs[n] - obs[1]) / hz / wall * 100, (irq[n] - irq[1]) / hz / wall * 100,
-				(busy[n] - busy[1]) / ((busy[n] - busy[1]) + (idle[n] - idle[1])) * 100, wall
+			# fewer than 7: no memory or CPU figures, the counters all the same
+			if (n < 7) {
+				print "INFO memory: " n + 0 " samples, fewer than 7"
+				print "RESULT cpu SKIP (report only: " n + 0 " samples, fewer than 7)"
+			} else {
+				s = 6
+				printf "INFO memory from minute 5 to the end: SUnreclaim %+d kB (the recording'"'"'s page cache counts), Slab %+d kB, VmallocUsed %+d kB, MemAvailable %+d kB, OBS RSS %+d kB\n",
+					sunr[n] - sunr[s], slab[n] - slab[s], vm[n] - vm[s], avail[n] - avail[s], rss[n] - rss[s]
+				wall = t[n] - t[1]
+				printf "RESULT cpu PASS (report only: OBS %.1f %% of one CPU, the IRQ thread %.2f %%, the host %.1f %% of its CPUs, over %d s)\n",
+					(obs[n] - obs[1]) / hz / wall * 100, (irq[n] - irq[1]) / hz / wall * 100,
+					(busy[n] - busy[1]) / ((busy[n] - busy[1]) + (idle[n] - idle[1])) * 100, wall
+			}
 			split("v_bad_status v_unarmed v_order a_bad_done a_order h_poll_errors h_xfer_errors", errs, " ")
 			for (i in errs) iserr[errs[i]] = 1
 			for (k in names) {
