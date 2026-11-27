@@ -913,6 +913,8 @@ static int gc573_pm_notify(struct notifier_block *nb, unsigned long action,
 		busy = "a video stream is on";
 	else if (sleeping && gc->aud.running)
 		busy = "an audio stream is on";
+	else if (sleeping && gc573_audio_stop_unconfirmed(gc))
+		busy = "an audio stop is not confirmed (no INT bit 4, the audio DMA still on)";
 	else
 		gc->sleeping = sleeping;
 	spin_unlock_irq(&gc->aud.lock);

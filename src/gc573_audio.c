@@ -452,8 +452,31 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 }
 
 /*
+ * gc573_pm_notify(), aud.lock held: a stop asked for (a drop) and not
+ * synced yet (gc573_pcm_sync_stop(), which ALSA calls only at the next
+ * prepare, hw_free or close), confirmed by neither INT bit 4 nor DMA_RUN
+ */
+bool gc573_audio_stop_unconfirmed(struct gc573 *gc)
+{
+	struct gc573_audio *a = &gc->aud;
+	u32 run;
+
+	if (!a->stopping)
+		return false;
+	/* tests only: counted as without INT bit 4 and the DMA still on */
+	if (READ_ONCE(gc573_exp_stop_fault) & GC573_STOP_FAULT_AUD_SYNC)
+		return true;
+	if (completion_done(&a->stopped))
+		return false;
+	run = gc573_rd(gc, GC573_DMA_RUN);
+	return run == U32_MAX || (run & GC573_DMA_RUN_AUDIO);
+}
+
+/*
  * After a stop, before prepare, hw_free and close: the DMA has stopped
- * (INT bit 4) and no IRQ handler still holds the stream
+ * (INT bit 4) and no IRQ handler still holds the stream. Without INT bit
+ * 4, and DMA_RUN still showing the audio DMA (or all-ones), the stop is
+ * not confirmed: the card is dead (gc573_dma_dead()), its buffer kept.
  */
 static int gc573_pcm_sync_stop(struct snd_pcm_substream *ss)
 {
@@ -487,6 +510,10 @@ static int gc573_pcm_sync_stop(struct snd_pcm_substream *ss)
 		spin_unlock_irq(&a->lock);
 		dev_warn(&gc->pdev->dev, "audio stop: no INT bit 4 in %u ms, DMA_RUN=%#010x\n",
 			 GC573_AUD_STOP_MS, run);
+		/* still on, or no answer: its buffer may still be written */
+		if (run == U32_MAX || (run & GC573_DMA_RUN_AUDIO))
+			gc573_dma_dead(gc,
+				       "audio stop (no INT bit 4, the audio DMA still on) failed");
 	}
 out:
 	synchronize_irq(gc->irq);
