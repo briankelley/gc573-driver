@@ -1,0 +1,69 @@
+# GC573 regression suite
+date:    2026-11-27 13:48:42 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 0EF9B52AA6E81AE583AB37B
+rev:     34066fe4803d
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 27-no-answer-dead
+  before the load, BAR0: DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  mode 1: loaded, the probe refused the card
+    | [   12.497010] Setting dangerous option exp_mmio_ones - tainting kernel
+    | [   12.497320] gc573 0000:07:00.0: exp_mmio_ones 1: register reads return all-ones from now on
+    | [   12.497322] gc573 0000:07:00.0: the card does not answer (VERSION ffffffff DMA_RUN 0xffffffff VIP_CTRL 0xffffffff): not used
+    | [   12.497867] gc573 0000:07:00.0: bus mastering was on when the probe started, and the card did not read idle: a previous owner may have left its DMA running
+    | [   12.497890] gc573 0000:07:00.0: the probe failed before the engines were stopped: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+    | [   12.498878] Setting dangerous option exp_mmio_ones - tainting kernel
+  BAR0 (past the driver): DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  dead: PCI enable count 1, bus mastering on, in dead_cards
+  rmmod refused: rmmod: ERROR: Module gc573 is in use
+  bind refused: No such device
+  runtime PM, control auto: the card active, its port 0000:00:02.6 active (control on)
+  INTx: PCI_COMMAND 0407 (INTx Disable 1), PCI_STATUS 0010 (interrupt status 0); line 22:  0 0 0 0 IO-APIC 22-fasteoi virtio4
+  system sleep refused: /home/dev/gc573-driver/tests/cases/../lib.sh: line 238: echo: write error: Device or resource busy
+  mode 1 left the card as it is until reboot: bus mastering on, the memory it was given kept
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (17 lines)
+  | [   12.481161] gc573-test: 1795787322370364052-7168 no-answer 1, bus mastering on
+  | [   12.485189] mc: Linux media interface: v0.10
+  | [   12.492219] videodev: Linux video capture interface: v2.00
+  | [   12.496331] gc573: loading out-of-tree module taints kernel.
+  | [   12.496339] gc573: module verification failed: signature and/or required key missing - tainting kernel
+  | [   12.497010] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [   12.497320] gc573 0000:07:00.0: exp_mmio_ones 1: register reads return all-ones from now on
+  | [   12.497322] gc573 0000:07:00.0: the card does not answer (VERSION ffffffff DMA_RUN 0xffffffff VIP_CTRL 0xffffffff): not used
+  | [   12.497867] gc573 0000:07:00.0: bus mastering was on when the probe started, and the card did not read idle: a previous owner may have left its DMA running
+  | [   12.497890] gc573 0000:07:00.0: the probe failed before the engines were stopped: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  | [   12.498878] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [   14.681417] PM: suspend entry (s2idle)
+  | [   14.718032] Filesystems sync: 0.036 seconds
+  | [   14.718429] gc573: system sleep refused: 1 card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first
+  | [   14.718443] random: crng reseeded on system resumption
+  | [   14.718449] PM: suspend exit
+  | [   14.724318] Setting dangerous option exp_mmio_ones - tainting kernel
+  expected: [   12.497890] gc573 0000:07:00.0: the probe failed before the engines were stopped: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+RESULT 27-no-answer-dead    PASS (2s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 
+input:   none
+RESULT 27-no-answer-dead    PASS (2s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+NOTE: 27-no-answer-dead left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=1 fail=0 skip=2

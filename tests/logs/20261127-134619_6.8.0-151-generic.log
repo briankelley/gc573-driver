@@ -1,0 +1,108 @@
+# GC573 regression suite
+date:    2026-11-27 13:46:20 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion 0EF9B52AA6E81AE583AB37B
+rev:     34066fe4803d
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 22-stop-fault
+  -- audio stop, confirmed, then counted as without INT bit 4 and the DMA still on
+  aud: PARAMS audio hw:CARD=/dev/snd/by-path/pci-0000:07:00.0,DEV=0 rate=48000 channels=2 period=480 buffer=9600
+  aud: DROPPED holding=8.0
+  aud: RESULT audio frames=96000 secs=1.990 rate=48003.502 xruns=0 restarts=0
+    | [   15.325383] Setting dangerous option exp_stop_fault - tainting kernel
+    | [   17.462154] gc573 0000:07:00.0: system sleep refused: an audio stop is not confirmed (no INT bit 4, the audio DMA still on), and the PCI core would turn bus mastering off under its DMA
+    | [   25.349006] gc573 0000:07:00.0: exp_stop_fault 0x20: the audio stop was confirmed (INT bit 4 came, DMA_RUN 0x00000000), counted as no INT bit 4 and the audio DMA still on
+    | [   25.349030] gc573 0000:07:00.0: audio stop: no INT bit 4 in 100 ms, DMA_RUN=0x00000002
+    | [   25.349180] gc573 0000:07:00.0: audio stop (no INT bit 4, the audio DMA still on) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+    | [   25.354143] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+    | [   25.410089] Setting dangerous option exp_stop_fault - tainting kernel
+  stop confirmed, then counted as failed; BAR0 idle: DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+    | [   17.407431] PM: suspend entry (s2idle)
+    | [   17.462154] gc573 0000:07:00.0: system sleep refused: an audio stop is not confirmed (no INT bit 4, the audio DMA still on), and the PCI core would turn bus mastering off under its DMA
+    | [   17.462184] PM: suspend exit
+    | [   25.349006] gc573 0000:07:00.0: exp_stop_fault 0x20: the audio stop was confirmed (INT bit 4 came, DMA_RUN 0x00000000), counted as no INT bit 4 and the audio DMA still on
+    | [   25.349030] gc573 0000:07:00.0: audio stop: no INT bit 4 in 100 ms, DMA_RUN=0x00000002
+    | [   25.349180] gc573 0000:07:00.0: audio stop (no INT bit 4, the audio DMA still on) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  system sleep refused before the sync: /home/dev/gc573-driver/tests/cases/../lib.sh: line 238: echo: write error: Device or resource busy
+  kept: 12 KiB
+  rmmod refused: rmmod: ERROR: Module gc573 is in use
+  bind refused: No such device
+  unbound: PCI enable count 1, bus mastering on
+  runtime PM, control auto: the card active, its port 0000:00:02.6 active (control on)
+  INTx: PCI_COMMAND 0407 (INTx Disable 1), PCI_STATUS 0010 (interrupt status 0); line 22:  0 0 0 0 IO-APIC 22-fasteoi virtio4
+  system sleep refused: /home/dev/gc573-driver/tests/cases/../lib.sh: line 238: echo: write error: Device or resource busy
+  the audio stop, not confirmed, left the card dead with its memory and bus mastering
+  the case left card(s) 0000:07:00.0 dead until reboot: gc573 stays loaded, and the cases after it SKIP
+  -- kernel log (39 lines)
+  | [   13.163473] mc: Linux media interface: v0.10
+  | [   13.172629] videodev: Linux video capture interface: v2.00
+  | [   13.177677] gc573: loading out-of-tree module taints kernel.
+  | [   13.177684] gc573: module verification failed: signature and/or required key missing - tainting kernel
+  | [   13.286542] gc573 0000:07:00.0: using MSI, irq 60
+  | [   13.286562] gc573 0000:07:00.0: FPGA version 20200811
+  | [   13.417440] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [   13.418377] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [   13.524821] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [   13.525500] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [   13.624786] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [   13.766140] gc573 0000:07:00.0: video device video0
+  | [   13.766827] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [   13.789560] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [   14.326865] gc573 0000:07:00.0: HDMI: EDID set, 0 blocks
+  | [   15.324664] gc573-test: 1795787183178348244-21978 stop-fault audio
+  | [   15.325383] Setting dangerous option exp_stop_fault - tainting kernel
+  | [   17.407431] PM: suspend entry (s2idle)
+  | [   17.461662] Filesystems sync: 0.054 seconds
+  | [   17.462154] gc573 0000:07:00.0: system sleep refused: an audio stop is not confirmed (no INT bit 4, the audio DMA still on), and the PCI core would turn bus mastering off under its DMA
+  | [   17.462176] random: crng reseeded on system resumption
+  | [   17.462184] PM: suspend exit
+  | [   25.349006] gc573 0000:07:00.0: exp_stop_fault 0x20: the audio stop was confirmed (INT bit 4 came, DMA_RUN 0x00000000), counted as no INT bit 4 and the audio DMA still on
+  | [   25.349030] gc573 0000:07:00.0: audio stop: no INT bit 4 in 100 ms, DMA_RUN=0x00000002
+  | [   25.349180] gc573 0000:07:00.0: audio stop (no INT bit 4, the audio DMA still on) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  | [   25.349460] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -19
+  | [   25.354143] gc573 0000:07:00.0: 12 KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN 0x00000000 VIP_CTRL 0x00000000)
+  | [   25.410089] Setting dangerous option exp_stop_fault - tainting kernel
+  | [   25.465261] gc573-test: 1795787193319441270-9101 stop-fault unbind
+  | [   25.569254] gc573 0000:07:00.0: HDMI: 0x70 bank 3 select failed: -19
+  | [   25.571206] gc573 0000:07:00.0: HDMI: sp_hpd_low row 0 failed: -19
+  | [   25.573052] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -19
+  | [   25.574933] gc573 0000:07:00.0: HDMI: 0x70 bank 0 select failed: -19
+  | [   27.904358] PM: suspend entry (s2idle)
+  | [   27.915634] Filesystems sync: 0.011 seconds
+  | [   27.916020] gc573: system sleep refused: 1 card(s) did not confirm their DMA stopped (dead_cards), and the PCI core would turn bus mastering off; reboot first
+  | [   27.916035] random: crng reseeded on system resumption
+  | [   27.916041] PM: suspend exit
+  | [   27.920568] Setting dangerous option exp_stop_fault - tainting kernel
+  expected: [   17.462154] gc573 0000:07:00.0: system sleep refused: an audio stop is not confirmed (no INT bit 4, the audio DMA still on), and the PCI core would turn bus mastering off under its DMA
+  expected: [   25.349180] gc573 0000:07:00.0: audio stop (no INT bit 4, the audio DMA still on) failed: the card keeps bus mastering and gets no driver until reboot; reboot before using the card again
+  expected: [   25.349460] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -19
+  expected: [   25.569254] gc573 0000:07:00.0: HDMI: 0x70 bank 3 select failed: -19
+  expected: [   25.571206] gc573 0000:07:00.0: HDMI: sp_hpd_low row 0 failed: -19
+  expected: [   25.573052] gc573 0000:07:00.0: HDMI: 0x90 bank 0 select failed: -19
+  expected: [   25.574933] gc573 0000:07:00.0: HDMI: 0x70 bank 0 select failed: -19
+RESULT 22-stop-fault        PASS (15s)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 22-stop-fault        PASS (15s)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+NOTE: 22-stop-fault left the card dead until reboot: reboot before the next run (in a VM: tools/vms/card-idle.sh first)
+SUMMARY pass=1 fail=0 skip=2
