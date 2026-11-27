@@ -43,9 +43,17 @@
 # leftover of an earlier probe), a driver error that is not the injected
 # -ENOMEM, or a kernel log that is not complete. Expected and allowed:
 # the driver's and the driver core's lines naming -ENOMEM, and the call
-# traces the page allocator prints for a failed vmalloc. The injection
-# notices are printed (verbose 1, rate-limited), without stack dumps. SKIP
-# without fault injection.
+# traces the page allocator prints for a failed vmalloc. Each injected
+# failure is printed with its stack (verbose 2, not rate-limited; none for
+# an allocation with __GFP_NOWARN). What the stack of a failure in the
+# same step explains is allowed too, each line by its own time, at most
+# one per such failure:
+# - remove_proc_entry()'s warning, from unregister_irq_proc(), for an
+#   entry of /proc/irq/N after a failure in register_irq_proc():
+#   register_irq_proc() ignores its failures, and unregister_irq_proc()
+#   removes every entry, made or not (kernel/irq/proc.c in 6.8), so the
+#   warning is the kernel's, not the driver's.
+# SKIP without fault injection.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
@@ -108,7 +116,8 @@ fi_set probability 0
 fi_set interval 1
 fi_set times 1
 fi_set space 0
-fi_set verbose 1
+fi_set verbose 2			# the notice and the failure's stack
+fi_set verbose_ratelimit_interval_ms 0	# every failure's
 fi_set task-filter N
 fi_set stacktrace-depth 32
 fi_set ignore-gfp-wait N	# GFP_KERNEL too: the driver's allocations sleep
@@ -251,7 +260,92 @@ klog_bad() {
 		koff=$size
 	fi
 	bad=$(grep -E "$KMSG_BAD|$KMSG_DRV_BAD|debugfs: .*already present|with -EEXIST|^LOST " <<< "$win" |
-		grep -vEf "$allow" | head -5)
+		grep -vEf "$allow")
+	stacks=$(fi_stacks <<< "$win")
+	[ -z "$bad" ] || explained "$1" "$win"
+	bad=$(head -5 <<< "$bad")
+}
+
+# The stacks of the failures injected in the lines on stdin (verbose 2:
+# the notice, then dump_stack()): one line per failure, "PID COMM" and the
+# reliable frames' functions, innermost first (no "? " frames: stale
+# addresses the unwinder only found on the stack)
+fi_stacks() {
+	awk '
+		/\] FAULT_INJECTION: forcing a failure\.$/ { st = 1; next }
+		st == 1 && /\] name [a-z_]+, interval [0-9]+, probability / { st = 2; next }
+		st == 2 && match($0, /\] CPU: [0-9]+ PID: [0-9]+ Comm: [^ ]+/) {
+			split(substr($0, RSTART + 2, RLENGTH - 2), w, " ")
+			pid = w[4]
+			comm = w[6]
+			fr = ""
+			st = 3
+			next
+		}
+		st == 3 && /\] +<\/TASK>$/ { print pid, comm fr; st = 0; next }
+		st == 3 && match($0, /\] +[A-Za-z0-9_.]+\+0x[0-9a-f]+\/0x[0-9a-f]+/) {
+			f = substr($0, RSTART + 1, RLENGTH - 1)
+			sub(/^ +/, "", f)
+			sub(/\+.*/, "", f)
+			fr = fr " " f
+			next
+		}
+		st == 3 { next }
+		{ st = 0 }'
+}
+
+# Allows kernel log line $2 of step $1 for reason $3: takes it out of bad
+# and puts it in run.sh's list as that line alone (its own time)
+allow_line() {
+	local q
+	q=$(sed 's/[[\.*^$+?(){|]/\\&/g' <<< "$2")
+	echo "^$q\$" >> "${GC573_KMSG_ALLOW:-/dev/null}"
+	bad=$(grep -vxF -- "$2" <<< "$bad")
+	echo "  $1: allowed, $3: ${2#*] }"
+}
+
+# remove_proc_entry()'s warnings in the lines on stdin that name an entry
+# register_irq_proc() makes and whose call trace runs through
+# unregister_irq_proc(): "WARNING line<TAB>entry" for each
+irq_proc_warnings() {
+	awk '
+		index($0, "------------[ cut here ]------------") {
+			inb = 1
+			name = ""
+			w = ""
+			via = 0
+			next
+		}
+		!inb { next }
+		w == "" && match($0, /\] name '\''[a-z_]+'\''$/) {
+			name = substr($0, RSTART + 8, RLENGTH - 9)
+			next
+		}
+		/\] WARNING: CPU: [0-9]+ PID: [0-9]+ at fs\/proc\/generic\.c:[0-9]+ remove_proc_entry\+/ {
+			w = $0
+			next
+		}
+		/\] +unregister_irq_proc\+0x/ { via = 1; next }
+		index($0, "---[ end trace ") {
+			if (w != "" && via && name ~ /^(smp_affinity|affinity_hint|smp_affinity_list|node|effective_affinity|effective_affinity_list|spurious)$/)
+				print w "\t" name
+			inb = 0
+		}'
+}
+
+# Takes out of bad what the stacks of the failures in step $1's window
+# ($2) explain (the header's list), each line at most once per such
+# failure, and allows it in run.sh (allow_line)
+explained() {
+	local n k line name
+	n=$(grep -cE ' register_irq_proc( |$)' <<< "$stacks")
+	k=0
+	while IFS=$'\t' read -r line name; do
+		[ "$k" -lt "$n" ] || break
+		grep -qxF -- "$line" <<< "$bad" || continue
+		allow_line "$1" "$line" "remove_proc_entry('$name') after a failure in register_irq_proc()"
+		k=$((k + 1))
+	done < <(irq_proc_warnings <<< "$2")
 }
 # The kernel's lines of step $1 (klog_bad), each a problem; at the step's
 # end, after its unload or unbind, so the lines that undoing it brings are
