@@ -1,0 +1,200 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0
+# tools/card-release.sh's checks, offline, on this test's own processes and
+# a made-up sysfs tree: what tools/install.sh and tools/uninstall.sh rely
+# on before they touch the card (delta review D2, D5, D8, D16). Root, in a
+# VM (install-test.sh runs it in every matrix VM). It runs in a PID and
+# mount namespace of its own: the scan of open files sees only this test's
+# processes, and nothing is written outside a tmpfs. No device node is
+# opened but /dev/full, by this test's own processes.
+#   d2-export   install.sh and uninstall.sh export LC_ALL=C before they
+#               source card-release.sh
+#   d2-catalog  a holder of a character device is found under another
+#               language. stat's file type names are translated (Ubuntu's
+#               language packs carry coreutils' catalog): a catalog of our
+#               own, "character special file" in German, in a tmpfs over
+#               /usr/share/locale, and LANGUAGE=xx. SKIP when no installed
+#               locale lets a catalog take effect.
+#   d8-opath    an O_PATH descriptor of the device is no holder, an open
+#               one is
+#   vfio-user   gc573_vfio_user names the process holding a made-up
+#               device's VFIO node (the device above)
+#   d16-timeout a stat that hangs (a stand-in first in PATH, as for a file
+#               on a network mount whose server has gone): the scan gives
+#               up after GC573_SCAN_TIMEOUT s with status 2, and
+#               gc573_vfio_user too, saying why
+#   d5-dead     gc573_dead_check on a made-up sysfs: a card in gc573's
+#               dead_cards, or with driver_override gc573-dead-card, is
+#               dead; neither, or no gc573 and no card, is not
+# Usage: sudo tests/card-release-check.sh   (RESULT lines; exit 1 on a FAIL)
+set -u
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+[ "$(id -u)" = 0 ] || { echo "card-release-check.sh: needs root (namespaces)" >&2; exit 2; }
+if [ -z "${GC573_CRC_NS:-}" ]; then
+	exec unshare --mount --pid --fork --mount-proc env GC573_CRC_NS=1 bash "$0" "$@"
+fi
+
+NAME=gc573
+say() { printf '%s\n' "$*"; }
+# shellcheck source=tools/card-release.sh
+. "$ROOT/tools/card-release.sh"
+fail=0
+res() {
+	printf 'RESULT\tcrc-%s\t%s\t%s\n' "$1" "$2" "$3"
+	[ "$2" != FAIL ] || fail=1
+}
+tmp=$(mktemp -d)
+mount -t tmpfs gc573-crc "$tmp" || { echo "card-release-check.sh: no tmpfs" >&2; exit 2; }
+dev=/dev/full
+rdev=$(LC_ALL=C stat -L -c '%t:%T' "$dev")
+sleep 300 < "$dev" &
+open_pid=$!
+python3 -I -c 'import os, sys, time; fd = os.open(sys.argv[1], os.O_PATH); time.sleep(300)' "$dev" &
+opath_pid=$!
+sleep 0.5
+echo "device $dev ($rdev): open in pid $open_pid (sleep), O_PATH in pid $opath_pid (python3)"
+has_pid() { grep -q "^$1 " <<< "$2"; }
+
+# ---- d2-export
+for s in install.sh uninstall.sh; do
+	e=$(grep -n -m1 '^export LC_ALL=C$' "$ROOT/tools/$s" | cut -d: -f1)
+	c=$(grep -n -m1 '^\. .*card-release\.sh"$' "$ROOT/tools/$s" | cut -d: -f1)
+	if [ -n "$e" ] && [ -n "$c" ] && [ "$e" -lt "$c" ]; then
+		res d2-export PASS "$s: export LC_ALL=C at line $e, card-release.sh sourced at line $c"
+	else
+		res d2-export FAIL "$s: export LC_ALL=C at line '${e:-none}', card-release.sh sourced at line '${c:-none}'"
+	fi
+done
+
+# ---- d2-catalog
+de="zeichenorientierte Spezialdatei"
+mkdir -p "$tmp/locale/xx/LC_MESSAGES"
+python3 -I - "$tmp/locale/xx/LC_MESSAGES/coreutils.mo" "$de" <<'PY'
+# A GNU .mo catalog: the header and one translation, keys sorted
+import struct, sys
+msgs = {b"": b"Content-Type: text/plain; charset=UTF-8\n",
+        b"character special file": sys.argv[2].encode()}
+keys = sorted(msgs)
+ids = strs = b""
+ent = []
+for k in keys:
+    ent.append((len(k), len(ids), len(msgs[k]), len(strs)))
+    ids += k + b"\0"
+    strs += msgs[k] + b"\0"
+n = len(keys)
+kstart = 28 + 16 * n
+vstart = kstart + len(ids)
+kt = [x for kl, ko, vl, vo in ent for x in (kl, kstart + ko)]
+vt = [x for kl, ko, vl, vo in ent for x in (vl, vstart + vo)]
+with open(sys.argv[1], "wb") as f:
+    f.write(struct.pack("<7I", 0x950412de, 0, n, 28, 28 + 8 * n, 0, 0))
+    f.write(struct.pack("<%dI" % len(kt), *kt))
+    f.write(struct.pack("<%dI" % len(vt), *vt))
+    f.write(ids + strs)
+PY
+mount --bind "$tmp/locale" /usr/share/locale
+loc=
+for l in C.UTF-8 C.utf8 en_US.UTF-8 en_US.utf8; do
+	if [ "$(env -u LC_ALL -u LC_MESSAGES LANG="$l" LANGUAGE=xx stat -L -c %F "$dev" 2>/dev/null)" = "$de" ]; then
+		loc=$l
+		break
+	fi
+done
+if [ -z "$loc" ]; then
+	res d2-catalog SKIP "no installed locale makes stat use the catalog (tried C.UTF-8, en_US.UTF-8)"
+else
+	h=$(unset LC_ALL LC_MESSAGES; export LANG="$loc" LANGUAGE=xx; gc573_fd_holders "$rdev")
+	if has_pid "$open_pid" "$h"; then
+		res d2-catalog PASS "LANG=$loc LANGUAGE=xx, stat -c %F says '$de': the holder is found (pid $open_pid)"
+	else
+		res d2-catalog FAIL "LANG=$loc LANGUAGE=xx, stat -c %F says '$de': holders '$(tr '\n' ' ' <<< "$h")', not pid $open_pid"
+	fi
+fi
+umount /usr/share/locale
+
+# ---- d8-opath
+h=$(gc573_fd_holders "$rdev")
+if has_pid "$open_pid" "$h" && ! has_pid "$opath_pid" "$h"; then
+	res d8-opath PASS "holders: pid $open_pid (open); not pid $opath_pid (O_PATH)"
+else
+	res d8-opath FAIL "holders '$(tr '\n' ' ' <<< "$h")': want pid $open_pid and not pid $opath_pid (O_PATH)"
+fi
+
+# ---- vfio-user: a made-up device whose VFIO node is the device above
+vd=$tmp/0000:99:00.0
+mkdir -p "$vd/vfio-dev/vfio0"
+printf '%d:%d\n' "$((16#${rdev%%:*}))" "$((16#${rdev##*:}))" > "$vd/vfio-dev/vfio0/dev"
+u=$(gc573_vfio_user "$vd")
+if [ "$u" = "process $open_pid (sleep)" ]; then
+	res vfio-user PASS "'$u'"
+else
+	res vfio-user FAIL "'$u', not 'process $open_pid (sleep)'"
+fi
+
+# ---- d16-timeout: stat hangs
+mkdir -p "$tmp/bin"
+printf '#!/bin/sh\nexec sleep 300\n' > "$tmp/bin/stat"
+chmod +x "$tmp/bin/stat"
+for f in holders vfio; do
+	(
+		export PATH="$tmp/bin:$PATH" GC573_SCAN_TIMEOUT=2
+		if [ $f = holders ]; then
+			gc573_fd_holders "$rdev" > "$tmp/$f.out"
+		else
+			gc573_vfio_user "$vd" > "$tmp/$f.out"
+		fi
+		echo $? > "$tmp/$f.rc"
+	) &
+	w=$!
+	t0=$(date +%s)
+	for _ in $(seq 150); do
+		kill -0 "$w" 2>/dev/null || break
+		sleep 0.1
+	done
+	dt=$(($(date +%s) - t0))
+	if kill -0 "$w" 2>/dev/null; then
+		res d16-timeout FAIL "$f: still scanning after $dt s with GC573_SCAN_TIMEOUT=2"
+		continue
+	fi
+	rc=$(cat "$tmp/$f.rc")
+	o=$(cat "$tmp/$f.out")
+	if [ "$rc" = 2 ] && { [ $f = holders ] || [[ $o == *"did not finish within 2 s"* ]]; }; then
+		res d16-timeout PASS "$f: status 2 after $dt s${o:+, '$o'}"
+	else
+		res d16-timeout FAIL "$f: status $rc after $dt s, '$o'"
+	fi
+done
+
+# ---- d5-dead: a made-up sysfs
+sys=$tmp/sys
+card=$sys/bus/pci/devices/0000:07:00.0
+mkdir -p "$sys/module/$NAME/parameters" "$card"
+echo 0x1461 > "$card/vendor"
+echo 0x0054 > "$card/device"
+dead() {
+	local o r
+	o=$(GC573_SYSFS=$sys; gc573_dead_check 2>&1)
+	r=$?
+	printf '%s|%s' "$r" "$o"
+}
+echo 0000:07:00.0 > "$sys/module/$NAME/parameters/dead_cards"
+echo '(null)' > "$card/driver_override"
+d1=$(dead)
+: > "$sys/module/$NAME/parameters/dead_cards"
+echo gc573-dead-card > "$card/driver_override"
+d2=$(dead)
+echo '(null)' > "$card/driver_override"
+d3=$(dead)
+rm -r "$sys/module/$NAME" "$card"
+d4=$(dead)
+for c in "listed|$d1|0|0000:07:00.0" "driver_override|$d2|0|gc573-dead-card" "neither|$d3|1|" "nothing|$d4|1|"; do
+	IFS='|' read -r what r o want_r want_o <<< "$c"
+	if [ "$r" = "$want_r" ] && [[ $o == *"$want_o"* ]]; then
+		res d5-dead PASS "$what: status $r${o:+, '$o'}"
+	else
+		res d5-dead FAIL "$what: status $r, '$o' (want status $want_r${want_o:+ and $want_o})"
+	fi
+done
+
+kill "$open_pid" "$opath_pid" 2>/dev/null
+exit $fail

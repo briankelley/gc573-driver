@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0
 # Test tools/install.sh and tools/uninstall.sh at a git ref on the regression
 # matrix VMs (no card there). Per VM, one at a time:
+#   crc-*            tests/card-release-check.sh: the scripts' holder scan and
+#                    dead-card check, offline (its own processes, a made-up
+#                    sysfs)
 #   headers-missing  the running kernel's build link hidden: install.sh stops
 #                    with the package to install, nothing installed
 #   dkms-missing     dkms not on PATH: install.sh stops with the package to
@@ -27,7 +30,7 @@ REF=HEAD VMS=()
 while [ $# -gt 0 ]; do
   case $1 in
     -r) REF=$2; shift 2 ;;
-    -h|--help) sed -n '3,25p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,26p' "$0"; exit 0 ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) VMS+=("$1"); shift ;;
   esac
@@ -61,6 +64,9 @@ echo "kernels with headers: ${kernels[*]}"
 res() { printf 'RESULT\t%s\t%s\t%s\n' "$1" "$2" "$3"; }
 resolve() { modprobe -n -v "$ALIAS" 2>/dev/null | grep -o '[^ ]*gc573\.ko[^ ]*' | tail -1; }
 sudo bash tools/uninstall.sh > /dev/null 2>&1 || true
+
+echo "=== card-release-check"
+sudo bash tests/card-release-check.sh
 
 echo "=== headers-missing"
 b=/lib/modules/$krel/build
