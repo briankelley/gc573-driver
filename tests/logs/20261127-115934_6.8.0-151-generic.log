@@ -1,0 +1,56 @@
+# GC573 regression suite
+date:    2026-11-27 11:59:34 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion AC39CC232FD36373DF3F649
+rev:     d084a38b4122
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 30-probe-entry
+  unbound: bus mastering off, BAR0 DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  ones: bind refused (No such device)
+    | [  605.260867] Setting dangerous option exp_mmio_ones - tainting kernel
+    | [  605.266993] gc573 0000:07:00.0: exp_mmio_ones 1: register reads return all-ones from now on
+    | [  605.266999] gc573 0000:07:00.0: the card does not answer (VERSION ffffffff DMA_RUN 0xffffffff VIP_CTRL 0xffffffff): not used
+    | [  605.269277] Setting dangerous option exp_mmio_ones - tainting kernel
+  FAIL: the probe did not refuse the card for not reading idle with bus mastering off
+  -- kernel log (16 lines)
+  | [  604.502471] gc573 0000:07:00.0: using MSI, irq 60
+  | [  604.502493] gc573 0000:07:00.0: FPGA version 20200811
+  | [  604.634833] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  604.637098] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  604.748642] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  604.749335] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  604.851309] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  604.992211] gc573 0000:07:00.0: video device video0
+  | [  604.992550] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  605.015804] gc573 0000:07:00.0: HDMI: signal, not locked
+  | [  605.260354] gc573-test: 1795780776030505406-31365 probe-entry ones
+  | [  605.260867] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [  605.266993] gc573 0000:07:00.0: exp_mmio_ones 1: register reads return all-ones from now on
+  | [  605.266999] gc573 0000:07:00.0: the card does not answer (VERSION ffffffff DMA_RUN 0xffffffff VIP_CTRL 0xffffffff): not used
+  | [  605.269277] Setting dangerous option exp_mmio_ones - tainting kernel
+  | [  605.278837] Setting dangerous option exp_mmio_ones - tainting kernel
+RESULT 30-probe-entry       FAIL (1s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 30-probe-entry       FAIL (1s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=0 fail=1 skip=2

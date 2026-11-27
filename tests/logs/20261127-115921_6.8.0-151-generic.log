@@ -1,0 +1,65 @@
+# GC573 regression suite
+date:    2026-11-27 11:59:21 UTC
+host:    gc573-dev
+kernel:  6.8.0-151-generic #151-Ubuntu SMP PREEMPT_DYNAMIC Wed Nov 11 01:28:36 UTC 2026
+debug:   KASAN= PROVE_LOCKING= DEBUG_KMEMLEAK= DMA_API_DEBUG= DEBUG_ATOMIC_SLEEP=
+card:    07:00.0 Multimedia video controller [0400]: Avermedia Technologies Inc Device [1461:0054]
+         subsystem 1461:5730
+module:  /home/dev/gc573-driver/gc573.ko srcversion AC39CC232FD36373DF3F649
+rev:     d084a38b4122
+input:   none
+checks:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+
+## 30-probe-entry
+  unbound: bus mastering off, BAR0 DMA_RUN 0x00000000 VIP_CTRL 0x00000000
+  FAIL: armed: the bind succeeded
+  -- kernel log (30 lines)
+  | [  591.351413] mc: Linux media interface: v0.10
+  | [  591.358446] videodev: Linux video capture interface: v2.00
+  | [  591.361891] gc573: loading out-of-tree module taints kernel.
+  | [  591.361898] gc573: module verification failed: signature and/or required key missing - tainting kernel
+  | [  591.467842] gc573 0000:07:00.0: using MSI, irq 60
+  | [  591.467863] gc573 0000:07:00.0: FPGA version 20200811
+  | [  591.601192] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  591.603688] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  591.714182] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  591.714871] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  591.816722] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  591.960579] gc573 0000:07:00.0: video device video0
+  | [  591.961101] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  591.983599] gc573 0000:07:00.0: HDMI: 5 V, no signal
+  | [  592.233289] gc573-test: 1795780763002703144-28408 probe-entry armed
+  | [  592.233935] Setting dangerous option exp_probe_armed - tainting kernel
+  | [  592.249646] gc573 0000:07:00.0: exp_probe_armed: DMA_RUN 0x00000000 read as 0x00000002 (the audio DMA on)
+  | [  592.249661] gc573 0000:07:00.0: DMA running at probe (DMA_RUN 0x00000002, VIP_CTRL 0x00000000): stopped before bus mastering
+  | [  592.356935] gc573 0000:07:00.0: using MSI, irq 60
+  | [  592.356957] gc573 0000:07:00.0: FPGA version 20200811
+  | [  592.490166] gc573 0000:07:00.0: I2C adapters: bus 0 off, bus 1 off, bus 2 off (parameters i2c_bus1, i2c_bus02)
+  | [  592.492081] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+  | [  592.595849] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+  | [  592.596543] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+  | [  592.698271] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+  | [  592.840528] gc573 0000:07:00.0: video device video0
+  | [  592.843850] gc573 0000:07:00.0: audio: ALSA card 1 (GC573)
+  | [  592.844152] Setting dangerous option exp_probe_armed - tainting kernel
+  | [  592.844386] Setting dangerous option exp_probe_armed - tainting kernel
+  | [  592.856331] gc573 0000:07:00.0: HDMI: 5 V, no signal
+RESULT 30-probe-entry       FAIL (1s, exit 1)
+
+## kmemleak (whole suite)
+  kmemleak not available on this kernel
+RESULT kmemleak             SKIP 
+
+## debug checkers (whole suite)
+  before: lockdep debug_locks=-, DMA-API error_count=- disabled=-
+  after:  lockdep debug_locks=-, DMA-API error_count=- disabled=-
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+
+## summary
+kernel:  6.8.0-151-generic
+card fw: 20200811 
+input:   none
+RESULT 30-probe-entry       FAIL (1s, exit 1)
+RESULT kmemleak             SKIP 
+RESULT debug-checkers       SKIP (no lockdep or DMA-API debug)
+SUMMARY pass=0 fail=1 skip=2
