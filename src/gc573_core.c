@@ -289,11 +289,12 @@ static void gc573_irq_hw_disable(struct gc573 *gc)
  * video output off as the spec's stops do, every video channel disarmed,
  * then step 2's domain resets.
  *
- * A card that does not answer reads all-ones (VERSION too): the probe
- * ends there. VERSION is read again after the resets, for
- * gc573_answer_check(). If the stop cannot be completed once the slots
- * point at the dummy list, that list and the audio buffers are kept
- * (gc573_dma_dead()).
+ * A card that does not answer reads all-ones (VERSION too): it may as
+ * well be running DMA, and the probe ends there, bus mastering left as it
+ * is (gc573_master_guard() keeps it on if it was). VERSION is read again
+ * after the resets, for gc573_answer_check(). If the stop cannot be
+ * completed once the slots point at the dummy list, that list and the
+ * audio buffers are kept (gc573_dma_dead()).
  */
 static int gc573_hw_stop_engines(struct gc573 *gc)
 {
@@ -334,7 +335,40 @@ static int gc573_hw_stop_engines(struct gc573 *gc)
 	}
 	if (ret)
 		gc573_dma_dead(gc, "the stop of the engines at probe failed");
+	else
+		gc->master_unchecked = false;
 	return ret;
+}
+
+/*
+ * Before the PCI enable: bus mastering as the card's last owner left it
+ * (firmware leaves it on, too). On, with the card not reading idle (an
+ * engine on, all-ones, or BAR0 not readable): a previous owner may have
+ * left DMA running, and gc573_master_guard() must keep any unwind from
+ * turning bus mastering off. Read through a mapping of its own, so that
+ * nothing of the probe's can fail before the guard is in place.
+ */
+static bool gc573_master_unchecked(struct pci_dev *pdev)
+{
+	void __iomem *m;
+	u32 run, vip;
+	u16 cmd;
+
+	pci_read_config_word(pdev, PCI_COMMAND, &cmd);
+	if (cmd != (u16)~0 && !(cmd & PCI_COMMAND_MASTER))
+		return false;
+	/* tests only: exp_mmio_ones 1 has the card read all-ones from here */
+	if (cmd == (u16)~0 || !(cmd & PCI_COMMAND_MEMORY) ||
+	    READ_ONCE(exp_mmio_ones) == GC573_MMIO_ONES_PROBE)
+		return true;
+	m = pci_iomap_range(pdev, 0, 0, GC573_BAR0_SIZE);
+	if (!m)
+		return true;
+	run = readl(m + GC573_DMA_RUN);
+	vip = readl(m + GC573_VIP_CTRL);
+	pci_iounmap(pdev, m);
+	return run == U32_MAX || vip == U32_MAX ||
+	       (run & GC573_DMA_RUN_AUDIO) || (vip & GC573_VIP_CTRL_OUT_EN);
 }
 
 /* After bus mastering goes on: up to this long for the card to answer */
@@ -500,7 +534,8 @@ MODULE_PARM_DESC(dead_cards,
 
 /*
  * The card's DMA may still run (spec/pci.md): leave the card as it is
- * until reboot, and never turn its bus mastering off.
+ * until reboot, and never turn its bus mastering off. Without MMIO, so
+ * that gc573_master_guard() can use it too.
  * - An enable that is never undone: pcim's disable at the teardown then
  *   leaves the device enabled and bus mastering on (pci_disable_device()
  *   turns it off only with the last enable gone).
@@ -553,6 +588,26 @@ void gc573_dma_dead(struct gc573 *gc, const char *why)
 	       GC573_AUD_BUF_BYTES;
 	dev_warn(dev, "%ld KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN %#010x VIP_CTRL %#010x)\n",
 		 kept >> 10, run, vip);
+}
+
+/*
+ * Devres, added right after pcim_enable_device() if bus mastering was on
+ * when the probe started and the card did not read idle
+ * (gc573_master_unchecked()): it runs after every other teardown action
+ * and just before pcim's disable, which turns bus mastering off. A
+ * previous owner may have left DMA running, so a probe that ends before
+ * gc573_hw_stop_engines() confirmed the engines stopped leaves the card as
+ * one whose stop failed. The card was given none of the driver's memory
+ * before that point.
+ */
+static void gc573_master_guard(void *data)
+{
+	struct gc573 *gc = data;
+
+	if (!gc->master_unchecked || READ_ONCE(gc->dma_dead))
+		return;
+	dev_warn(&gc->pdev->dev, "bus mastering was on when the probe started, and the card did not read idle: a previous owner may have left its DMA running\n");
+	gc573_card_dead(gc, "the probe failed before the engines were stopped");
 }
 
 /*
@@ -777,14 +832,26 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	if (ret)
 		return ret;
 
-	/* 1: PCI enable, bus master, BAR0, MSI (spec/pci.md) */
-	ret = pcim_enable_device(pdev);
-	if (ret)
-		return dev_err_probe(dev, ret, "cannot enable device\n");
-
 	if (pci_resource_len(pdev, 0) < GC573_BAR0_SIZE)
 		return dev_err_probe(dev, -ENODEV, "BAR0 too small: %pR\n",
 				     &pdev->resource[0]);
+
+	/*
+	 * 1: PCI enable, bus master, BAR0, MSI (spec/pci.md). With bus
+	 * mastering on and the card not idle, no unwind may turn it off
+	 * before the engines were stopped (gc573_master_guard()).
+	 */
+	gc->master_unchecked = gc573_master_unchecked(pdev);
+	ret = pcim_enable_device(pdev);
+	if (ret)
+		return dev_err_probe(dev, ret, "cannot enable device\n");
+	if (gc->master_unchecked) {
+		ret = devm_add_action(dev, gc573_master_guard, gc);
+		if (ret) {
+			gc573_master_guard(gc);
+			return ret;
+		}
+	}
 
 	gc->mmio = gc573_pcim_iomap_region(pdev, 0, KBUILD_MODNAME);
 	if (IS_ERR(gc->mmio))

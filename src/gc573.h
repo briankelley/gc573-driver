@@ -384,6 +384,8 @@ struct gc573 {
 	bool dma_stopped;		/* gc573_dma_stop() ran: teardown */
 	/* a stop failed: the card stays as it is until reboot */
 	bool dma_dead;
+	/* probe: bus mastering was on, the engines not yet seen stopped */
+	bool master_unchecked;
 	/* tests only, exp_mmio_ones: register reads return all-ones */
 	bool mmio_ones;
 	bool mmio_ones_timed;		/* until mmio_ones_until (jiffies) */
