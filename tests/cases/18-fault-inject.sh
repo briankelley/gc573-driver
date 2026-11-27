@@ -227,14 +227,38 @@ EOF
 cat "$allow" >> "${GC573_KMSG_ALLOW:-/dev/null}"
 # Sets bad to the kernel's lines since the last call that fail the case
 # here: run.sh's (less the above), a duplicate sysfs or debugfs name, a
-# lost record. Not in a subshell: it moves the offset koff
+# lost record. The window ends at a mark for step $1 that the call writes
+# to the kernel log: once the follower has it, every line logged before
+# the call is in the window, and nothing of the next step. Not in a
+# subshell: it moves the offset koff
 klog_bad() {
-	local size
-	size=$(stat -c %s "$klogf")
-	bad=$(tail -c +$((koff + 1)) "$klogf" | head -c $((size - koff)) |
-		grep -E "$KMSG_BAD|$KMSG_DRV_BAD|debugfs: .*already present|with -EEXIST|^LOST " |
+	local tag i size win="" len=""
+	tag=$(kmsg_mark "18-fault-inject $1")
+	for i in $(seq 300); do
+		size=$(stat -c %s "$klogf")
+		win=$(tail -c +$((koff + 1)) "$klogf" | head -c $((size - koff)))
+		# bytes up to the end of the mark's line
+		len=$(LC_ALL=C awk -v m="gc573-test: $tag" '
+			{ n += length($0) + 1 } index($0, m) { print n; exit }' <<< "$win")
+		[ -z "$len" ] || break
+		sleep 0.01
+	done
+	if [ -n "$len" ]; then
+		win=$(LC_ALL=C head -c "$len" <<< "$win")
+		koff=$((koff + len))
+	else
+		echo "  (the kernel log follower did not show the mark for $1 within 3 s: the window ends at what it has)"
+		koff=$size
+	fi
+	bad=$(grep -E "$KMSG_BAD|$KMSG_DRV_BAD|debugfs: .*already present|with -EEXIST|^LOST " <<< "$win" |
 		grep -vEf "$allow" | head -5)
-	koff=$size
+}
+# The kernel's lines of step $1 (klog_bad), each a problem; at the step's
+# end, after its unload or unbind, so the lines that undoing it brings are
+# its own
+klog_step() {
+	klog_bad "$1"
+	[ -z "$bad" ] || problem "$1: kernel: $(tr '\n' '|' <<< "$bad")"
 }
 
 problem() {
@@ -293,18 +317,17 @@ smoke() {
 		{ echo "audio: $(grep -E 'RESULT|rror|fail' <<< "$out" | head -2 | tr '\n' ' ')"; return 1; }
 }
 
-# After a load, bind or unbind with a fault (step $1, its result $2):
-# bound and working, or nothing left; the kernel log clean
+# After a load or bind with a fault (step $1, its result $2): bound and
+# working, or nothing left. The kernel log is checked once the step is
+# undone (klog_step)
 after_fault() {
-	local left bad
+	local left out
 	if gc573_bound; then
-		bad=$(smoke) || problem "$1: bound, but $bad"
+		out=$(smoke) || problem "$1: bound, but $out"
 	else
 		left=$(leftovers)
 		[ -z "$left" ] || problem "$1 ($2): left behind: $(tr '\n' ';' <<< "$left")"
 	fi
-	klog_bad
-	[ -z "$bad" ] || problem "$1: kernel: $(tr '\n' '|' <<< "$bad")"
 }
 
 errnos=""
@@ -346,11 +369,13 @@ while :; do
 	[ ! -e "$drv" ] || problem "load n=$n: driver still registered after the module went"
 	left=$(leftovers)
 	[ -z "$left" ] || problem "load n=$n: left behind after rmmod: $(tr '\n' ';' <<< "$left")"
+	klog_step "load n=$n"
 	[ $((inj % 50)) != 0 ] || echo "  load: $inj faults so far (n=$n)"
 	n=$((n < LOAD_FULL ? n + 1 : n + LOAD_STRIDE))
 done
 gc573_bound || fail "load without a fault (n=$n): not bound"
 bad=$(smoke) || fail "load without a fault: $bad"
+klog_step "the load without a fault"
 echo "load: $inj faults (n=1..$((n - 1)), every point to $LOAD_FULL, then every $LOAD_STRIDE-th): module loaded $nload times (bound $nbound), errnos $(errno_summary); $(($(date +%s) - t0)) s"
 
 # ---- 2. bind ----
@@ -375,11 +400,13 @@ while :; do
 		left=$(leftovers)
 		[ -z "$left" ] || problem "bind n=$n: the unbind left: $(tr '\n' ';' <<< "$left")"
 	fi
+	klog_step "bind n=$n"
 	[ $((inj % 50)) != 0 ] || echo "  bind: $inj faults so far (n=$n)"
 	n=$((n < BIND_FULL ? n + 1 : n + BIND_STRIDE))
 done
 gc573_bound || fail "bind without a fault (n=$n): not bound"
 bad=$(smoke) || fail "bind without a fault: $bad"
+klog_step "the bind without a fault"
 echo "bind: $inj faults (n=1..$((n - 1))), bound anyway $nbound, errnos $(errno_summary); $(($(date +%s) - t0)) s"
 
 # ---- 3. the ioctls ----
@@ -395,8 +422,7 @@ for op in vopen reqbufs s_fmt streamon s_edid pcm_open hw_params; do
 	grep '^FI ' "$tmp/out" | sed 's/^/  /'
 	[ "$rc" = 124 ] && fail "sweep $op hangs"
 	[ "$rc" = 0 ] || problem "sweep $op: exit $rc ($(grep -v '^FI ' "$tmp/out" | head -3 | tr '\n' ' '))"
-	klog_bad
-	[ -z "$bad" ] || problem "sweep $op: kernel: $(tr '\n' '|' <<< "$bad")"
+	klog_step "sweep $op"
 done
 echo "ioctl sweeps: $(($(date +%s) - t0)) s"
 
@@ -440,8 +466,7 @@ for i in $(seq "$CYCLES"); do
 			esac
 		fi
 	fi
-	klog_bad
-	[ -z "$bad" ] || problem "random cycle $i: kernel: $(tr '\n' '|' <<< "$bad")"
+	klog_step "random cycle $i"
 done
 fi_set probability 0
 echo "random: $CYCLES cycles at $PROB %: bound $nb, captures through $nc, EDID set and cleared $ne, audio $na (failures there are the injection's); $(($(date +%s) - t0)) s"
@@ -462,8 +487,7 @@ mem=$(sed -n 's/^mem (live, all cards): //p' "$(gc573_debugfs)")
 echo "after the faults: bind, capture and audio OK; driver memory: $mem"
 gc573_unload || fail "rmmod failed"
 sleep 0.5
-klog_bad
-[ -z "$bad" ] || problem "kernel: $(tr '\n' '|' <<< "$bad")"
+klog_step "the clean bind and unload"
 [ "$problems" = 0 ] || fail "$problems problems (above)"
 if [ -n "$note" ]; then
 	echo "NOTE:$note"
