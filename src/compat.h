@@ -116,9 +116,10 @@ gc573_pcim_iomap_region(struct pci_dev *pdev, int bar, const char *name)
  *   takes under the device lock: from a work item then, which waits for
  *   the device lock, so a bind queued behind the same remove could come
  *   first; gc573_dma_stop() writes it in place again at the teardown.
- *   gc573_card_dead() keeps the module for good, and with it the work's
- *   code; a caller without the device lock while the module unloads gets
- *   no block, and says so.
+ *   The work holds a module reference from before it is queued, never
+ *   put, so the module and the work's code stay; a caller without the
+ *   device lock while the module unloads cannot take one, gets no block,
+ *   and says so.
  */
 #define GC573_NO_DRIVER		"gc573-dead-card"
 
@@ -233,11 +234,14 @@ static inline void gc573_block_drivers(struct pci_dev *pdev,
 		gc573_pci_override_block(pdev, drv);
 		return;
 	}
+	/*
+	 * Never put: the work must not run, or return, into freed code, and
+	 * gc573_card_dead()'s own __module_get() comes after this
+	 */
 	if (!try_module_get(THIS_MODULE)) {
 		dev_err(&pdev->dev, "cannot block other drivers: the module is unloading\n");
 		return;
 	}
-	module_put(THIS_MODULE);
 	bw = kzalloc(sizeof(*bw), GFP_KERNEL);
 	if (!bw)
 		goto nomem;
