@@ -55,6 +55,7 @@ if grep -q "^$NAME " /proc/modules; then
 		case $rc in
 		0) say "unloaded $NAME" ;;
 		1) die "nothing was changed" ;;
+		3) die "run this again once the unbind has finished" ;;
 		*) inuse=1 ;;
 		esac
 	elif gc573_unload_wait; then

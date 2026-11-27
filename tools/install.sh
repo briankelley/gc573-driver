@@ -208,13 +208,18 @@ fi
 user=
 if [ "$drv" = vfio-pci ] && [ -e "$dev/iommu_group" ]; then
 	grp=/dev/vfio/$(basename "$(readlink -f "$dev/iommu_group")")
-	for fd in /proc/[0-9]*/fd/*; do
-		[ "$(readlink "$fd" 2>/dev/null)" = "$grp" ] || continue
-		p=${fd#/proc/}; p=${p%%/*}
-		vmname=$(tr '\0' ' ' < "/proc/$p/cmdline" | grep -o 'guest=[^, ]*' | head -1 || true)
-		user="process $p ($(cat "/proc/$p/comm" 2>/dev/null))${vmname:+, virtual machine ${vmname#guest=}}"
-		break
-	done
+	# the fd whose link target is exactly the group device (no parsing of
+	# what the processes chose), names with printable characters only
+	p=$(find /proc/[0-9]*/fd -maxdepth 1 -type l -lname "$grp" -printf '%h\n' 2>/dev/null | head -1)
+	p=${p#/proc/}
+	p=${p%/fd}
+	case $p in
+	*[!0-9]* | "") ;;
+	*)
+		vmname=$(tr '\0' ' ' < "/proc/$p/cmdline" | LC_ALL=C tr -cd '[:print:]' | grep -o 'guest=[^, ]*' | head -1 || true)
+		user="process $p ($(gc573_comm "$p"))${vmname:+, virtual machine ${vmname#guest=}}"
+		;;
+	esac
 fi
 vm_busy() {
 	[ -n "$user" ] || return 1

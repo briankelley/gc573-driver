@@ -32,7 +32,8 @@ sync_tree() {
 		--exclude='.*.cmd' --exclude='modules.order' --exclude='Module.symvers' \
 		--exclude='/tests/logs/' \
 		--include='/Makefile' --include='/Kbuild' --include='/dkms.conf' \
-		--include='/src/***' --include='/tests/***' --exclude='*' \
+		--include='/src/***' --include='/tests/***' \
+		--include='/tools/' --include='/tools/card-release.sh' --exclude='*' \
 		-e "ssh -o BatchMode=yes" "$ROOT/" "$VM:$VMDIR/"
 }
 

@@ -52,6 +52,7 @@ An update (`install.sh` again) or `uninstall.sh` first takes the card away from 
 - PipeWire keeps the control device of every sound card it manages open. It lets go by itself once the card is taken away, so neither script needs you to stop it.
 - While something records the card's audio through PipeWire (OBS's PulseAudio or PipeWire source, `pw-record`), PipeWire holds the card's sound device itself. The scripts then name it as *PipeWire, streaming the card's audio* and change nothing, as for any other program (below).
 - If another program has the card open (OBS, a capture), the scripts name it and change nothing on the card. Close it and run the script again, or add `--yes`: the program then loses the card. If it keeps the device open anyway, the old module stays loaded: once the program has let go, run the script again (or reboot).
+- A program other than PipeWire that has the card's sound devices or its I2C devices (`/dev/i2c-*`: ddcutil, i2c-tools) open is never overridden, not even with `--yes`: taking the card would wait until the program closes them. Close it and run the script again. If taking the card has not finished after 10 s anyway (a program opened it in the meantime), the script says so and stops; the card goes once that program closes it.
 
 ## Use with OBS
 
