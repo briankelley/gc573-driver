@@ -689,19 +689,27 @@ static void gc573_vid_setup(struct gc573 *gc)
 	gc573_wr(gc, GC573_SCALER_RESET, GC573_SCALER_RUN);
 	fsleep(GC573_SCALER_RESET_US);
 
-	/* rate limit and colour-path flags; bit 3 and above 31:16 kept */
+	/*
+	 * rate limit and colour-path flags; bit 3 and above 31:16 kept.
+	 * Nothing is written when the read gives all-ones: the card does
+	 * not answer, and its every bit set is no state to write back.
+	 */
 	if (exp_rate_fps >= 1 && exp_rate_fps <= 60)
 		fps = exp_rate_fps;
 	rate = gc573_rd(gc, GC573_RATE_CTRL);
-	rate &= ~(GC573_RATE_CTRL_FPS | GC573_RATE_CTRL_IN_YUV |
-		  GC573_RATE_CTRL_OUT_RGB);
-	rate |= FIELD_PREP(GC573_RATE_CTRL_FPS, fps) |
-		(yuv_in ? GC573_RATE_CTRL_IN_YUV : 0) |
-		(f->rgb ? GC573_RATE_CTRL_OUT_RGB : 0);
-	if (exp_rate_bits >= 0)
-		rate = (rate & ~GC573_RATE_CTRL_EXP) |
-		       (exp_rate_bits & GC573_RATE_CTRL_EXP);
-	gc573_wr(gc, GC573_RATE_CTRL, rate);
+	if (rate != U32_MAX) {
+		rate &= ~(GC573_RATE_CTRL_FPS | GC573_RATE_CTRL_IN_YUV |
+			  GC573_RATE_CTRL_OUT_RGB);
+		rate |= FIELD_PREP(GC573_RATE_CTRL_FPS, fps) |
+			(yuv_in ? GC573_RATE_CTRL_IN_YUV : 0) |
+			(f->rgb ? GC573_RATE_CTRL_OUT_RGB : 0);
+		if (exp_rate_bits >= 0)
+			rate = (rate & ~GC573_RATE_CTRL_EXP) |
+			       (exp_rate_bits & GC573_RATE_CTRL_EXP);
+		gc573_wr(gc, GC573_RATE_CTRL, rate);
+	} else {
+		dev_warn_once(&gc->pdev->dev, "RATE_CTRL update: the card does not answer (reads all-ones): not written\n");
+	}
 
 	/* R2Y: from Y2R's full-range RGB, or from the RGB input as it is */
 	gc573_csc_r2y(&m, gc573_vid_out_enc(v), yuv_in || full_in);
