@@ -39,8 +39,9 @@
 # holder: it holds nothing open (it needs no permission on the node, so
 # any user could otherwise block the scripts, and an unbind does not wait
 # for it). The scan stats every open file, and a file on a network mount
-# whose server has gone can stall that: it gets GC573_SCAN_TIMEOUT seconds,
-# and a scan that does not finish makes the scripts refuse.
+# whose server has gone can stall that: it gets GC573_SCAN_TIMEOUT seconds
+# (a whole number from 1 to 600), and a scan that does not finish, or that
+# fails in any other way, makes the scripts refuse (final review F5).
 #
 # A card the driver keeps until reboot, because it could not confirm that
 # the card's DMA stopped (gc573_dead_check), is left alone until then: an
@@ -144,9 +145,26 @@ gc573_fd_opath() {
 	(((8#$fl & 8#10000000) != 0))
 }
 
-# The message for a scan of open files that did not finish
+# GC573_SCAN_TIMEOUT is a whole number of seconds from 1 to 600. Read at
+# each scan, not only when this file is sourced: anything else (timeout's
+# 0 is no limit at all, and bash reads 010 as octal) makes every scan fail
+gc573_scan_timeout_ok() {
+	case $GC573_SCAN_TIMEOUT in
+	'' | *[!0-9]* | 0* | ????*) return 1 ;;
+	esac
+	((GC573_SCAN_TIMEOUT <= 600))
+}
+
+# The message for a scan of open files that did not finish or failed
 gc573_scan_failed() {
-	printf 'the scan of open files did not finish within %s s (a file on a network mount that does not answer?)' \
+	local v
+	if ! gc573_scan_timeout_ok; then
+		v=$(printf '%s' "$GC573_SCAN_TIMEOUT" | LC_ALL=C tr -cd '[:print:]' | cut -c1-40)
+		printf "GC573_SCAN_TIMEOUT is '%s', not a whole number of seconds from 1 to 600, so no scan of open files was made" \
+			"$v"
+		return 0
+	fi
+	printf 'the scan of open files did not finish within %s s, or failed (a file on a network mount that does not answer?)' \
 		"$GC573_SCAN_TIMEOUT"
 }
 
@@ -155,20 +173,26 @@ gc573_scan_failed() {
 # O_PATH descriptors are left out. stat -L of /proc/PID/fd/N describes the
 # open file itself, whatever path it was opened by; its raw mode (%f, hex)
 # is a character device's when the file type bits read 2 (S_IFCHR,
-# 0020000). Status 2, and nothing printed, when the stats did not finish
-# within GC573_SCAN_TIMEOUT s (timeout kills them, its process group);
-# otherwise 0: processes come and go meanwhile, and a file that went is no
-# holder.
+# 0020000). Status 0 only for a scan that finished: timeout and xargs exit
+# 0, or 123 (some stats failed: processes come and go meanwhile, and a file
+# that went is no holder), and it saw an open file (this shell's, at
+# least). Status 2, and nothing printed, for anything else (final review
+# F5): GC573_SCAN_TIMEOUT not valid (gc573_scan_timeout_ok), the stats not
+# done within it (124, 137: timeout kills them, its process group), or
+# timeout or xargs failing on their own (125, 126, 127, ...).
 gc573_fd_holders() {
 	local want=" $* " out p f r
+	gc573_scan_timeout_ok || return 2
 	out=$(find /proc/[0-9]*/fd -mindepth 1 -maxdepth 1 -type l -print0 2>/dev/null |
 		{
 			LC_ALL=C timeout -k 2 "$GC573_SCAN_TIMEOUT" xargs -0 -r stat -L -c '%f|%t:%T|%n' 2>/dev/null
 			echo "gc573-scan-status $?"
 		}) || :
 	case ${out##*gc573-scan-status } in
-	124 | 137) return 2 ;;
+	0 | 123) ;;
+	*) return 2 ;;
 	esac
+	[ -n "${out%gc573-scan-status *}" ] || return 2
 	awk -F'|' -v want="$want" '
 		$1 ~ /^2[0-9a-f][0-9a-f][0-9a-f]$/ && index(want, " " $2 " ") {
 			n = $3
