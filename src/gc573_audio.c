@@ -586,7 +586,7 @@ void gc573_audio_early_init(struct gc573 *gc)
 	gc->aud.st.interval_min_us = UINT_MAX;
 }
 
-/* Devres, with bus mastering off; kept after gc573_dma_dead() */
+/* Devres, after the engines' stop and the quiesce; kept after gc573_dma_dead() */
 static void gc573_audio_free_buf(void *data)
 {
 	struct gc573 *gc = data;

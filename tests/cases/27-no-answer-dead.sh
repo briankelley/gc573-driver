@@ -13,8 +13,9 @@
 #   confirmed.
 # 1 from the probe's start, at the first probe of the boot (the module
 #   loaded with exp_mmio_ones=1), which finds bus mastering on as the
-#   firmware leaves it: the card does not read idle to the driver, so the
-#   failed probe must not turn bus mastering off (the probe's guard). SKIP
+#   firmware leaves it: the card does not answer to the driver, so the
+#   probe's decision at its start leaves it dead at once, nothing written
+#   and bus mastering on (final review F1; its "probe entry" line). SKIP
 #   if it is off. BAR0 must read idle before the load, or nothing is
 #   loaded: a driver without the guard turns bus mastering off in the
 #   failed probe, which only an idle card can take.
@@ -56,6 +57,7 @@ trap cleanup EXIT
 	echo 'video stop \(no INT bit 0, no reset of domain 0\) failed: the card keeps bus mastering and gets no driver until reboot'
 	echo 'teardown stop failed: the card does not answer'
 	echo 'the probe failed before the engines were stopped: the card keeps bus mastering and gets no driver until reboot'
+	echo 'the card does not answer at the probe.s start: the card keeps bus mastering and gets no driver until reboot'
 	echo 'system sleep refused: 1 card\(s\) did not confirm their DMA stopped'
 	echo 'WARNING: CPU: [0-9]+ PID: [0-9]+ at kernel/dma/debug\.c:[0-9]+ dma_debug_device_change'
 	echo 'DMA-API: Mapped at:'
@@ -100,12 +102,12 @@ kmsg_since "$tag" | grep -E 'exp_mmio_ones|does not answer|bus mastering|answers
 	sed 's/^/  | /'
 case $mode in
 1)
-	kmsg_since "$tag" | grep -q ': the card does not answer (VERSION ffffffff .*): not used$' ||
+	kmsg_since "$tag" | grep -qE ': probe entry: bus mastering on, RESET 0xffffffff, .*: dead until reboot, nothing written: the card does not answer$' ||
+		fail "no probe entry line for a card that does not answer, bus mastering on"
+	kmsg_since "$tag" | grep -q ': the card does not answer (VERSION ffffffff .*): its DMA may run; nothing is written to the card$' ||
 		fail "no 'does not answer' line"
-	kmsg_since "$tag" | grep -q 'bus mastering was on when the probe started, and the card did not read idle' ||
-		fail "the probe's guard did not see bus mastering on with the card not idle"
-	kmsg_since "$tag" | grep -q 'the probe failed before the engines were stopped: the card keeps bus mastering and gets no driver until reboot' ||
-		fail "the failed probe did not leave the card as it is"
+	kmsg_since "$tag" | grep -q 'the card does not answer at the probe.s start: the card keeps bus mastering and gets no driver until reboot' ||
+		fail "the probe did not leave the card as it is"
 	! kmsg_since "$tag" | grep -q 'kept until reboot' || fail "memory kept, but the card was never given any"
 	;;
 3)

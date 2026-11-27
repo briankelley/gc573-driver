@@ -2033,7 +2033,7 @@ unlock:
 
 /* ---- setup ---- */
 
-/* Devres, with bus mastering off; kept after gc573_dma_dead() */
+/* Devres, after the engines' stop and the quiesce; kept after gc573_dma_dead() */
 static void gc573_video_free_dummy(void *data)
 {
 	struct gc573 *gc = data;

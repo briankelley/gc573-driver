@@ -58,6 +58,14 @@ struct snd_pcm_substream;
 #define GC573_RESET_DOMAIN_9		BIT(9)
 #define GC573_RESET_DOMAINS		(GC573_RESET_DOMAIN_0 | GC573_RESET_DOMAIN_8 | \
 					 GC573_RESET_DOMAIN_9)
+/* sets with domain 0's reset; meaning unknown */
+#define GC573_RESET_BIT3		BIT(3)
+/*
+ * Sticky: set by a driver's domain resets, cleared only by a device reset
+ * (0x001 after one, 0x309 after any bring-up; spec/init.md step 2)
+ */
+#define GC573_RESET_STICKY		(GC573_RESET_BIT3 | GC573_RESET_DOMAIN_8 | \
+					 GC573_RESET_DOMAIN_9)
 
 /* Interrupt bits, spec/interrupts.md */
 #define GC573_INT_VID_TERM		BIT(0)		/* video stream terminated */
