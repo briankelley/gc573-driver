@@ -29,6 +29,15 @@
 #               on a network mount whose server has gone): the scan gives
 #               up after GC573_SCAN_TIMEOUT s with status 2, and
 #               gc573_vfio_user too, saying why
+#   f5-status   a scan counts only when timeout and xargs exit 0, or 123
+#               (some stats failed: their processes went), and it saw an
+#               open file (final review F5): with a stand-in timeout that
+#               exits 1, 125 (timeout's own for a bad duration, or no
+#               fork), 126 or 127, or a stand-in find that lists nothing,
+#               status 2 and no holders; so for a GC573_SCAN_TIMEOUT that
+#               is not a whole number of seconds from 1 to 600, and the
+#               message names it. A stat that exits 1 (xargs 123) and the
+#               bounds 1 and 600 find the holder
 #   d5-dead     gc573_dead_check on a made-up sysfs: a card in gc573's
 #               dead_cards, or with driver_override gc573-dead-card, is
 #               dead; neither, or no gc573 and no card, is not
@@ -210,6 +219,52 @@ for f in holders vfio; do
 	else
 		res d16-timeout FAIL "$f: status $rc after $dt s, '$o'"
 	fi
+done
+
+# ---- f5-status: what counts as a finished scan
+# $1 the case, $2 a directory first in PATH (or none), $3
+# GC573_SCAN_TIMEOUT, $4 the status wanted: 0 must find the open holder,
+# 2 must print no holder
+f5() {
+	local h r l
+	h=$(if [ -n "$2" ]; then PATH="$2:$PATH"; fi; GC573_SCAN_TIMEOUT=$3; gc573_fd_holders "$rdev")
+	r=$?
+	l=$(printf '%s' "$h" | tr '\n' ';')
+	if [ "$r" != "$4" ]; then
+		res f5-status FAIL "$1: status $r, holders '$l' (want status $4)"
+	elif [ "$r" = 0 ] && ! has_pid "$open_pid" "$h"; then
+		res f5-status FAIL "$1: status 0, holders '$l' without pid $open_pid"
+	elif [ "$r" = 2 ] && [ -n "$h" ]; then
+		res f5-status FAIL "$1: status 2, but holders '$l'"
+	else
+		res f5-status PASS "$1: status $r, holders '$l'"
+	fi
+}
+# a stand-in $2 in a directory of its own, exiting $3 after $4 (or nothing)
+standin() {
+	mkdir -p "$tmp/f5/$1"
+	printf '#!/bin/sh\n%s\nexit %s\n' "${4:-}" "$3" > "$tmp/f5/$1/$2"
+	chmod +x "$tmp/f5/$1/$2"
+}
+for n in 1 125 126 127; do
+	standin "timeout-$n" timeout "$n"
+	f5 "timeout exits $n" "$tmp/f5/timeout-$n" 20 2
+done
+standin find-none find 0
+f5 "find lists no open file" "$tmp/f5/find-none" 20 2
+standin stat-1 stat 1 "$(command -v stat) \"\$@\""
+f5 "every stat exits 1 after its output (xargs 123)" "$tmp/f5/stat-1" 20 0
+for v in x 0 601 010 1.5 99999999999999999999 ''; do
+	f5 "GC573_SCAN_TIMEOUT='$v'" "" "$v" 2
+	m=$(GC573_SCAN_TIMEOUT=$v; gc573_scan_failed)
+	if [[ $m == *"GC573_SCAN_TIMEOUT is '$v'"* ]]; then
+		res f5-status PASS "GC573_SCAN_TIMEOUT='$v': '$m'"
+	else
+		res f5-status FAIL "GC573_SCAN_TIMEOUT='$v': the message '$m' does not name it"
+	fi
+done
+for v in 1 600; do
+	f5 "GC573_SCAN_TIMEOUT=$v" "" "$v" 0
 done
 
 # ---- d5-dead: a made-up sysfs
