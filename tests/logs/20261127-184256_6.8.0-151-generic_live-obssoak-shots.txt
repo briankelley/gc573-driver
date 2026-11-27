@@ -1,0 +1,1 @@
+SHOT 86.0 bad err=253 counter=None size=1920x1080
