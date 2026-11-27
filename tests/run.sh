@@ -198,6 +198,65 @@ dma_error_lines() {
 	grep -cE 'DMA-API: [^ ]+ [0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]: ' <<< "$1"
 }
 
+# kmemleak's report (stdin), each object's lines prefixed "A " when the
+# list $1 (GC573_KMEMLEAK_ALLOW) allows it, then its reason ("W "), else
+# "N ". An entry allows an object of its task (comm and pid), of its size,
+# whose backtrace has its two functions one after the other (the callee,
+# then its caller)
+kml_allowed() {
+	awk -v allow="$1" '
+		BEGIN {
+			while ((getline l < allow) > 0) {
+				if (split(l, f, "\t") < 6)
+					continue
+				na++
+				ac[na] = f[1]; ap[na] = f[2]; as[na] = f[3]
+				a1[na] = f[4]; a2[na] = f[5]; aw[na] = f[6]
+			}
+		}
+		function flush(  i, k, j, ok, why, size, comm, pid, nf, fr, x) {
+			if (!nb)
+				return
+			size = comm = pid = ""
+			nf = 0
+			if (match(blk[1], /\(size [0-9]+\)/))
+				size = substr(blk[1], RSTART + 6, RLENGTH - 7)
+			for (i = 2; i <= nb; i++) {
+				if (match(blk[i], /comm "[^"]*", pid [0-9]+/)) {
+					x = substr(blk[i], RSTART + 6, RLENGTH - 6)
+					comm = substr(x, 1, index(x, "\"") - 1)
+					pid = x
+					sub(/.*, pid /, "", pid)
+				} else if (match(blk[i], /^ +[A-Za-z0-9_.]+\+0x[0-9a-f]+\/0x[0-9a-f]+/)) {
+					x = substr(blk[i], RSTART, RLENGTH)
+					sub(/^ +/, "", x)
+					sub(/\+.*/, "", x)
+					fr[++nf] = x
+				}
+			}
+			ok = 0
+			for (k = 1; k <= na && !ok; k++) {
+				if (comm != ac[k] || pid != ap[k] || size != as[k])
+					continue
+				for (j = 1; j < nf; j++)
+					if (fr[j] == a1[k] && fr[j + 1] == a2[k]) {
+						ok = 1
+						why = aw[k]
+						break
+					}
+			}
+			for (i = 1; i <= nb; i++)
+				print (ok ? "A " : "N ") blk[i]
+			if (ok)
+				print "W " why
+			nb = 0
+		}
+		/^unreferenced object / { flush(); inobj = 1 }
+		inobj { blk[++nb] = $0; next }
+		{ print "N " $0 }
+		END { flush() }'
+}
+
 [ $# -gt 0 ] || set -- "$GC573_TESTS"/cases/*.sh
 # the cases that keep DMA memory until reboot go last, in their order
 first=() last=()
@@ -252,6 +311,12 @@ if kml_available; then
 	echo scan=off > "$KML"	# no automatic scans while cases run
 	kml_reset		# report leaks older than the suite, forget them
 fi
+# a case lists the kernel's own leaks a failure it injected leads to, one
+# line each: COMM PID SIZE CALLEE CALLER REASON (tab-separated). The
+# kmemleak check allows an object of that task, that size, with that
+# pair of frames in its backtrace, and says why
+GC573_KMEMLEAK_ALLOW=$(mktemp)
+export GC573_KMEMLEAK_ALLOW
 
 npass=0
 nfail=0
@@ -360,17 +425,25 @@ echo "## kmemleak (whole suite)"
 if kml_available; then
 	leaks=$(kml_report)
 	echo scan=on > "$KML"
-	if [ -z "$leaks" ]; then
-		echo "  no new unreferenced objects"
-		result kmemleak PASS
+	marked=$(kml_allowed "$GC573_KMEMLEAK_ALLOW" <<< "$leaks")
+	na=$(grep -c '^A unreferenced object' <<< "$marked")
+	nl=$(grep -c '^N unreferenced object' <<< "$marked")
+	if [ "$na" != 0 ]; then
+		echo "  allowed, the kernel's own leaks after a failure a case injected ($na objects):"
+		sed -n 's/^W /  why: /p; s/^A /  /p' <<< "$marked"
+	fi
+	if [ "$nl" = 0 ]; then
+		echo "  no other new unreferenced objects"
+		result kmemleak PASS "$([ "$na" = 0 ] || echo "($na allowed)")"
 	else
-		echo "$leaks" | sed 's/^/  /'
-		result kmemleak FAIL "($(echo "$leaks" | grep -c 'unreferenced object') objects)"
+		sed -n 's/^N /  /p' <<< "$marked"
+		result kmemleak FAIL "($nl objects$([ "$na" = 0 ] || echo ", $na more allowed"))"
 	fi
 else
 	echo "  kmemleak not available on this kernel"
 	result kmemleak SKIP
 fi
+rm -f "$GC573_KMEMLEAK_ALLOW"
 
 echo
 echo "## debug checkers (whole suite)"

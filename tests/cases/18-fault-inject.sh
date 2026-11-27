@@ -56,7 +56,11 @@
 # - the probe's "error -EBUSY: cannot map BAR0" after a failure in
 #   __request_region() under the PCI core's region request: a region
 #   request whose allocation fails gives -EBUSY, the errno of a region in
-#   use (__pci_request_region(), drivers/pci/pci.c in 6.8).
+#   use (__pci_request_region(), drivers/pci/pci.c in 6.8);
+# - for run.sh's kmemleak check, after a failure in device_register()
+#   inside __video_register_device(): the 8-byte name of the video device
+#   (dev_set_name()) that task allocated, which videodev leaks there
+#   (kml_allow).
 # SKIP without fault injection.
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
@@ -268,6 +272,34 @@ klog_bad() {
 	stacks=$(fi_stacks <<< "$win")
 	[ -z "$bad" ] || explained "$1" "$win"
 	bad=$(head -5 <<< "$bad")
+	kml_allow "$1"
+}
+
+# videodev leaks the name of a video device whose device_register() failed:
+# __video_register_device() goes to its cleanup without put_device()
+# (drivers/media/v4l2-core/v4l2-dev.c, lines 1040-1044 in 6.8), so the
+# kobject's name from dev_set_name() ("videoN", 8 bytes) stays. For a
+# failure in step $1 inside device_register() (device_register or
+# device_add on the stack, inside __video_register_device), run.sh's
+# kmemleak check allows that object of that task (GC573_KMEMLEAK_ALLOW)
+kml_allow() {
+	local pid comm
+	while read -r pid comm; do
+		printf '%s\t%s\t8\tdev_set_name\t__video_register_device\t%s\n' "$comm" "$pid" \
+			"videodev's name of a video device whose device_register() failed (pid $pid, step $1): __video_register_device() returns without put_device() (drivers/media/v4l2-core/v4l2-dev.c:1040-1044 in 6.8)" \
+			>> "${GC573_KMEMLEAK_ALLOW:-/dev/null}"
+		echo "  $1: a failure in device_register() under __video_register_device() (pid $pid): its leak of the device's name is allowed for that task"
+	done < <(awk '{
+		d = v = 0
+		for (i = 3; i <= NF; i++) {
+			if (!d && $i ~ /^device_(register|add)$/)
+				d = i
+			if (!v && $i == "__video_register_device")
+				v = i
+		}
+		if (d && v && d < v)
+			print $1, $2
+	}' <<< "$stacks")
 }
 
 # The stacks of the failures injected in the lines on stdin (verbose 2:
