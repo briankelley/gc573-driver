@@ -35,7 +35,10 @@
 # path; a sound server by the executable it runs; and every name is printed
 # with non-printable characters removed. The file type is stat's raw mode
 # (%f), not its name (%F), which a language catalog translates: under
-# another language no file would be a holder.
+# another language no file would be a holder. An O_PATH descriptor is no
+# holder: it holds nothing open (it needs no permission on the node, so
+# any user could otherwise block the scripts, and an unbind does not wait
+# for it).
 #
 # Uses NAME and say() from the script that sources it.
 
@@ -84,25 +87,43 @@ gc573_card_nodes() {
 	return 0
 }
 
+# An O_PATH file descriptor (O_PATH, 010000000, in the flags of
+# /proc/PID/fdinfo/N): it names a file but holds nothing open. Status 1
+# when it is not one, or when that cannot be read (then it counts as a
+# holder). $1: pid, $2: fd
+gc573_fd_opath() {
+	local fl
+	fl=$(awk '$1 == "flags:" { print $2; exit }' "/proc/$1/fdinfo/$2" 2>/dev/null) || return 1
+	case $fl in
+	'' | *[!0-7]*) return 1 ;;
+	esac
+	(((8#$fl & 8#10000000) != 0))
+}
+
 # "PID RDEV" for every open character device file, in any process, whose
-# device number is one of the RDEVs given (gc573_hexdev's form), sorted.
-# stat -L of /proc/PID/fd/N describes the open file itself, whatever path
-# it was opened by; its raw mode (%f, hex) is a character device's when the
-# file type bits read 2 (S_IFCHR, 0020000). Never fails: processes come
-# and go meanwhile.
+# device number is one of the RDEVs given (gc573_hexdev's form), sorted;
+# O_PATH descriptors are left out. stat -L of /proc/PID/fd/N describes the
+# open file itself, whatever path it was opened by; its raw mode (%f, hex)
+# is a character device's when the file type bits read 2 (S_IFCHR,
+# 0020000). Never fails: processes come and go meanwhile.
 gc573_fd_holders() {
-	local want=" $* "
+	local want=" $* " p f r
 	find /proc/[0-9]*/fd -mindepth 1 -maxdepth 1 -type l -print0 2>/dev/null |
 		LC_ALL=C xargs -0 -r stat -L -c '%f|%t:%T|%n' 2>/dev/null |
 		awk -F'|' -v want="$want" '
 			$1 ~ /^2[0-9a-f][0-9a-f][0-9a-f]$/ && index(want, " " $2 " ") {
-				p = $3
-				sub(/^\/proc\//, "", p)
+				n = $3
+				sub(/^\/proc\//, "", n)
+				p = n
 				sub(/\/.*/, "", p)
-				if (p ~ /^[0-9]+$/)
-					print p, $2
+				f = n
+				sub(/^[0-9]+\/fd\//, "", f)
+				if (p ~ /^[0-9]+$/ && f ~ /^[0-9]+$/)
+					print p, f, $2
 			}' |
-		sort -u -k1,1n -k2,2
+		while read -r p f r; do
+			gc573_fd_opath "$p" "$f" || printf '%s %s\n' "$p" "$r"
+		done | sort -u -k1,1n -k2,2
 	return 0
 }
 
