@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0
 # Debug kernel for gc573-dev: Ubuntu source of the VM's GA kernel + kmemleak, lockdep,
-# sleep-in-atomic checks, KASAN, DMA-API debug. (DEBUG_OBJECTS off: Ubuntu 6.8.0-151's
+# sleep-in-atomic checks, KASAN, DMA-API debug, UBSAN (bounds and shift checks, as
+# Ubuntu's config has them, now required; not alignment, and reports rather than
+# traps) and fault injection (failslab, fail_page_alloc, their debugfs files and the
+# stacktrace filter that aims them at one module: tests/cases/18-fault-inject.sh).
+# (DEBUG_OBJECTS off: Ubuntu 6.8.0-151's
 # lib/debugobjects.c uses __data_racy, undefined in that tree.) Built on the host
 # (localmodconfig from the VM's modules), installed in the VM as an extra boot entry.
 # Default boot stays the generic kernel. Boot debug once:
@@ -41,14 +45,22 @@ scripts/config \
   -e PROVE_LOCKING -e DEBUG_ATOMIC_SLEEP -e DEBUG_LIST -e DEBUG_SG \
   -e DMA_API_DEBUG -e DMA_API_DEBUG_SG \
   -e KASAN -e KASAN_GENERIC -e KASAN_INLINE \
+  -e UBSAN -e UBSAN_BOUNDS -e UBSAN_SHIFT -d UBSAN_ALIGNMENT -d UBSAN_TRAP \
+  -e FAULT_INJECTION -e FAILSLAB -e FAIL_PAGE_ALLOC -e FAULT_INJECTION_DEBUG_FS \
+  -e FAULT_INJECTION_STACKTRACE_FILTER \
   -d DEBUG_OBJECTS \
   -d DEBUG_INFO_DWARF5 -d DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT -e DEBUG_INFO_NONE -d DEBUG_INFO_BTF \
   -d MODULE_SIG_FORCE \
   --set-str SYSTEM_TRUSTED_KEYS "" --set-str SYSTEM_REVOCATION_KEYS "" \
   --set-str LOCALVERSION "" -d LOCALVERSION_AUTO
 make -s olddefconfig
-for o in DEBUG_KMEMLEAK PROVE_LOCKING DEBUG_ATOMIC_SLEEP KASAN DMA_API_DEBUG; do
+for o in DEBUG_KMEMLEAK PROVE_LOCKING DEBUG_ATOMIC_SLEEP KASAN DMA_API_DEBUG \
+  UBSAN UBSAN_BOUNDS UBSAN_SHIFT FAULT_INJECTION FAILSLAB FAIL_PAGE_ALLOC \
+  FAULT_INJECTION_DEBUG_FS FAULT_INJECTION_STACKTRACE_FILTER; do
   grep -q "^CONFIG_$o=y" .config || { echo "config: $o not enabled" >&2; exit 1; }
+done
+for o in UBSAN_ALIGNMENT UBSAN_TRAP; do
+  ! grep -q "^CONFIG_$o=y" .config || { echo "config: $o enabled" >&2; exit 1; }
 done
 for o in VIDEO_DEV VIDEOBUF2_CORE VIDEOBUF2_V4L2 VIDEOBUF2_MEMOPS; do
   grep -q "^CONFIG_$o=[ym]" .config || { echo "config: $o not enabled" >&2; exit 1; }
