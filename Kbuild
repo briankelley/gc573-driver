@@ -10,8 +10,9 @@ gc573-y := src/gc573_core.o src/gc573_i2c.o src/gc573_vb2.o src/gc573_video.o \
 gc573-pci-h := $(srctree)/include/linux/pci.h
 gc573-dev-h := $(srctree)/include/linux/device.h
 gc573-bus-h := $(srctree)/include/linux/device/bus.h
-# a lone parenthesis would end the function call below
-gc573-lp := (
+# "(" for grep -E: make would count a bare one in the call below, and ERE
+# takes it for a group
+gc573-lp := [(]
 ccflags-y += $(if $(shell grep -Eqs '^[[:space:]]+bool[[:space:]]+match_driver;' \
 	$(gc573-pci-h) && echo y),-DGC573_HAVE_PCI_MATCH_DRIVER)
 ccflags-y += $(if $(shell grep -Eqs '^[[:space:]]+(const[[:space:]]+)?char[[:space:]]*\*[[:space:]]*driver_override;' \
