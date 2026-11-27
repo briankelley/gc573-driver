@@ -14,7 +14,8 @@
 #      default gc573-driver), INSMOD_ARGS (module parameters for load),
 #      GC573_INPUT (HDMI input description recorded in test logs, default none),
 #      GC573_TEST_* (a case's choices, passed to tests/run.sh: GC573_TEST_STOP
-#      for 22-stop-fault, GC573_TEST_NOANSWER for 27-no-answer-dead)
+#      for 22-stop-fault, GC573_TEST_NOANSWER for 27-no-answer-dead,
+#      GC573_TEST_ENTRY for 30-probe-entry)
 set -euo pipefail
 
 VM=${VM:-gc573-dev}

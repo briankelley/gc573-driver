@@ -77,6 +77,12 @@ module_param_unsafe(exp_mmio_ones, uint, 0644);
 MODULE_PARM_DESC(exp_mmio_ones,
 		 "Test only; setting it taints the kernel. Register reads return all-ones, as from a card that does not answer; read at each probe. 1: from the start of the probe, 2: for 1.5 s once bus mastering is on, 3: for 25 s once it is on, 4: from the probe's check after that on, for good (0: off)");
 
+/* Tests only (tests/cases/30-probe-entry.sh): see gc573_hw_stop_engines() */
+static bool exp_probe_armed;
+module_param_unsafe(exp_probe_armed, bool, 0644);
+MODULE_PARM_DESC(exp_probe_armed,
+		 "Test only; setting it taints the kernel. The probe's read of DMA_RUN before it stops the engines shows the audio DMA on, as a previous owner could leave it; the card itself is idle. Read at each probe (0: off)");
+
 /*
  * Tests only (tests/cases/29-intx.sh, bare metal): the card's INTx is
  * untested, and under VFIO its line storms (spec/open-questions.md #43),
@@ -334,6 +340,14 @@ static int gc573_hw_stop_engines(struct gc573 *gc)
 		ver, gc573_rd(gc, GC573_RESET), gc573_rd(gc, GC573_INT_ENABLE),
 		gc573_rd(gc, GC573_INT_STATUS), gc573_rd(gc, GC573_GPIO),
 		run, vip);
+	/* tests only: an idle card, read as one a previous owner left busy */
+	if (READ_ONCE(exp_probe_armed) && run != U32_MAX) {
+		u32 armed = run | GC573_DMA_RUN_AUDIO;
+
+		dev_warn(dev, "exp_probe_armed: DMA_RUN %#010x read as %#010x (the audio DMA on)\n",
+			 run, armed);
+		run = armed;
+	}
 	if (ver == U32_MAX || run == U32_MAX || vip == U32_MAX) {
 		dev_err(dev, "the card does not answer (VERSION %08x DMA_RUN %#010x VIP_CTRL %#010x): not used\n",
 			ver, run, vip);

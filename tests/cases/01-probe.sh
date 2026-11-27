@@ -7,7 +7,7 @@
 # driver's debugfs state file next to it.
 # Fix review N7: setting a stop test parameter (exp_stop_fault,
 # exp_stop_domains) taints the kernel, here with their defaults (no
-# effect).
+# effect); so does exp_probe_armed (delta review D1).
 # MSI only by default (exp_intx 0; INTx is untested on the card and storms
 # its line under VFIO, spec/open-questions.md #43): with MSI disallowed for
 # the device (sysfs msi_bus 0, which the PCI core reads at the next MSI
@@ -26,13 +26,14 @@ fi
 dev=$(gc573_video_dev)
 dbg=$(cat "$(gc573_debugfs)" 2>/dev/null)
 ttag=$(kmsg_mark "probe: test parameters")
-echo 0 > "$par/exp_stop_fault" && echo -1 > "$par/exp_stop_domains"
+echo 0 > "$par/exp_stop_fault" && echo -1 > "$par/exp_stop_domains" &&
+	echo 0 > "$par/exp_probe_armed"
 rc=$?
-taint=$(kmsg_since "$ttag" | grep -c 'Setting dangerous option exp_stop_\(fault\|domains\) - tainting kernel')
+taint=$(kmsg_since "$ttag" | grep -c 'Setting dangerous option \(exp_stop_fault\|exp_stop_domains\|exp_probe_armed\) - tainting kernel')
 gc573_unload || fail "rmmod failed"
-[ $rc = 0 ] || fail "cannot write exp_stop_fault and exp_stop_domains"
-[ "$taint" = 2 ] || fail "setting exp_stop_fault and exp_stop_domains tainted the kernel $taint times, not 2"
-echo "exp_stop_fault, exp_stop_domains: setting each taints the kernel"
+[ $rc = 0 ] || fail "cannot write exp_stop_fault, exp_stop_domains and exp_probe_armed"
+[ "$taint" = 3 ] || fail "setting exp_stop_fault, exp_stop_domains and exp_probe_armed tainted the kernel $taint times, not 3"
+echo "exp_stop_fault, exp_stop_domains, exp_probe_armed: setting each taints the kernel"
 
 [ -n "$dev" ] || fail "no video4linux node under $GC573_BDF"
 echo "video node: $dev"
