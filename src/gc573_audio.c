@@ -458,23 +458,37 @@ static int gc573_pcm_trigger(struct snd_pcm_substream *ss, int cmd)
 static int gc573_pcm_sync_stop(struct snd_pcm_substream *ss)
 {
 	struct gc573 *gc = snd_pcm_substream_chip(ss);
+	unsigned int fault = READ_ONCE(gc573_exp_stop_fault);
 	struct gc573_audio *a = &gc->aud;
-	bool stopping;
+	bool stopping, missing;
+	u32 run;
 
 	spin_lock_irq(&a->lock);
 	stopping = a->stopping;
 	a->stopping = false;
 	spin_unlock_irq(&a->lock);
 
-	if (stopping &&
-	    !wait_for_completion_timeout(&a->stopped,
-					 msecs_to_jiffies(GC573_AUD_STOP_MS))) {
+	if (!stopping)
+		goto out;
+	missing = !wait_for_completion_timeout(&a->stopped,
+					       msecs_to_jiffies(GC573_AUD_STOP_MS));
+	run = gc573_rd(gc, GC573_DMA_RUN);
+	/* tests only: a stop confirmed, counted as failed */
+	if ((fault & GC573_STOP_FAULT_AUD_SYNC) && !missing &&
+	    run != U32_MAX && !(run & GC573_DMA_RUN_AUDIO)) {
+		dev_warn(&gc->pdev->dev, "exp_stop_fault %#x: the audio stop was confirmed (INT bit 4 came, DMA_RUN %#010x), counted as no INT bit 4 and the audio DMA still on\n",
+			 fault, run);
+		missing = true;
+		run |= GC573_DMA_RUN_AUDIO;
+	}
+	if (missing) {
 		spin_lock_irq(&a->lock);
 		a->st.stop_missing++;
 		spin_unlock_irq(&a->lock);
 		dev_warn(&gc->pdev->dev, "audio stop: no INT bit 4 in %u ms, DMA_RUN=%#010x\n",
-			 GC573_AUD_STOP_MS, gc573_rd(gc, GC573_DMA_RUN));
+			 GC573_AUD_STOP_MS, run);
 	}
+out:
 	synchronize_irq(gc->irq);
 	return 0;
 }

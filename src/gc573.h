@@ -437,6 +437,8 @@ struct gc573 {
 /* a video stop counted as failed (bits 0, 1) is so only this much later */
 #define GC573_STOP_FAULT_SLOW		BIT(4)
 #define GC573_STOP_FAULT_SLOW_MS	2000
+/* an audio stop: no INT bit 4, and the audio DMA still on */
+#define GC573_STOP_FAULT_AUD_SYNC	BIT(5)
 extern unsigned int gc573_exp_stop_fault;
 
 /*
