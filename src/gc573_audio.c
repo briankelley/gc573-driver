@@ -488,7 +488,6 @@ static int gc573_pcm_sync_stop(struct snd_pcm_substream *ss)
 
 	spin_lock_irq(&a->lock);
 	stopping = a->stopping;
-	a->stopping = false;
 	spin_unlock_irq(&a->lock);
 
 	if (!stopping)
@@ -516,6 +515,15 @@ static int gc573_pcm_sync_stop(struct snd_pcm_substream *ss)
 				       "audio stop (no INT bit 4, the audio DMA still on) failed",
 				       false);
 	}
+	/*
+	 * Only after the verdict, under aud.lock (final review F3): until
+	 * here gc573_pm_notify() finds the stop not confirmed
+	 * (gc573_audio_stop_unconfirmed()), so no sleep slips in between the
+	 * wait and a death
+	 */
+	spin_lock_irq(&a->lock);
+	a->stopping = false;
+	spin_unlock_irq(&a->lock);
 out:
 	synchronize_irq(gc->irq);
 	return 0;
