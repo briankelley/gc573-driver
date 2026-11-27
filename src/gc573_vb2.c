@@ -12,7 +12,10 @@
  *   pages, and an sg_table over them. The size comes from the caller
  *   (CREATE_BUFS; the queue setup bounds it), so the memory is charged to
  *   the caller's memory cgroup, and running out of it fails the request
- *   with ENOMEM: no allocation here waits on the OOM killer or warns;
+ *   with ENOMEM: the page allocations never wait on the OOM killer or
+ *   warn. The small allocations around them (this struct, the page array,
+ *   the sg_table) are plain GFP_KERNEL_ACCOUNT ones, which can OOM-kill in
+ *   the caller's own cgroup;
  * - cookie: that sg_table; the driver DMA-maps it in its buf_init and
  *   builds the descriptor lists from it (gc573_video.c);
  * - vaddr: vmap() on first use;
