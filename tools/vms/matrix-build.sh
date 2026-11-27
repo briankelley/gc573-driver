@@ -63,7 +63,7 @@ for k in "${kernels[@]}"; do
   ko=$(find . -name gc573.ko -newer build.log -o -name gc573.ko -print 2>/dev/null | head -1)
   if [ $rc -ne 0 ]; then echo "RESULT	$k	build	FAIL	rc=$rc warnings=$w"
   elif [ "$w" -gt 0 ]; then echo "RESULT	$k	build	FAIL	warnings=$w"
-  else echo "RESULT	$k	build	PASS	$(modinfo -F vermagic "$ko" 2>/dev/null | cut -d' ' -f1)"; fi
+  else echo "RESULT	$k	build	PASS	$(modinfo -F vermagic "$ko" 2>/dev/null | cut -d' ' -f1) dead_block=$(modinfo -F dead_block "$ko" 2>/dev/null)"; fi
   if [ "$load" = 1 ] && [ "$k" = "$(uname -r)" ] && [ $rc -eq 0 ]; then
     echo "=== load $k"
     deps=$(modinfo -F depends "$ko" | tr ',' ' ')

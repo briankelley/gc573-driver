@@ -115,7 +115,7 @@ Host: Linux Mint 22 / Ubuntu 24.04, kernel 6.8, x86_64, VT-d on.
 - vb2 memory: driver-private `vb2_mem_ops` (EL9 5.14 ships neither videobuf2-dma-sg nor -dma-contig). Pages from `alloc_pages(GFP_KERNEL | __GFP_DMA32)` while the DMA mask is 32-bit; `vmap` for kernel access; `sg_table` → `dma_map_sgtable` → descriptor lists; mmap by page insertion. Not videobuf2-vmalloc: its pages land above 4 GB, which a 32-bit mask bounces through swiotlb when no IOMMU translates (VM, `iommu=pt`): small pool, a copy per frame. MMAP first; USERPTR/DMABUF import later. Mem-ops signature differences across kernels in `src/compat.h`. DV timings API + `V4L2_EVENT_SOURCE_CHANGE`.
 - Formats: NV12, YUYV min. RGB24 only if verified in OBS.
 - Style: kernel coding style, `scripts/checkpatch.pl --strict` clean. SPDX GPL-2.0 header every file.
-- Kernel range: every regression-matrix VM kernel (today 5.14 EL9 → 7.3 Fedora 45). Kernel-version differences only in `src/compat.h` (`LINUX_VERSION_CODE` / `RHEL_RELEASE_CODE`); no #ifdef elsewhere.
+- Kernel range: every regression-matrix VM kernel (today 5.14 EL9 → 7.3 Fedora 45). Kernel-version differences only in `src/compat.h` (`LINUX_VERSION_CODE` / `RHEL_RELEASE_CODE`); no #ifdef elsewhere. Where backports make a version test unreliable, header feature probes in `Kbuild` (a grep of the kernel's headers, defining `GC573_HAVE_*`) are allowed, read only by `src/compat.h`. modinfo `dead_block` names the way a dead card is kept from other drivers (the matrix prints it).
 
 ## Milestones (driver)
 Each gate passes in `gc573-dev` before the next starts.

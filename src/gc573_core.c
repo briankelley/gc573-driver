@@ -311,6 +311,7 @@ static void gc573_irq_hw_disable(struct gc573 *gc)
 }
 
 static void gc573_card_dead(struct gc573 *gc, const char *why);
+static struct pci_driver gc573_pci_driver;
 
 /*
  * Probe, with MMIO only, before bus mastering goes on (spec/init.md step
@@ -632,7 +633,8 @@ MODULE_PARM_DESC(dead_cards,
  *   it could then suspend under its DMA.
  * - No driver takes the card again: not this one, and not vfio-pci, whose
  *   release (a VM's end) turns bus mastering off (gc573_block_drivers(),
- *   compat.h: complete up to v6.15, weaker from v6.16 and on RHEL 10).
+ *   compat.h: complete where the kernel has pci_dev.match_driver, up to
+ *   v6.15, weaker without it; modinfo's dead_block says which).
  *   A new pci_dev of it, after a remove and rescan, gets refused by this
  *   driver's record.
  * - The module stays loaded, and with it the record. A stop that fails
@@ -653,7 +655,7 @@ static void gc573_card_dead(struct gc573 *gc, const char *why)
 		dev_err(&pdev->dev, "cannot keep the device enabled: its teardown will turn bus mastering off\n");
 	/* never put: no runtime suspend, of it or of the port above it */
 	pm_runtime_get_noresume(&pdev->dev);
-	gc573_block_drivers(pdev);
+	gc573_block_drivers(pdev, &gc573_pci_driver);
 	gc573_dead_add(pdev);
 	__module_get(THIS_MODULE);
 	pci_read_config_word(pdev, PCI_COMMAND, &cmd);
@@ -1224,3 +1226,5 @@ module_exit(gc573_exit);
 
 MODULE_DESCRIPTION("AVerMedia Live Gamer 4K (GC573) HDMI capture driver");
 MODULE_LICENSE("GPL");
+/* how a dead card is kept from other drivers here (compat.h) */
+MODULE_INFO(dead_block, GC573_DEAD_BLOCK);
