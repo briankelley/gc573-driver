@@ -167,6 +167,21 @@ recheck in the VM died that way and failed nothing:
 `logs/20261127-094342_6.8.12-gc573dbg_live.log`); the `remnant` step's
 helpers (frame runs, kept frames and their times) on made-up output.
 
+`card-release-check.sh` (root, in a VM; `tools/vms/install-test.sh` runs
+it in every matrix VM): the checks `tools/install.sh` and `uninstall.sh`
+make before they touch the card (`tools/card-release.sh`), in a PID and
+mount namespace of its own, on its own processes (one holding `/dev/full`
+open, one with an O_PATH descriptor of it) and a made-up sysfs tree. A
+holder is found under another language (a catalog of its own for stat's
+"character special file", in a tmpfs over `/usr/share/locale`, with
+`LANGUAGE=xx`), and both scripts export `LC_ALL=C` first; an O_PATH
+descriptor is no holder; a stat that hangs (a stand-in first in `PATH`)
+ends the scan after `GC573_SCAN_TIMEOUT` s with status 2, which the
+callers refuse on; a card in gc573's `dead_cards`, or with driver_override
+`gc573-dead-card`, is dead (delta review D2, D8, D16, D5).
+`logs/20261127-130828_6.8.0-151-generic_card-release-check.log` is the
+scripts before those fixes.
+
 ## Live input (`live.sh`, host)
 `tests/live.sh [STEP...]` runs on the host: it drives the loopback output
 (`DVI-D-0`, never the primary) with `tools/testsrc/show.sh`, `avsync.sh` and xrandr, and runs

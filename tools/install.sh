@@ -82,6 +82,13 @@ tty=0
 root=$(cd "$(dirname "$0")/.." && pwd)
 # shellcheck source=tools/card-release.sh
 . "$root/tools/card-release.sh"
+# A card the driver keeps until reboot (gc573_dead_check): an update would
+# take it from gc573 or hand it on, so nothing is done. dead_cards here;
+# the card's driver_override below, after the check for an unbind that has
+# not finished
+if why=$(gc573_dead_check listed); then
+	die "$why. Reboot first, then run this again; nothing was changed"
+fi
 for f in dkms.conf Makefile Kbuild; do
 	[ -f "$root/$f" ] || die "$root/$f is missing: run the script from a complete source tree"
 done
@@ -195,6 +202,9 @@ bdf=$(basename "$dev")
 # kernels a read of driver_override), which waits for that unbind too
 if why=$(gc573_unbind_pending); then
 	die "$why: a program holds the card's I2C or sound devices, and the unbind finishes once that program closes them. Run this again after that; nothing was changed"
+fi
+if why=$(gc573_dead_check); then
+	die "$why. Reboot first, then run this again; $NAME $ver is installed in DKMS, and the card was not touched"
 fi
 drv=
 [ -e "$dev/driver" ] && drv=$(basename "$(readlink -f "$dev/driver")")
@@ -322,6 +332,7 @@ if [ -n "$persistent" ] && [ "$persistent" != "$NAME" ]; then
 			3)
 				say "run this again once the unbind has finished, or reboot (the card goes back to $persistent) and run this again"
 				exit 1 ;;
+			4) exit 1 ;;
 			*)
 				say "the older $NAME keeps the card. Run this again once the card is free, or reboot (the card goes back to $persistent) and run this again"
 				exit 1 ;;
@@ -391,6 +402,10 @@ if [ "$drv" = "$NAME" ]; then
 	0) say "reloading $NAME" ;;
 	3)
 		say "run this again once the unbind has finished: then the new $NAME takes the card. A reboot gives it the card too"
+		exit 1 ;;
+	4)
+		# the older gc573 had the card at boot: the new one takes it at the next
+		noload_off
 		exit 1 ;;
 	*)
 		say "the older $NAME keeps the card: the new one takes over after a reboot, or when this runs again with the card free"

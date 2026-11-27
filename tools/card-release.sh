@@ -42,22 +42,61 @@
 # whose server has gone can stall that: it gets GC573_SCAN_TIMEOUT seconds,
 # and a scan that does not finish makes the scripts refuse.
 #
+# A card the driver keeps until reboot, because it could not confirm that
+# the card's DMA stopped (gc573_dead_check), is left alone until then: an
+# unbind, a bind or an override (driverctl, a vfio-pci override put back)
+# can each end with its bus mastering turned off under running DMA, which
+# can hang the computer.
+#
 # Uses NAME and say() from the script that sources it.
 
 GC573_PCI_ID=${GC573_PCI_ID:-1461:0054}
 GC573_UNBIND_PID=${GC573_UNBIND_PID:-/run/gc573-unbind.pid}
-GC573_VFIO_CLASS=${GC573_VFIO_CLASS:-/sys/class/vfio}
+GC573_SYSFS=${GC573_SYSFS:-/sys}
+GC573_VFIO_CLASS=${GC573_VFIO_CLASS:-$GC573_SYSFS/class/vfio}
 GC573_SCAN_TIMEOUT=${GC573_SCAN_TIMEOUT:-20}
+# the driver_override the driver gives a dead card (src/compat.h)
+GC573_NO_DRIVER=gc573-dead-card
 
 # The card's PCI devices (GC573_PCI_ID), one sysfs dir per line
 gc573_cards() {
 	local d
-	for d in /sys/bus/pci/devices/*; do
+	for d in "$GC573_SYSFS"/bus/pci/devices/*; do
 		[ "$(cat "$d/vendor" 2>/dev/null)" = "0x${GC573_PCI_ID%%:*}" ] &&
 			[ "$(cat "$d/device" 2>/dev/null)" = "0x${GC573_PCI_ID##*:}" ] &&
 			printf '%s\n' "$d"
 	done
 	return 0
+}
+
+# A card the driver keeps until reboot: it could not confirm that the
+# card's DMA stopped (gc573_card_dead() in src/gc573_core.c). gc573 lists
+# such a card in its dead_cards parameter; on kernels without the PCI
+# core's match_driver its driver_override also names no driver
+# (GC573_NO_DRIVER), which outlasts the module. Prints why; status 0 when
+# there is one. $1 = listed: dead_cards alone, since on some kernels a read
+# of driver_override waits for an unbind that has not finished (check
+# gc573_unbind_pending first)
+gc573_dead_check() {
+	local l d o
+	l=$(cat "$GC573_SYSFS/module/$NAME/parameters/dead_cards" 2>/dev/null) || l=
+	l=$(printf '%s\n' "$l" | awk 'NF { printf "%s%s", (n++ ? ", " : ""), $1 }')
+	if [ -n "$l" ]; then
+		printf '%s: %s could not confirm that the card'"'"'s DMA stopped (dead_cards), so it is left as it is until reboot' \
+			"$l" "$NAME"
+		return 0
+	fi
+	[ "${1:-}" != listed ] || return 1
+	while read -r d; do
+		[ -n "$d" ] || continue
+		o=$(cat "$d/driver_override" 2>/dev/null) || o=
+		if [ "$o" = "$GC573_NO_DRIVER" ]; then
+			printf '%s: its driver_override is %s: %s could not confirm that the card'"'"'s DMA stopped, so it is left as it is until reboot' \
+				"$(basename "$d")" "$o" "$NAME"
+			return 0
+		fi
+	done < <(gc573_cards)
+	return 1
 }
 
 # A sysfs dev file's "MAJOR:MINOR" (decimal), as stat's %t:%T prints a
@@ -364,7 +403,9 @@ gc573_unbind() {
 # unbound but gc573 could not be unloaded within 5 s (a holder did not let
 # go); then the cards are bound to gc573 again, so that they stay usable.
 # Status 3: an unbind did not finish within 10 s (it goes on, nothing else
-# is done), or one from an earlier run is still pending.
+# is done), or one from an earlier run is still pending. Status 4: the
+# DMA stop of an unbind's teardown failed, and the card is dead until
+# reboot (gc573_dead_check): nothing else is done, no rebind either.
 gc573_release() {
 	local yes=$1 d h o b n why all="" others="" blockers="" bdfs="" hint="" nodes=""
 	# before anything that takes a device's lock, which waits for that unbind
@@ -425,6 +466,12 @@ gc573_release() {
 		fi
 		say "warning: could not unbind $d from $NAME"
 	done
+	# the teardown's stop, not confirmed: gc573 keeps the card, and its
+	# record, until reboot (a rebind would only be refused)
+	if why=$(gc573_dead_check); then
+		say "$why. Reboot before using the card again; nothing else was changed"
+		return 4
+	fi
 	gc573_unload_wait && return 0
 	say "warning: $NAME is still in use 5 s after the card was taken from it, so it cannot be unloaded; the card goes back to it"
 	for d in $bdfs; do

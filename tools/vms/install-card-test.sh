@@ -75,23 +75,36 @@
 #   pending-refused    install.sh and uninstall.sh refuse at once while that
 #                      unbind waits; once the holder ends it finishes, and
 #                      uninstall.sh leaves nothing; the modprobe.d file goes
+#   dead-refused       install.sh --permanent --yes (the override removed and
+#                      recorded), then exp_stop_fault=4: uninstall.sh --yes
+#                      takes the card, and its teardown counts the stop as
+#                      failed, so the card is dead until reboot. The release
+#                      says so and stops: no rebind, the override not put
+#                      back. install.sh and uninstall.sh --yes then refuse at
+#                      once ("Reboot first"; nothing changed); after a reboot
+#                      (card-idle.sh first) uninstall.sh --yes puts the
+#                      override back and leaves nothing
 #   cleanup            driverctl purged, as before the test; reboot (then
 #                      tools/vmbuild.sh load for development)
 # --pw-only: prepare, then (the override unset) the PipeWire and holder
-# steps and cleanup: no reboot before cleanup, about 12 minutes
+# steps and cleanup: no reboot before cleanup, about 12 minutes.
+# --dead-only: prepare, dead-refused and cleanup: two reboots, about 5
+# minutes
 # Log: tests/logs/install/<UTC>-<sha>/gc573-dev-card.log (+ summary.tsv)
-# Usage: tools/vms/install-card-test.sh [-r REF] [--pw-only]
+# Usage: tools/vms/install-card-test.sh [-r REF] [--pw-only | --dead-only]
 set -uo pipefail
 
-REF=HEAD VM=gc573-dev pw_only=0
+REF=HEAD VM=gc573-dev pw_only=0 dead_only=0
 while [ $# -gt 0 ]; do
 	case $1 in
 	-r) REF=$2; shift 2 ;;
 	--pw-only) pw_only=1; shift ;;
-	-h|--help) sed -n '3,83p' "$0"; exit 0 ;;
+	--dead-only) dead_only=1; shift ;;
+	-h|--help) sed -n '3,94p' "$0"; exit 0 ;;
 	*) echo "unknown argument $1" >&2; exit 2 ;;
 	esac
 done
+[ $pw_only = 0 ] || [ $dead_only = 0 ] || { echo "--pw-only and --dead-only exclude each other" >&2; exit 2; }
 root=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
 sha=$(git -C "$root" rev-parse --short=12 "$REF^{commit}")
 out=$root/tests/logs/install/$(date -u +%Y%m%dT%H%M%SZ)-$sha
@@ -242,7 +255,9 @@ else
 	res prepare FAIL "$s"
 fi
 
-if [ $pw_only = 0 ]; then
+if [ $dead_only = 1 ]; then
+	:
+elif [ $pw_only = 0 ]; then
 echo "=== install-notty"
 o=$(vm "$I" 2>&1); rc=$?
 echo "$o" | sed 's/^/  /'
@@ -400,6 +415,7 @@ else
 	vm "sudo driverctl --noprobe unset-override $bdf" 2>&1 | sed 's/^/  /'
 fi
 
+if [ $dead_only = 0 ]; then
 echo "=== pw-install"
 pw_rule off
 o=$(vm "$I" 2>&1); rc=$?
@@ -644,6 +660,47 @@ if [ $rc = 1 ] && has 'has not finished' "$o" && has 'nothing was changed' "$o" 
 	res pending-refused PASS "while that unbind waited, install.sh and uninstall.sh refused at once ($dt s for both); once the holder ended it finished, and uninstall.sh left nothing"
 else
 	res pending-refused FAIL "exit $rc/$rc2 in $dt s; unbind: $done; exit $rc3; left '$left'; $s3"
+fi
+fi
+
+if [ $pw_only = 0 ]; then
+echo "=== dead-refused"
+# the card dead by a test parameter: the teardown's stop, confirmed, counted
+# as failed (exp_stop_fault bit 2, as tests/cases/22-stop-fault.sh
+# teardown); card-idle.sh lets the reboot go by that kernel log line
+vm "sudo driverctl --noprobe set-override $bdf vfio-pci" 2>&1 | sed 's/^/  /'
+o0=$(vm "$I --permanent --yes" 2>&1); rc0=$?
+echo "$o0" | sed 's/^/  /'
+s0=$(state); echo "  $s0"
+vm "echo 4 | sudo tee /sys/module/gc573/parameters/exp_stop_fault > /dev/null"
+o1=$(vm "$U --yes" 2>&1); rc1=$?
+echo "$o1" | sed 's/^/  /'
+vm "sudo dmesg | grep -F 'gc573 $bdf: ' | grep -E 'exp_stop_fault|until reboot' | tail -4" | sed 's/^/  /'
+dead=$(vm "cat /sys/module/gc573/parameters/dead_cards 2>/dev/null" | tr '\n' ' ')
+echo "  dead_cards: $dead"
+o2=$(vm "$I" 2>&1); rc2=$?
+echo "$o2" | sed 's/^/  /'
+o3=$(vm "$U --yes" 2>&1); rc3=$?
+echo "$o3" | sed 's/^/  /'
+s3=$(state); echo "  $s3"
+reboot_vm
+s4=$(state); echo "  after the reboot: $s4"
+o5=$(vm "$U --yes" 2>&1); rc5=$?
+echo "$o5" | sed 's/^/  /'
+s5=$(state); left=$(not_left); echo "  $s5; left: '$left'"
+vm "sudo driverctl --noprobe unset-override $bdf" 2>&1 | sed 's/^/  /'
+if [ $rc0 = 0 ] && has 'driver: gc573 override: (null) persisted:  loaded: yes' "$s0" && has 'state: bind permanent' "$s0" &&
+	[ $rc1 = 1 ] && has 'Reboot before using the card again' "$o1" && has 'reboot first' "$o1" &&
+	! has 'override restored' "$o1" && ! has 'goes back to it' "$o1" && has "$bdf" "$dead" &&
+	[ $rc2 = 1 ] && has 'Reboot first' "$o2" && has 'nothing was changed' "$o2" &&
+	[ $rc3 = 1 ] && has 'Reboot first' "$o3" && has 'nothing was changed' "$o3" &&
+	has 'driver:  override: (null) persisted:  loaded: yes' "$s3" && has 'state: bind permanent' "$s3" && has 'dkms: gc573/' "$s3" &&
+	has 'driver: gc573' "$s4" &&
+	[ $rc5 = 0 ] && has 'override restored' "$o5" && has 'persisted: vfio-pci' "$s5" && [ -z "$left" ]; then
+	res dead-refused PASS "a teardown stop counted as failed (exp_stop_fault=4) in uninstall.sh's unbind: it stopped (no rebind, no override put back); install.sh and uninstall.sh --yes then refused at once; after a reboot uninstall.sh put the override back and left nothing"
+else
+	res dead-refused FAIL "exit $rc0/$rc1/$rc2/$rc3/$rc5; dead_cards '$dead'; left '$left'; $s0 / $s3 / $s4 / $s5"
+fi
 fi
 
 echo "=== cleanup"

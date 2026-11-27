@@ -56,6 +56,12 @@ bound() { if [ -L "/sys/bus/pci/devices/$1/driver" ]; then basename "$(readlink 
 if why=$(gc573_unbind_pending); then
 	die "$why: a program holds the card's I2C or sound devices, and the unbind finishes once that program closes them. Run this again after that; nothing was changed"
 fi
+# A card the driver keeps until reboot (gc573_dead_check): an unbind, or a
+# vfio-pci override put back, could end with its bus mastering off under
+# running DMA
+if why=$(gc573_dead_check); then
+	die "$why. Reboot first, then run this again; nothing was changed"
+fi
 
 # gc573 lets go of the card (a sound server by itself; another program
 # only with --yes), then unloads. inuse: it could not be unloaded yet (a program
@@ -70,6 +76,7 @@ if grep -q "^$NAME " /proc/modules; then
 		0) say "unloaded $NAME" ;;
 		1) die "nothing was changed" ;;
 		3) die "run this again once the unbind has finished" ;;
+		4) die "reboot first, then run this again" ;;
 		*) inuse=1 ;;
 		esac
 	elif gc573_unload_wait; then
