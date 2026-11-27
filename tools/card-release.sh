@@ -33,7 +33,9 @@
 # device number of each open file (stat -L of /proc/PID/fd/N, the file
 # itself) against the card's nodes' sysfs dev files, never by a name or a
 # path; a sound server by the executable it runs; and every name is printed
-# with non-printable characters removed.
+# with non-printable characters removed. The file type is stat's raw mode
+# (%f), not its name (%F), which a language catalog translates: under
+# another language no file would be a holder.
 #
 # Uses NAME and say() from the script that sources it.
 
@@ -85,13 +87,15 @@ gc573_card_nodes() {
 # "PID RDEV" for every open character device file, in any process, whose
 # device number is one of the RDEVs given (gc573_hexdev's form), sorted.
 # stat -L of /proc/PID/fd/N describes the open file itself, whatever path
-# it was opened by. Never fails: processes come and go meanwhile.
+# it was opened by; its raw mode (%f, hex) is a character device's when the
+# file type bits read 2 (S_IFCHR, 0020000). Never fails: processes come
+# and go meanwhile.
 gc573_fd_holders() {
 	local want=" $* "
 	find /proc/[0-9]*/fd -mindepth 1 -maxdepth 1 -type l -print0 2>/dev/null |
-		xargs -0 -r stat -L -c '%F|%t:%T|%n' 2>/dev/null |
+		LC_ALL=C xargs -0 -r stat -L -c '%f|%t:%T|%n' 2>/dev/null |
 		awk -F'|' -v want="$want" '
-			$1 == "character special file" && index(want, " " $2 " ") {
+			$1 ~ /^2[0-9a-f][0-9a-f][0-9a-f]$/ && index(want, " " $2 " ") {
 				p = $3
 				sub(/^\/proc\//, "", p)
 				sub(/\/.*/, "", p)

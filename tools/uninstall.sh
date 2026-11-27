@@ -21,6 +21,10 @@
 #   --yes: the override is put back without a question, and programs that
 #   have the card open lose it
 set -euo pipefail
+# The checks read what tools print (stat, among others: card-release.sh),
+# which a language catalog would translate; sudo keeps the caller's LANG,
+# LANGUAGE and LC_*
+export LC_ALL=C
 
 NAME=gc573
 STATE_DIR=/var/lib/gc573-install

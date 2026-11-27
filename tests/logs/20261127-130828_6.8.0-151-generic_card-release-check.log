@@ -1,0 +1,14 @@
+# tests/card-release-check.sh in gc573-dev (Ubuntu 24.04, 6.8.0-151-generic) at 52cd8d4: the scripts before the D2, D8, D16 and D5 fixes
+device /dev/full (1:7): open in pid 8 (sleep), O_PATH in pid 9 (python3)
+RESULT	crc-d2-export	FAIL	install.sh: export LC_ALL=C at line 'none', card-release.sh sourced at line '80'
+RESULT	crc-d2-export	FAIL	uninstall.sh: export LC_ALL=C at line 'none', card-release.sh sourced at line '45'
+RESULT	crc-d2-catalog	FAIL	LANG=en_US.UTF-8 LANGUAGE=xx, stat -c %F says 'zeichenorientierte Spezialdatei': holders ' ', not pid 8
+RESULT	crc-d8-opath	FAIL	holders '8 1:7 9 1:7 ': want pid 8 and not pid 9 (O_PATH)
+RESULT	crc-vfio-user	PASS	'process 8 (sleep)'
+RESULT	crc-d16-timeout	FAIL	holders: still scanning after 15 s with GC573_SCAN_TIMEOUT=2
+RESULT	crc-d16-timeout	FAIL	vfio: still scanning after 16 s with GC573_SCAN_TIMEOUT=2
+RESULT	crc-d5-dead	FAIL	listed: status 127, '/home/dev/gc573-crc/tests/card-release-check.sh: line 176: gc573_dead_check: command not found' (want status 0 and 0000:07:00.0)
+RESULT	crc-d5-dead	FAIL	driver_override: status 127, '/home/dev/gc573-crc/tests/card-release-check.sh: line 176: gc573_dead_check: command not found' (want status 0 and gc573-dead-card)
+RESULT	crc-d5-dead	FAIL	neither: status 127, '/home/dev/gc573-crc/tests/card-release-check.sh: line 176: gc573_dead_check: command not found' (want status 1)
+RESULT	crc-d5-dead	FAIL	nothing: status 127, '/home/dev/gc573-crc/tests/card-release-check.sh: line 176: gc573_dead_check: command not found' (want status 1)
+exit 1

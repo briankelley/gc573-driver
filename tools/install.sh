@@ -45,6 +45,10 @@
 #   open lose it at an update
 # Undo:  sudo tools/uninstall.sh [--yes]
 set -euo pipefail
+# The checks read what tools print (stat, among others: card-release.sh),
+# which a language catalog would translate; sudo keeps the caller's LANG,
+# LANGUAGE and LC_*
+export LC_ALL=C
 
 NAME=gc573
 PCI_ID=1461:0054
