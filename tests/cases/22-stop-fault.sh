@@ -11,7 +11,20 @@
 # - streamoff (default): STREAMOFF of gc573-sec stopoff (4 buffers, 120
 #   frames) with bit 0 and 1 (no INT bit 0, no domain 0 reset).
 # - teardown: an unbind while video and audio stream, with bit 2 (the
-#   teardown's check counts the audio DMA as still on).
+#   teardown's check counts the audio DMA as still on), power/control at
+#   auto from before the unbind (final review F4: the PCI core drops its
+#   runtime PM reference before the teardown, and the dead card must stay
+#   runtime active all the same).
+# - wakeup (final review F2, F4): an unbind of the idle card with bit 6,
+#   which starts the teardown's stop 2 s late, and bit 2, power/control at
+#   auto from before the unbind. Within those 2 s a system sleep with
+#   /sys/power/pm_test at "freezer": no stop has begun, so the notifiers
+#   let it through (no "system sleep refused" line), and its freezer waits
+#   for the unbinding task. The card's death must then stop the sleep (the
+#   driver signals a wakeup event, which the freezer checks): the write
+#   fails, and the freezer never completes. The sleep must start inside
+#   the 2 s (its "suspend entry" line between the late start's and the
+#   failed stop's). SKIP without pm_test.
 # - sleep (delta review D4): the streamoff part with bit 4 too, which
 #   holds the stop, counted as failed, for 2 s under the video lock
 #   before the card is dead; within those 2 s a system sleep with
@@ -24,9 +37,11 @@
 #   INT bit 4 counts as missing and its DMA as still on, once the stop was
 #   confirmed), stopped (drop) and held open 8 s before the close, which
 #   is when the driver syncs the stop (gc573-aud -H). A system sleep in
-#   between (pm_test freezer) must be refused for the stop not confirmed,
-#   and the close's sync must leave the card dead, 12 KiB kept (the dummy
-#   list and the audio buffers). SKIP without pm_test.
+#   between (pm_test freezer) must be refused for the stop not confirmed
+#   (by the card's notifier, or by the module's for a stop whose verdict
+#   is not in: final review F2), and the close's sync must leave the card
+#   dead, 12 KiB kept (the dummy list and the audio buffers). SKIP without
+#   pm_test.
 # Before anything else is judged, the kernel log must say the stop was
 # confirmed and only counted as failed, and BAR0 must read idle (VIP_CTRL
 # output and DMA_RUN audio off). If not, the case stops there: no unbind,
@@ -38,6 +53,8 @@
 #   ENODEV, REQBUFS 0 works, no video or audio stream starts again; the
 #   unbind finishes and leaves the device enabled with bus mastering on;
 # - teardown: the unbind finishes and both programs end;
+# - wakeup: the sleep's write failed, with no notifier's refusal and no
+#   "Freezing ... completed" line, and the unbind finishes;
 # - the module cannot be unloaded, the card cannot be bound again
 #   (ENODEV: no driver matches it), and system sleep is refused (with
 #   /sys/power/pm_test, as far as its freezer stage);
@@ -62,13 +79,15 @@ param=/sys/module/$GC573_MOD/parameters/exp_stop_fault
 drv=/sys/bus/pci/drivers/$GC573_MOD
 pdev=/sys/bus/pci/devices/$GC573_BDF
 part=${GC573_TEST_STOP:-streamoff}
-case $part in streamoff | teardown | sleep | audio) ;; *) fail "GC573_TEST_STOP: streamoff, teardown, sleep or audio, not '$part'" ;; esac
-if [ "$part" = sleep ] || [ "$part" = audio ]; then
+case $part in streamoff | teardown | sleep | audio | wakeup) ;; *) fail "GC573_TEST_STOP: streamoff, teardown, sleep, audio or wakeup, not '$part'" ;; esac
+if [ "$part" = sleep ] || [ "$part" = audio ] || [ "$part" = wakeup ]; then
 	[ -w /sys/power/pm_test ] && grep -qw freeze /sys/power/state ||
 		skip "no /sys/power/pm_test or no freeze state"
 fi
 work=$(mktemp -d)
 pids=()
+ctl=$pdev/power/control
+ctl0=$(cat "$ctl")
 
 # A module whose exp_stop_fault itself leaves a DMA running (before
 # spec/pci.md's rule) would turn bus mastering off under it: refused
@@ -84,6 +103,7 @@ cleanup() {
 	for p in "${pids[@]}"; do kill "$p" 2>/dev/null; done
 	wait 2>/dev/null
 	[ -w /sys/power/pm_test ] && echo none > /sys/power/pm_test
+	echo "$ctl0" > "$ctl"
 	[ -n "$(gc573_dead_cards)" ] || { gc573_loaded && gc573_unload; }
 	rm -rf "$work"
 }
@@ -93,6 +113,7 @@ cleanup() {
 	echo 'audio stop: no INT bit 4 in [0-9]+ ms'
 	echo 'audio stop \(no INT bit 4, the audio DMA still on\) failed: the card keeps bus mastering and gets no driver until reboot'
 	echo 'system sleep refused: an audio stop is not confirmed'
+	echo 'exp_stop_fault 0x[0-9a-f]+: the teardown stop starts in [0-9]+ ms'
 	echo 'exp_stop_fault 0x[0-9a-f]+: the video stop counts as failed in [0-9]+ ms, vid.lock held'
 	echo 'system sleep refused: the card did not confirm its DMA stopped'
 	echo 'video stop \(no INT bit 0, no reset of domain 0\) failed: the card keeps bus mastering and gets no driver until reboot'
@@ -312,7 +333,7 @@ elif [ "$part" = audio ]; then
 	case $src in
 	0) bad+="system sleep went through the freezer stage between the audio stop and its sync; " ;;
 	1)
-		if kmsg_since "$tag" | grep -q 'system sleep refused: an audio stop is not confirmed'; then
+		if kmsg_since "$tag" | grep -qE 'system sleep refused: (an audio stop is not confirmed|[0-9]+ DMA stop\(s\) not confirmed yet)'; then
 			echo "system sleep refused before the sync: $(cat "$work/sleep2.out")"
 		else
 			bad+="the sleep was refused, but not for the audio stop not confirmed; "
@@ -330,6 +351,60 @@ elif [ "$part" = audio ]; then
 	timeout 30 sh -c "echo $GC573_BDF > $drv/unbind" || fail "unbind did not finish"
 	dead_checks
 	echo "the audio stop, not confirmed, left the card dead with its memory and bus mastering"
+elif [ "$part" = wakeup ]; then
+	echo "-- unbind of the idle card, its stop 2 s late, then confirmed and counted as the audio DMA still on; a sleep in those 2 s"
+	tag=$(kmsg_mark "stop-fault wakeup")
+	echo 68 > "$param" || fail "cannot set exp_stop_fault"
+	kmsg_since "$tag" | grep -q 'Setting dangerous option exp_stop_fault - tainting kernel' ||
+		fail "setting exp_stop_fault did not taint the kernel"
+	echo auto > "$ctl" || fail "cannot set power/control to auto"
+	timeout 60 sh -c "echo $GC573_BDF > $drv/unbind" &
+	upid=$!
+	pids+=("$upid")
+	for i in $(seq 100); do
+		kmsg_since "$tag" | grep -q 'the teardown stop starts in [0-9]* ms' && break
+		kill -0 "$upid" 2>/dev/null || break
+		sleep 0.05
+	done
+	kmsg_since "$tag" | grep -q 'the teardown stop starts in [0-9]* ms' || {
+		wait "$upid"
+		echo 0 > "$param"
+		confirmed_idle "$tag" teardown
+		fail "the stop did not start late (a driver without exp_stop_fault bit 6)"
+	}
+	gc573_sleep_test > "$work/sleep4.out"
+	src=$?
+	wait "$upid"
+	rc=$?
+	pids=()
+	echo 0 > "$param"
+	echo "after the unbind, power/control auto: runtime $(cat "$pdev/power/runtime_status")"
+	confirmed_idle "$tag" teardown
+	[ $rc = 0 ] || fail "unbind did not finish"
+	kmsg_since "$tag" | grep -E 'starts in|PM: suspend|Freezing|system sleep refused|teardown stop failed' | sed 's/^/  | /'
+	t0=$(kmsg_since "$tag" | sed -n 's/^\[ *\([0-9.]*\)\].*: exp_stop_fault 0x[0-9a-f]*: the teardown stop starts in .*/\1/p' | head -1)
+	t1=$(kmsg_since "$tag" | sed -n 's/^\[ *\([0-9.]*\)\] PM: suspend entry .*/\1/p' | head -1)
+	t2=$(kmsg_since "$tag" | sed -n 's/^\[ *\([0-9.]*\)\].*: teardown stop failed: DMA still on.*/\1/p' | head -1)
+	[ -n "$t0" ] && [ -n "$t1" ] && [ -n "$t2" ] ||
+		fail "a line is missing: the late start '$t0', the sleep's entry '$t1', the failed stop '$t2'"
+	awk -v a="$t0" -v b="$t1" -v c="$t2" 'BEGIN { exit !(a < b && b < c) }' ||
+		fail "the sleep did not start before the stop (late start at $t0 s, entry $t1 s, failed stop $t2 s): not judged"
+	echo "the sleep started $(awk -v a="$t0" -v b="$t1" 'BEGIN { printf "%.3f", b - a }') s after the late start's line, the failed stop came $(awk -v a="$t0" -v c="$t2" 'BEGIN { printf "%.3f", c - a }') s after it"
+	kmsg_since "$tag" | grep -q 'system sleep refused' &&
+		fail "a notifier refused the sleep: the case needs one that went through them"
+	bad=""
+	case $src in
+	0) bad+="system sleep went through the freezer stage although the card died while the freezer waited; " ;;
+	1) echo "system sleep stopped: $(cat "$work/sleep4.out")" ;;
+	*) bad+="pm_test: the sleep could not be tried; " ;;
+	esac
+	kmsg_since "$tag" | grep -q 'Freezing user space processes completed' &&
+		bad+="the freezer completed; "
+	kmsg_since "$tag" | grep -q 'teardown stop failed: the card keeps bus mastering and gets no driver until reboot' ||
+		bad+="no line for the failed teardown stop; "
+	[ -z "$bad" ] || fail "${bad%; }"
+	dead_checks
+	echo "the card's death after the notifiers stopped the sleep, and left the card dead with its memory and bus mastering"
 else
 	echo "-- unbind while streaming, the teardown's stop confirmed, then counted as the audio DMA still on"
 	"$cap" -d "$vdev" -n 100000 > "$work/cap3.log" 2>&1 &
@@ -344,9 +419,11 @@ else
 	echo 4 > "$param" || fail "cannot set exp_stop_fault"
 	kmsg_since "$tag" | grep -q 'Setting dangerous option exp_stop_fault - tainting kernel' ||
 		fail "setting exp_stop_fault did not taint the kernel"
+	echo auto > "$ctl" || fail "cannot set power/control to auto"
 	timeout 60 sh -c "echo $GC573_BDF > $drv/unbind"
 	rc=$?
 	echo 0 > "$param"
+	echo "after the unbind, power/control auto: runtime $(cat "$pdev/power/runtime_status")"
 	confirmed_idle "$tag" teardown
 	[ $rc = 0 ] || fail "unbind did not finish"
 	for p in "${pids[@]}"; do
