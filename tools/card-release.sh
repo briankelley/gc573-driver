@@ -38,13 +38,16 @@
 # another language no file would be a holder. An O_PATH descriptor is no
 # holder: it holds nothing open (it needs no permission on the node, so
 # any user could otherwise block the scripts, and an unbind does not wait
-# for it).
+# for it). The scan stats every open file, and a file on a network mount
+# whose server has gone can stall that: it gets GC573_SCAN_TIMEOUT seconds,
+# and a scan that does not finish makes the scripts refuse.
 #
 # Uses NAME and say() from the script that sources it.
 
 GC573_PCI_ID=${GC573_PCI_ID:-1461:0054}
 GC573_UNBIND_PID=${GC573_UNBIND_PID:-/run/gc573-unbind.pid}
 GC573_VFIO_CLASS=${GC573_VFIO_CLASS:-/sys/class/vfio}
+GC573_SCAN_TIMEOUT=${GC573_SCAN_TIMEOUT:-20}
 
 # The card's PCI devices (GC573_PCI_ID), one sysfs dir per line
 gc573_cards() {
@@ -100,27 +103,42 @@ gc573_fd_opath() {
 	(((8#$fl & 8#10000000) != 0))
 }
 
+# The message for a scan of open files that did not finish
+gc573_scan_failed() {
+	printf 'the scan of open files did not finish within %s s (a file on a network mount that does not answer?)' \
+		"$GC573_SCAN_TIMEOUT"
+}
+
 # "PID RDEV" for every open character device file, in any process, whose
 # device number is one of the RDEVs given (gc573_hexdev's form), sorted;
 # O_PATH descriptors are left out. stat -L of /proc/PID/fd/N describes the
 # open file itself, whatever path it was opened by; its raw mode (%f, hex)
 # is a character device's when the file type bits read 2 (S_IFCHR,
-# 0020000). Never fails: processes come and go meanwhile.
+# 0020000). Status 2, and nothing printed, when the stats did not finish
+# within GC573_SCAN_TIMEOUT s (timeout kills them, its process group);
+# otherwise 0: processes come and go meanwhile, and a file that went is no
+# holder.
 gc573_fd_holders() {
-	local want=" $* " p f r
-	find /proc/[0-9]*/fd -mindepth 1 -maxdepth 1 -type l -print0 2>/dev/null |
-		LC_ALL=C xargs -0 -r stat -L -c '%f|%t:%T|%n' 2>/dev/null |
-		awk -F'|' -v want="$want" '
-			$1 ~ /^2[0-9a-f][0-9a-f][0-9a-f]$/ && index(want, " " $2 " ") {
-				n = $3
-				sub(/^\/proc\//, "", n)
-				p = n
-				sub(/\/.*/, "", p)
-				f = n
-				sub(/^[0-9]+\/fd\//, "", f)
-				if (p ~ /^[0-9]+$/ && f ~ /^[0-9]+$/)
-					print p, f, $2
-			}' |
+	local want=" $* " out p f r
+	out=$(find /proc/[0-9]*/fd -mindepth 1 -maxdepth 1 -type l -print0 2>/dev/null |
+		{
+			LC_ALL=C timeout -k 2 "$GC573_SCAN_TIMEOUT" xargs -0 -r stat -L -c '%f|%t:%T|%n' 2>/dev/null
+			echo "gc573-scan-status $?"
+		}) || :
+	case ${out##*gc573-scan-status } in
+	124 | 137) return 2 ;;
+	esac
+	awk -F'|' -v want="$want" '
+		$1 ~ /^2[0-9a-f][0-9a-f][0-9a-f]$/ && index(want, " " $2 " ") {
+			n = $3
+			sub(/^\/proc\//, "", n)
+			p = n
+			sub(/\/.*/, "", p)
+			f = n
+			sub(/^[0-9]+\/fd\//, "", f)
+			if (p ~ /^[0-9]+$/ && f ~ /^[0-9]+$/)
+				print p, f, $2
+		}' <<< "${out%gc573-scan-status *}" |
 		while read -r p f r; do
 			gc573_fd_opath "$p" "$f" || printf '%s %s\n' "$p" "$r"
 		done | sort -u -k1,1n -k2,2
@@ -157,21 +175,23 @@ gc573_sound_server() {
 }
 
 # "pid node comm" for each node in $1 (gc573_card_nodes output) a process
-# holds open, sorted by pid
+# holds open, sorted by pid. Status 2 when the scan did not finish
 gc573_holders_of() {
-	local p r
+	local p r h
 	[ -n "$1" ] || return 0
 	# shellcheck disable=SC2046
-	gc573_fd_holders $(awk '{ print $1 }' <<< "$1") |
-		while read -r p r; do
-			printf '%s %s %s\n' "$p" "$(awk -v r="$r" '$1 == r { print $2; exit }' <<< "$1")" \
-				"$(gc573_comm "$p")"
-		done | sort -u -k1,1n -k2,2
+	h=$(gc573_fd_holders $(awk '{ print $1 }' <<< "$1")) || return 2
+	while read -r p r; do
+		[ -n "$p" ] || continue
+		printf '%s %s %s\n' "$p" "$(awk -v r="$r" '$1 == r { print $2; exit }' <<< "$1")" \
+			"$(gc573_comm "$p")"
+	done <<< "$h" | sort -u -k1,1n -k2,2
 	return 0
 }
 
 # "pid node comm" for each of the card's nodes a process holds open,
-# sorted by pid. $1: the PCI device's sysfs dir
+# sorted by pid; status 2 when the scan did not finish. $1: the PCI
+# device's sysfs dir
 gc573_holders() {
 	gc573_holders_of "$(gc573_card_nodes "$1")"
 }
@@ -228,8 +248,9 @@ gc573_names() {
 # holds the card's VFIO group node (/dev/vfio/N) or its VFIO device node
 # (iommufd: /dev/vfio/devices/vfioN) open. Prints "process PID (comm)",
 # with the virtual machine's name if its command line has one, for the
-# first such process; nothing if none. Never fails: processes come and go
-# meanwhile. $1: the PCI device's sysfs dir
+# first such process; nothing if none. Status 2, with gc573_scan_failed's
+# message printed, when the scan did not finish; otherwise 0: processes
+# come and go meanwhile. $1: the PCI device's sysfs dir
 gc573_vfio_user() {
 	local d r want="" p vm
 	if [ -e "$1/iommu_group" ]; then
@@ -241,7 +262,11 @@ gc573_vfio_user() {
 	done
 	[ -n "$want" ] || return 0
 	# shellcheck disable=SC2086
-	p=$(gc573_fd_holders $want | awk 'NR == 1 { print $1 }')
+	if ! p=$(gc573_fd_holders $want); then
+		gc573_scan_failed
+		return 2
+	fi
+	p=$(awk 'NR == 1 { print $1 }' <<< "$p")
 	[ -n "$p" ] || return 0
 	vm=$(tr '\0' ' ' 2>/dev/null < "/proc/$p/cmdline" | LC_ALL=C tr -cd '[:print:]' |
 		grep -o 'guest=[^, ]*' | head -1) || true
@@ -333,8 +358,9 @@ gc573_unbind() {
 
 # Take every card gc573 has away from it, and unload it. Refuses (status 1,
 # nothing changed) when anything but a sound server holds a node of a card
-# and $1 is not 1 (--yes), and always when such a holder has an ALSA or
-# i2c-dev node open (an unbind would wait for it). Status 2: the cards were
+# and $1 is not 1 (--yes), always when such a holder has an ALSA or
+# i2c-dev node open (an unbind would wait for it), and when the scan for
+# holders did not finish (gc573_fd_holders). Status 2: the cards were
 # unbound but gc573 could not be unloaded within 5 s (a holder did not let
 # go); then the cards are bound to gc573 again, so that they stay usable.
 # Status 3: an unbind did not finish within 10 s (it goes on, nothing else
@@ -352,7 +378,10 @@ gc573_release() {
 		bdfs="$bdfs $(basename "$d")"
 		n=$(gc573_card_nodes "$d")
 		nodes="$nodes$n"$'\n'
-		h=$(gc573_holders_of "$n")
+		if ! h=$(gc573_holders_of "$n"); then
+			say "could not check which programs have the card open: $(gc573_scan_failed). The card is left alone; nothing was changed"
+			return 1
+		fi
 		all="$all$h"$'\n'
 		o=$(gc573_others "$h")
 		[ -z "$o" ] || others="$others$o"$'\n'
@@ -381,11 +410,15 @@ gc573_release() {
 		gc573_unbind "$d" && continue
 		if [ $? = 3 ]; then
 			# the nodes are gone from sysfs by now: their numbers from before
-			h=$(gc573_procs "$(gc573_holders_of "$(sed '/^$/d' <<< "$nodes")")")
-			if [ -n "$h" ]; then
-				h="now: $(gc573_names "$h")"
+			if h=$(gc573_holders_of "$(sed '/^$/d' <<< "$nodes")"); then
+				h=$(gc573_procs "$h")
+				if [ -n "$h" ]; then
+					h="now: $(gc573_names "$h")"
+				else
+					h="no process shows it open: one may be in flight between programs"
+				fi
 			else
-				h="no process shows it open: one may be in flight between programs"
+				h=$(gc573_scan_failed)
 			fi
 			say "the unbind of $d has not finished after 10 s: a program holds the card ($h); it finishes once that program closes it. Run this again after that. Nothing else was changed"
 			return 3

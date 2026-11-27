@@ -220,7 +220,8 @@ fi
 # unbind (gc573_vfio_user: by device number)
 user=
 if [ "$drv" = vfio-pci ]; then
-	user=$(gc573_vfio_user "$dev")
+	user=$(gc573_vfio_user "$dev") ||
+		die "could not check whether a virtual machine uses the card: $user. The card was not touched"
 fi
 vm_busy() {
 	[ -n "$user" ] || return 1
