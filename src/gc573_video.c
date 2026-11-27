@@ -882,9 +882,10 @@ static void gc573_vid_return_all(struct gc573 *gc, enum vb2_buffer_state st)
  * DMA; with neither, the buffers about to go back may still be written:
  * the card is left as it is, with that memory, until reboot
  * (gc573_dma_dead()), and -EIO is returned. vid.lock held. Safe to call
- * when not running.
+ * when not running. @locked: called by the teardown, under the device
+ * lock (gc573_dma_stop()); not by an ioctl or a worker.
  */
-int gc573_video_hw_stop(struct gc573 *gc)
+int gc573_video_hw_stop(struct gc573 *gc, bool locked)
 {
 	struct gc573_video *v = &gc->vid;
 	struct device *dev = &gc->pdev->dev;
@@ -945,7 +946,8 @@ int gc573_video_hw_stop(struct gc573 *gc)
 				 fault, GC573_STOP_FAULT_SLOW_MS);
 			msleep(GC573_STOP_FAULT_SLOW_MS);
 		}
-		gc573_dma_dead(gc, "video stop (no INT bit 0, no reset of domain 0) failed");
+		gc573_dma_dead(gc, "video stop (no INT bit 0, no reset of domain 0) failed",
+			       locked);
 		return -EIO;
 	}
 	/* a reset of domain 8 stops the audio DMA: start it again */
@@ -1269,7 +1271,7 @@ static void gc573_stop_streaming(struct vb2_queue *q)
 
 	/* after the quiesce the engines are reset and the IRQ is off */
 	if (!v->dead)
-		gc573_video_hw_stop(gc);
+		gc573_video_hw_stop(gc, false);
 	v->start_pending = false;
 	v->held = false;
 	gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
@@ -1915,7 +1917,7 @@ static void gc573_vid_fail(struct gc573 *gc)
 	struct gc573_video *v = &gc->vid;
 
 	if (v->running)
-		gc573_video_hw_stop(gc);
+		gc573_video_hw_stop(gc, false);
 	v->start_pending = false;
 	v->held = false;
 	gc573_vid_return_all(gc, VB2_BUF_STATE_ERROR);
@@ -1957,7 +1959,7 @@ static void gc573_vid_follow_input(struct gc573 *gc)
 		/* held already: the hold counts from its start */
 		if (v->held)
 			return;
-		if (gc573_video_hw_stop(gc)) {
+		if (gc573_video_hw_stop(gc, false)) {
 			gc573_vid_fail(gc);
 			return;
 		}
@@ -1977,7 +1979,7 @@ static void gc573_vid_follow_input(struct gc573 *gc)
 	/* free-running already, and still no input */
 	if (!v->in.locked && !v->live && (v->running || v->start_pending))
 		return;
-	if (gc573_video_hw_stop(gc)) {
+	if (gc573_video_hw_stop(gc, false)) {
 		gc573_vid_fail(gc);
 		return;
 	}

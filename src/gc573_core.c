@@ -310,7 +310,7 @@ static void gc573_irq_hw_disable(struct gc573 *gc)
 	gc573_wr(gc, GC573_INT_STATUS, gc573_rd(gc, GC573_INT_STATUS));
 }
 
-static void gc573_card_dead(struct gc573 *gc, const char *why);
+static void gc573_card_dead(struct gc573 *gc, const char *why, bool locked);
 static struct pci_driver gc573_pci_driver;
 
 /*
@@ -369,7 +369,8 @@ static int gc573_hw_stop_engines(struct gc573 *gc)
 	     (run & GC573_DMA_RUN_AUDIO) || (vip & GC573_VIP_CTRL_OUT_EN))) {
 		dev_err(dev, "bus mastering was off when the probe started, and the card does not read idle (VERSION %08x DMA_RUN %#010x VIP_CTRL %#010x): a previous owner may have turned it off under running DMA, and on again it can stall the machine (spec/pci.md); nothing is written to the card\n",
 			ver, run, vip);
-		gc573_card_dead(gc, "not idle at the probe's start with bus mastering off");
+		gc573_card_dead(gc, "not idle at the probe's start with bus mastering off",
+				true);
 		return -ENODEV;
 	}
 	if (ver == U32_MAX || run == U32_MAX || vip == U32_MAX) {
@@ -417,7 +418,7 @@ static int gc573_hw_stop_engines(struct gc573 *gc)
 		}
 	}
 	if (ret)
-		gc573_dma_dead(gc, "the stop of the engines at probe failed");
+		gc573_dma_dead(gc, "the stop of the engines at probe failed", true);
 	else
 		gc->master_unchecked = false;
 	return ret;
@@ -490,7 +491,8 @@ static int gc573_answer_check(struct gc573 *gc, unsigned long t_master)
 			return 0;
 		}
 	}
-	gc573_dma_dead(gc, "the card stopped answering after bus mastering was enabled");
+	gc573_dma_dead(gc, "the card stopped answering after bus mastering was enabled",
+		       true);
 	return -ENODEV;
 }
 
@@ -641,9 +643,11 @@ MODULE_PARM_DESC(dead_cards,
  *   while the module unloads cannot hold it: then only
  *   gc573_block_drivers() does.
  * No stream starts again; bus 1 and the HDMI poll stop too.
- * Process context.
+ * Process context. @locked: the caller holds the device lock, or runs
+ * for a task that holds it and waits (probe, devres, shutdown); not an
+ * ioctl, a worker or an ALSA callback (compat.h, gc573_block_drivers()).
  */
-static void gc573_card_dead(struct gc573 *gc, const char *why)
+static void gc573_card_dead(struct gc573 *gc, const char *why, bool locked)
 {
 	struct pci_dev *pdev = gc->pdev;
 	u16 cmd;
@@ -655,7 +659,7 @@ static void gc573_card_dead(struct gc573 *gc, const char *why)
 		dev_err(&pdev->dev, "cannot keep the device enabled: its teardown will turn bus mastering off\n");
 	/* never put: no runtime suspend, of it or of the port above it */
 	pm_runtime_get_noresume(&pdev->dev);
-	gc573_block_drivers(pdev, &gc573_pci_driver);
+	gc573_block_drivers(pdev, &gc573_pci_driver, locked);
 	gc573_dead_add(pdev);
 	__module_get(THIS_MODULE);
 	pci_read_config_word(pdev, PCI_COMMAND, &cmd);
@@ -674,9 +678,10 @@ static void gc573_card_dead(struct gc573 *gc, const char *why)
  * gc573_card_dead(). The memory the card was given may still be written,
  * so it is kept for good, DMA-mapped, from here on: the buffers the card
  * was given (gc573_buf_cleanup()), their lists, the dummy list and the
- * audio buffers. A reboot gives it back. Called in process context.
+ * audio buffers. A reboot gives it back. Called in process context;
+ * @locked as for gc573_card_dead().
  */
-void gc573_dma_dead(struct gc573 *gc, const char *why)
+void gc573_dma_dead(struct gc573 *gc, const char *why, bool locked)
 {
 	struct device *dev = &gc->pdev->dev;
 	u32 run, vip;
@@ -687,7 +692,7 @@ void gc573_dma_dead(struct gc573 *gc, const char *why)
 	gc573_audio_quiesce(gc);
 	run = gc573_rd(gc, GC573_DMA_RUN);
 	vip = gc573_rd(gc, GC573_VIP_CTRL);
-	gc573_card_dead(gc, why);
+	gc573_card_dead(gc, why, locked);
 	kept = atomic_long_read(&gc->vid.exposed_bytes) + PAGE_SIZE +
 	       GC573_AUD_BUF_BYTES;
 	dev_warn(dev, "%ld KiB of DMA memory kept until reboot: the card did not confirm its DMA stopped (after the stop DMA_RUN %#010x VIP_CTRL %#010x)\n",
@@ -711,7 +716,8 @@ static void gc573_master_guard(void *data)
 	if (!gc->master_unchecked || READ_ONCE(gc->dma_dead))
 		return;
 	dev_warn(&gc->pdev->dev, "bus mastering was on when the probe started, and the card did not read idle: a previous owner may have left its DMA running\n");
-	gc573_card_dead(gc, "the probe failed before the engines were stopped");
+	gc573_card_dead(gc, "the probe failed before the engines were stopped",
+			true);
 }
 
 /*
@@ -720,7 +726,10 @@ static void gc573_master_guard(void *data)
  * stopped for good, the domains reset (spec/init.md "Remove / quiesce"
  * steps 1 and 3), and the stop checked by what DMA_RUN and VIP_CTRL read
  * back. Interrupts stay on: the HDMI teardown still uses bus 1. Runs once,
- * from the first teardown action that frees DMA memory.
+ * from the first teardown action that frees DMA memory, under the device
+ * lock (devres, shutdown). A card that died under an ioctl or a worker
+ * gets its block again here, in place, before the unbind ends
+ * (gc573_block_drivers()).
  */
 void gc573_dma_stop(struct gc573 *gc)
 {
@@ -731,11 +740,13 @@ void gc573_dma_stop(struct gc573 *gc)
 	if (gc->dma_stopped)
 		return;
 	gc->dma_stopped = true;
+	if (READ_ONCE(gc->dma_dead))
+		gc573_block_drivers(gc->pdev, &gc573_pci_driver, true);
 
 	mutex_lock(&gc->vid.lock);
 	gc->vid.dead = true;
 	if (gc573_rd(gc, GC573_VIP_CTRL) & GC573_VIP_CTRL_OUT_EN)
-		gc573_video_hw_stop(gc);
+		gc573_video_hw_stop(gc, true);
 	mutex_unlock(&gc->vid.lock);
 	/* a held stream's deadline: nothing queues it once dead is set */
 	cancel_delayed_work_sync(&gc->vid.hold_work);
@@ -756,7 +767,7 @@ void gc573_dma_stop(struct gc573 *gc)
 		dev_err(dev, "teardown stop failed: %s, DMA_RUN %#010x VIP_CTRL %#010x\n",
 			run == U32_MAX || vip == U32_MAX ?
 			"the card does not answer" : "DMA still on", run, vip);
-		gc573_dma_dead(gc, "teardown stop failed");
+		gc573_dma_dead(gc, "teardown stop failed", true);
 	}
 }
 

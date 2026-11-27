@@ -454,7 +454,7 @@ bool gc573_mmio_ones_now(struct gc573 *gc);
 int gc573_reset_domain_mask(struct gc573 *gc, u32 mask);
 int gc573_reset_domains(struct gc573 *gc);
 void gc573_dma_stop(struct gc573 *gc);
-void gc573_dma_dead(struct gc573 *gc, const char *why);
+void gc573_dma_dead(struct gc573 *gc, const char *why, bool locked);
 void gc573_gpio_update(struct gc573 *gc, u32 mask, u32 val);
 void gc573_dma_run_update(struct gc573 *gc, u32 mask, u32 val);
 
@@ -499,7 +499,7 @@ extern struct gc573_mem_live gc573_mem_live;
 void gc573_video_early_init(struct gc573 *gc);
 int gc573_video_alloc(struct gc573 *gc);
 int gc573_video_init(struct gc573 *gc);
-int gc573_video_hw_stop(struct gc573 *gc);
+int gc573_video_hw_stop(struct gc573 *gc, bool locked);
 void gc573_video_disarm(struct gc573 *gc);
 void gc573_video_irq_done(struct gc573 *gc);
 void gc573_video_irq_term(struct gc573 *gc);

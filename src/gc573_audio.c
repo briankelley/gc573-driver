@@ -513,7 +513,8 @@ static int gc573_pcm_sync_stop(struct snd_pcm_substream *ss)
 		/* still on, or no answer: its buffer may still be written */
 		if (run == U32_MAX || (run & GC573_DMA_RUN_AUDIO))
 			gc573_dma_dead(gc,
-				       "audio stop (no INT bit 4, the audio DMA still on) failed");
+				       "audio stop (no INT bit 4, the audio DMA still on) failed",
+				       false);
 	}
 out:
 	synchronize_irq(gc->irq);

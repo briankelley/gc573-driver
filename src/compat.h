@@ -107,13 +107,18 @@ gc573_pcim_iomap_region(struct pci_dev *pdev, int bar, const char *name)
  *   Ubuntu's 6.8 and 7.0 have it backported), device_set_driver_override(),
  *   under a spinlock of its own, where the bus says it matches with it
  *   (bus_type.driver_override: PCI from v7.1, and Ubuntu's 7.0);
- * - pci_dev.driver_override (v6.16 to v7.0, RHEL 10), through
- *   driver_set_override(), which takes the device lock that probe, remove
- *   and shutdown hold where a stop fails: from a work item, which waits
- *   for that lock, so a bind queued behind the same remove can come first.
+ * - pci_dev.driver_override (v6.16 to v7.0, RHEL 10), which the device
+ *   lock guards. Probe, devres and shutdown hold it, or run for a task
+ *   that holds it and waits (work_on_cpu()): @locked, and the override is
+ *   written in place, as driver_set_override() does under that lock, so
+ *   the block is there before any other driver is tried. An ioctl, a
+ *   worker or an ALSA callback holds vid.lock or aud.lock, which an unbind
+ *   takes under the device lock: from a work item then, which waits for
+ *   the device lock, so a bind queued behind the same remove could come
+ *   first; gc573_dma_stop() writes it in place again at the teardown.
  *   gc573_card_dead() keeps the module for good, and with it the work's
- *   code; while the module unloads only remove gets here, with the device
- *   lock held, and the override is written in place.
+ *   code; a caller without the device lock while the module unloads gets
+ *   no block, and says so.
  */
 #define GC573_NO_DRIVER		"gc573-dead-card"
 
@@ -129,7 +134,7 @@ static inline void gc573_block_check(struct pci_dev *pdev,
 #define GC573_DEAD_BLOCK	"match_driver"
 
 static inline void gc573_block_drivers(struct pci_dev *pdev,
-				       struct pci_driver *drv)
+				       struct pci_driver *drv, bool locked)
 {
 	pdev->match_driver = false;
 	gc573_block_check(pdev, drv);
@@ -177,58 +182,79 @@ struct gc573_block_work {
 	struct pci_driver *drv;
 };
 
+/* The device lock held, by the caller or the task it runs for */
+static inline int gc573_pci_override_set(struct pci_dev *pdev)
+{
+	const char *old, *name;
+
+	if (pdev->driver_override &&
+	    !strcmp(pdev->driver_override, GC573_NO_DRIVER))
+		return 0;
+	name = kstrdup(GC573_NO_DRIVER, GFP_KERNEL);
+	if (!name)
+		return -ENOMEM;
+	old = pdev->driver_override;
+	pdev->driver_override = name;
+	kfree(old);
+	return 0;
+}
+
+static inline void gc573_pci_override_block(struct pci_dev *pdev,
+					    struct pci_driver *drv)
+{
+	int ret = gc573_pci_override_set(pdev);
+
+	if (ret)
+		dev_err(&pdev->dev, "cannot block other drivers: driver_override: %d\n",
+			ret);
+	else
+		gc573_block_check(pdev, drv);
+}
+
 static inline void gc573_block_drivers_work(struct work_struct *work)
 {
 	struct gc573_block_work *bw = container_of(work, struct gc573_block_work, work);
-	struct pci_dev *pdev = bw->pdev;
-	int ret = driver_set_override(&pdev->dev, &pdev->driver_override,
-				      GC573_NO_DRIVER, strlen(GC573_NO_DRIVER));
 
-	if (ret) {
-		dev_err(&pdev->dev, "cannot block other drivers: driver_override: %d\n",
-			ret);
-	} else {
-		device_lock(&pdev->dev);
-		gc573_block_check(pdev, bw->drv);
-		device_unlock(&pdev->dev);
-	}
-	pci_dev_put(pdev);
+	device_lock(&bw->pdev->dev);
+	gc573_pci_override_block(bw->pdev, bw->drv);
+	device_unlock(&bw->pdev->dev);
+	pci_dev_put(bw->pdev);
 	kfree(bw);
 }
 
 static inline void gc573_block_drivers(struct pci_dev *pdev,
-				       struct pci_driver *drv)
+				       struct pci_driver *drv, bool locked)
 {
 	struct gc573_block_work *bw;
-	const char *old, *name;
 
 	if (gc573_block_generic(pdev, drv))
 		return;
+	if (locked) {
+		gc573_pci_override_block(pdev, drv);
+		return;
+	}
 	if (!try_module_get(THIS_MODULE)) {
-		/* unloading: remove, under the device lock */
-		name = kstrdup(GC573_NO_DRIVER, GFP_KERNEL);
-		if (!name)
-			return;
-		old = pdev->driver_override;
-		pdev->driver_override = name;
-		kfree(old);
-		gc573_block_check(pdev, drv);
+		dev_err(&pdev->dev, "cannot block other drivers: the module is unloading\n");
 		return;
 	}
 	module_put(THIS_MODULE);
 	bw = kzalloc(sizeof(*bw), GFP_KERNEL);
 	if (!bw)
-		return;
+		goto nomem;
 	INIT_WORK(&bw->work, gc573_block_drivers_work);
 	bw->pdev = pci_dev_get(pdev);
 	bw->drv = drv;
 	schedule_work(&bw->work);
+	return;
+nomem:
+	dev_err(&pdev->dev, "cannot block other drivers: driver_override: %d\n",
+		-ENOMEM);
 }
 #else
 #define GC573_DEAD_BLOCK	GC573_BLOCK_ONLY
 
 static inline void gc573_block_drivers(struct pci_dev *pdev,
-				       struct pci_driver *drv)
+				       struct pci_driver *drv, bool locked)
 {
 	if (!gc573_block_generic(pdev, drv))
 		dev_err(&pdev->dev, "cannot block other drivers: this kernel's PCI bus keeps no driver_override a driver can set\n");
