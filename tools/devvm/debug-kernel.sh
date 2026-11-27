@@ -8,8 +8,8 @@
 # (DEBUG_OBJECTS off: Ubuntu 6.8.0-151's
 # lib/debugobjects.c uses __data_racy, undefined in that tree.) Built on the host
 # (localmodconfig from the VM's modules), installed in the VM as an extra boot entry.
-# Default boot stays the generic kernel. Boot debug once:
-#   ssh gc573-dev 'sudo grub-reboot "$(cat /etc/gc573-dbg-entry)" && sudo reboot'
+# Default boot stays the generic kernel. Boot debug once: tools/devvm/dbg-boot.sh
+# (it reboots only once tools/vms/card-idle.sh says the card is idle: spec/pci.md).
 # Prereq: gc573-dev running, ssh alias gc573-dev. Run as normal user with sudo.
 # Without the VM (gc573-dev holds the card's hostdev, so it starts only when
 # the card may go to it): VMCONFIG=FILE (the VM's /boot/config of its

@@ -203,6 +203,7 @@ Name the devices explicitly. Then nothing else is opened, and the names stay put
   A normal reboot of the computer is safe: the kernel does not turn bus mastering off for a plain reboot, and the platform's reset then resets the card.
 - Not handled: kexec (as kdump or a fast reboot uses) and a write to the card's sysfs `enable` file can still turn bus mastering off on such a card. Do neither before the reboot.
 - In a virtual machine, such a card cannot be let go safely: a reboot of the guest (QEMU resets the card) and its shutdown (vfio-pci releases the card) both turn bus mastering off. Expect the host to need a power cycle.
+- Shut a virtual machine that uses the card down normally while it captures, never kill it (`virsh destroy`): at a shutdown the driver stops the card's DMA first. A crashed or killed VM can hang the host, because vfio-pci then turns bus mastering off under the running DMA.
 - System sleep (suspend, hibernate) is refused while the card captures: the kernel would turn its bus mastering off under the running DMA. Suspend and resume are not supported yet (M9): after a sleep taken while the card was idle, rebind the driver or reboot before you use the card again.
 - HDCP-protected sources (consoles, streaming boxes) are untested.
 - Tested in a virtual machine with the card passed through, and on a real host (Linux Mint 22, kernel 6.8): a 2-hour OBS recording with a source change every 3 minutes, and frame-exact captures at 1080p60, 1080p59.94 and 720p59.94.

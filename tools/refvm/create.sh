@@ -19,7 +19,7 @@ USERDATA=${USERDATA:-$HERE/user-data.in}
 
 [ -n "$CARD_BDF" ] || { echo "GC573 not found" >&2; exit 1; }
 if sudo virsh dominfo "$NAME" >/dev/null 2>&1; then
-  echo "VM $NAME exists. Remove: sudo virsh destroy $NAME; sudo virsh undefine $NAME --nvram --tpm" >&2; exit 1
+  echo "VM $NAME exists. Remove: sudo virsh shutdown $NAME (tools/vms/card-idle.sh $NAME first, never virsh destroy: spec/pci.md), then sudo virsh undefine $NAME --nvram --tpm" >&2; exit 1
 fi
 [ -f "$KEY" ] || ssh-keygen -q -t ed25519 -N '' -C "$NAME" -f "$KEY"
 

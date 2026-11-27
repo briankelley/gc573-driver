@@ -47,9 +47,10 @@ the `gc573-dev` VM during bring-up, the host only for release validation.
   (exit 2) until a reboot. So each such case runs alone for its other
   choices (`GC573_TEST_STOP`, `GC573_TEST_NOANSWER`, which
   `tools/vmbuild.sh` passes on), and every one is followed by a reboot of
-  the VM once `tools/vms/card-idle.sh` says the card is idle. Under
-  DMA-API debug a new suite also refuses to start while the card's device
-  has DMA mappings and no driver.
+  the VM: `tools/devvm/dbg-boot.sh` reboots only once
+  `tools/vms/card-idle.sh` says the card is idle. Under DMA-API debug a
+  new suite also refuses to start while the card's device has DMA
+  mappings and no driver.
 - `run.sh` follows each case's kernel log while it runs
   (`tests/kmsg-tail.py` into a file, exported to the case as
   `GC573_KLOG_FILE`), so the log is complete even when the case writes more
@@ -270,8 +271,8 @@ locking, with the card in `gc573-dev`:
    the security cases `20-ioctl-limits` to `28-sleep-guard` in it.
    `22-stop-fault` leaves the card dead until reboot, and
    `27-no-answer-dead` SKIPs after it. Then each of the other choices
-   alone, each after a reboot once `tools/vms/card-idle.sh` says the card
-   is idle: `GC573_TEST_STOP=teardown tools/vmbuild.sh
+   alone, each after a reboot (`tools/devvm/dbg-boot.sh`, which waits for
+   `tools/vms/card-idle.sh`): `GC573_TEST_STOP=teardown tools/vmbuild.sh
    test 22-stop-fault`, `tools/vmbuild.sh test 27-no-answer-dead` and
    `GC573_TEST_NOANSWER=4 tools/vmbuild.sh test 27-no-answer-dead`, and
    first after a reboot `GC573_TEST_NOANSWER=1 tools/vmbuild.sh test
@@ -283,8 +284,8 @@ locking, with the card in `gc573-dev`:
    `tools/devvm/dbg-boot.sh threadirqs`: `18-fault-inject`,
    `19-surprise-remove`, `22-stop-fault` (last: then the card is dead
    until reboot), `24-unbind-alsa-held` and `live.sh stress`. Then
-   `tools/devvm/dbg-boot.sh` again, or a plain reboot for the generic
-   kernel.
+   `tools/devvm/dbg-boot.sh` again, or `tools/devvm/dbg-boot.sh
+   --generic` for the generic kernel.
 
 A fix's test should fail before the fix: build the module of the commit
 before it (a scratch worktree), copy it to the VM, and run the new case
@@ -298,21 +299,3 @@ or at their first check. `22-stop-fault` refuses a module whose
 `exp_stop_fault` is of the older kind: that one turned bus mastering off
 under a running DMA (spec/pci.md), so a failed stop of an older driver is
 shown by its code, never by a run.
-
-## Host step: probe with an engine still armed
-Security review F5 (probe stops the engines before bus mastering). Run
-by the coordinator on the host, where the IOMMU translates the card's
-DMA (domain DMA-FQ), with the card in `gc573-dev`:
-1. In the VM, stream video and audio: `gc573-cap -d /dev/videoN -n 100000`
-   (its limit: 28 min at 60 Hz) and `gc573-aud -t 3600`, each in the
-   background (both armed: the audio DMA and the video output on).
-2. On the host, note `journalctl -k | grep -c DMAR`, then
-   `virsh destroy gc573-dev`: the card keeps its registers, engines armed
-   (it has no FLR; vfio-pci turns bus mastering off on release).
-3. Give the card to gc573 on the host (the usual card move and bind).
-4. Pass: the bind's log has `DMA running at probe (DMA_RUN ..., VIP_CTRL
-   ...): stopped before bus mastering` (if not, vfio-pci reset the card
-   and the step proved nothing: say so), no new DMAR line in
-   `journalctl -k` since the bind, and a capture and an audio read work.
-   Before the fix the engines ran on as soon as probe turned bus
-   mastering on, before its reset.

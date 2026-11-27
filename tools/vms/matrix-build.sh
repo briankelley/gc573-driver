@@ -34,6 +34,9 @@ sudo -n true 2>/dev/null || sudo -v || { echo "sudo: no credential" >&2; exit 2;
 if [ ${#VMS[@]} -eq 0 ]; then
   mapfile -t VMS < <(sudo virsh list --all --name | grep '^gc573-' | grep -vx -e gc573-ref -e gc573-dev)
 fi
+for vm in "${VMS[@]}"; do
+  case $vm in gc573-dev|gc573-ref) echo "refusing $vm (it claims the card at start; not a matrix VM)" >&2; exit 2 ;; esac
+done
 card=$("$root/tools/vms/card.sh" --where 2>/dev/null || true)
 out=$root/tests/logs/matrix/$(date -u +%Y%m%dT%H%M%SZ)-$sha
 mkdir -p "$out"
@@ -118,7 +121,10 @@ one() {
         "${SSH[@]}" "$vm" 'rm -rf ~/gc573-matrix && mkdir -p ~/gc573-matrix && tar -x -C ~/gc573-matrix'
       "${SSH[@]}" "$vm" bash -s -- "$load" "$DKMS" < <(remote) 2>&1 || true
     fi
-    if [ $started = 1 ]; then
+    # a shutdown turns the bus mastering of a card the VM holds off (spec/pci.md)
+    if [ $started = 1 ] && ! "$root/tools/vms/card-idle.sh" "$vm"; then
+      echo "note: $vm left running: card-idle.sh says its card is not idle"
+    elif [ $started = 1 ]; then
       "${SSH[@]}" "$vm" sudo poweroff >/dev/null 2>&1 || true
       for i in $(seq 1 45); do [ "$(sudo virsh domstate "$vm")" = "shut off" ] && break; sleep 4; done
       [ "$(sudo virsh domstate "$vm")" = "shut off" ] || { sudo virsh shutdown "$vm" >/dev/null 2>&1; echo "note: $vm still running after poweroff"; }

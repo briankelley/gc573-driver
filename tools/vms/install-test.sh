@@ -172,16 +172,23 @@ for vm in "${VMS[@]}"; do
       git -C "$root" archive --format=tar --prefix=gc573/ "$sha" |
         "${SSH[@]}" "$vm" 'rm -rf ~/gc573-install && mkdir -p ~/gc573-install && tar -x -C ~/gc573-install'
       "${SSH[@]}" "$vm" bash -s < <(phase1) 2>&1 || true
-      "${SSH[@]}" "$vm" sudo reboot > /dev/null 2>&1 || true
-      sleep 15
-      if wait_ssh "$vm"; then
-        "${SSH[@]}" "$vm" bash -s < <(phase2) 2>&1 || true
+      # a reboot or shutdown turns a held card's bus mastering off (spec/pci.md)
+      if ! "$root/tools/vms/card-idle.sh" "$vm"; then
+        printf 'RESULT\treboot\tFAIL\tnot rebooted: card-idle.sh says the card in it is not idle\n'
       else
-        printf 'RESULT\treboot\tFAIL\tno ssh after the reboot\n'
+        "${SSH[@]}" "$vm" sudo reboot > /dev/null 2>&1 || true
+        sleep 15
+        if wait_ssh "$vm"; then
+          "${SSH[@]}" "$vm" bash -s < <(phase2) 2>&1 || true
+        else
+          printf 'RESULT\treboot\tFAIL\tno ssh after the reboot\n'
+        fi
       fi
       "${SSH[@]}" "$vm" 'rm -rf ~/gc573-install' > /dev/null 2>&1 || true
     fi
-    if [ $started = 1 ]; then
+    if [ $started = 1 ] && ! "$root/tools/vms/card-idle.sh" "$vm"; then
+      echo "note: $vm left running: card-idle.sh says the card in it is not idle"
+    elif [ $started = 1 ]; then
       "${SSH[@]}" "$vm" sudo poweroff > /dev/null 2>&1 || true
       for i in $(seq 1 45); do [ "$(sudo virsh domstate "$vm")" = "shut off" ] && break; sleep 4; done
       [ "$(sudo virsh domstate "$vm")" = "shut off" ] || echo "note: $vm still running after poweroff"

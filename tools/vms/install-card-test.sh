@@ -137,6 +137,9 @@ stream_check() {
 }
 reboot_vm() {
 	local b0
+	# a reboot turns the card's bus mastering off (spec/pci.md)
+	"$root/tools/vms/card-idle.sh" "$VM" ||
+		{ echo "  no reboot of $VM: card-idle.sh says the card is not idle"; return 1; }
 	b0=$(vm cat /proc/sys/kernel/random/boot_id)
 	vm "sudo systemctl reboot" 2>/dev/null
 	wait_boot "$b0" && sleep 5
