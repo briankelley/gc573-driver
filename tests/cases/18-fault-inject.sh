@@ -8,13 +8,18 @@
 # of one task fails, for N = 1, 2, ... until the operation has no N-th
 # point. Points count only with module code in the top 32 frames of the
 # stack (the stacktrace filter from the kernel text's end up), so the module
-# loader's and the VFS's own allocations stay out, and none with ACPICA
-# (drivers/acpi/acpica) there: the filter's one reject range is ACPICA's
-# text. An allocation failure in ACPICA can break ACPI's namespace for the
-# rest of the boot (tests/logs/20261127-064813: a reference count left
-# wrong, a use-after-free at the next _PRT evaluation, and from then on no
-# PCI interrupt routing), which then fails what comes after it. kmemleak's
-# own allocations count as points: a failure there falls back to its pool,
+# loader's and the VFS's own allocations stay out. The filter has one
+# reject range. In the load and bind sweeps it is ACPICA's text
+# (drivers/acpi/acpica), which a probe runs: an allocation failure in
+# ACPICA can break ACPI's namespace for the rest of the boot
+# (tests/logs/20261127-064813: a reference count left wrong, a
+# use-after-free at the next _PRT evaluation, and from then on no PCI
+# interrupt routing), which then fails what comes after it. In the ioctl
+# sweeps and the random cycles, which probe nothing under injection, it
+# is dma-debug's text (kernel/dma/debug.c): a failure in dma-debug's own
+# allocations turns DMA-API debug off for the boot
+# (tests/logs/20261127-083556, the REQBUFS sweep). kmemleak's own
+# allocations count as points: a failure there falls back to its pool,
 # and the step is one with no failure in the driver.
 # First a load without a fault and an unload, so that the device's state
 # is the driver's own: before any probe it is the boot's (bus mastering on
@@ -38,8 +43,10 @@
 #    driver's buffer memory (debugfs "mem") is back to 0.
 # 4. random: GC573_FI_CYCLES (20) cycles of unbind, bind, capture, EDID set
 #    and clear, and audio, with GC573_FI_PROB (5) % of the points under the
-#    driver's own code failing in any task (the filter on gc573's text);
-#    after each unbind nothing left, as in 2.
+#    driver's own code failing in any task (the filter on gc573's text),
+#    except in the unbind and the bind, whose remove and probe run ACPICA
+#    (the bind sweep has every point of the probe); after each unbind
+#    nothing left, as in 2.
 # Last a clean bind with a capture, audio and the driver's memory at 0.
 # Fails on a kernel warning, oops, KASAN/UBSAN or lockdep report, a hung
 # task (hung_task_timeout_secs 30 for the case; an operation that does not
@@ -219,18 +226,86 @@ acpica_range() {
 			print a[lo], a[e], e - lo, s[lo], s[hi], s[e] other
 		}'
 }
+# dma-debug's text (kernel/dma/debug.c): from its first debug_dma_* or
+# dma_debug_* symbol in /proc/kallsyms to the symbol after its last, no
+# .cold parts, as for ACPICA. Every dma-debug allocation runs under one of
+# them (add_dma_entry(), dma_entry_alloc() and the checks sit between in
+# 6.8). "lo end count first last next other...", other: the symbols in it
+# that are not dma-debug's by name
+dmadebug_range() {
+	LC_ALL=C sort /proc/kallsyms | awk -v etext="$etext" '
+		function bare(name) {
+			sub(/^__pfx_/, "", name)
+			return name
+		}
+		function api(name) {
+			name = bare(name)
+			return name !~ /\.cold$/ && name ~ /^(debug_dma_|dma_debug_)/
+		}
+		function helper(name) {
+			return bare(name) ~ /^(dma_entry_[a-z_]+|add_dma_entry|check_sync|check_unmap|dump_show)$/
+		}
+		NF != 3 || $1 >= etext { next }
+		{ n++; a[n] = $1; t[n] = $2; s[n] = $3 }
+		END {
+			for (i = 1; i <= n; i++)
+				if (t[i] ~ /^[tT]$/ && api(s[i])) {
+					if (!lo)
+						lo = i
+					hi = i
+				}
+			if (!lo)
+				exit
+			for (e = hi + 1; e <= n && a[e] == a[hi]; e++)
+				;
+			if (e > n)
+				exit
+			for (i = lo; i < e; i++)
+				if (!api(s[i]) && !helper(s[i]))
+					other = other " " s[i]
+			print a[lo], a[e], e - lo, s[lo], s[hi], s[e] other
+		}'
+}
+# The reject range: ACPICA's for the load and bind sweeps, whose probes
+# run ACPICA (the PCI enable's _PRT, the I2C adapters' address space
+# handlers); dma-debug's for the ioctl sweeps and the random cycles,
+# which probe nothing under injection: a failure in dma-debug's own
+# allocations (its cacheline tracking's radix tree, __GFP_NOWARN) turns
+# DMA-API debug off for the boot (add_dma_entry(), kernel/dma/debug.c in
+# 6.8; tests/logs/20261127-083556)
+reject_set() {	# lo end, or none
+	if [ "$1" = none ]; then
+		fi_set reject-start 0
+		fi_set reject-end 0
+	else
+		fi_set reject-start "0x$1"
+		fi_set reject-end "0x$2"
+	fi
+}
 r=$(acpica_range)
 if [ -n "$r" ]; then
 	read -r alo aend acount afirst alast anext aother <<< "$r"
-	fi_set reject-start "0x$alo"
-	fi_set reject-end "0x$aend"
-	echo "ACPICA's text rejected: 0x$alo-0x$aend, $acount symbols ($afirst to $alast; then $anext)"
+	echo "ACPICA's text rejected in the load and bind sweeps: 0x$alo-0x$aend, $acount symbols ($afirst to $alast; then $anext)"
 	if [ -n "$aother" ]; then
 		echo "NOTE: in that range, not ACPICA's by name:$aother"
 		note+=" the reject range for ACPICA holds other symbols ($aother), whose points were not swept;"
 	fi
 else
-	echo "no ACPICA text found in /proc/kallsyms: nothing rejected"
+	alo=none aend=""
+	echo "no ACPICA text found in /proc/kallsyms: nothing rejected in the load and bind sweeps"
+fi
+reject_set "$alo" "$aend"
+r=$(dmadebug_range)
+if [ -n "$r" ]; then
+	read -r dlo dend dcount dfirst dlast dnext dother <<< "$r"
+	echo "dma-debug's text rejected in the ioctl sweeps and random cycles: 0x$dlo-0x$dend, $dcount symbols ($dfirst to $dlast; then $dnext)"
+	if [ -n "$dother" ]; then
+		echo "NOTE: in that range, not dma-debug's by name:$dother"
+		note+=" the reject range for dma-debug holds other symbols ($dother), whose points were not swept;"
+	fi
+else
+	dlo=$alo dend=$aend
+	echo "no dma-debug text found in /proc/kallsyms: the ioctl sweeps and random cycles reject as the load and bind sweeps"
 fi
 filter_modules() {
 	fi_set require-start "0x$etext"
@@ -659,6 +734,7 @@ klog_step "the bind without a fault"
 echo "bind: $inj faults (n=1..$((n - 1))), bound anyway $nbound, errnos $(errno_summary); $(($(date +%s) - t0)) s"
 
 # ---- 3. the ioctls ----
+reject_set "$dlo" "$dend"	# dma-debug's, until the clean end
 dev=$(gc573_video_dev) || fail "no video node"
 pcm=$(gc573_pcm_hw) || fail "no ALSA card"
 "$fi" edid-save -d "$dev" "$tmp/edid.bin" || fail "cannot save the EDID"
@@ -682,6 +758,10 @@ fi_set probability "$PROB"
 t0=$(date +%s)
 nb=0 nc=0 na=0 ne=0
 for i in $(seq "$CYCLES"); do
+	# the unbind and the bind with injection off: their remove and probe
+	# run ACPICA, which dma-debug's reject range lets through; the bind
+	# sweep has every point of the probe
+	fi_set probability 0
 	if gc573_bound; then
 		bounded sh -c "echo $GC573_BDF > $drv/unbind"
 		[ $? != 124 ] || fail "random cycle $i: unbind hangs"
@@ -690,6 +770,7 @@ for i in $(seq "$CYCLES"); do
 	fi
 	bounded sh -c "echo $GC573_BDF > $drv/bind"
 	[ $? != 124 ] || fail "random cycle $i: bind hangs"
+	fi_set probability "$PROB"
 	if ! gc573_bound; then
 		left=$(leftovers)
 		[ -z "$left" ] || problem "random cycle $i: the failed bind left: $(tr '\n' ';' <<< "$left")"
@@ -722,6 +803,7 @@ echo "random: $CYCLES cycles at $PROB %: bound $nb, captures through $nc, EDID s
 
 # ---- last: clean ----
 filter_modules
+reject_set "$alo" "$aend"
 if gc573_bound; then
 	echo "$GC573_BDF" > "$drv/unbind" || fail "the last unbind failed"
 fi
