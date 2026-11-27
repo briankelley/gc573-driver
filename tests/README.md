@@ -75,6 +75,12 @@ Footer: kernel, card firmware (FPGA VERSION), input, all results, `SUMMARY`.
 | `16-probe-fail-hpd` | M3 review | a probe that fails after the HDMI chips came up (bpftrace overrides `gc573_video_init()` with -ENOMEM) leaves GPIO bit 2, the IT6805-side HPD, low (read through `resource0`); before that: bit 2 high while bound, low after a normal unbind. SKIP without bpftrace or function error injection |
 | `18-fault-inject` | security review | debug kernel (failslab, fail_page_alloc, the stacktrace filter; SKIP without them). `gc573-fault` fails the N-th fault point of its own task (fail-nth), N = 1, 2, ... until the operation has no N-th point; only points with module code in the top 32 frames count (the filter from `_etext` up), none in kmemleak's bookkeeping (a reject range). Load: `finit_module` with every point to `GC573_FI_LOAD_FULL` (60), then every `GC573_FI_LOAD_STRIDE`-th (10). Bind: every point of the probe (`GC573_FI_BIND_FULL`, `GC573_FI_BIND_STRIDE`). After each: bound and a capture and audio read pass, or nothing of the device left (video node, sound card, debugfs directory, I2C adapters, IRQ, MSI vectors, PCI enable count, bus mastering). The ioctls with the input off: open, REQBUFS, S_FMT, STREAMON, S_EDID, the PCM's open and hw_params; after each failure the step clean, a short stream, the driver's memory at 0. Random: `GC573_FI_CYCLES` (20) bind/capture/EDID/audio/unbind cycles with `GC573_FI_PROB` (5) % of the points under gc573's text failing in any task. Fails on a warning, oops, KASAN/UBSAN or lockdep report, a hung task (`hung_task_timeout_secs` 30; an operation over 120 s), a debugfs or sysfs name already present, a driver error that is not the injected -ENOMEM, an incomplete log. With a NUMA node the probe runs on a worker, out of fail-nth's reach: SKIP with a note |
 | `19-surprise-remove` | security review | `GC573_REMOVE_ITER` (3) rounds: sysfs `remove` while `gc573-cap` (NV12, pattern check) and `gc573-aud` stream and two holders keep the video node and the ALSA control node open. The removal returns within 20 s with the files still held (else the holders are killed and the case fails), the device directory is gone, both tools exit with an error within 10 s, the holders' QUERYCAP and CARD_INFO get ENODEV (or EIO) and they close; `rescan` binds it again within 10 s with its nodes, a capture and an audio read pass, the driver's memory is 0. `hung_task_timeout_secs` 30 |
+| `20-ioctl-limits` | security review | no input. SOURCE_CHANGE subscriptions (F2): id 0 subscribes, ids 1 and 0xffffffff fail with EINVAL, the control event subscribes. CREATE_BUFS (F1): the current size and 8294400 bytes (1920x1080 XBGR32) succeed, a byte more and 64 MiB fail with EINVAL; driver memory 0 after. In a `GC573_MEMCG_MB` (48) MiB memory cgroup, `nobody` with the node's group asks for 16 buffers of 8294400 bytes: it holds no more than the limit (fewer buffers, or ENOMEM), the cgroup is charged for what it holds, nothing is OOM-killed (`memory.events` oom_kill 0), driver memory 0 after (SKIP of that part without the cgroup v2 memory controller). `tests/gc573-sec.c` issues the ioctls |
+| `21-i2c-bus1-policy` | security review | F8, through i2c-dev on bus 1 (`tests/i2c-xfer.py`): reads of 0x37 (DDC/CI) and 0x50 (EDID) fail with EPERM and the IT6805 ID still reads 54 49 05 68; only then writes to 0x37 and 0x50, which fail with EPERM too. A write of IT6805 0x0f = 1 (another bank) between the driver's sequences: debugfs hdmi `resyncs` goes up and the IT6805 is back in bank 0 0.5 s later |
+| `22-stop-fault` | security review | F4, with the test parameter `exp_stop_fault`, no input. STREAMOFF with no INT bit 0 and no domain reset: bus mastering off (PCI_COMMAND bit 2), debugfs `dma_dead 1`, no video or audio stream starts; a rebind brings bus mastering back and a pattern-checked capture. Unbind while video and audio stream with the audio stop ignored and no domain reset: the teardown sees the audio DMA still on and turns bus mastering off, the unbind finishes, both programs end, a rebind brings the card back. Driver memory 0 each time |
+| `23-channel-disarm` | security review | F4, no input: after a YV12 and an NV12 stream, and during and after a YUYV stream, the ch1/ch2 CH_CTRL values last written (debugfs) are 0; every stream pattern-checked |
+| `24-unbind-alsa-held` | security review | F6: two processes hold the ALSA control node and the capture PCM; the unbind finishes within 20 s with them still running; once they close, the module references go to 0 and gc573 unloads |
+| `25-card-release` | security review | F6, F7: `tools/card-release.sh` (synced by `tools/vmbuild.sh`) with gc573 loaded. `gc573_release --yes` refuses (status 1, the card still bound, the holder named) an i2c-dev holder of bus 1, an ALSA control holder, and an ALSA holder whose comm is `wireplumber`; a video holder with escapes in its comm is named without control characters; a holder of a file named `x<newline>1 /dev/videoN` is no holder. Each release is bounded: after 30 s the case kills the holder and fails |
 | `17-audio` | M4 | no input: ALSA hw params (S16_LE, 2 channels, 48 kHz, periods from 480 frames); 3 s capture at 48 kHz +- 0.1 % against the clock, no overrun, all samples zero, every period silent, AUDIO_DONE in order (debugfs `audio`); 20 stop/start cycles (INT bit 4 each), audio across 3 video stream start/stops and across 30 video stop/start cycles in every format (while audio runs the video stop leaves out reset domain 8, which holds the audio DMA: no restart, nothing filled, AUDIO_DONE in order, rate within 0.1 %), rmmod refused while the PCM is open, unbind while capturing (< 5 s, the application exits), capture after the rebind. SKIP without the alsa-lib headers |
 
 Experiment `exp-delivery.sh RATE [N] [TAG]` (host side like `live.sh`,
@@ -227,6 +233,7 @@ identifiers, no pictures of what the Roku shows.
 | `unload` | `rmmod` while streaming video and audio (refused, in use), unbind (< 5 s, both applications exit), rebind, lock |
 | `reload` | `GC573_RELOADS` (50) unload/load cycles with the source on: host output back and input locked each time |
 | `compliance` | `v4l2-compliance -s` with the live input |
+| `remnant` | not in the default steps (security review, section 3 test 5): user A captures the pattern at 1080p60 (checked against `pattern.py`'s image), which fills the card's frame store; then each the first stream after it: with the source off, B's 60 frames, the first delivered one too, have one signature and the last is one 32-bit word repeated (`tests/frame-uniform.py`: the free-run black); with the source at 720p60, locked 3 s with no stream in between, B's 60 frames have one signature and the last is the 720p pattern |
 | `stress` | VM only, not in the default steps: `gc573-stress` in the VM for `GC573_STRESS_SECS` (600), workers in random order: video (3: S_FMT, REQBUFS, mmap, STREAMON, frames, then STREAMOFF, REQBUFS 0 or close while streaming; DV timings, events, information ioctls), audio (2: one substream, so EBUSY for one; hw_params, start, reads, overrun recovery, drop, close), control (the ALSA control node, the video node, the debugfs files), EDID (S_EDID every 2-10 s: the default, another serial, none for a few seconds) and the bind role (unbind and bind every 15-45 s; `GC573_STRESS_BIND=0`: off), while the host sets `DVI-D-0` at random every 3-15 s with no test player: 1080p60, 1080p59.94, 720p60, 720p59.94 (streams hold, the hold expires), off for 2-6 s. VM `hung_task_timeout_secs` 30. PASS: no unexpected errno and no hang in the workers (an operation over 10 s, 30 s for unbind/bind), no `KMSG_BAD` line and no lost record in the VM's whole kernel log over the step (`kmsg-tail.py`; the driver's error lines INFO), a verified capture at 1080p60 after, the driver's memory at 0 |
 
 ## VM gates
@@ -234,14 +241,44 @@ Before a release, and after any change to the driver's teardown, DMA or
 locking, with the card in `gc573-dev`:
 1. `v4l2-compliance`: `tools/vmbuild.sh test 11-v4l2-compliance`, and
    `tests/live.sh compliance` with the live input.
-2. The debug kernel (`tools/devvm/debug-kernel.sh`; boot it once with
-   `ssh gc573-dev 'sudo grub-reboot "$(cat /etc/gc573-dbg-entry)" && sudo reboot'`):
-   the whole suite, `tools/vmbuild.sh test` (load/unload x50 in
-   `02-load-unload`; kmemleak, lockdep and DMA-API debug over all of it),
-   with `18-fault-inject` and `19-surprise-remove` in it.
+2. The debug kernel (`tools/devvm/debug-kernel.sh`, or with the VM off
+   `INSTALL=0` and later `INSTALL=only`; boot it once with
+   `tools/devvm/dbg-boot.sh`): the whole suite, `tools/vmbuild.sh test`
+   (load/unload x50 in `02-load-unload`; kmemleak, lockdep and DMA-API
+   debug over all of it), with `18-fault-inject`, `19-surprise-remove` and
+   the security cases `20-ioctl-limits` to `25-card-release` in it.
 3. On the debug kernel, `tests/live.sh blip fpgawait fpgaheal avchange
-   obsevents stress` (the last for `GC573_STRESS_SECS`, 600 s).
-4. The same three new gates again with the debug kernel booted with
-   `threadirqs` (the hard IRQ handler in a thread too): `18-fault-inject`,
-   `19-surprise-remove` and `live.sh stress`. Boot: TODO (the command for a
-   one-time `threadirqs` boot of the debug kernel).
+   obsevents remnant stress` (the last for `GC573_STRESS_SECS`, 600 s).
+4. The same new gates again with the debug kernel booted with
+   `threadirqs` (the hard IRQ handler in a thread too), booted with
+   `tools/devvm/dbg-boot.sh threadirqs`: `18-fault-inject`,
+   `19-surprise-remove`, `22-stop-fault`, `24-unbind-alsa-held` and
+   `live.sh stress`. Then `tools/devvm/dbg-boot.sh` again, or a plain
+   reboot for the generic kernel.
+
+A fix's test should fail before the fix: build the module of the commit
+before it (a scratch worktree), copy it to the VM, and run the new case
+from the current tree against it, `sudo GC573_KO=/path/gc573.ko
+tests/run.sh CASE`. `21-i2c-bus1-policy` stops before its writes and its
+bank part on an older driver, which would otherwise change its chips;
+`25-card-release` kills its holders after 30 s, which ends an unbind that
+waits for them; `22-stop-fault` needs the parameter it tests and fails at
+once.
+
+## Host step: probe with an engine still armed
+Security review F5 (probe stops the engines before bus mastering). Run
+by the coordinator on the host, where the IOMMU translates the card's
+DMA (domain DMA-FQ), with the card in `gc573-dev`:
+1. In the VM, stream video and audio: `gc573-cap -d /dev/videoN -n 1000000`
+   and `gc573-aud -t 3600`, each in the background (both armed: the
+   audio DMA and the video output on).
+2. On the host, note `journalctl -k | grep -c DMAR`, then
+   `virsh destroy gc573-dev`: the card keeps its registers, engines armed
+   (it has no FLR; vfio-pci turns bus mastering off on release).
+3. Give the card to gc573 on the host (the usual card move and bind).
+4. Pass: the bind's log has `DMA running at probe (DMA_RUN ..., VIP_CTRL
+   ...): stopped before bus mastering` (if not, vfio-pci reset the card
+   and the step proved nothing: say so), no new DMAR line in
+   `journalctl -k` since the bind, and a capture and an audio read work.
+   Before the fix the engines ran on as soon as probe turned bus
+   mastering on, before its reset.
