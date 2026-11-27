@@ -172,6 +172,47 @@ gc573_master_on() {
 # dead_cards: a DMA stop not confirmed); empty if none or not loaded
 gc573_dead_cards() { cat "/sys/module/$GC573_MOD/parameters/dead_cards" 2>/dev/null; }
 
+# A dead card with no driver, its runtime PM (delta review D9c): with
+# power/control at auto its runtime status stays active (the driver keeps
+# a usage count), so the port above it cannot suspend under its DMA. Prints
+# the card's and the port's states; status 1 if the card suspended, 2 if
+# power/control cannot be set. power/control is put back.
+gc573_dead_rpm() {
+	local d=/sys/bus/pci/devices/$GC573_BDF ctl st port i
+	ctl=$(cat "$d/power/control")
+	echo auto > "$d/power/control" || return 2
+	for i in $(seq 20); do
+		st=$(cat "$d/power/runtime_status")
+		[ "$st" = suspended ] && break
+		sleep 0.1
+	done
+	port=$(readlink -f "$d/..")
+	echo "runtime PM, control auto: the card $st, its port ${port##*/} $(cat "$port/power/runtime_status" 2>/dev/null) (control $(cat "$port/power/control" 2>/dev/null))"
+	echo "$ctl" > "$d/power/control"
+	[ "$st" = active ]
+}
+
+# A dead card with no driver, its INTx (delta review D14): PCI_COMMAND
+# INTx Disable (bit 10) set after the teardown. Shows PCI_STATUS's
+# interrupt status (bit 3) and the legacy line's counts, read only.
+gc573_dead_intx() {
+	local d=/sys/bus/pci/devices/$GC573_BDF cmd stat irq
+	cmd=$(od -An -tx2 -j4 -N2 "$d/config" | tr -d ' ')
+	stat=$(od -An -tx2 -j6 -N2 "$d/config" | tr -d ' ')
+	irq=$(cat "$d/irq")
+	echo "INTx: PCI_COMMAND $cmd (INTx Disable $(((0x$cmd >> 10) & 1))), PCI_STATUS $stat (interrupt status $(((0x$stat >> 3) & 1))); line $irq: $(awk -v i="$irq:" '$1 == i { $1 = ""; print }' /proc/interrupts | tr -s ' ' | cut -c1-100)"
+	[ $(((0x$cmd >> 10) & 1)) = 1 ]
+}
+
+# Both, for a dead card with no driver: fails the case with every one that
+# does not hold
+gc573_dead_left() {
+	local bad=""
+	gc573_dead_rpm || bad+="the card's runtime PM suspended it (no usage count kept); "
+	gc573_dead_intx || bad+="INTx is enabled on the dead card (INTx Disable clear); "
+	[ -z "$bad" ] || fail "${bad%; }"
+}
+
 # The card's DMA engines idle as BAR0 reads, with register reader $1 and
 # no driver in between: VIP_CTRL output enable (bit 0) and DMA_RUN audio
 # (bit 1) off, neither all-ones. Prints the two values.

@@ -22,8 +22,10 @@
 # given kept (modes 3, 4: the dummy list and the audio buffers, 12 KiB;
 # mode 1: none given), bus mastering still on and the device still
 # enabled, the card in dead_cards, the module held, no bind (ENODEV: no
-# driver matches it), no system sleep (with /sys/power/pm_test, as far as
-# its freezer stage); and BAR0, read past the driver, idle. run.sh runs
+# driver matches it), runtime PM that keeps it active with power/control
+# at auto (delta review D9c), INTx disabled (D14), no system sleep (with
+# /sys/power/pm_test, as far as its freezer stage); and BAR0, read past
+# the driver, idle. run.sh runs
 # this case last and skips the cases after it; the machine needs a reboot
 # after it (in a VM: tools/vms/card-idle.sh first). Allowed: the failures
 # this case provokes, and under DMA-API debug the report of the kept
@@ -137,6 +139,7 @@ if echo "$GC573_BDF" > "$drv/bind" 2> "$work/bind.err"; then
 	fail "the card could be bound again"
 fi
 echo "bind refused: $(sed 's/^.*: //' "$work/bind.err")"
+gc573_dead_left
 gc573_sleep_test > "$work/sleep.out"
 case $? in
 0) fail "system sleep went through the freezer stage with a card dead" ;;

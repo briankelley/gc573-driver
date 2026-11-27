@@ -41,6 +41,11 @@
 # - the module cannot be unloaded, the card cannot be bound again
 #   (ENODEV: no driver matches it), and system sleep is refused (with
 #   /sys/power/pm_test, as far as its freezer stage);
+# - with no driver: with power/control at auto the card stays runtime
+#   active (delta review D9c: the driver keeps a usage count, so its port
+#   cannot suspend under the DMA; control put back after), and its INTx
+#   is disabled (PCI_COMMAND bit 10, D14; PCI_STATUS's interrupt bit and
+#   the line's counts shown);
 # - streamoff: a remove and rescan of the device (its DMA confirmed
 #   stopped) gives a new device that the driver refuses by its record.
 # The card stays dead until reboot: run.sh runs this case last, skips the
@@ -156,6 +161,7 @@ dead_checks() {
 	gc573_master_on || fail "bus mastering off after the unbind"
 	echo "unbound: PCI enable count $(cat "$pdev/enable"), bus mastering on"
 	[ "$(cat "$pdev/enable")" -ge 1 ] || fail "the device was disabled at the unbind (bus mastering went off with it)"
+	gc573_dead_left
 	gc573_sleep_test > "$work/sleep.out"
 	case $? in
 	0) fail "system sleep went through the freezer stage with a card dead" ;;
