@@ -510,7 +510,7 @@ setup() {
 		"$ROOT/tests/obsws.py" "$ROOT/tests/obs-check.py" \
 		"$ROOT/tests/obs-av.py" "$ROOT/tests/obs-run.sh" "$ROOT/tests/obs-events.py" \
 		"$ROOT/tests/obsbridge.py" "$ROOT/tests/app-check.py" \
-		"$ROOT/tools/testsrc/scrub.py" "$W/"
+		"$ROOT/tools/testsrc/scrub.py" "$ROOT/tests/remnant-frames.py" "$W/"
 }
 
 # The frame interval G_PARM must report for the timings in a gc573-cap
@@ -2576,42 +2576,93 @@ frame_sigs() {
 	sigs=$(sed -nE 's/^FRAME seq=[0-9]+ .*sig=([0-9a-fx]+).*/\1/p' <<< "$1")
 	echo "$(grep -c . <<< "$sigs") $(sort -u <<< "$sigs" | grep -c .)"
 }
+# the frames of gc573-cap -F output ($1) as runs of one signature, each
+# with its first frame's timestamp, and the driver's stats (debugfs)
+frame_runs() {
+	sed -nE 's/^FRAME seq=([0-9]+) ts_ms=([0-9.]+) sig=([0-9a-f]+).*/\1 \2 \3/p' <<< "$1" |
+		awk 'function out() { printf "  frames: seq %s-%s sig=%s (%d, the first at ts_ms %s)\n", a, p, s, n, t }
+			$3 != s { if (n) out(); a = $1; s = $3; t = $2; n = 0 }
+			{ p = $1; n++ }
+			END { if (n) out() }'
+	grep '^  | stats:' <<< "$1" | sed 's/^  | /  driver: /'
+}
+# the size (W H) of gc573-cap output $1's YUYV capture, default 1920 1080
+cap_size() {
+	local s
+	s=$(sed -nE 's/^RESULT .*fmt=YUYV ([0-9]+)x([0-9]+) .*/\1 \2/p' <<< "$1" | head -1)
+	echo "${s:-1920 1080}"
+}
 # the pattern at WxH ($1, $2) compared with frame file $3 (YUYV)
 remnant_compare() {
 	vm "[ -f $W/p-$1x$2.png ] || python3 $W/pattern.py $W/p-$1x$2.png $1 $2 >/dev/null"
 	vm "python3 $W/live-compare.py $W/p-$1x$2.png $3 YUYV $1 $2 709" 2>&1
 }
+# The frames gc573-cap -K PFX kept (output $1, PFX $2): the first and each
+# whose signature changed, with seq and time from STREAMON; with a size $3
+# (WxH) also from the driver's last "HDMI: locked: WxH" line before
+# gc573-cap's STREAMON mark (kernel log, the kernel's clock). Then each
+# frame against A's (tests/remnant-frames.py; $4 the expected pattern's
+# PNG or - for the free-run black, $5 $6 the size) as RESULT $7-a-content
+remnant_kept() {
+	local lk="" files
+	if [ -n "$3" ]; then
+		lk=$(vm "sudo dmesg" | awk -v m="gc573-cap: STREAMON $2" -v l="HDMI: locked: $3" '
+			function ts(x) { sub(/^\[ */, "", x); sub(/\].*/, "", x); return x + 0 }
+			index($0, l) { last = ts($0) }
+			index($0, m) { s = ts($0); at = last }
+			END { if (s && at) printf "%.1f", (s - at) * 1000 }')
+		[ -n "$lk" ] || echo "  kept: no \"HDMI: locked: $3\" line before the STREAMON mark"
+	fi
+	sed -nE 's/^KEPT seq=([0-9]+) ts_ms=[0-9.]+ from_streamon_ms=([0-9.-]+) sig=([0-9a-f]+) file=(.*)/\1 \2 \3 \4/p' <<< "$1" |
+		awk -v lk="$lk" '{ printf "  kept: seq %s at %.1f ms after STREAMON%s, sig=%s %s\n", $1, $2,
+			lk == "" ? "" : sprintf(", %.1f ms after the lock", lk + $2), $3, $4 }'
+	grep '^INFO not kept' <<< "$1" | sed 's/^/  /'
+	files=$(sed -nE 's/^KEPT .* file=(.*)/\1/p' <<< "$1" | paste -sd' ')
+	if [ -z "$files" ]; then
+		result "$7-a-content" FAIL "(gc573-cap kept no frame)"
+		return
+	fi
+	av_results "$7" "$(vm "python3 $W/remnant-frames.py $W/remnant-a.YUYV 1920 1080 $4 $5 $6 $files" 2>&1)"
+}
 step_remnant() {
 	local out n u cmp rc t
+	vm "sudo rm -f $W/remnant-b0k-*.YUYV $W/remnant-b1k-*.YUYV"
 	# A: the pattern at 1080p60, the last frame checked
 	src_mode 1920x1080 60
 	out=$(cap "-L 10 -f YUYV -b 4 -n 60 -o $W/remnant-a -F" 2>&1)
 	cmp=$(remnant_compare 1920 1080 "$W/remnant-a.YUYV")
 	rc=$?
 	echo "$cmp" | grep '^RESULT' | sed 's/^/  A: /'
-	check remnant-a "$([ "$rc" = 0 ]; echo $?)" "(user A's frames are the 1080p pattern: $(frame_sigs "$out") frames/signatures)"
+	read -r n u <<< "$(frame_sigs "$out")"
+	[ "$u" = 1 ] || frame_runs "$out"
+	check remnant-a "$([ "$rc" = 0 ]; echo $?)" "(user A's frames are the 1080p pattern: $n $u frames/signatures)"
 
 	# B, no input: the first stream after A
 	src_off
 	wait_unlocked || { result remnant-noinput FAIL "(the input did not go away)"; return; }
-	out=$(cap "-f YUYV -b 4 -n 60 -o $W/remnant-b0 -F" 2>&1)
+	out=$(cap "-f YUYV -b 4 -n 60 -o $W/remnant-b0 -F -K $W/remnant-b0k" 2>&1)
 	read -r n u <<< "$(frame_sigs "$out")"
+	[ "$u" = 1 ] || frame_runs "$out"
 	cmp=$(vm "python3 $VMDIR/tests/frame-uniform.py $W/remnant-b0.YUYV" 2>&1)
 	rc=$?
 	check remnant-noinput "$([ "$n" -ge 60 ] && [ "$u" = 1 ] && [ "$rc" = 0 ]; echo $?)" \
 		"(no input: $n frames, $u distinct; last frame: $cmp)"
+	# shellcheck disable=SC2046 # the size: two words
+	remnant_kept "$out" "$W/remnant-b0k" "" - $(cap_size "$out") remnant-noinput
 
 	# B, a smaller input: locked 3 s, no stream in between
 	src_on 1280x720 60
 	t=$(time_to_lock 15)
 	sleep 3
-	out=$(cap "-L 10 -f YUYV -b 4 -n 60 -o $W/remnant-b1 -F" 2>&1)
+	out=$(cap "-L 10 -f YUYV -b 4 -n 60 -o $W/remnant-b1 -F -K $W/remnant-b1k" 2>&1)
 	read -r n u <<< "$(frame_sigs "$out")"
+	[ "$u" = 1 ] || frame_runs "$out"
 	cmp=$(remnant_compare 1280 720 "$W/remnant-b1.YUYV")
 	rc=$?
 	echo "$cmp" | grep '^RESULT' | sed 's/^/  B: /'
 	check remnant-720p "$([ "$n" -ge 60 ] && [ "$u" = 1 ] && [ "$rc" = 0 ]; echo $?)" \
 		"(720p60 locked $t ms after the mode set: $n frames, $u distinct, the last the 720p pattern: rc $rc)"
+	remnant_kept "$out" "$W/remnant-b1k" 1280x720 "$W/p-1280x720.png" 1280 720 remnant-720p
 	src_mode 1920x1080 60
 }
 

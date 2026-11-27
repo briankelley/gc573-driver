@@ -8,7 +8,8 @@
 # marks that way (tests/logs/20261126-190906_6.8.0-151-generic_live.log).
 # Also: setup() puts into the VM every module of this tree that the scripts
 # it puts there import, and av_results fails STEP-check when a checker
-# gives no RESULT line (both: tests/logs/20261127-094342_6.8.12-gc573dbg_live.log).
+# gives no RESULT line (both: tests/logs/20261127-094342_6.8.12-gc573dbg_live.log);
+# and the remnant step's helpers on made-up gc573-cap output.
 # Usage: tests/live-lib-check.sh   (PASS/FAIL lines; exit 1 on a failure)
 set -u
 here=$(cd "$(dirname "$0")" && pwd)
@@ -77,5 +78,42 @@ check live-av-results-empty "$(grep -q '^empty R x-check FAIL' <<< "$out" &&
 	"(no output, and output without RESULT: $(grep -E '^(empty|info)' <<< "$out" | tr '\n' ';'))"
 check live-av-results-ok "$(grep -qx 'ok 0' <<< "$out"; echo $?)" \
 	"(a RESULT line: $(sed -n 's/^ok //p' <<< "$out") x-check results)"
+
+# the remnant step's helpers on made-up gc573-cap output: the frame list
+# as runs, the capture's size, the kept frames with their times from
+# STREAMON and from the lock line before gc573-cap's STREAMON mark, their
+# classification, and a capture that kept nothing
+out=$(bash -s "$LIVE" <<'EOF' 2>&1
+. <(for f in frame_runs cap_size remnant_kept; do sed -n "/^$f() {/,/^}/p" "$1"; done)
+W=/w
+vm() {
+	case $1 in
+	'sudo dmesg') printf '%s\n' '[  100.000100] gc573 0000:07:00.0: HDMI: locked: 1280x720p, 74250000 Hz' \
+		'[  200.500000] gc573 0000:07:00.0: HDMI: locked: 1280x720p, 74250000 Hz' \
+		'[  205.000000] gc573-cap: STREAMON /w/b1k' ;;
+	*) echo "RESULT a-content PASS (vm: $1)" ;;
+	esac
+}
+result() { echo "R $1 $2 $3"; }
+av_results() { echo "AV $1 $2"; }
+cap=$(printf '%s\n' 'FRAME seq=0 ts_ms=5.000 sig=00000000000000aa' \
+	'FRAME seq=1 ts_ms=21.700 sig=00000000000000bb' 'FRAME seq=2 ts_ms=38.300 sig=00000000000000bb' \
+	'  | stats: irqs 10 frames 3 skipped 1' 'RESULT capture fmt=YUYV 1280x720 frames=3 seq_gaps=0' \
+	'KEPT seq=0 ts_ms=5.000 from_streamon_ms=16.700 sig=00000000000000aa file=/w/b1k-0.YUYV' \
+	'KEPT seq=1 ts_ms=21.700 from_streamon_ms=33.400 sig=00000000000000bb file=/w/b1k-1.YUYV')
+frame_runs "$cap"
+echo "size $(cap_size "$cap")"
+remnant_kept "$cap" /w/b1k 1280x720 /w/p.png 1280 720 r720
+remnant_kept 'nothing kept' /w/b0k "" - 1920 1080 r0
+EOF
+)
+check live-remnant-runs "$(grep -qF 'frames: seq 0-0 sig=00000000000000aa (1, the first at ts_ms 5.000)' <<< "$out" &&
+	grep -qF 'frames: seq 1-2 sig=00000000000000bb (2, the first at ts_ms 21.700)' <<< "$out" &&
+	grep -qF 'driver: stats: irqs 10 frames 3 skipped 1' <<< "$out" && grep -qx 'size 1280 720' <<< "$out"; echo $?)" \
+	"($(grep -E 'frames:|driver:|^size' <<< "$out" | tr '\n' ';'))"
+check live-remnant-kept "$(grep -qF 'kept: seq 0 at 16.7 ms after STREAMON, 4516.7 ms after the lock' <<< "$out" &&
+	grep -qF 'remnant-frames.py /w/remnant-a.YUYV 1920 1080 /w/p.png 1280 720 /w/b1k-0.YUYV /w/b1k-1.YUYV' <<< "$out" &&
+	grep -qF 'R r0-a-content FAIL (gc573-cap kept no frame)' <<< "$out"; echo $?)" \
+	"($(grep -E 'kept:|^AV|^R ' <<< "$out" | cut -c1-90 | tr '\n' ';'))"
 echo "FAILS $fails"
 [ "$fails" = 0 ]
