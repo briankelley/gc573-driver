@@ -10,9 +10,8 @@
 # card works (a pattern-checked capture). The modes that leave the card
 # dead until reboot are tests/cases/27-no-answer-dead.sh (3, 4, and 1 at
 # the first probe of a boot, bus mastering on) and
-# tests/cases/30-probe-entry.sh (1 after an unbind, bus mastering off:
-# GC573_TEST_ENTRY=ones; up to the delta review's D1 it refused the card
-# and left it usable).
+# tests/cases/30-probe-entry.sh (1 after an unbind: GC573_TEST_ENTRY=ones;
+# up to the delta review's D1 it refused the card and left it usable).
 # shellcheck source=tests/lib.sh
 . "$(dirname "$0")/../lib.sh"
 
@@ -62,7 +61,8 @@ kmsg_since "$tag" | grep -q 'Setting dangerous option exp_mmio_ones - tainting k
 	fail "setting exp_mmio_ones did not taint the kernel"
 
 echo "-- mode 2: no answer for 1.5 s once bus mastering is on"
-gc573_master_on && fail "bus mastering on after the unbind"
+# a clean unbind leaves it on (final review F1: the driver never turns it off)
+gc573_master_on || fail "bus mastering off after the unbind (the driver turned it off)"
 tag=$(kmsg_mark "no-answer 2")
 echo 2 > "$param"
 echo "$GC573_BDF" > "$drv/bind" || fail "mode 2: bind failed"

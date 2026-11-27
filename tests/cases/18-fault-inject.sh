@@ -36,7 +36,9 @@
 #    After each load or bind: bound (the failure absorbed) and a smoke
 #    capture and audio read pass, or nothing of the device is left: no
 #    video node, sound card, debugfs directory, I2C adapter "gc573 BDF bus
-#    N", IRQ or MSI vector, the PCI device disabled, bus mastering off.
+#    N", IRQ or MSI vector; the PCI enable count at 1 and bus mastering on
+#    (final review F1: the driver's own enable, taken at the first probe
+#    and never undone, and bus mastering never turned off).
 # 3. the ioctls (gc573-fault sweep), the input off: open, REQBUFS, S_FMT,
 #    STREAMON, S_EDID, the PCM's open and hw_params. After each injected
 #    failure the same step without one passes, a short stream runs, and the
@@ -605,10 +607,11 @@ leftovers() {
 	grep -w "$GC573_MOD" /proc/interrupts | awk '{ print "IRQ " $1 }'
 	x=$(find "$pdev/msi_irqs" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l)
 	[ "$x" = 0 ] || echo "MSI vectors: $x"
+	# the driver's own enable stays, and bus mastering (final review F1)
 	x=$(cat "$pdev/enable")
-	[ "$x" = 0 ] || echo "PCI enable count $x"
+	[ "$x" = 1 ] || echo "PCI enable count $x, not 1"
 	x=$(od -An -tu2 -j4 -N2 "$pdev/config" | tr -d ' ')
-	[ $((x & 4)) = 0 ] || echo "bus mastering on (COMMAND $x)"
+	[ $((x & 4)) != 0 ] || echo "bus mastering off (COMMAND $x)"
 }
 
 # A short capture and audio read on the bound device; once more after the
@@ -661,7 +664,9 @@ strays=$(stray_nodes)	# from before the case: not its own
 # has the boot's state (in gc573-dev COMMAND 0x0007, bus mastering on),
 # which a step whose failure stops the driver before its probe leaves as
 # it is (load n=1 in tests/logs/20261127-075711). After the driver's own
-# remove, what the leftovers check finds is the driver's
+# remove, what the leftovers check finds is the driver's: since final
+# review F1 its own enable (count 1, kept from the first probe on) and
+# bus mastering on
 gc573_load i2c_bus1=1 i2c_bus02=1 || fail "the load before the sweeps failed"
 gc573_bound || { gc573_unload; fail "the load before the sweeps: not bound"; }
 gc573_unload || fail "rmmod after the load before the sweeps failed"
