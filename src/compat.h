@@ -91,6 +91,9 @@ gc573_pcim_iomap_region(struct pci_dev *pdev, int bar, const char *name)
  * (Kbuild's probes, GC573_HAVE_*), not by version, and then checked: the
  * PCI bus must no longer match gc573 itself to the card
  * (gc573_block_check()), or the driver says it cannot block other drivers.
+ * Headers in which the probes find none of the ways stop the build. The
+ * way each matrix kernel must get is asserted (modinfo dead_block:
+ * tools/vms/matrix-build.sh, tools/vmbuild.sh).
  *
  * pci_dev.match_driver (up to v6.15, EL9; GC573_HAVE_PCI_MATCH_DRIVER),
  * set false: pci_bus_match() then refuses every driver, whatever binds
@@ -146,7 +149,6 @@ static inline void gc573_block_drivers(struct pci_dev *pdev,
 #if defined(GC573_HAVE_DEVICE_SET_DRIVER_OVERRIDE) && \
 	defined(GC573_HAVE_BUS_DRIVER_OVERRIDE)
 #define GC573_BLOCK_GENERIC	"generic,"
-#define GC573_BLOCK_ONLY	"generic"
 
 /* The override in struct device, if the PCI bus matches with it */
 static inline bool gc573_block_generic(struct pci_dev *pdev,
@@ -164,15 +166,23 @@ static inline bool gc573_block_generic(struct pci_dev *pdev,
 		gc573_block_check(pdev, drv);
 	return true;
 }
-#else
+#elif defined(GC573_HAVE_PCI_DRIVER_OVERRIDE)
 #define GC573_BLOCK_GENERIC	""
-#define GC573_BLOCK_ONLY	"none"
 
 static inline bool gc573_block_generic(struct pci_dev *pdev,
 				       struct pci_driver *drv)
 {
 	return false;
 }
+#else
+/*
+ * Every supported kernel has one of the ways: match_driver up to v6.15,
+ * pci_dev.driver_override v6.16 to v7.0, the override in struct device
+ * with the bus flag from v7.1 (and their backports). None found means a
+ * probe in Kbuild no longer matches these headers: a build without a
+ * block would leave a dead card to any driver, unseen.
+ */
+#error "gc573: Kbuild's GC573_HAVE_* probes found no way to keep other drivers off a dead card"
 #endif
 
 #if defined(GC573_HAVE_PCI_DRIVER_OVERRIDE)
@@ -256,13 +266,13 @@ nomem:
 		-ENOMEM);
 }
 #else
-#define GC573_DEAD_BLOCK	GC573_BLOCK_ONLY
+#define GC573_DEAD_BLOCK	"generic"
 
 static inline void gc573_block_drivers(struct pci_dev *pdev,
 				       struct pci_driver *drv, bool locked)
 {
 	if (!gc573_block_generic(pdev, drv))
-		dev_err(&pdev->dev, "cannot block other drivers: this kernel's PCI bus keeps no driver_override a driver can set\n");
+		dev_err(&pdev->dev, "cannot block other drivers: this kernel's PCI bus does not match by the driver_override in struct device\n");
 }
 #endif
 #endif

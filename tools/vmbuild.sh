@@ -5,7 +5,9 @@
 # The module is never loaded on the host.
 #
 # Usage: tools/vmbuild.sh [ACTION...]
-#   (none)        sync tree to the VM, clean W=1 build; any compiler warning fails
+#   (none)        sync tree to the VM, clean W=1 build; any compiler warning fails,
+#                 and so does a modinfo dead_block other than the kernel's
+#                 (6.8: match_driver)
 #   load          build, then (re)load gc573.ko and print the probe's dmesg
 #   unload        rmmod gc573 and print its dmesg (no build)
 #   check         build, then checkpatch --strict on src/ and a sparse (C=2) build
@@ -41,14 +43,27 @@ sync_tree() {
 }
 
 build() {
-	local out
-	echo "== build ($VM, $(vm uname -r))"
+	local out krel got want
+	krel=$(vm uname -r)
+	echo "== build ($VM, $krel)"
 	vm "make -s -C $VMDIR clean >/dev/null"
 	out=$(vm "make -C $VMDIR W=1 2>&1") || { echo "$out"; die "build failed"; }
 	echo "$out" | grep -vE '^make(\[[0-9]+\])?: (Entering|Leaving) directory' || true
 	if echo "$out" | grep -qE 'warning:|error:'; then
 		die "build has warnings"
 	fi
+	# the way this build keeps other drivers off a dead card (src/compat.h):
+	# a Kbuild header probe that stops matching changes it with no error.
+	# The 6.8 kernels here (generic, debug) have match_driver, and Ubuntu's
+	# also the override in struct device, which would hide a lost probe
+	case $krel in
+	6.8.*) want=match_driver ;;
+	*) die "no expected dead_block for kernel $krel here (tools/vmbuild.sh; the matrix kernels' are in tools/vms/matrix-build.sh)" ;;
+	esac
+	got=$(vm "modinfo -F dead_block $VMDIR/gc573.ko")
+	[ "$got" = "$want" ] ||
+		die "dead_block is '${got:-none}' for $krel, not $want: a Kbuild header probe (GC573_HAVE_*) no longer matches"
+	echo "dead_block: $got"
 }
 
 check() {
