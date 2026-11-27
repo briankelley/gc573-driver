@@ -638,7 +638,8 @@ MODULE_PARM_DESC(dead_cards,
  *   compat.h: complete where the kernel has pci_dev.match_driver, up to
  *   v6.15, weaker without it; modinfo's dead_block says which).
  *   A new pci_dev of it, after a remove and rescan, gets refused by this
- *   driver's record.
+ *   driver's record, but nothing keeps other drivers from that one
+ *   (README).
  * - The module stays loaded, and with it the record. A stop that fails
  *   while the module unloads cannot hold it: then only
  *   gc573_block_drivers() does.
@@ -1187,8 +1188,11 @@ static int gc573_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 /*
  * Reboot, kexec: no DMA or interrupts may outlive this kernel. After a
  * stop the card did not confirm, bus mastering stays on (spec/pci.md):
- * a reboot's platform reset stops the card. kexec has the PCI core turn
- * it off for every bound device regardless (pci_device_shutdown()).
+ * a reboot's platform reset stops the card. A kexec does not wait for
+ * that: the PCI core turns bus mastering off on every PCI device in D0 to
+ * D3hot, bound to a driver or not, after its driver's shutdown
+ * (pci_device_shutdown(), the bus's shutdown, which device_shutdown()
+ * calls for every device), so a dead card's is turned off too (README).
  */
 static void gc573_shutdown(struct pci_dev *pdev)
 {
