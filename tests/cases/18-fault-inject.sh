@@ -263,7 +263,7 @@ after_fault() {
 
 errnos=""
 count_errno() { errnos+="$(sed -n 's/.* errno=\([A-Z0-9]*\).*/\1/p' "$tmp/out") "; }
-errno_summary() { tr ' ' '\n' <<< "$errnos" | sed '/^$/d' | sort | uniq -c | awk '{ printf "%s%s:%s", NR > 1 ? "," : "", $2, $1 }'; }
+errno_summary() { tr ' ' '\n' <<< "$errnos" | sed '/^$/d' | sort | uniq -c | awk '{ printf "%s%s:%s", (NR > 1 ? "," : ""), $2, $1 }'; }
 
 numa=$(cat "$pdev/numa_node" 2>/dev/null || echo -1)
 echo "device $GC573_BDF numa_node $numa"
