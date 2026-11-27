@@ -2070,7 +2070,11 @@ step_avchange() {
 	check avchange-capture $rc "($(vm "grep -E '^(PARAMS|RESULT)' $W/avc.txt" | tr '\n' ' '))"
 	out=$(vm "python3 $W/live-av.py $W/avc.txt $W/avc.raw --segments 20,40,60")
 	vm "rm -f $W/avc.raw"
-	grep -E '^SEGMENT|raw offsets|^RESULT (video|gaps)' <<< "$out" | sed 's/^/  /'
+	# live-av.py's video and gaps checks take the capture whole, and this
+	# one restarts three times on purpose: informational here (no verdict
+	# word), the segments are what is judged
+	grep -E '^SEGMENT|raw offsets|^RESULT (video|gaps)' <<< "$out" |
+		sed -E "s/^RESULT (video|gaps) +(PASS|FAIL|SKIP) /INFO whole-capture \\1, across the step's restarts (not judged): /; s/^/  /"
 	out=$(awk '/^SEGMENT/ { for (i = 1; i <= NF; i++) if ($i ~ /^corr=/) { c = substr($i, 6) + 0; n++
 			if (n == 1) c0 = c; d = c - c0; if (d < 0) d = -d; if (d > dmax) dmax = d; s = s sprintf(" %+.3f", c) } }
 		END { printf "%s %d %.3f%s", (n == 4 && dmax <= 1) ? "PASS" : "FAIL", n, dmax, s }' <<< "$out")
@@ -2150,7 +2154,7 @@ step_obsevents() {
 	out=$(python3 "$ROOT/tests/obs-events.py" events --reps 1 --only res-720p,res-1080p --record \
 		"${OBSEV_ARGS[@]}" 2>&1)
 	grep -E '^RECFORMAT|^ *EVENT|^RESULT' <<< "$out" |
-		sed 's/^RESULT/  INFO mkv (report only):/; s/^ *EVENT/  mkv: EVENT/; s/^RECFORMAT/  RECFORMAT/'
+		sed -E 's/^RESULT ([^ ]+) +(PASS|FAIL|SKIP) /  INFO mkv (report only, not judged): \1: /; s/^ *EVENT/  mkv: EVENT/; s/^RECFORMAT/  RECFORMAT/'
 	f=$(sed -n 's/^RECORDING //p' <<< "$out")
 	[ -z "$f" ] || vm "rm -f '$f'"
 	obs_log_since "$m" | grep -E 'Unable to set format|failed to|busy' | sed 's/^/  mkv: obs log: /' | head -8
