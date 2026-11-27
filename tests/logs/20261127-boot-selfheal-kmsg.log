@@ -1,0 +1,23 @@
+# Host boot 2026-11-26 18:58 MST via the GRUB entry with gc573_bind=1: the Q40 boot race and self-heal attempt 1 (kernel log, gc573 lines; journalctl -b -k -o short-monotonic)
+[   10.955963] gc573 0000:07:00.0: enabling device (0000 -> 0002)
+[   10.956254] gc573 0000:07:00.0: using MSI, irq 194
+[   11.058524] gc573 0000:07:00.0: FPGA version 20200811
+[   11.190962] gc573 0000:07:00.0: I2C bus 0: i2c-1, bus 1: i2c-2, bus 2: i2c-3 (bus 0/2 transfers off)
+[   11.191850] gc573 0000:07:00.0: I2C bus 1 0x90 (IT6805): id 54 49 05 68 rev 0xb1
+[   11.290590] gc573 0000:07:00.0: IT6805 rev 0xb1: factory 37954 kHz, trim 0x13, 5 V present
+[   11.291280] gc573 0000:07:00.0: I2C bus 1 0x58 (splitter): id 54 49 63 66 rev 0x01
+[   11.393298] gc573 0000:07:00.0: splitter rev 0x01: rclk 21146 kHz (OTP, OTP record 0x0b0)
+[   11.532972] gc573 0000:07:00.0: video device video4
+[   11.533371] gc573 0000:07:00.0: audio: ALSA card 5 (GC573)
+[   11.544860] gc573 0000:07:00.0: HDMI: 5 V, no signal
+[   13.960180] gc573 0000:07:00.0: splitter: EQ search found no valid channel (d0 = 2a), attempt 1
+[   14.638258] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 147911 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+[   14.713132] gc573 0000:07:00.0: splitter: EQ search found no valid channel (d0 = 2a), attempt 2
+[   16.911183] gc573 0000:07:00.0: HDMI: input stable for 40 polls, but the FPGA has no valid measurement of it (1004 0x1 1008 0x780 100c 0x438 1010 0x196dab): not locked until it has
+[   19.694265] gc573 0000:07:00.0: HDMI: self-heal 1 of 3, receiver restart: input stable for 90 polls, no valid FPGA measurement (1004 0x1 1008 0x780 100c 0x438 1010 0x196dab)
+[   20.014442] gc573 0000:07:00.0: IT6805: stable: 1920x1080p total 2200x1125, 146107 kHz, HDMI, AVI 00 28 88 10 00, single pixel
+[   21.344788] gc573 0000:07:00.0: HDMI: FPGA measurement valid after self-heal 1
+[   21.344804] gc573 0000:07:00.0: HDMI: locked: 1920x1080p, 148500000 Hz pixel clock, frame period 0x196dab (60.006 Hz), RGB, full range; FPGA 1004 0x3 1008 0x780 100c 0x438
+# gc573-boot-bind.service
+[   10.890109] gc573-boot-bind[1506]: gc573-boot-bind: binding 0000:07:00.0 to gc573 for this boot (kernel command line)
+[   11.535551] gc573-boot-bind[1506]: gc573-boot-bind: driver now: gc573
