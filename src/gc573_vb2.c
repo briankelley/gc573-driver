@@ -7,9 +7,12 @@
  * an IOMMU every such page is bounced through swiotlb; videobuf2-dma-sg is
  * not available on every matrix kernel (EL9). So the buffers are built
  * here:
- * - alloc: pages from alloc_pages(GFP_KERNEL | __GFP_DMA32), largest
- *   blocks first (fewer DMA descriptors), split into order-0 pages, and
- *   an sg_table over them;
+ * - alloc: pages from alloc_pages(GFP_KERNEL_ACCOUNT | __GFP_DMA32),
+ *   largest blocks first (fewer DMA descriptors), split into order-0
+ *   pages, and an sg_table over them. The size comes from the caller
+ *   (CREATE_BUFS; the queue setup bounds it), so the memory is charged to
+ *   the caller's memory cgroup, and running out of it fails the request
+ *   with ENOMEM: no allocation here waits on the OOM killer or warns;
  * - cookie: that sg_table; the driver DMA-maps it in its buf_init and
  *   builds the descriptor lists from it (gc573_video.c);
  * - vaddr: vmap() on first use;
@@ -63,11 +66,15 @@ static int gc573_mem_alloc_pages(struct gc573_mem *m)
 		unsigned int i;
 
 		for (;;) {
-			gfp_t gfp = GFP_KERNEL | __GFP_DMA32 | __GFP_ZERO;
+			gfp_t gfp = GFP_KERNEL_ACCOUNT | __GFP_DMA32 | __GFP_ZERO |
+				    __GFP_NOWARN;
 
-			/* a smaller block will do: no hard reclaim, no warning */
-			if (order)
-				gfp |= __GFP_NORETRY | __GFP_NOWARN;
+			/*
+			 * a smaller block will do: no hard reclaim. Single
+			 * pages: reclaim, but fail rather than OOM-kill (in
+			 * the caller's cgroup too)
+			 */
+			gfp |= order ? __GFP_NORETRY : __GFP_RETRY_MAYFAIL;
 			p = alloc_pages(gfp, order);
 			if (p || !order)
 				break;
@@ -90,12 +97,12 @@ static void *gc573_mem_alloc(struct vb2_buffer *vb, struct device *dev,
 	struct gc573_mem *m;
 	int ret;
 
-	m = kzalloc(sizeof(*m), GFP_KERNEL);
+	m = kzalloc(sizeof(*m), GFP_KERNEL_ACCOUNT);
 	if (!m)
 		return ERR_PTR(-ENOMEM);
 
 	m->n_pages = PAGE_ALIGN(size) >> PAGE_SHIFT;
-	m->pages = kvcalloc(m->n_pages, sizeof(*m->pages), GFP_KERNEL);
+	m->pages = kvcalloc(m->n_pages, sizeof(*m->pages), GFP_KERNEL_ACCOUNT);
 	if (!m->pages) {
 		ret = -ENOMEM;
 		goto err_free;
@@ -109,7 +116,8 @@ static void *gc573_mem_alloc(struct vb2_buffer *vb, struct device *dev,
 	ret = sg_alloc_table_from_pages_segment(&m->sgt, m->pages, m->n_pages,
 						0,
 						(unsigned long)m->n_pages << PAGE_SHIFT,
-						GC573_DMA_SEG_MAX, GFP_KERNEL);
+						GC573_DMA_SEG_MAX,
+						GFP_KERNEL_ACCOUNT);
 	if (ret)
 		goto err_free_pages;
 

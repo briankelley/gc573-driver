@@ -107,6 +107,12 @@
  * a lasting change (the failed queue) that much later.
  */
 #define GC573_VID_HOLD_MS		1000
+/*
+ * The largest image any format can have: the timings cap's largest frame
+ * (1920x1080) in the widest format (XBGR32, 4 bytes per pixel). A buffer
+ * that CREATE_BUFS asks for beyond it could never be used.
+ */
+#define GC573_SIZEIMAGE_MAX		(1920 * 1080 * 4)
 
 static int exp_slot_mode;
 module_param(exp_slot_mode, int, 0644);
@@ -948,8 +954,13 @@ static int gc573_queue_setup(struct vb2_queue *q, unsigned int *nbufs,
 	struct gc573 *gc = vb2_get_drv_priv(q);
 	u32 size = gc->vid.pix.sizeimage;
 
+	/*
+	 * CREATE_BUFS: the caller's sizeimage, at least the current one and
+	 * at most what a later format could use (all of it is allocated)
+	 */
 	if (*nplanes)
-		return *nplanes != 1 || sizes[0] < size ? -EINVAL : 0;
+		return *nplanes != 1 || sizes[0] < size ||
+		       sizes[0] > PAGE_ALIGN(GC573_SIZEIMAGE_MAX) ? -EINVAL : 0;
 	*nplanes = 1;
 	sizes[0] = size;
 	return 0;
