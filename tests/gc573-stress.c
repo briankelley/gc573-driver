@@ -20,7 +20,9 @@
  *                  others see ENODEV and open again once the device is back
  * Every operation's error is checked against the errors it can have here
  * (another process owns the queue, the input is in other timings, the
- * device went away, ...): any other is "unexpected". A watchdog in the
+ * device went away, ...): any other is "unexpected". REQBUFS 0 while
+ * streaming is its own operation: vb2 refuses it with EBUSY ("streaming
+ * active"), and its success is unexpected too. A watchdog in the
  * parent reports an operation still running after -w ms (default 10000;
  * 30000 for unbind and bind) as a hang. Run as root.
  *
@@ -64,7 +66,8 @@
 enum op {
 	OP_NONE = -1,
 	V_OPEN, V_CLOSE, V_INFO, V_S_FMT, V_REQBUFS, V_QUERYBUF, V_MMAP,
-	V_QBUF, V_STREAMON, V_DQBUF, V_STREAMOFF, V_REQBUFS0, V_QUERY_DV,
+	V_QBUF, V_STREAMON, V_DQBUF, V_STREAMOFF, V_REQBUFS0, V_REQBUFS0_ON,
+	V_QUERY_DV,
 	V_S_DV, V_G_EDID, V_S_EDID, V_SUBSCRIBE, V_DQEVENT, V_LOG_STATUS,
 	A_OPEN, A_HW_PARAMS, A_PREPARE, A_START, A_READ, A_DROP, A_CLOSE,
 	C_CTL, D_READ, B_UNBIND, B_BIND, B_WAIT,
@@ -73,7 +76,8 @@ enum op {
 
 static const char *const opname[NOPS] = {
 	"open", "close", "info", "S_FMT", "REQBUFS", "QUERYBUF", "mmap",
-	"QBUF", "STREAMON", "DQBUF", "STREAMOFF", "REQBUFS0", "QUERY_DV_TIMINGS",
+	"QBUF", "STREAMON", "DQBUF", "STREAMOFF", "REQBUFS0",
+	"REQBUFS0_streaming", "QUERY_DV_TIMINGS",
 	"S_DV_TIMINGS", "G_EDID", "S_EDID", "SUBSCRIBE_EVENT", "DQEVENT",
 	"LOG_STATUS", "pcm_open", "hw_params", "prepare", "start", "read",
 	"drop", "pcm_close", "ctl", "debugfs", "unbind", "bind", "bind_wait",
@@ -91,6 +95,8 @@ static const int allowed[NOPS][6] = {
 	[V_STREAMON]	= { EPIPE, EIO, EINVAL },
 	[V_DQBUF]	= { EAGAIN, EIO, EINVAL },
 	[V_STREAMOFF]	= { EINVAL },
+	/* vb2 refuses REQBUFS while streaming: "streaming active" */
+	[V_REQBUFS0_ON]	= { EBUSY },
 	[V_QUERY_DV]	= { ENOLINK, ENOLCK, ERANGE },
 	[V_S_DV]	= { EBUSY, EINVAL },
 	[V_G_EDID]	= { ENODATA, EINVAL },
@@ -185,6 +191,17 @@ static void op_begin(int op)
 	__atomic_store_n(&me->op, op, __ATOMIC_RELEASE);
 }
 
+/* an unexpected result of operation op: what (an errno name, or more) */
+static void note_unexpected(int op, const char *what)
+{
+	if (me->unexpected < NFIRST) {
+		snprintf(me->first[me->unexpected], sizeof(me->first[0]),
+			 "%s: %s", opname[op], what);
+		printf("UNEXPECTED %s %s\n", me->name, me->first[me->unexpected]);
+	}
+	me->unexpected++;
+}
+
 /*
  * End of an operation; e = its errno (0: success). Returns e. ENODEV (the
  * device went away, as the bind role makes it) is always allowed.
@@ -209,12 +226,7 @@ static int op_end(int e)
 	for (i = 0; i < 6 && allowed[op][i]; i++)
 		if (allowed[op][i] == e)
 			return e;
-	if (me->unexpected < NFIRST) {
-		snprintf(me->first[me->unexpected], sizeof(me->first[0]),
-			 "%s: %s", opname[op], ename(e));
-		printf("UNEXPECTED %s %s\n", me->name, me->first[me->unexpected]);
-	}
-	me->unexpected++;
+	note_unexpected(op, ename(e));
 	return e;
 }
 
@@ -387,7 +399,7 @@ static int vstream(int *fdp)
 	struct pollfd pf = { .fd = *fdp, .events = POLLIN };
 	struct mbuf mb[MAX_BUFS] = { { 0 } };
 	struct v4l2_buffer b;
-	int fd = *fdp, e = 0, type = CAP, gone = 0, r;
+	int fd = *fdp, e = 0, type = CAP, gone = 0, r, op0 = V_REQBUFS0;
 	unsigned int i, n = 0, nf, k;
 	int64_t t0;
 
@@ -465,7 +477,8 @@ static int vstream(int *fdp)
 		vclose(fd);
 		*fdp = -1;
 		return 1;
-	case 1:		/* REQBUFS 0 while streaming */
+	case 1:		/* REQBUFS 0 while streaming: refused (EBUSY) */
+		op0 = V_REQBUFS0_ON;
 		break;
 	default:
 		e = vio(V_STREAMOFF, fd, VIDIOC_STREAMOFF, &type);
@@ -477,7 +490,10 @@ out:
 			munmap(mb[i].p, mb[i].len);
 	if (!gone) {
 		rb.count = 0;
-		gone = vio(V_REQBUFS0, fd, VIDIOC_REQBUFS, &rb) == ENODEV;
+		e = vio(op0, fd, VIDIOC_REQBUFS, &rb);
+		if (op0 == V_REQBUFS0_ON && !e)
+			note_unexpected(op0, "succeeded while streaming");
+		gone = e == ENODEV;
 	}
 	return gone;
 }
