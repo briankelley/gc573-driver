@@ -1,0 +1,4 @@
+INFO change: streaming YUYV 1920x1080, buffer 3 held back, tails 0 bytes
+INFO change: SOURCE_CHANGE (changes 0x1) at 3264 ms, 142 frames
+INFO change: SOURCE_CHANGE (changes 0x1) at 5833 ms, 277 frames
+RESULT change fmt=YUYV 1920x1080 frames=694 event_ms=3264 events=2 last_event_ms=5833 frames_after_event=552 frames_after_last_event=417 last_frame_ms=12847 dqbuf_error_ms=-1 held_blocks_changed=0 held_tail_words_changed=0 tails_changed=0

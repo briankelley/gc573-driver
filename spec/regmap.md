@@ -85,11 +85,24 @@ Descriptor format and protocol: `video-dma.md`.
 | 0x1064 | HUE | RW | default 0 | same | C |
 | 0x1068 | SATURATION | RW | default 0x80 | same | C |
 | 0x107c | DDR_STATUS | RW | [0] on-board DDR ready. Recovery write sequence: 8, then 1, wait 2 s, re-check. Read at init: `0x3` | `T1/S01`,`S` | L |
-| 0x1080 | RATE_CTRL | RW | [31:16] output frame-rate limit in fps (RD clamps 5..60; 5 with no input) · [2:1] CSC range/table select (YUV out `0b01`, RGB out `0b11` in bits [2:1]) · [3] set at reset, preserve | `T1/S02`,`T2/S11`,`S` | L |
+| 0x1080 | RATE_CTRL | RW | [31:16] output frame-rate limit in fps (RD clamps 5..60; 5 with no input) · [2:1] CSC range/table select (YUV out `0b01`, RGB out `0b11` in bits [2:1]) · [3] status: 1 while the output free-runs, 0 once it follows the input; the hardware changes it without a write (`video-pipeline.md` "Delivery rate"). Set at reset; RD preserves it. UNVERIFIED: whether a write to it has any effect | `T1/S02`,`T2/S11`,`S`; [3] `E` (`tests/logs/q41-sweep-20261127T014811Z`) | L ([3] C) |
 | 0x1088 | PIX_MODE | RW | [0] dual-pixel input bus · [1] DDR input bus (see `video-pipeline.md`) | `S`,`T1`,`T3` | L |
 | 0x10a0 | AUDIO_SAMPLE_PERIOD | RO | audio sample period in 100 MHz ticks; fs = 1e8/val. `0xffffffff` with no input | `T1`,`T2/S13`,`S` | C |
+| 0x10a4 | OUT_STATUS | R | [14:13] 3 once the output follows the input, 0 while it free-runs (RATE_CTRL[3] is the inverse); the other bits read 0x105 throughout (unknown). Never written: UNVERIFIED whether writable | `E` (`tests/logs/q41-sweep-20261127T014811Z`) | C ([14:13]) |
 | 0x10c0–0x10d8 | CSC_RGB2YUV | RW | 7 words, format in `video-pipeline.md` | `T1/S02`,`D` | C |
 | 0x10e0–0x10f8 | CSC_YUV2RGB | RW | 7 words | same | C |
+| 0x10fc | PIXCLK_HZ | R | `0x08d9ee20` = 148 500 000 with 1080p60 input: the pixel clock in Hz. UNVERIFIED: whether measured or nominal, and whether it follows other modes (74 250 000 expected at 720p60) | `E` (`tests/logs/q41-sweep-20261127T014811Z`) | U |
+
+The other offsets in 0x1000–0x10fc that the driver does not use, read once each with 1080p60 input (2026-11-27 01:48Z), raised no fault and had no effect on the card.
+- **Write-only or unimplemented:** 0x1044–0x1058, 0x106c–0x1078 and 0x10ac–0x10bc read `0xeeeeeeee`. Write-only registers read the same (ch1/ch2 CH_CTRL, `video-dma.md`).
+- **Zero:** 0x1014, 0x1018, 0x101c, 0x1084, 0x108c and 0x1090.
+- **Possibly frame stores:** 0x1030, 0x1034 and 0x1038 read 0, `0x02400000` and `0x04800000`, 36 MiB apart: perhaps frame-store bases in the on-board DDR (UNVERIFIED).
+- **0x103c** reads `0x0025c3f8` = 2 475 000 = 2200 × 1125, the input's total pixels per frame (UNVERIFIED: one mode).
+- **Unknown:** 0x1094 = `0x5a0`, 0x1098 = 9, 0x109c = `0xc`, 0x10a8 = `0x22`.
+- **Across fresh locks** (an EDID change, about 1 ms sampling): of these offsets only 0x10a4 changed, at bits 14:13.
+  - RATE_CTRL[3] flipped with it, and 0x1004 and 0x1010 showed their documented loss values.
+  - With a stream running, the driver's own writes also changed VIP_CTRL and RATE_CTRL's rate field.
+  - (`E`: spec-session BAR0 sweep, `tests/logs/q41-sweep-20261127T014811Z`; C)
 
 ## Scalers
 | Off | Block | Ev | Conf |
